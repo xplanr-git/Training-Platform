@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "hono": "https://deno.land/x/hono@v4.0.0/mod.ts",
+    "hono/": "https://deno.land/x/hono@v4.0.0/"
+  }
+}
