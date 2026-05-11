@@ -2,6 +2,8 @@
 
 > **This file is the single source of truth for contributors and AI assistants.**
 > If anything in another doc contradicts this file, this file wins. Update this file when decisions change; do not let other docs drift.
+>
+> **New to the repo?** Read this end-to-end. The load-bearing sections are §1 (locked decisions), §4 (security issues), and §7 (operating rules for AI assistants).
 
 Last reviewed: 2026-05-11.
 
