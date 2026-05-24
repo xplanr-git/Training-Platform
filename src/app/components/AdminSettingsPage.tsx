@@ -3,7 +3,7 @@ import { Save, Bell, Lock, Globe, Mail, CreditCard, Users as UsersIcon, Shield, 
 import { supabase } from '/utils/supabase/client';
 
 interface AdminSettingsPageProps {
-  activeSection?: 'company-profile' | 'notifications' | 'security' | 'team-management' | 'billing' | 'privacy' | 'preferences';
+  activeSection?: 'company-profile' | 'community-access' | 'notifications' | 'security' | 'team-management' | 'billing' | 'privacy' | 'preferences';
   companyId?: string | null;
   companyName?: string;
 }
@@ -1250,6 +1250,106 @@ export function AdminSettingsPage({ activeSection = 'company-profile', companyId
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Community Access Settings */}
+        {activeSection === 'community-access' && (
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-8">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Community Access</h2>
+              <p className="text-sm text-gray-500">Control visibility, posting rights, and membership rules for your community spaces.</p>
+            </div>
+
+            {/* Visibility */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-1">Community visibility</p>
+              <p className="text-xs text-gray-500 mb-3">Control who can see this community and its content.</p>
+              <div className="space-y-2">
+                {[
+                  { val: 'public',  label: 'Public',          desc: 'Anyone on the platform can find and view this community.' },
+                  { val: 'members', label: 'Members only',     desc: 'Only members can see posts and activity.' },
+                  { val: 'private', label: 'Private (hidden)', desc: 'Hidden from discovery — accessible by direct invite only.' },
+                ].map(opt => (
+                  <label key={opt.val} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors">
+                    <input type="radio" name="ca-visibility" defaultChecked={opt.val === 'members'} className="mt-0.5 accent-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100" />
+
+            {/* Who can post */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-1">Who can post</p>
+              <p className="text-xs text-gray-500 mb-3">Set which members are allowed to create new posts.</p>
+              <div className="space-y-2">
+                {[
+                  { val: 'everyone', label: 'Everyone',      desc: 'All community members can post.' },
+                  { val: 'members',  label: 'Members only',  desc: 'Only approved members can post.', default: true },
+                  { val: 'admins',   label: 'Admins only',   desc: 'Only admins and staff can post; others can reply.' },
+                ].map(opt => (
+                  <label key={opt.val} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors">
+                    <input type="radio" name="ca-whocanpost" defaultChecked={!!opt.default} className="mt-0.5 accent-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100" />
+
+            {/* Membership */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-1">Membership</p>
+              <p className="text-xs text-gray-500 mb-3">Choose how new members can join this community.</p>
+              <div className="space-y-2">
+                {[
+                  { val: 'open',     label: 'Open',              desc: 'Anyone can join without approval.' },
+                  { val: 'approval', label: 'Requires approval', desc: 'Admin must approve membership requests.', default: true },
+                  { val: 'invite',   label: 'Invite only',       desc: 'New members can only join via a direct invite.' },
+                ].map(opt => (
+                  <label key={opt.val} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors">
+                    <input type="radio" name="ca-membership" defaultChecked={!!opt.default} className="mt-0.5 accent-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100" />
+
+            {/* Toggle options */}
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-gray-800">Additional access options</p>
+              {[
+                { id: 'ca-guest',    label: 'Allow guest preview',   desc: 'Non-members can browse posts without joining.',                          defaultChecked: false },
+                { id: 'ca-approval', label: 'Require post approval', desc: 'New posts from non-admin members are held for review before publishing.', defaultChecked: true },
+                { id: 'ca-dms',      label: 'Allow direct messages', desc: 'Members can send direct messages to each other within this space.',       defaultChecked: true },
+              ].map(opt => (
+                <div key={opt.id} className="flex items-start justify-between gap-4 p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{opt.label}</p>
+                    <p className="text-sm text-gray-600 mt-0.5">{opt.desc}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                    <input type="checkbox" defaultChecked={opt.defaultChecked} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
         )}
