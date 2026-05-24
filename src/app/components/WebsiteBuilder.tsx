@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Course } from '@/app/types';
 import { EditableContent } from './EditableContent';
-import { Plus, Grip, Eye, EyeOff, Trash2, ChevronUp, ChevronDown, ChevronRight, Palette, Type, Image as ImageIcon, Monitor, Smartphone, Check, Users, DollarSign, HelpCircle, TrendingUp, Building2, Video, Copy, Settings, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, List, Link2, Sparkles, ArrowLeft, Loader2, Layout, PanelTop, FileText, Globe, MousePointerClick, Maximize, Filter, BookOpen, Layers, Zap, MessageSquare, Rss, Upload } from 'lucide-react';
+import { Plus, Grip, Eye, EyeOff, Trash2, ChevronUp, ChevronDown, ChevronRight, Palette, Type, Image as ImageIcon, Monitor, Smartphone, Check, Users, DollarSign, HelpCircle, TrendingUp, Building2, Video, Copy, Settings, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, List, Link2, Sparkles, ArrowLeft, Loader2, Layout, PanelTop, FileText, Globe, MousePointerClick, Maximize, Filter, BookOpen, Layers, Zap, MessageSquare, Rss, Upload, X } from 'lucide-react';
 import { supabase } from '/utils/supabase/client';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import { courses as availableCourses } from '../data/courses';
@@ -297,6 +297,54 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
   const [activeAddTab, setActiveAddTab] = useState<'sections' | 'elements'>('sections');
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [activeFunnelPopup, setActiveFunnelPopup] = useState<string | null>(null);
+  const [blogWizard, setBlogWizard] = useState<{
+    type: 'new-article' | 'categories' | 'blog-settings';
+    label: string; desc: string; icon: any; color: string;
+    step: 1 | 2;
+    // new-article
+    title: string;
+    category: string;
+    tags: string;
+    allowComments: boolean;
+    seoDescription: string;
+    // categories
+    catName: string;
+    catSlug: string;
+    catDescription: string;
+    catColor: string;
+    // blog-settings
+    blogTitle: string;
+    blogDescription: string;
+    postsPerPage: number;
+    commentsEnabled: boolean;
+    rssEnabled: boolean;
+    analyticsId: string;
+  } | null>(null);
+  const [popupWizard, setPopupWizard] = useState<{
+    type: 'exit-intent' | 'welcome-banner' | 'lead-magnet';
+    label: string; desc: string; icon: any; color: string;
+    step: 1 | 2;
+    name: string;
+    headline: string;
+    body: string;
+    cta: string;
+    // exit-intent
+    triggerDelay: 'immediate' | '5s' | '10s';
+    // welcome-banner
+    position: 'top' | 'bottom' | 'modal';
+    // lead-magnet
+    offerType: 'free-course' | 'ebook' | 'checklist' | 'webinar';
+    emailPlaceholder: string;
+    // shared
+    showTo: 'everyone' | 'new-visitors';
+  } | null>(null);
+  const [funnelWizard, setFunnelWizard] = useState<{
+    label: string; desc: string; icon: any; color: string;
+    step: 1 | 2;
+    name: string;
+    emailCapture: boolean;
+    tracking: boolean;
+  } | null>(null);
 
   // Course player preview state
   const [playerPreviewCourse, setPlayerPreviewCourse] = useState<{ title: string; description?: string } | null>(null);
@@ -1342,6 +1390,25 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
     }
   };
 
+  // ── Funnel page definitions ──────────────────────────────────────
+  const funnelPageDefs: Record<string, { name: string; slug: string; badge: string; badgeColor: string; sections: string[] }[]> = {
+    'Lead Capture Funnel': [
+      { name: 'Opt-in Page',    slug: '/opt-in',    badge: 'Step 1', badgeColor: 'bg-amber-100 text-amber-700',   sections: ['hero', 'features', 'cta'] },
+      { name: 'Thank You Page', slug: '/thank-you', badge: 'Step 2', badgeColor: 'bg-teal-100 text-teal-700',     sections: ['hero'] },
+    ],
+    'Webinar Funnel': [
+      { name: 'Registration Page',  slug: '/register',     badge: 'Step 1', badgeColor: 'bg-blue-100 text-blue-700',     sections: ['hero', 'features', 'cta'] },
+      { name: 'Confirmation Page',  slug: '/confirmation', badge: 'Step 2', badgeColor: 'bg-purple-100 text-purple-700', sections: ['hero', 'cta'] },
+      { name: 'Replay Page',        slug: '/replay',       badge: 'Step 3', badgeColor: 'bg-teal-100 text-teal-700',     sections: ['hero'] },
+    ],
+    'Sales Funnel': [
+      { name: 'Sales Page',    slug: '/sales',    badge: 'Step 1', badgeColor: 'bg-green-100 text-green-700',   sections: ['hero', 'features', 'pricing'] },
+      { name: 'Order Page',    slug: '/order',    badge: 'Step 2', badgeColor: 'bg-blue-100 text-blue-700',     sections: ['hero', 'cta'] },
+      { name: 'Upsell Page',   slug: '/upsell',   badge: 'Step 3', badgeColor: 'bg-amber-100 text-amber-700',   sections: ['hero', 'features', 'cta'] },
+      { name: 'Thank You Page',slug: '/thank-you',badge: 'Step 4', badgeColor: 'bg-teal-100 text-teal-700',     sections: ['hero'] },
+    ],
+  };
+
   return (
     <div className="flex h-full relative">
       {/* Course Player Preview Modal */}
@@ -1353,6 +1420,710 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
           onClose={() => setPlayerPreviewCourse(null)}
         />
       )}
+
+      {funnelWizard && (() => {
+        const FunnelIcon = funnelWizard.icon;
+        return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setFunnelWizard(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${funnelWizard.color}`}>
+                  <FunnelIcon className="size-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{funnelWizard.label}</p>
+                  <p className="text-xs text-gray-400">{funnelWizard.desc}</p>
+                </div>
+              </div>
+              <button onClick={() => setFunnelWizard(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {funnelWizard.step === 1 && (
+              <>
+                <div className="px-6 py-5 space-y-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Funnel Name</label>
+                    <input
+                      type="text"
+                      value={funnelWizard.name}
+                      onChange={e => setFunnelWizard(w => w ? { ...w, name: e.target.value } : w)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="e.g. Summer Lead Capture"
+                    />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pages that will be created</p>
+                    <div className="space-y-2">
+                      {(funnelPageDefs[funnelWizard.label] ?? []).map((pg, i) => (
+                        <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${pg.badgeColor}`}>{pg.badge}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-gray-800">{pg.name}</p>
+                            <p className="text-[10px] text-gray-400 truncate">/{funnelWizard.name.toLowerCase().replace(/\s+/g, '-')}{pg.slug}</p>
+                          </div>
+                          <div className="flex gap-1 flex-wrap justify-end">
+                            {pg.sections.map(s => (
+                              <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-gray-200 text-gray-500 capitalize">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Settings</p>
+                    <div className="space-y-2.5">
+                      <div className="flex items-start justify-between gap-3 p-3 rounded-lg border border-gray-100">
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">Email capture & integration</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Connect to your email list automatically</p>
+                        </div>
+                        <div className="cursor-pointer shrink-0 mt-0.5" onClick={() => setFunnelWizard(w => w ? { ...w, emailCapture: !w.emailCapture } : w)}>
+                          <div className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${funnelWizard.emailCapture ? 'bg-teal-500' : 'bg-gray-300'}`}>
+                            <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${funnelWizard.emailCapture ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-start justify-between gap-3 p-3 rounded-lg border border-gray-100">
+                        <div>
+                          <p className="text-xs font-medium text-gray-800">Conversion tracking</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Track funnel performance and drop-off</p>
+                        </div>
+                        <div className="cursor-pointer shrink-0 mt-0.5" onClick={() => setFunnelWizard(w => w ? { ...w, tracking: !w.tracking } : w)}>
+                          <div className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${funnelWizard.tracking ? 'bg-teal-500' : 'bg-gray-300'}`}>
+                            <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${funnelWizard.tracking ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                  <button onClick={() => setFunnelWizard(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
+                  <button
+                    onClick={() => {
+                      const pageDefs = funnelPageDefs[funnelWizard.label] ?? [];
+                      const baseName = funnelWizard.name.toLowerCase().replace(/\s+/g, '-');
+                      pageDefs.forEach(pg => {
+                        const newPage = {
+                          id: `page-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                          name: pg.name,
+                          slug: `/${baseName}${pg.slug}`,
+                          sections: pg.sections.map((type, idx) => ({ id: `${idx}`, type, title: type.charAt(0).toUpperCase() + type.slice(1) + ' Section', visible: true, config: {} })),
+                          subpages: [],
+                        };
+                        setPages(prev => [...prev, newPage]);
+                      });
+                      setFunnelWizard(w => w ? { ...w, step: 2 } : w);
+                    }}
+                    className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors"
+                  >
+                    Create Funnel
+                  </button>
+                </div>
+              </>
+            )}
+
+            {funnelWizard.step === 2 && (
+              <>
+                <div className="px-6 py-6 flex flex-col items-center text-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-base">Funnel created!</p>
+                    <p className="text-sm text-gray-500 mt-1">"{funnelWizard.name}" is ready. {(funnelPageDefs[funnelWizard.label] ?? []).length} pages have been added to your site.</p>
+                  </div>
+                  <div className="w-full space-y-2 text-left">
+                    {(funnelPageDefs[funnelWizard.label] ?? []).map((pg, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-teal-50 border border-teal-100">
+                        <div className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-medium text-teal-800">{pg.name}</p>
+                          <p className="text-[10px] text-teal-600">/{funnelWizard.name.toLowerCase().replace(/\s+/g, '-')}{pg.slug}</p>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${pg.badgeColor}`}>{pg.badge}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                  <button onClick={() => setFunnelWizard(null)} className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors">
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        );
+      })()}
+
+      {/* ── Popup Wizard Modal ── */}
+      {popupWizard && (() => {
+        const PopupIcon = popupWizard.icon;
+        const accentBtn =
+          popupWizard.type === 'exit-intent'    ? 'bg-red-600 hover:bg-red-700'    :
+          popupWizard.type === 'welcome-banner' ? 'bg-purple-600 hover:bg-purple-700' :
+                                                   'bg-teal-600 hover:bg-teal-700';
+        const accentRing =
+          popupWizard.type === 'exit-intent'    ? 'focus:ring-red-500'    :
+          popupWizard.type === 'welcome-banner' ? 'focus:ring-purple-500' :
+                                                   'focus:ring-teal-500';
+        return (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setPopupWizard(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${popupWizard.color}`}>
+                    <PopupIcon className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{popupWizard.label}</p>
+                    <p className="text-xs text-gray-400">{popupWizard.desc}</p>
+                  </div>
+                </div>
+                <button onClick={() => setPopupWizard(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {popupWizard.step === 1 && (
+                <>
+                  <div className="px-6 py-5 space-y-4">
+
+                    {/* Popup name */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Popup Name</label>
+                      <input
+                        type="text"
+                        value={popupWizard.name}
+                        onChange={e => setPopupWizard(w => w ? { ...w, name: e.target.value } : w)}
+                        className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                      />
+                    </div>
+
+                    {/* Headline */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Headline</label>
+                      <input
+                        type="text"
+                        value={popupWizard.headline}
+                        onChange={e => setPopupWizard(w => w ? { ...w, headline: e.target.value } : w)}
+                        className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                        placeholder="e.g. Don't miss out…"
+                      />
+                    </div>
+
+                    {/* Body text */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Body Text</label>
+                      <textarea
+                        value={popupWizard.body}
+                        onChange={e => setPopupWizard(w => w ? { ...w, body: e.target.value } : w)}
+                        rows={2}
+                        className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent resize-none`}
+                        placeholder="Describe your offer…"
+                      />
+                    </div>
+
+                    {/* CTA */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Button Text</label>
+                      <input
+                        type="text"
+                        value={popupWizard.cta}
+                        onChange={e => setPopupWizard(w => w ? { ...w, cta: e.target.value } : w)}
+                        className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                        placeholder="e.g. Get Started"
+                      />
+                    </div>
+
+                    {/* Lead Magnet: offer type + email placeholder */}
+                    {popupWizard.type === 'lead-magnet' && (
+                      <>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Offer Type</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(['free-course', 'ebook', 'checklist', 'webinar'] as const).map(ot => (
+                              <button
+                                key={ot}
+                                onClick={() => setPopupWizard(w => w ? { ...w, offerType: ot } : w)}
+                                className={`px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${popupWizard.offerType === ot ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                              >
+                                {ot === 'free-course' ? '🎓 Free Course' : ot === 'ebook' ? '📖 eBook' : ot === 'checklist' ? '✅ Checklist' : '🎥 Webinar'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Email Field Placeholder</label>
+                          <input
+                            type="text"
+                            value={popupWizard.emailPlaceholder}
+                            onChange={e => setPopupWizard(w => w ? { ...w, emailPlaceholder: e.target.value } : w)}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                            placeholder="Enter your email address"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Welcome Banner: position */}
+                    {popupWizard.type === 'welcome-banner' && (
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Display Position</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {([['top', '⬆ Top Bar'], ['modal', '⬛ Center Modal'], ['bottom', '⬇ Bottom Bar']] as const).map(([val, lbl]) => (
+                            <button
+                              key={val}
+                              onClick={() => setPopupWizard(w => w ? { ...w, position: val } : w)}
+                              className={`px-2 py-2 rounded-lg border text-[10px] font-medium transition-colors ${popupWizard.position === val ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                            >
+                              {lbl}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Exit-intent: trigger delay */}
+                    {popupWizard.type === 'exit-intent' && (
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Show Popup</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {([['immediate', 'Immediately'], ['5s', 'After 5s'], ['10s', 'After 10s']] as const).map(([val, lbl]) => (
+                            <button
+                              key={val}
+                              onClick={() => setPopupWizard(w => w ? { ...w, triggerDelay: val } : w)}
+                              className={`px-2 py-2 rounded-lg border text-[10px] font-medium transition-colors ${popupWizard.triggerDelay === val ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                            >
+                              {lbl}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show to */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Show To</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([['everyone', 'Everyone'], ['new-visitors', 'New Visitors Only']] as const).map(([val, lbl]) => (
+                          <button
+                            key={val}
+                            onClick={() => setPopupWizard(w => w ? { ...w, showTo: val } : w)}
+                            className={`px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${popupWizard.showTo === val ? `border-teal-500 bg-teal-50 text-teal-700` : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                          >
+                            {lbl}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                    <button onClick={() => setPopupWizard(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
+                    <button
+                      onClick={() => setPopupWizard(w => w ? { ...w, step: 2 } : w)}
+                      className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${accentBtn}`}
+                    >
+                      Create Popup
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {popupWizard.step === 2 && (
+                <>
+                  <div className="px-6 py-6 flex flex-col items-center text-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-base">Popup created!</p>
+                      <p className="text-sm text-gray-500 mt-1">"{popupWizard.name}" is active and ready to engage your visitors.</p>
+                    </div>
+
+                    {/* Preview card */}
+                    <div className="w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-left space-y-3">
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Preview</p>
+                      <div className={`rounded-lg p-3 border ${popupWizard.type === 'exit-intent' ? 'border-red-100 bg-red-50' : popupWizard.type === 'welcome-banner' ? 'border-purple-100 bg-purple-50' : 'border-teal-100 bg-teal-50'}`}>
+                        <p className={`text-xs font-semibold mb-1 ${popupWizard.type === 'exit-intent' ? 'text-red-800' : popupWizard.type === 'welcome-banner' ? 'text-purple-800' : 'text-teal-800'}`}>{popupWizard.headline}</p>
+                        <p className={`text-[11px] mb-2 ${popupWizard.type === 'exit-intent' ? 'text-red-600' : popupWizard.type === 'welcome-banner' ? 'text-purple-600' : 'text-teal-600'}`}>{popupWizard.body}</p>
+                        {popupWizard.type === 'lead-magnet' && (
+                          <div className={`text-[10px] text-teal-500 border border-teal-200 rounded px-2 py-1 bg-white mb-2`}>{popupWizard.emailPlaceholder}</div>
+                        )}
+                        <div className={`inline-block text-[10px] font-semibold px-3 py-1 rounded-full text-white ${popupWizard.type === 'exit-intent' ? 'bg-red-500' : popupWizard.type === 'welcome-banner' ? 'bg-purple-500' : 'bg-teal-500'}`}>{popupWizard.cta}</div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-gray-400 font-semibold uppercase tracking-wide">Show to</span>
+                          <span className="text-gray-700 font-medium">{popupWizard.showTo === 'everyone' ? 'Everyone' : 'New visitors only'}</span>
+                        </div>
+                        {popupWizard.type === 'exit-intent' && (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-gray-400 font-semibold uppercase tracking-wide">Trigger</span>
+                            <span className="text-gray-700 font-medium">{popupWizard.triggerDelay === 'immediate' ? 'On exit intent' : `${popupWizard.triggerDelay} delay + exit intent`}</span>
+                          </div>
+                        )}
+                        {popupWizard.type === 'welcome-banner' && (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-gray-400 font-semibold uppercase tracking-wide">Position</span>
+                            <span className="text-gray-700 font-medium capitalize">{popupWizard.position === 'modal' ? 'Center modal' : `${popupWizard.position} bar`}</span>
+                          </div>
+                        )}
+                        {popupWizard.type === 'lead-magnet' && (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-gray-400 font-semibold uppercase tracking-wide">Offer</span>
+                            <span className="text-gray-700 font-medium capitalize">{popupWizard.offerType.replace('-', ' ')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                    <button onClick={() => setPopupWizard(null)} className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${accentBtn}`}>
+                      Done
+                    </button>
+                  </div>
+                </>
+              )}
+
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Blog Wizard Modal ── */}
+      {blogWizard && (() => {
+        const BlogIcon = blogWizard.icon;
+        const accentBtn =
+          blogWizard.type === 'new-article'   ? 'bg-indigo-600 hover:bg-indigo-700' :
+          blogWizard.type === 'categories'    ? 'bg-orange-600 hover:bg-orange-700' :
+                                                'bg-gray-700 hover:bg-gray-800';
+        const accentRing =
+          blogWizard.type === 'new-article'   ? 'focus:ring-indigo-500' :
+          blogWizard.type === 'categories'    ? 'focus:ring-orange-500' :
+                                                'focus:ring-gray-500';
+        const toggleColor =
+          blogWizard.type === 'new-article'   ? 'bg-indigo-500' :
+          blogWizard.type === 'categories'    ? 'bg-orange-500' :
+                                                'bg-teal-500';
+        return (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setBlogWizard(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${blogWizard.color}`}>
+                    <BlogIcon className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{blogWizard.label}</p>
+                    <p className="text-xs text-gray-400">{blogWizard.desc}</p>
+                  </div>
+                </div>
+                <button onClick={() => setBlogWizard(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {blogWizard.step === 1 && (
+                <>
+                  <div className="px-6 py-5 space-y-4">
+
+                    {/* ── New Article fields ── */}
+                    {blogWizard.type === 'new-article' && (
+                      <>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Article Title</label>
+                          <input
+                            type="text"
+                            value={blogWizard.title}
+                            onChange={e => setBlogWizard(w => w ? { ...w, title: e.target.value } : w)}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                            placeholder="e.g. 5 Ways to Build a High-Performance Team"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Category</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {['Leadership', 'Technology', 'Business', 'Personal Development'].map(cat => (
+                              <button key={cat} onClick={() => setBlogWizard(w => w ? { ...w, category: cat } : w)}
+                                className={`px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${blogWizard.category === cat ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tags <span className="font-normal text-gray-400 normal-case">(comma separated)</span></label>
+                          <input
+                            type="text"
+                            value={blogWizard.tags}
+                            onChange={e => setBlogWizard(w => w ? { ...w, tags: e.target.value } : w)}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                            placeholder="e.g. leadership, teamwork, culture"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">SEO Description</label>
+                          <textarea
+                            value={blogWizard.seoDescription}
+                            onChange={e => setBlogWizard(w => w ? { ...w, seoDescription: e.target.value } : w)}
+                            rows={2}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent resize-none`}
+                            placeholder="Brief description for search engines (120–160 chars)"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                          <div>
+                            <p className="text-xs font-medium text-gray-800">Allow comments</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">Let readers comment on this article</p>
+                          </div>
+                          <div className="cursor-pointer shrink-0" onClick={() => setBlogWizard(w => w ? { ...w, allowComments: !w.allowComments } : w)}>
+                            <div className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${blogWizard.allowComments ? toggleColor : 'bg-gray-300'}`}>
+                              <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${blogWizard.allowComments ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── Categories fields ── */}
+                    {blogWizard.type === 'categories' && (
+                      <>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Category Name</label>
+                          <input
+                            type="text"
+                            value={blogWizard.catName}
+                            onChange={e => setBlogWizard(w => w ? { ...w, catName: e.target.value, catSlug: e.target.value.toLowerCase().replace(/\s+/g, '-') } : w)}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                            placeholder="e.g. Leadership"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">URL Slug</label>
+                          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-500">
+                            <span className="px-3 py-2 bg-gray-50 text-xs text-gray-400 border-r border-gray-200">/blog/</span>
+                            <input
+                              type="text"
+                              value={blogWizard.catSlug}
+                              onChange={e => setBlogWizard(w => w ? { ...w, catSlug: e.target.value } : w)}
+                              className="flex-1 px-3 py-2 text-sm focus:outline-none"
+                              placeholder="leadership"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Description</label>
+                          <textarea
+                            value={blogWizard.catDescription}
+                            onChange={e => setBlogWizard(w => w ? { ...w, catDescription: e.target.value } : w)}
+                            rows={2}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent resize-none`}
+                            placeholder="What kind of articles are in this category?"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Colour</label>
+                          <div className="flex gap-2">
+                            {[
+                              { key: 'indigo',  bg: 'bg-indigo-500'  },
+                              { key: 'orange',  bg: 'bg-orange-500'  },
+                              { key: 'teal',    bg: 'bg-teal-500'    },
+                              { key: 'purple',  bg: 'bg-purple-500'  },
+                              { key: 'red',     bg: 'bg-red-500'     },
+                              { key: 'green',   bg: 'bg-green-500'   },
+                            ].map(({ key, bg }) => (
+                              <button key={key} onClick={() => setBlogWizard(w => w ? { ...w, catColor: key } : w)}
+                                className={`w-7 h-7 rounded-full ${bg} transition-transform ${blogWizard.catColor === key ? 'scale-125 ring-2 ring-offset-2 ring-gray-400' : 'hover:scale-110'}`} />
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── Blog Settings fields ── */}
+                    {blogWizard.type === 'blog-settings' && (
+                      <>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Blog Title</label>
+                          <input
+                            type="text"
+                            value={blogWizard.blogTitle}
+                            onChange={e => setBlogWizard(w => w ? { ...w, blogTitle: e.target.value } : w)}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Blog Description <span className="font-normal text-gray-400 normal-case">(SEO)</span></label>
+                          <textarea
+                            value={blogWizard.blogDescription}
+                            onChange={e => setBlogWizard(w => w ? { ...w, blogDescription: e.target.value } : w)}
+                            rows={2}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent resize-none`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Posts Per Page</label>
+                          <div className="flex gap-2">
+                            {[6, 9, 12, 15].map(n => (
+                              <button key={n} onClick={() => setBlogWizard(w => w ? { ...w, postsPerPage: n } : w)}
+                                className={`px-4 py-2 rounded-lg border text-xs font-medium transition-colors ${blogWizard.postsPerPage === n ? 'border-gray-700 bg-gray-800 text-white' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                                {n}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Features</label>
+                          <div className="space-y-2.5">
+                            {[
+                              { key: 'commentsEnabled' as const, label: 'Comments', sub: 'Allow readers to comment on articles' },
+                              { key: 'rssEnabled'      as const, label: 'RSS Feed',  sub: 'Publish an RSS feed for subscribers' },
+                            ].map(({ key, label, sub }) => (
+                              <div key={key} className="flex items-start justify-between gap-3 p-3 rounded-lg border border-gray-100">
+                                <div>
+                                  <p className="text-xs font-medium text-gray-800">{label}</p>
+                                  <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
+                                </div>
+                                <div className="cursor-pointer shrink-0 mt-0.5" onClick={() => setBlogWizard(w => w ? { ...w, [key]: !w[key] } : w)}>
+                                  <div className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${blogWizard[key] ? 'bg-teal-500' : 'bg-gray-300'}`}>
+                                    <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${blogWizard[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Google Analytics ID <span className="font-normal text-gray-400 normal-case">(optional)</span></label>
+                          <input
+                            type="text"
+                            value={blogWizard.analyticsId}
+                            onChange={e => setBlogWizard(w => w ? { ...w, analyticsId: e.target.value } : w)}
+                            className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent`}
+                            placeholder="G-XXXXXXXXXX"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                    <button onClick={() => setBlogWizard(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
+                    <button
+                      onClick={() => setBlogWizard(w => w ? { ...w, step: 2 } : w)}
+                      disabled={blogWizard.type === 'new-article' && !blogWizard.title.trim()}
+                      className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${accentBtn}`}
+                    >
+                      {blogWizard.type === 'new-article' ? 'Create Article' : blogWizard.type === 'categories' ? 'Create Category' : 'Save Settings'}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {blogWizard.step === 2 && (
+                <>
+                  <div className="px-6 py-6 flex flex-col items-center text-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      {blogWizard.type === 'new-article' && (
+                        <>
+                          <p className="font-semibold text-gray-900 text-base">Article created!</p>
+                          <p className="text-sm text-gray-500 mt-1">"{blogWizard.title || 'Untitled'}" has been added to your blog.</p>
+                        </>
+                      )}
+                      {blogWizard.type === 'categories' && (
+                        <>
+                          <p className="font-semibold text-gray-900 text-base">Category created!</p>
+                          <p className="text-sm text-gray-500 mt-1">"{blogWizard.catName || 'New Category'}" is ready for posts.</p>
+                        </>
+                      )}
+                      {blogWizard.type === 'blog-settings' && (
+                        <>
+                          <p className="font-semibold text-gray-900 text-base">Settings saved!</p>
+                          <p className="text-sm text-gray-500 mt-1">Your blog settings have been updated.</p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Summary card */}
+                    <div className="w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-left space-y-2">
+                      {blogWizard.type === 'new-article' && (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-800">{blogWizard.title}</p>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium">{blogWizard.category}</span>
+                          </div>
+                          {blogWizard.tags && <p className="text-[10px] text-gray-400">Tags: {blogWizard.tags}</p>}
+                          {blogWizard.seoDescription && <p className="text-[10px] text-gray-500 leading-relaxed">{blogWizard.seoDescription}</p>}
+                          <div className="flex items-center gap-3 pt-1 text-[10px] text-gray-500">
+                            <span className={`font-medium ${blogWizard.allowComments ? 'text-teal-600' : 'text-gray-400'}`}>
+                              {blogWizard.allowComments ? '💬 Comments on' : '💬 Comments off'}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                      {blogWizard.type === 'categories' && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full bg-${blogWizard.catColor}-500`} />
+                            <p className="text-xs font-semibold text-gray-800">{blogWizard.catName || 'New Category'}</p>
+                          </div>
+                          <p className="text-[10px] text-gray-400">/blog/{blogWizard.catSlug || 'new-category'}</p>
+                          {blogWizard.catDescription && <p className="text-[10px] text-gray-500">{blogWizard.catDescription}</p>}
+                        </>
+                      )}
+                      {blogWizard.type === 'blog-settings' && (
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px]">
+                          <div><span className="text-gray-400 uppercase font-semibold tracking-wide block">Title</span><span className="text-gray-700">{blogWizard.blogTitle}</span></div>
+                          <div><span className="text-gray-400 uppercase font-semibold tracking-wide block">Posts/page</span><span className="text-gray-700">{blogWizard.postsPerPage}</span></div>
+                          <div><span className="text-gray-400 uppercase font-semibold tracking-wide block">Comments</span><span className={blogWizard.commentsEnabled ? 'text-teal-600 font-medium' : 'text-gray-400'}>{blogWizard.commentsEnabled ? 'Enabled' : 'Disabled'}</span></div>
+                          <div><span className="text-gray-400 uppercase font-semibold tracking-wide block">RSS Feed</span><span className={blogWizard.rssEnabled ? 'text-teal-600 font-medium' : 'text-gray-400'}>{blogWizard.rssEnabled ? 'Enabled' : 'Disabled'}</span></div>
+                          {blogWizard.analyticsId && <div className="col-span-2"><span className="text-gray-400 uppercase font-semibold tracking-wide block">Analytics</span><span className="text-gray-700">{blogWizard.analyticsId}</span></div>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                    <button onClick={() => setBlogWizard(null)} className={`px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${accentBtn}`}>
+                      Done
+                    </button>
+                  </div>
+                </>
+              )}
+
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Loading overlay while fetching course player data */}
       {isLoadingPlayerPreview && !playerPreviewCourse && (
         <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center">
@@ -1788,19 +2559,9 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
                   ].map(({ label, desc, icon: Icon, color }) => (
                     <button
                       key={label}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all text-left group relative focus:outline-none"
-                      onClick={() => {
-                        const funnelSections: Record<string, string[]> = {
-                          'Lead Capture Funnel': ['hero', 'features', 'cta'],
-                          'Webinar Funnel':      ['hero', 'features', 'testimonials', 'cta'],
-                          'Sales Funnel':        ['hero', 'features', 'pricing', 'testimonials', 'cta'],
-                        };
-                        const types = funnelSections[label] ?? ['hero', 'cta'];
-                        types.forEach(type => addSection(type));
-                        setActiveFunnelPopup(label);
-                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all text-left group focus:outline-none"
+                      onClick={() => setFunnelWizard({ label, desc, icon: Icon, color, step: 1, name: label, emailCapture: true, tracking: true })}
                     >
-                      {/* Button row */}
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
                         <Icon className="size-4" />
                       </div>
@@ -1809,64 +2570,9 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
                         <p className="text-xs text-gray-400 truncate">{desc}</p>
                       </div>
                       <Plus className="size-4 text-gray-300 group-hover:text-teal-500 ml-auto shrink-0" />
-
-                      {/* Confirmation popup — fixed so it escapes sidebar overflow.
-                          Shown via state; clicking the backdrop closes it. */}
-                      <div className={`fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-200 ${activeFunnelPopup === label ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={(e) => { e.stopPropagation(); setActiveFunnelPopup(null); }} />
-                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-80" onClick={(e) => e.stopPropagation()}>
-                          {/* Header */}
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                              <Icon className="size-5" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-                            </div>
-                          </div>
-                          {/* Section steps */}
-                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Sections added to your page</p>
-                          <div className="flex flex-col gap-1.5 mb-4">
-                            {(
-                              label === 'Lead Capture Funnel'
-                                ? [{ name: 'Hero',         c: 'bg-amber-100 text-amber-700'   },
-                                   { name: 'Features',     c: 'bg-blue-100 text-blue-700'     },
-                                   { name: 'CTA',          c: 'bg-teal-100 text-teal-700'     }]
-                              : label === 'Webinar Funnel'
-                                ? [{ name: 'Hero',         c: 'bg-amber-100 text-amber-700'   },
-                                   { name: 'Features',     c: 'bg-blue-100 text-blue-700'     },
-                                   { name: 'Testimonials', c: 'bg-purple-100 text-purple-700' },
-                                   { name: 'CTA',          c: 'bg-teal-100 text-teal-700'     }]
-                                : [{ name: 'Hero',         c: 'bg-amber-100 text-amber-700'   },
-                                   { name: 'Features',     c: 'bg-blue-100 text-blue-700'     },
-                                   { name: 'Pricing',      c: 'bg-pink-100 text-pink-700'     },
-                                   { name: 'Testimonials', c: 'bg-purple-100 text-purple-700' },
-                                   { name: 'CTA',          c: 'bg-teal-100 text-teal-700'     }]
-                            ).map((step, i) => (
-                              <div key={step.name} className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-300 w-4 shrink-0 text-right">{i + 1}</span>
-                                <div className="w-px h-3.5 bg-gray-200 shrink-0" />
-                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${step.c}`}>{step.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Success banner */}
-                          <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2.5">
-                            <div className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
-                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                            <p className="text-xs text-teal-700 font-medium">Sections successfully added!</p>
-                          </div>
-                          <p className="text-[10px] text-gray-400 text-center mt-3">Click anywhere to dismiss</p>
-                        </div>
-                      </div>
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 text-center mt-6 italic">Funnel builder coming soon</p>
               </div>
             )}
 
@@ -1885,26 +2591,27 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {[
-                    { label: 'Exit-Intent Popup', desc: 'Capture visitors before they leave', icon: MousePointerClick, color: 'text-red-500 bg-red-50'       },
-                    { label: 'Welcome Banner',    desc: 'Greet new visitors with an offer',   icon: Sparkles,          color: 'text-purple-500 bg-purple-50' },
-                    { label: 'Lead Magnet',       desc: 'Offer a freebie for email sign-up',  icon: MessageSquare,     color: 'text-teal-500 bg-teal-50'     },
-                  ].map(({ label, desc, icon: Icon, color }) => (
+                  {([
+                    { type: 'exit-intent'    as const, label: 'Exit-Intent Popup', desc: 'Capture visitors before they leave', icon: MousePointerClick, color: 'text-red-500 bg-red-50',       defaults: { headline: "Wait! Don't leave yet…", body: 'Get 10% off your first course when you sign up today.', cta: 'Claim My Offer' } },
+                    { type: 'welcome-banner' as const, label: 'Welcome Banner',    desc: 'Greet new visitors with an offer',   icon: Sparkles,          color: 'text-purple-500 bg-purple-50', defaults: { headline: `Welcome to ${companyName}!`, body: 'Explore our professional training courses designed for modern teams.', cta: 'Browse Courses' } },
+                    { type: 'lead-magnet'    as const, label: 'Lead Magnet',       desc: 'Offer a freebie for email sign-up',  icon: MessageSquare,     color: 'text-teal-500 bg-teal-50',     defaults: { headline: 'Get Your Free Leadership Checklist', body: "Enter your email and we'll send it straight to your inbox.", cta: 'Send Me the Free Guide' } },
+                  ]).map(({ type, label, desc, icon: Icon, color, defaults }) => (
                     <button
                       key={label}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all text-left group relative focus:outline-none"
-                      onClick={() => {
-                        const popupSections: Record<string, string[]> = {
-                          'Exit-Intent Popup': ['cta'],
-                          'Welcome Banner':    ['hero'],
-                          'Lead Magnet':       ['hero', 'cta'],
-                        };
-                        const types = popupSections[label] ?? ['cta'];
-                        types.forEach(type => addSection(type));
-                        setActiveFunnelPopup(label);
-                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all text-left group focus:outline-none"
+                      onClick={() => setPopupWizard({
+                        type, label, desc, icon: Icon, color, step: 1,
+                        name: label,
+                        headline: defaults.headline,
+                        body: defaults.body,
+                        cta: defaults.cta,
+                        triggerDelay: 'immediate',
+                        position: 'modal',
+                        offerType: 'checklist',
+                        emailPlaceholder: 'Enter your email address',
+                        showTo: 'everyone',
+                      })}
                     >
-                      {/* Button row */}
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
                         <Icon className="size-4" />
                       </div>
@@ -1913,52 +2620,9 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
                         <p className="text-xs text-gray-400 truncate">{desc}</p>
                       </div>
                       <Plus className="size-4 text-gray-300 group-hover:text-teal-500 ml-auto shrink-0" />
-
-                      {/* Confirmation popup */}
-                      <div className={`fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-200 ${activeFunnelPopup === label ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={(e) => { e.stopPropagation(); setActiveFunnelPopup(null); }} />
-                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-80" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                              <Icon className="size-5" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-                            </div>
-                          </div>
-                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Sections added to your page</p>
-                          <div className="flex flex-col gap-1.5 mb-4">
-                            {(
-                              label === 'Exit-Intent Popup'
-                                ? [{ name: 'CTA',   c: 'bg-red-100 text-red-700'       }]
-                              : label === 'Welcome Banner'
-                                ? [{ name: 'Hero',  c: 'bg-purple-100 text-purple-700'  }]
-                                : [{ name: 'Hero',  c: 'bg-teal-100 text-teal-700'      },
-                                   { name: 'CTA',   c: 'bg-teal-100 text-teal-700'      }]
-                            ).map((step, i) => (
-                              <div key={step.name} className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-300 w-4 shrink-0 text-right">{i + 1}</span>
-                                <div className="w-px h-3.5 bg-gray-200 shrink-0" />
-                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${step.c}`}>{step.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2.5">
-                            <div className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
-                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                            <p className="text-xs text-teal-700 font-medium">Sections successfully added!</p>
-                          </div>
-                          <p className="text-[10px] text-gray-400 text-center mt-3">Click anywhere to dismiss</p>
-                        </div>
-                      </div>
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 text-center mt-6 italic">Popup builder coming soon</p>
               </div>
             )}
 
@@ -1977,26 +2641,21 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {[
-                    { label: 'New Article',   desc: 'Write and publish a blog post', icon: BookOpen, color: 'text-indigo-500 bg-indigo-50' },
-                    { label: 'Categories',    desc: 'Organise posts by topic',        icon: Layout,   color: 'text-orange-500 bg-orange-50' },
-                    { label: 'Blog Settings', desc: 'SEO, comments, and RSS config',  icon: Settings, color: 'text-gray-500 bg-gray-100'    },
-                  ].map(({ label, desc, icon: Icon, color }) => (
+                  {([
+                    { type: 'new-article'   as const, label: 'New Article',   desc: 'Write and publish a blog post', icon: BookOpen, color: 'text-indigo-500 bg-indigo-50' },
+                    { type: 'categories'    as const, label: 'Categories',    desc: 'Organise posts by topic',        icon: Layout,   color: 'text-orange-500 bg-orange-50' },
+                    { type: 'blog-settings' as const, label: 'Blog Settings', desc: 'SEO, comments, and RSS config',  icon: Settings, color: 'text-gray-500 bg-gray-100'    },
+                  ]).map(({ type, label, desc, icon: Icon, color }) => (
                     <button
                       key={label}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all text-left group relative focus:outline-none"
-                      onClick={() => {
-                        const blogSections: Record<string, string[]> = {
-                          'New Article':   ['hero'],
-                          'Categories':    ['features'],
-                          'Blog Settings': ['cta'],
-                        };
-                        const types = blogSections[label] ?? ['hero'];
-                        types.forEach(type => addSection(type));
-                        setActiveFunnelPopup(label);
-                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all text-left group focus:outline-none"
+                      onClick={() => setBlogWizard({
+                        type, label, desc, icon: Icon, color, step: 1,
+                        title: '', category: 'Leadership', tags: '', allowComments: true, seoDescription: '',
+                        catName: '', catSlug: '', catDescription: '', catColor: 'indigo',
+                        blogTitle: `${companyName} Blog`, blogDescription: 'Insights, guides and thought leadership from our team.', postsPerPage: 9, commentsEnabled: true, rssEnabled: true, analyticsId: '',
+                      })}
                     >
-                      {/* Button row */}
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
                         <Icon className="size-4" />
                       </div>
@@ -2005,51 +2664,9 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
                         <p className="text-xs text-gray-400 truncate">{desc}</p>
                       </div>
                       <Plus className="size-4 text-gray-300 group-hover:text-teal-500 ml-auto shrink-0" />
-
-                      {/* Confirmation popup */}
-                      <div className={`fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-200 ${activeFunnelPopup === label ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" onClick={(e) => { e.stopPropagation(); setActiveFunnelPopup(null); }} />
-                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 w-80" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                              <Icon className="size-5" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900 text-sm">{label}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-                            </div>
-                          </div>
-                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Sections added to your page</p>
-                          <div className="flex flex-col gap-1.5 mb-4">
-                            {(
-                              label === 'New Article'
-                                ? [{ name: 'Hero',     c: 'bg-indigo-100 text-indigo-700' }]
-                              : label === 'Categories'
-                                ? [{ name: 'Features', c: 'bg-orange-100 text-orange-700' }]
-                                : [{ name: 'CTA',      c: 'bg-gray-100 text-gray-700'     }]
-                            ).map((step, i) => (
-                              <div key={step.name} className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-300 w-4 shrink-0 text-right">{i + 1}</span>
-                                <div className="w-px h-3.5 bg-gray-200 shrink-0" />
-                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${step.c}`}>{step.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2.5">
-                            <div className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center shrink-0">
-                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                            <p className="text-xs text-teal-700 font-medium">Sections successfully added!</p>
-                          </div>
-                          <p className="text-[10px] text-gray-400 text-center mt-3">Click anywhere to dismiss</p>
-                        </div>
-                      </div>
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 text-center mt-6 italic">Blog editor coming soon</p>
               </div>
             )}
 
