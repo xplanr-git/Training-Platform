@@ -689,6 +689,10 @@ export default function App() {
                 <ComingSoonPage section="mobile" />
               )}
 
+              {currentSubPage === 'automations' && (
+                <ComingSoonPage section="automations" />
+              )}
+
               {currentSubPage && !currentSubPage.includes('analytics') && !currentSubPage.includes('course') && !currentSubPage.includes('website') && currentSubPage !== 'overview' && currentSubPage !== 'all-courses' && currentSubPage !== 'add-course' && currentSubPage !== 'manage-courses' && currentSubPage !== 'course-analytics' && currentSubPage !== 'all-users' && currentSubPage !== 'add-user' && currentSubPage !== 'user-roles' && currentSubPage !== 'user-activity' && currentSubPage !== 'certificates' && currentSubPage !== 'review-center' && currentSubPage !== 'gradebook' && currentSubPage !== 'activity-matrix' && currentSubPage !== 'question-banks' && currentSubPage !== 'programs-subscription' && currentSubPage !== 'leads' && currentSubPage !== 'user-groups' && currentSubPage !== 'multiple-seats' && currentSubPage !== 'tags' && currentSubPage !== 'user-fields' && currentSubPage !== 'user-activity' && currentSubPage !== 'approvals' && currentSubPage !== 'email-templates' && currentSubPage !== 'send-email' && currentSubPage !== 'inbox' && currentSubPage !== 'users2' && currentSubPage !== 'push-notifications' && currentSubPage !== 'community' && currentSubPage !== 'mass-emails' && currentSubPage !== 'school-emails' && currentSubPage !== 'email-integration' && currentSubPage !== 'settings' && currentSubPage !== 'company-profile' && currentSubPage !== 'notifications' && currentSubPage !== 'security' && currentSubPage !== 'team-management' && currentSubPage !== 'billing' && currentSubPage !== 'privacy' && currentSubPage !== 'preferences' && (
                 <AdminPage
                   currentUser={currentUser}

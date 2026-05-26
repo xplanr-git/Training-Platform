@@ -105,7 +105,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
         { id: 'leads', label: 'Leads', icon: UserPlus },
         { id: 'user-groups', label: 'User Groups', icon: Users2 },
         { id: 'multiple-seats', label: 'Multiple Seats', icon: Layers },
-        { id: 'automations', label: 'Automations', icon: Zap },
+        { id: 'automations', label: 'Automations', icon: Zap, comingSoon: true },
         { id: 'tags', label: 'Tags', icon: Tag },
         { id: 'user-fields', label: 'User Fields', icon: ClipboardList },
         { id: 'approvals', label: 'Approvals', icon: Check },
@@ -160,14 +160,10 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
       label: 'Reports', 
       icon: BarChart3,
       subItems: [
-        { id: 'overview-analytics', label: 'Overview', icon: BarChart3 },
-        { id: 'revenue', label: 'Revenue Reports', icon: DollarSign },
-        { id: 'traffic', label: 'Traffic Analysis', icon: Eye },
-        { id: 'user-behavior', label: 'User Behavior', icon: MousePointer },
-        { id: 'login-stats', label: 'Login Statistics', icon: LogIn },
+        { id: 'overview-analytics', label: 'Reports Center', icon: BarChart3 },
         { id: 'system-health', label: 'System Health', icon: Server },
-        { id: 'report-center', label: 'Report Center', icon: FileText },
-        { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
+
+        { id: 'ai-insights', label: 'AI Insights', icon: Sparkles, comingSoon: true },
         { id: 'training-matrix', label: 'Training Matrix', icon: Grid3x3 },
         { id: 'product-insights', label: 'Product Insights', icon: Package },
         { id: 'scheduled-reports', label: 'Scheduled Reports', icon: Clock },
@@ -403,7 +399,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                               </div>
                             </div>
                           )}
-                          {isSubItemActive && <div className="size-2 bg-teal-500 rounded-full" />}
+                          {isSubItemActive && !(subItem as any).comingSoon && <div className="size-2 bg-teal-500 rounded-full" />}
                         </button>
                       );
                     })}
