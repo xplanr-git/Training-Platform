@@ -376,6 +376,11 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                             }
                             if (item.id === 'admin-analytics' && onAnalyticsViewChange) {
                               onAnalyticsViewChange(subItem.id);
+                              // In company-admin mode, also ensure the analytics page is mounted
+                              // by keeping currentSubPage as an analytics-routed value
+                              if (isViewingCompanyPage && onSubPageChange) {
+                                onSubPageChange('overview-analytics');
+                              }
                             } else if (onSubPageChange) {
                               onSubPageChange(subItem.id);
                             }
