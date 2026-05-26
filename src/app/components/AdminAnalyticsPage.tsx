@@ -475,6 +475,15 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const USERS_PER_PAGE = 15;
   useEffect(() => { setUsersPage(1); }, [currentSection]);
+
+  // Collapse the slide panel whenever the top-level analytics view changes
+  // (e.g. clicking "AI Insights" while a detail panel is open would otherwise
+  //  leave the page stuck on panel 2 showing a blank screen)
+  useEffect(() => {
+    setDetailVisible(false);
+    const t = setTimeout(() => setCurrentSection(null), 300);
+    return () => clearTimeout(t);
+  }, [analyticsView]);
   useEffect(() => {
     if (!showFilterPicker) return;
     const handler = (e: MouseEvent) => {
@@ -915,8 +924,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
       {/* All reports content â€” hidden when My Segments tab is active */}
       {analyticsTab === 'all-reports' && <>
 
-      {/* Filter bar */}
-      <div className="bg-white rounded-lg shadow-sm px-4 py-3">
+      {/* Filter bar — hidden on views that don't use it */}
+      {analyticsView === 'overview-analytics' && <div className="bg-white rounded-lg shadow-sm px-4 py-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
           {[
             'All',
@@ -941,7 +950,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* â”€â”€ SECTION: System Health â”€â”€ */}
       {analyticsView === 'system-health' && (
