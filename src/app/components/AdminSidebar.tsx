@@ -370,9 +370,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                       return (
                         <button
                           key={subItem.id}
-                          disabled={(subItem as any).comingSoon}
                           onClick={() => {
-                            if ((subItem as any).comingSoon) return;
                             if (!isViewingCompanyPage && currentPage !== item.id) {
                               onNavigate(item.id as any);
                             }
@@ -388,11 +386,9 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                             }
                           }}
                           className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors ${
-                            (subItem as any).comingSoon
-                              ? 'text-gray-400 cursor-not-allowed opacity-70'
-                              : isSubItemActive
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            isSubItemActive && !(subItem as any).comingSoon
+                              ? 'bg-blue-50 text-blue-600 font-medium'
+                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                           }`}
                         >
                           <SubIcon className="size-4" />
