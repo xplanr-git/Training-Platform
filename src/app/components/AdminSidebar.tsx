@@ -381,7 +381,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                             }
                           }}
                           className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors ${
-                            isSubItemActive
+                            isSubItemActive && !(subItem as any).comingSoon
                               ? 'bg-blue-50 text-blue-600 font-medium'
                               : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                           }`}
