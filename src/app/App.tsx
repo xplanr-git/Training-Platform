@@ -620,7 +620,7 @@ export default function App() {
               )}
 
               {currentSubPage === 'user-activity' && (
-                <ApprovalsPage users={getCompanyUsers(selectedCompanyId)} />
+                <ApprovalsPage users={getCompanyUsers(selectedCompanyId)} companyId={selectedCompanyId} />
               )}
 
               {currentSubPage && (currentSubPage === 'all-users' || currentSubPage === 'approvals' || currentSubPage === 'add-user' || currentSubPage === 'user-roles') && (
@@ -658,11 +658,12 @@ export default function App() {
               {currentSubPage === 'leads' && (
                 <LeadsPage
                   onNavigateToWebsite={() => setCurrentSubPage('website-builder')}
+                  companyId={selectedCompanyId}
                 />
               )}
 
               {currentSubPage === 'user-groups' && (
-                <UserGroupsPage users={getCompanyUsers(selectedCompanyId)} />
+                <UserGroupsPage users={getCompanyUsers(selectedCompanyId)} companyId={selectedCompanyId} />
               )}
 
               {currentSubPage === 'multiple-seats' && (
@@ -670,11 +671,11 @@ export default function App() {
               )}
 
               {currentSubPage === 'tags' && (
-                <TagsPage users={getCompanyUsers(selectedCompanyId)} />
+                <TagsPage users={getCompanyUsers(selectedCompanyId)} companyId={selectedCompanyId} />
               )}
 
               {currentSubPage === 'user-fields' && (
-                <UserFieldsPage />
+                <UserFieldsPage companyId={selectedCompanyId} />
               )}
 
               {currentSubPage && ['offers','gifts','licenses','custom-deals','payments','plans','cart-checkout'].includes(currentSubPage) && (

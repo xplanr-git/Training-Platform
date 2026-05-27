@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '/utils/supabase/client';
 import {
   Users, Plus, Search, X, Edit2, Trash2, ChevronDown, Check,
   Mail, BookOpen, UserPlus, MoreHorizontal, Building2, Tag,
@@ -41,21 +42,21 @@ const defaultGroup = (): Omit<Group, 'id' | 'createdAt'> => ({
 
 interface UserGroupsPageProps {
   users?: User[];
+  companyId?: string | null;
 }
 
-export function UserGroupsPage({ users = [] }: UserGroupsPageProps) {
-  // Groups state — seeded with one example per company
-  const [groups, setGroups] = useState<Group[]>(() => {
-    const companies = [...new Set(users.map(u => u.company))];
-    return companies.slice(0, 4).map((company, i) => ({
-      id: `group-${i + 1}`,
-      name: company,
-      description: `All users belonging to ${company}`,
-      color: GROUP_COLORS[i % GROUP_COLORS.length].id,
-      memberIds: users.filter(u => u.company === company).map(u => u.id),
-      createdAt: '2026-05-01',
-    }));
-  });
+export function UserGroupsPage({ users = [], companyId = 'global' }: UserGroupsPageProps) {
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(true);
+
+  useEffect(() => {
+    setGroupsLoading(true);
+    supabase.from('kv_store_d60f2898').select('value').like('key', `user-group:${companyId}:%`)
+      .then(({ data }) => {
+        if (data && data.length > 0) setGroups(data.map((r: any) => r.value));
+        setGroupsLoading(false);
+      });
+  }, [companyId]);
 
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchGroups, setSearchGroups]   = useState('');
@@ -95,39 +96,44 @@ export function UserGroupsPage({ users = [] }: UserGroupsPageProps) {
   const openCreate = () => { setForm(defaultGroup()); setEditingGroup(null); setShowCreateModal(true); };
   const openEdit   = (g: Group) => { setForm({ name: g.name, description: g.description, color: g.color, memberIds: g.memberIds }); setEditingGroup(g); setShowCreateModal(true); setMenuOpen(null); };
 
-  const saveGroup = () => {
+  const saveGroup = async () => {
     if (!form.name.trim()) return;
     if (editingGroup) {
       const updated = { ...editingGroup, ...form };
       setGroups(gs => gs.map(g => g.id === editingGroup.id ? updated : g));
       if (selectedGroup?.id === editingGroup.id) setSelectedGroup(updated);
+      await supabase.from('kv_store_d60f2898').upsert({ key: `user-group:${companyId}:${updated.id}`, value: updated });
     } else {
       const ng: Group = { id: `group-${Date.now()}`, ...form, createdAt: new Date().toISOString().split('T')[0] };
       setGroups(gs => [ng, ...gs]);
+      await supabase.from('kv_store_d60f2898').upsert({ key: `user-group:${companyId}:${ng.id}`, value: ng });
     }
     setShowCreateModal(false);
   };
 
-  const deleteGroup = (g: Group) => {
+  const deleteGroup = async (g: Group) => {
     setGroups(gs => gs.filter(x => x.id !== g.id));
     if (selectedGroup?.id === g.id) setSelectedGroup(null);
     setDeleteConfirm(null);
     setMenuOpen(null);
+    await supabase.from('kv_store_d60f2898').delete().eq('key', `user-group:${companyId}:${g.id}`);
   };
 
-  const removeMember = (userId: string) => {
+  const removeMember = async (userId: string) => {
     if (!selectedGroup) return;
     const updated = { ...selectedGroup, memberIds: selectedGroup.memberIds.filter(id => id !== userId) };
     setGroups(gs => gs.map(g => g.id === selectedGroup.id ? updated : g));
     setSelectedGroup(updated);
+    await supabase.from('kv_store_d60f2898').upsert({ key: `user-group:${companyId}:${updated.id}`, value: updated });
   };
 
-  const addMembers = (ids: string[]) => {
+  const addMembers = async (ids: string[]) => {
     if (!selectedGroup) return;
     const updated = { ...selectedGroup, memberIds: [...new Set([...selectedGroup.memberIds, ...ids])] };
     setGroups(gs => gs.map(g => g.id === selectedGroup.id ? updated : g));
     setSelectedGroup(updated);
     setShowAddMembers(false);
+    await supabase.from('kv_store_d60f2898').upsert({ key: `user-group:${companyId}:${updated.id}`, value: updated });
   };
 
   return (

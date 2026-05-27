@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '/utils/supabase/client';
 import {
   FileCheck2, Search, X, Check, ChevronDown, MoreHorizontal,
   BookOpen, Award, Shield, Clock, CheckCircle2, XCircle,
@@ -209,10 +210,21 @@ function DetailPanel({ approval, onClose, onApprove, onReject }: DetailPanelProp
 }
 
 /* ─── Main Page ──────────────────────────────────────────────── */
-export interface ApprovalsPageProps { users?: User[] }
+export interface ApprovalsPageProps { users?: User[]; companyId?: string | null }
 
-export function ApprovalsPage({ users = [] }: ApprovalsPageProps) {
-  const [approvals, setApprovals] = useState<Approval[]>(SEED);
+export function ApprovalsPage({ users = [], companyId = 'global' }: ApprovalsPageProps) {
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [approvalsLoading, setApprovalsLoading] = useState(true);
+
+  useEffect(() => {
+    setApprovalsLoading(true);
+    supabase.from('kv_store_d60f2898').select('value').like('key', `approval:${companyId}:%`)
+      .then(({ data }) => {
+        if (data && data.length > 0) setApprovals(data.map((r: any) => r.value));
+        else setApprovals(SEED);
+        setApprovalsLoading(false);
+      });
+  }, [companyId]);
   const [activeTab, setActiveTab] = useState<ApprovalStatus>('pending');
   const [typeFilter, setTypeFilter] = useState<'all'|ApprovalType>('all');
   const [search, setSearch] = useState('');
@@ -243,14 +255,19 @@ export function ApprovalsPage({ users = [] }: ApprovalsPageProps) {
       .filter(x=>x.count>0);
   },[approvals]);
 
-  const resolve = (id: string, action: 'approve'|'reject', note: string) => {
-    setApprovals(prev=>prev.map(a=>a.id!==id?a:{
-      ...a, status:action==='approve'?'approved':'rejected',
+  const resolve = async (id: string, action: 'approve'|'reject', note: string) => {
+    const updated = approvals.map(a=>a.id!==id?a:{
+      ...a, status:action==='approve'?'approved':'rejected' as ApprovalStatus,
       resolvedAt:new Date().toISOString().slice(0,10), resolvedBy:'Curtis',
       ...(action==='reject'?{rejectionReason:note}:{note}),
-    }));
+    });
+    setApprovals(updated);
     if (selectedApproval?.id===id) setSelectedApproval(null);
     setSelected(s=>{const n=new Set(s);n.delete(id);return n;});
+    const resolvedApproval = updated.find(a => a.id === id);
+    if (resolvedApproval) {
+      await supabase.from('kv_store_d60f2898').upsert({ key: `approval:${companyId}:${id}`, value: resolvedApproval });
+    }
   };
 
   const bulkResolve = (action:'approve'|'reject') => {

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '/utils/supabase/client';
 import {
   UserPlus, Search, Download, Filter, X, ChevronDown, ExternalLink,
   Mail, Phone, Building2, Calendar, TrendingUp, Users, Target, Zap,
@@ -52,10 +53,25 @@ const SOURCE_LABEL: Record<Lead['source'], string> = {
 
 interface LeadsPageProps {
   onNavigateToWebsite?: () => void;
+  companyId?: string | null;
 }
 
-export function LeadsPage({ onNavigateToWebsite }: LeadsPageProps) {
-  const [leads, setLeads]               = useState<Lead[]>(mockLeads);
+export function LeadsPage({ onNavigateToWebsite, companyId = 'global' }: LeadsPageProps) {
+  const [leads, setLeads]               = useState<Lead[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(true);
+
+  useEffect(() => {
+    setLeadsLoading(true);
+    const prefix = `lead:${companyId}:`;
+    supabase
+      .from('kv_store_d60f2898')
+      .select('value')
+      .like('key', `${prefix}%`)
+      .then(({ data }) => {
+        if (data && data.length > 0) setLeads(data.map((r: any) => r.value));
+        setLeadsLoading(false);
+      });
+  }, [companyId]);
   const [searchQuery, setSearchQuery]   = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterSource, setFilterSource] = useState<string>('all');
@@ -79,16 +95,22 @@ export function LeadsPage({ onNavigateToWebsite }: LeadsPageProps) {
     return matchSearch && matchStatus && matchSource;
   });
 
-  const updateStatus = (id: string, status: Lead['status']) => {
+  const updateStatus = async (id: string, status: Lead['status']) => {
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
     if (selectedLead?.id === id) setSelectedLead(prev => prev ? { ...prev, status } : prev);
     setMenuOpen(null);
+    const updated = leads.find(l => l.id === id);
+    if (updated) {
+      const updatedLead = { ...updated, status };
+      await supabase.from('kv_store_d60f2898').upsert({ key: `lead:${companyId}:${updatedLead.id}`, value: updatedLead });
+    }
   };
 
-  const deleteLead = (id: string) => {
+  const deleteLead = async (id: string) => {
     setLeads(prev => prev.filter(l => l.id !== id));
     if (selectedLead?.id === id) setSelectedLead(null);
     setMenuOpen(null);
+    await supabase.from('kv_store_d60f2898').delete().eq('key', `lead:${companyId}:${id}`);
   };
 
   const exportCSV = () => {
@@ -102,11 +124,12 @@ export function LeadsPage({ onNavigateToWebsite }: LeadsPageProps) {
     a.click();
   };
 
-  const addLead = () => {
+  const addLead = async () => {
     const nl: Lead = { id: String(Date.now()), ...addForm, status: 'new', createdAt: new Date().toISOString().split('T')[0], tags: [] };
     setLeads(prev => [nl, ...prev]);
     setAddForm({ name: '', email: '', phone: '', company: '', source: 'manual', notes: '' });
     setShowAddModal(false);
+    await supabase.from('kv_store_d60f2898').upsert({ key: `lead:${companyId}:${nl.id}`, value: nl });
   };
 
   return (
@@ -230,7 +253,9 @@ export function LeadsPage({ onNavigateToWebsite }: LeadsPageProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredLeads.length === 0 ? (
+              {leadsLoading ? (
+                <tr><td colSpan={6} className="px-5 py-16 text-center text-sm text-gray-400">Loading leads…</td></tr>
+              ) : filteredLeads.length === 0 ? (
                 <tr><td colSpan={6} className="px-5 py-16 text-center text-sm text-gray-400">No leads match your filters.</td></tr>
               ) : filteredLeads.map(lead => {
                 const sm = STATUS_META[lead.status];

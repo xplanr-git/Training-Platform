@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '/utils/supabase/client';
 import {
   ClipboardList, Plus, Search, X, Trash2, Edit2, Check, MoreHorizontal,
   GripVertical, Type, Hash, Mail, Phone, Calendar, ChevronDown,
@@ -499,9 +500,13 @@ function FieldRow({ field, onEdit, onDelete, onDuplicate, onToggle }: FieldRowPr
 /* ══════════════════════════════════════════════════════════════
    Main Page
 ══════════════════════════════════════════════════════════════ */
-export function UserFieldsPage() {
-  const [fields, setFields] = useState<UserField[]>(SEED_FIELDS);
-  const [groups, setGroups] = useState<FieldGroup[]>(SEED_GROUPS);
+interface UserFieldsPageProps {
+  companyId?: string | null;
+}
+export function UserFieldsPage({ companyId = 'global' }: UserFieldsPageProps) {
+  const [fields, setFields] = useState<UserField[]>([]);
+  const [groups, setGroups] = useState<FieldGroup[]>([]);
+  const [fieldsLoading, setFieldsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'users'|'leads'>('users');
   const [selectedGroupId, setSelectedGroupId] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -510,6 +515,20 @@ export function UserFieldsPage() {
   const [deleteField, setDeleteField] = useState<UserField|null>(null);
   const [newGroupName, setNewGroupName] = useState('');
   const [showGroupInput, setShowGroupInput] = useState(false);
+
+  useEffect(() => {
+    setFieldsLoading(true);
+    Promise.all([
+      supabase.from('kv_store_d60f2898').select('value').like('key', `user-field:${companyId}:%`),
+      supabase.from('kv_store_d60f2898').select('value').like('key', `user-field-group:${companyId}:%`),
+    ]).then(([fieldsRes, groupsRes]) => {
+      if (fieldsRes.data && fieldsRes.data.length > 0) setFields(fieldsRes.data.map((r: any) => r.value));
+      else setFields(SEED_FIELDS); // fallback to seeds first time
+      if (groupsRes.data && groupsRes.data.length > 0) setGroups(groupsRes.data.map((r: any) => r.value));
+      else setGroups(SEED_GROUPS); // fallback to seeds first time
+      setFieldsLoading(false);
+    });
+  }, [companyId]);
 
   /* ── Derived ── */
   const tabFields = useMemo(() =>
@@ -532,42 +551,58 @@ export function UserFieldsPage() {
   }, [tabFields]);
 
   /* ── Actions ── */
-  const handleSave = (data: Omit<UserField,'id'|'createdAt'|'order'>) => {
+  const handleSave = async (data: Omit<UserField,'id'|'createdAt'|'order'>) => {
     if (editField) {
-      setFields(prev => prev.map(f => f.id===editField.id ? {...f,...data} : f));
+      const updated = { ...editField, ...data };
+      setFields(prev => prev.map(f => f.id===editField.id ? updated : f));
+      await supabase.from('kv_store_d60f2898').upsert({ key: `user-field:${companyId}:${updated.id}`, value: updated });
     } else {
       const maxOrder = Math.max(0, ...fields.filter(f=>f.groupId===data.groupId).map(f=>f.order));
-      setFields(prev => [...prev, {
+      const field: UserField = {
         ...data, id:`f-${Date.now()}`, createdAt: new Date().toISOString().slice(0,10), order: maxOrder+1,
-      }]);
+      };
+      setFields(prev => [...prev, field]);
+      await supabase.from('kv_store_d60f2898').upsert({ key: `user-field:${companyId}:${field.id}`, value: field });
     }
     setEditField(null);
   };
 
-  const handleDelete = (f: UserField) => {
+  const handleDelete = async (f: UserField) => {
     setFields(prev => prev.filter(x => x.id !== f.id));
     setDeleteField(null);
+    await supabase.from('kv_store_d60f2898').delete().eq('key', `user-field:${companyId}:${f.id}`);
   };
 
-  const handleDuplicate = (f: UserField) => {
+  const handleDuplicate = async (f: UserField) => {
     const maxOrder = Math.max(0, ...fields.filter(x=>x.groupId===f.groupId).map(x=>x.order));
-    setFields(prev => [...prev, {
+    const duplicate: UserField = {
       ...f, id:`f-${Date.now()}`, label:`${f.label} (Copy)`,
       key:`${f.key}_copy`, system:false, order: maxOrder+1,
       createdAt: new Date().toISOString().slice(0,10),
-    }]);
+    };
+    setFields(prev => [...prev, duplicate]);
+    await supabase.from('kv_store_d60f2898').upsert({ key: `user-field:${companyId}:${duplicate.id}`, value: duplicate });
   };
 
-  const handleToggle = (id: string, prop: 'required'|'visibleInProfile'|'editableByUser'|'searchable') => {
-    setFields(prev => prev.map(f => f.id===id ? {...f,[prop]:!f[prop]} : f));
+  const handleToggle = async (id: string, prop: 'required'|'visibleInProfile'|'editableByUser'|'searchable') => {
+    let updated: UserField | undefined;
+    setFields(prev => prev.map(f => {
+      if (f.id === id) { updated = { ...f, [prop]: !f[prop] }; return updated; }
+      return f;
+    }));
+    if (updated) {
+      await supabase.from('kv_store_d60f2898').upsert({ key: `user-field:${companyId}:${id}`, value: updated });
+    }
   };
 
-  const addGroup = () => {
+  const addGroup = async () => {
     if (!newGroupName.trim()) return;
     const id = `g-${Date.now()}`;
-    setGroups(prev => [...prev, { id, label: newGroupName.trim(), system: false }]);
+    const group: FieldGroup = { id, label: newGroupName.trim(), system: false };
+    setGroups(prev => [...prev, group]);
     setNewGroupName(''); setShowGroupInput(false);
     setSelectedGroupId(id);
+    await supabase.from('kv_store_d60f2898').upsert({ key: `user-field-group:${companyId}:${id}`, value: group });
   };
 
   /* ── Stats ── */

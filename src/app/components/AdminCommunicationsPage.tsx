@@ -5595,9 +5595,19 @@ const COMING_SOON_CONFIG: Record<string, {
       { icon: Send,     title: 'App Store launch',   desc: 'Guided submission to Apple & Google stores' },
     ],
   },
+  automations: {
+    icon: Zap,
+    label: 'Automations',
+    description: "Powerful workflow automations are on the way — trigger actions automatically based on user behaviour and events.",
+    features: [
+      { icon: RefreshCw, title: 'Workflow triggers',    desc: 'Fire actions on enrolment, completion, and more' },
+      { icon: Mail,      title: 'Automated emails',     desc: 'Send personalised emails at the right moment'    },
+      { icon: BarChart2, title: 'Automation analytics', desc: 'Track performance of every automated workflow'   },
+    ],
+  },
 };
 
-export function ComingSoonPage({ section }: { section: 'ecommerce' | 'marketing' | 'mobile' }) {
+export function ComingSoonPage({ section }: { section: 'ecommerce' | 'marketing' | 'mobile' | 'automations' }) {
   const cfg = COMING_SOON_CONFIG[section];
   const Icon = cfg.icon;
   return (

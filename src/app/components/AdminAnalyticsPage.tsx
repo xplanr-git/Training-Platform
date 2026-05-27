@@ -548,13 +548,21 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
     status: 'active' | 'paused';
     lastSent?: string; nextRun: string; createdAt: string;
   };
-  const [schedReports, setSchedReports] = useState<ScheduledReport[]>([
-    { id: 'sr1', name: 'Weekly Learner Progress',   segment: 'All Users',      reportType: 'User Progress',    frequency: 'Weekly',  time: '08:00', timezone: 'UTC+8',  dayLabel: 'Monday',  timePeriod: 'Last 30 days', recipients: ['admin@company.com', 'manager@company.com'], format: 'PDF',   notifyUsers: true,  emailTo: ['admin@company.com'], emailSubject: 'Weekly Learner Progress Report', emailMessage: '',  status: 'active',  lastSent: '2 days ago',  nextRun: 'In 5 days',    createdAt: '2026-04-01' },
-    { id: 'sr2', name: 'Monthly Completion Summary', segment: 'Active Learners',reportType: 'Product Insights', frequency: 'Monthly', time: '09:00', timezone: 'UTC+0',  dayLabel: '1st',     timePeriod: 'Last 90 days', recipients: ['hr@company.com'],                           format: 'Excel', notifyUsers: false, emailTo: [],                   emailSubject: '',                               emailMessage: '',  status: 'active',  lastSent: '12 days ago', nextRun: 'In 18 days',   createdAt: '2026-03-15' },
-    { id: 'sr3', name: 'Daily Engagement Digest',    segment: 'All Users',      reportType: 'User Activity',    frequency: 'Daily',   time: '07:30', timezone: 'UTC-5',                       timePeriod: 'Last 7 days',  recipients: ['team@company.com'],                         format: 'CSV',   notifyUsers: false, emailTo: [],                   emailSubject: '',                               emailMessage: '',  status: 'paused',  lastSent: '5 days ago',  nextRun: 'Paused',       createdAt: '2026-02-20' },
-    { id: 'sr4', name: 'System Health Report',       segment: 'Admins',         reportType: 'System Health',    frequency: 'Weekly',  time: '06:00', timezone: 'UTC+0',  dayLabel: 'Sunday',  timePeriod: 'Last 7 days',  recipients: ['devops@company.com'],                       format: 'PDF',   notifyUsers: true,  emailTo: ['devops@company.com'],emailSubject: 'System Health Weekly',           emailMessage: '',  status: 'active',  lastSent: '6 days ago',  nextRun: 'Tomorrow',     createdAt: '2026-01-10' },
-    { id: 'sr5', name: 'Course Drop-off Alert',      segment: 'At-Risk Users',  reportType: 'Product Insights', frequency: 'Weekly',  time: '10:00', timezone: 'UTC+8',  dayLabel: 'Friday',  timePeriod: 'Last 30 days', recipients: ['cto@company.com', 'admin@company.com'],     format: 'PDF',   notifyUsers: true,  emailTo: ['cto@company.com'],  emailSubject: 'Course Drop-off Weekly Alert',   emailMessage: '',  status: 'active',  lastSent: '1 day ago',   nextRun: 'In 6 days',    createdAt: '2026-04-10' },
-  ]);
+  const [schedReports, setSchedReports] = useState<ScheduledReport[]>([]);
+  const [schedLoading, setSchedLoading] = useState(true);
+  const schedKvPrefix = `scheduled-report:${companyId || 'global'}:`;
+
+  useEffect(() => {
+    setSchedLoading(true);
+    supabase
+      .from('kv_store_d60f2898')
+      .select('value')
+      .like('key', `${schedKvPrefix}%`)
+      .then(({ data }) => {
+        if (data && data.length > 0) setSchedReports(data.map((r: { value: ScheduledReport }) => r.value));
+        setSchedLoading(false);
+      });
+  }, [companyId]);
   const [schedFilter, setSchedFilter] = useState<'all' | 'active' | 'paused'>('all');
   const [schedSearch, setSchedSearch] = useState('');
   const [schedPage, setSchedPage] = useState(1);
@@ -1342,11 +1350,20 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         const schedStart      = filtered.length === 0 ? 0 : (schedSafePage - 1) * SCHED_PER_PAGE + 1;
         const schedEnd        = Math.min(schedSafePage * SCHED_PER_PAGE, filtered.length);
 
-        const toggleStatus = (id: string) =>
-          setSchedReports(prev => prev.map(r => r.id === id ? { ...r, status: r.status === 'active' ? 'paused' : 'active', nextRun: r.status === 'active' ? 'Paused' : 'Resuming...' } : r));
+        const toggleStatus = async (id: string) => {
+          let updated: ScheduledReport | undefined;
+          setSchedReports(prev => prev.map(r => {
+            if (r.id !== id) return r;
+            updated = { ...r, status: r.status === 'active' ? 'paused' : 'active', nextRun: r.status === 'active' ? 'Paused' : 'Resuming...' };
+            return updated;
+          }));
+          if (updated) await supabase.from('kv_store_d60f2898').upsert({ key: `${schedKvPrefix}${id}`, value: updated });
+        };
 
-        const deleteReport = (id: string) =>
+        const deleteReport = async (id: string) => {
           setSchedReports(prev => prev.filter(r => r.id !== id));
+          await supabase.from('kv_store_d60f2898').delete().eq('key', `${schedKvPrefix}${id}`);
+        };
 
         const openEdit = (r: ScheduledReport) => {
           setSchedEditId(r.id);
@@ -1359,16 +1376,22 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           setSchedFormOpen(true);
         };
 
-        const saveForm = () => {
+        const saveForm = async () => {
           if (!schedForm.name) return;
           const emailToArr = schedForm.emailTo.split(',').map(s => s.trim()).filter(Boolean);
           if (schedEditId) {
-            setSchedReports(prev => prev.map(r => r.id === schedEditId ? {
-              ...r, name: schedForm.name, segment: schedForm.segment, reportType: schedForm.reportType,
-              frequency: schedForm.frequency, time: schedForm.time, timezone: schedForm.timezone, dayLabel: schedForm.dayLabel,
-              timePeriod: schedForm.timePeriod, format: schedForm.format,
-              notifyUsers: schedForm.notifyUsers, emailTo: emailToArr, emailSubject: schedForm.emailSubject, emailMessage: schedForm.emailMessage,
-            } : r));
+            let updated: ScheduledReport | undefined;
+            setSchedReports(prev => prev.map(r => {
+              if (r.id !== schedEditId) return r;
+              updated = {
+                ...r, name: schedForm.name, segment: schedForm.segment, reportType: schedForm.reportType,
+                frequency: schedForm.frequency, time: schedForm.time, timezone: schedForm.timezone, dayLabel: schedForm.dayLabel,
+                timePeriod: schedForm.timePeriod, format: schedForm.format,
+                notifyUsers: schedForm.notifyUsers, emailTo: emailToArr, emailSubject: schedForm.emailSubject, emailMessage: schedForm.emailMessage,
+              };
+              return updated;
+            }));
+            if (updated) await supabase.from('kv_store_d60f2898').upsert({ key: `${schedKvPrefix}${schedEditId}`, value: updated });
           } else {
             const newR: ScheduledReport = {
               id: `sr${Date.now()}`, name: schedForm.name, segment: schedForm.segment, reportType: schedForm.reportType,
@@ -1378,6 +1401,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
               status: 'active', nextRun: 'Calculating…', createdAt: new Date().toISOString().slice(0, 10),
             };
             setSchedReports(prev => [newR, ...prev]);
+            await supabase.from('kv_store_d60f2898').upsert({ key: `${schedKvPrefix}${newR.id}`, value: newR });
           }
           setSchedFormOpen(false);
           setSchedEditId(null);
