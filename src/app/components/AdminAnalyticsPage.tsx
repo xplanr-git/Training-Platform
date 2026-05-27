@@ -497,6 +497,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [progressStat, setProgressStat] = useState<'completion' | 'finished' | 'inprogress' | 'score'>('completion');
   const [prodStat, setProdStat] = useState<'courses' | 'completion' | 'rating' | 'enrollments' | 'dropoffs'>('courses');
   const [prodTab, setProdTab] = useState<'analytics' | 'all-courses'>('analytics');
+  const [prodCoursesPage, setProdCoursesPage] = useState(1);
+  const PROD_COURSES_PER_PAGE = 15;
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1446,71 +1448,113 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             </> /* end analytics tab */}
 
             {/* All Courses tab */}
-            {prodTab === 'all-courses' && <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">All Courses Performance</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{totalCourses} courses in catalogue</p>
+            {prodTab === 'all-courses' && (() => {
+              const totalPages = Math.ceil(courseMetrics.length / PROD_COURSES_PER_PAGE);
+              const safePage   = Math.min(prodCoursesPage, totalPages || 1);
+              const pageSlice  = courseMetrics.slice((safePage - 1) * PROD_COURSES_PER_PAGE, safePage * PROD_COURSES_PER_PAGE);
+              const startIdx   = (safePage - 1) * PROD_COURSES_PER_PAGE + 1;
+              const endIdx     = Math.min(safePage * PROD_COURSES_PER_PAGE, courseMetrics.length);
+              return (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">All Courses Performance</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{totalCourses} courses in catalogue</p>
+                    </div>
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <Download className="size-3.5" /> Export
+                    </button>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-50">
+                        {['Course', 'Category', 'Level', 'Enrolled', 'Completion', 'Engagement', 'Rating', 'Duration'].map(h => (
+                          <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageSlice.map((m, i) => (
+                        <tr key={m.course.id} className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-800 text-xs max-w-[160px] truncate">{m.course.title}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{m.course.instructor}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500">{m.course.category}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${m.course.level === 'Beginner' ? 'bg-green-50 text-green-600' : m.course.level === 'Intermediate' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                              {m.course.level}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-semibold text-gray-700">{m.enrollCt.toLocaleString()}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${m.completionPct >= 70 ? 'bg-teal-400' : m.completionPct >= 40 ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${m.completionPct}%` }} />
+                              </div>
+                              <span className="text-xs font-semibold text-gray-700">{m.completionPct}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${m.engagementPct}%` }} />
+                              </div>
+                              <span className="text-xs font-semibold text-gray-700">{m.engagementPct}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              <Star className="size-3 text-amber-400 fill-amber-400" />
+                              <span className="text-xs font-semibold text-gray-700">{m.rating.toFixed(1)}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Clock className="size-3 text-gray-300" />
+                              {m.durationMins >= 60 ? `${Math.floor(m.durationMins / 60)}h ${m.durationMins % 60 > 0 ? `${m.durationMins % 60}m` : ''}` : `${m.durationMins}m`}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* Pagination footer */}
+                  <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                    <p className="text-xs text-gray-400">
+                      Showing <span className="font-semibold text-gray-600">{startIdx}–{endIdx}</span> of <span className="font-semibold text-gray-600">{courseMetrics.length}</span> courses
+                    </p>
+                    {totalPages > 1 && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setProdCoursesPage(p => Math.max(1, p - 1))}
+                          disabled={safePage === 1}
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <ChevronDown className="size-3 rotate-90" /> Prev
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                          <button
+                            key={p}
+                            onClick={() => setProdCoursesPage(p)}
+                            className={`size-7 rounded-lg text-xs font-semibold transition-colors ${safePage === p ? 'bg-teal-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setProdCoursesPage(p => Math.min(totalPages, p + 1))}
+                          disabled={safePage === totalPages}
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Next <ChevronDown className="size-3 -rotate-90" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Download className="size-3.5" /> Export
-                </button>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-50">
-                    {['Course', 'Category', 'Level', 'Enrolled', 'Completion', 'Engagement', 'Rating', 'Duration'].map(h => (
-                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {courseMetrics.map((m, i) => (
-                    <tr key={m.course.id} className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-800 text-xs max-w-[160px] truncate">{m.course.title}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{m.course.instructor}</p>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{m.course.category}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${m.course.level === 'Beginner' ? 'bg-green-50 text-green-600' : m.course.level === 'Intermediate' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
-                          {m.course.level}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-700">{m.enrollCt.toLocaleString()}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${m.completionPct >= 70 ? 'bg-teal-400' : m.completionPct >= 40 ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${m.completionPct}%` }} />
-                          </div>
-                          <span className="text-xs font-semibold text-gray-700">{m.completionPct}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${m.engagementPct}%` }} />
-                          </div>
-                          <span className="text-xs font-semibold text-gray-700">{m.engagementPct}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <Star className="size-3 text-amber-400 fill-amber-400" />
-                          <span className="text-xs font-semibold text-gray-700">{m.rating.toFixed(1)}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Clock className="size-3 text-gray-300" />
-                          {m.durationMins >= 60 ? `${Math.floor(m.durationMins / 60)}h ${m.durationMins % 60 > 0 ? `${m.durationMins % 60}m` : ''}` : `${m.durationMins}m`}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>} {/* end all-courses tab */}
+              );
+            })()} {/* end all-courses tab */}
           </div>
         );
       })()}
