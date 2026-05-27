@@ -1380,7 +1380,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
             {/* Create / Edit form */}
             {schedFormOpen && (() => {
-              const SEGMENTS    = ['All Users', 'Active Learners', 'At-Risk Users', 'Admins', 'New Users', 'Top Performers', 'Inactive Users'];
+              const SEGMENTS    = ['All Users', 'Active Learners', 'At-Risk Users', 'Admins', 'New Users', 'Top Performers', 'Inactive Users', ...segments.map(s => s.name)];
               const TIME_PERIODS= ['Last 7 days', 'Last 30 days', 'Last 90 days', 'Last 6 months', 'Last 12 months', 'All time', 'Custom range'];
               const TIMEZONES   = ['UTC-12','UTC-11','UTC-10','UTC-9','UTC-8','UTC-7','UTC-6','UTC-5','UTC-4','UTC-3','UTC-2','UTC-1','UTC+0','UTC+1','UTC+2','UTC+3','UTC+4','UTC+5','UTC+5:30','UTC+6','UTC+7','UTC+8','UTC+9','UTC+10','UTC+11','UTC+12'];
               const inputCls    = 'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white placeholder:text-gray-300';
