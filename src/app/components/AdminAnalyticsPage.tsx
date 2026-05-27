@@ -1,6 +1,6 @@
 ﻿import { Course, User } from '@/app/types';
 
-import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles } from 'lucide-react';
+import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface AdminAnalyticsPageProps {
@@ -808,6 +808,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             {analyticsView === 'system-health' && 'System Health & Platform Status'}
             {analyticsView === 'ai-insights' && 'AI Insights'}
             {analyticsView === 'training-matrix' && 'Training Matrix'}
+            {analyticsView === 'product-insights' && 'Product Insights'}
           </h1>
           <p className="text-gray-600">
             {analyticsView === 'overview-analytics' && 'Track learner progress, engagement, and outcomes across your platform'}
@@ -818,6 +819,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             {analyticsView === 'system-health' && 'Monitor platform infrastructure and integrations'}
             {analyticsView === 'ai-insights' && 'Intelligent analysis and recommendations powered by AI'}
             {analyticsView === 'training-matrix' && 'Visual overview of team training coverage and completion status'}
+            {analyticsView === 'product-insights' && 'Deep-dive analytics into course performance, content quality and learner outcomes'}
           </p>
         </div>
         {/* Tabs — only for overview */}
@@ -835,7 +837,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           </div>
         )}
         {/* Coming Soon pill — for views not yet available */}
-        {(analyticsView === 'ai-insights' || analyticsView === 'training-matrix') && (
+        {(analyticsView === 'ai-insights' || analyticsView === 'training-matrix' || analyticsView === 'product-insights') && (
           <div className="px-6 mt-3 pb-4">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-semibold text-amber-600">
               <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -1190,8 +1192,55 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         </div>
       )}
 
+      {/* ── Product Insights: Coming Soon ── */}
+      {analyticsView === 'product-insights' && (
+        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+          <div className="relative mb-8">
+            <div className="size-28 rounded-3xl bg-gradient-to-br from-indigo-50 to-purple-100 border-2 border-indigo-200 flex items-center justify-center shadow-lg shadow-indigo-100">
+              <Package className="size-12 text-indigo-400" />
+            </div>
+            <div className="absolute -top-1 -right-1 size-5 bg-amber-400 rounded-full border-2 border-white flex items-center justify-center">
+              <span className="text-[8px] font-black text-white leading-none">!</span>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Insights is on its way</h2>
+          <p className="text-sm text-gray-500 max-w-md mb-8 leading-relaxed">
+            Understand exactly how your course catalogue is performing — which content drives completions, where learners drop off, and what keeps them coming back.
+          </p>
+          <div className="grid grid-cols-1 gap-3 w-full max-w-lg mb-10 text-left">
+            {[
+              { icon: BookOpen,   color: 'bg-indigo-50 text-indigo-500',  label: 'Course Performance',      desc: 'Completion rates, ratings and drop-off points per course' },
+              { icon: TrendingUp, color: 'bg-green-50 text-green-500',    label: 'Content Effectiveness',   desc: 'Which lessons drive the most engagement and retention' },
+              { icon: Users,      color: 'bg-blue-50 text-blue-500',      label: 'Learner Journey Mapping', desc: 'Visualise how learners move through your catalogue' },
+              { icon: Award,      color: 'bg-amber-50 text-amber-500',    label: 'Quality Benchmarking',    desc: 'Compare course quality across instructors and categories' },
+            ].map(({ icon: Icon, color, label, desc }) => (
+              <div key={label} className="flex items-center gap-4 px-4 py-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+                <div className={`size-9 rounded-lg ${color} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-800">{label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+                </div>
+                <span className="ml-auto flex-shrink-0 text-[10px] font-bold text-gray-300 uppercase tracking-wide">Soon</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-xs text-gray-400">Get notified when Product Insights launches</p>
+            <div className="flex items-center gap-2">
+              <input type="email" placeholder="your@email.com"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-56 placeholder:text-gray-300" />
+              <button className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-lg transition-colors">
+                Notify me
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Section nav rows (replace accordions) ── */}
-      {analyticsTab === 'all-reports' && analyticsView !== 'system-health' && analyticsView !== 'ai-insights' && analyticsView !== 'training-matrix' && (
+      {analyticsTab === 'all-reports' && analyticsView !== 'system-health' && analyticsView !== 'ai-insights' && analyticsView !== 'training-matrix' && analyticsView !== 'product-insights' && (
         <div className="space-y-2">
           {sectionDefs.filter(s => showSection(s.name)).map(s => {
             /* ── User Progress: inline dropdown ── */
