@@ -1561,12 +1561,16 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                         <span className="ml-1 text-[9px] opacity-70">{r.time}</span>
                       </span>
                       {/* Recipients */}
-                      <div className="flex flex-wrap gap-1">
-                        {r.recipients.slice(0, 2).map(e => (
-                          <span key={e} className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded-full truncate max-w-[90px]">{e}</span>
-                        ))}
-                        {r.recipients.length > 2 && <span className="bg-gray-100 text-gray-500 text-[9px] px-1.5 py-0.5 rounded-full">+{r.recipients.length - 2}</span>}
-                      </div>
+                      {r.recipients && r.recipients.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {r.recipients.slice(0, 2).map(e => (
+                            <span key={e} className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded-full truncate max-w-[90px]">{e}</span>
+                          ))}
+                          {r.recipients.length > 2 && <span className="bg-gray-100 text-gray-500 text-[9px] px-1.5 py-0.5 rounded-full">+{r.recipients.length - 2}</span>}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                       {/* Format */}
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${fmtColor(r.format)}`}>{r.format}</span>
                       {/* Next run */}
