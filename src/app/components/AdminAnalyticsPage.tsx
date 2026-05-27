@@ -1537,8 +1537,16 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 {/* Table header */}
                 <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50">
-                  {['Report Name', 'Type', 'Frequency', 'Recipients', 'Format', 'Next Run', ''].map(h => (
-                    <p key={h} className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</p>
+                  {[
+                    { label: 'Report Name', cls: '' },
+                    { label: 'Type',        cls: 'text-center' },
+                    { label: 'Frequency',   cls: 'text-center' },
+                    { label: 'Recipients',  cls: 'text-center' },
+                    { label: 'Format',      cls: 'text-center' },
+                    { label: 'Next Run',    cls: 'text-center' },
+                    { label: '',            cls: '' },
+                  ].map(h => (
+                    <p key={h.label} className={`text-[11px] font-semibold text-gray-400 uppercase tracking-wide ${h.cls}`}>{h.label}</p>
                   ))}
                 </div>
                 {/* Rows */}
@@ -1554,27 +1562,33 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                         <p className="text-[10px] text-gray-400 mt-0.5 pl-4">Created {r.createdAt} · Last sent: {r.lastSent ?? 'Never'}</p>
                       </div>
                       {/* Type */}
-                      <p className="text-xs text-gray-500 truncate">{r.reportType}</p>
+                      <p className="text-xs text-gray-500 truncate text-center">{r.reportType}</p>
                       {/* Frequency */}
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold w-fit ${freqColor(r.frequency)}`}>
-                        {r.frequency}{r.dayLabel ? ` · ${r.dayLabel}` : ''}<br className="hidden" />
-                        <span className="ml-1 text-[9px] opacity-70">{r.time}</span>
-                      </span>
+                      <div className="flex justify-center">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold ${freqColor(r.frequency)}`}>
+                          {r.frequency}{r.dayLabel ? ` · ${r.dayLabel}` : ''}
+                          <span className="ml-1 text-[9px] opacity-70">{r.time}</span>
+                        </span>
+                      </div>
                       {/* Recipients */}
-                      {r.recipients && r.recipients.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {r.recipients.slice(0, 2).map(e => (
-                            <span key={e} className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded-full truncate max-w-[90px]">{e}</span>
-                          ))}
-                          {r.recipients.length > 2 && <span className="bg-gray-100 text-gray-500 text-[9px] px-1.5 py-0.5 rounded-full">+{r.recipients.length - 2}</span>}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-300">—</span>
-                      )}
+                      <div className="flex justify-center flex-wrap gap-1">
+                        {r.recipients && r.recipients.length > 0 ? (
+                          <>
+                            {r.recipients.slice(0, 2).map(e => (
+                              <span key={e} className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded-full truncate max-w-[90px]">{e}</span>
+                            ))}
+                            {r.recipients.length > 2 && <span className="bg-gray-100 text-gray-500 text-[9px] px-1.5 py-0.5 rounded-full">+{r.recipients.length - 2}</span>}
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-300">—</span>
+                        )}
+                      </div>
                       {/* Format */}
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${fmtColor(r.format)}`}>{r.format}</span>
+                      <div className="flex justify-center">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${fmtColor(r.format)}`}>{r.format}</span>
+                      </div>
                       {/* Next run */}
-                      <p className={`text-xs font-medium ${r.status === 'paused' ? 'text-gray-400' : 'text-gray-700'}`}>{r.nextRun}</p>
+                      <p className={`text-xs font-medium text-center ${r.status === 'paused' ? 'text-gray-400' : 'text-gray-700'}`}>{r.nextRun}</p>
                       {/* Actions */}
                       <div className="flex items-center gap-1">
                         {schedDeleteConfirm === r.id ? (
