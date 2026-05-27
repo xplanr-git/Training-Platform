@@ -4,7 +4,7 @@ import { ComingSoonPage } from '@/app/components/AdminCommunicationsPage';
 
 import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package, Star, Clock, BarChart2, TrendingDown, Pencil } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, Radar, Cell } from 'recharts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface AdminAnalyticsPageProps {
   courses: Course[];
@@ -585,6 +585,14 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [schedForm, setSchedForm] = useState<SchedFormState>(SCHED_FORM_DEFAULT);
   const [schedFormOpen, setSchedFormOpen] = useState(false);
   const [schedEditId, setSchedEditId] = useState<string | null>(null);
+  const [msgEmojiOpen, setMsgEmojiOpen] = useState(false);
+  const msgEditorRef = useRef<HTMLDivElement>(null);
+  // Sync contenteditable innerHTML when the schedule form opens or switches to edit mode
+  useEffect(() => {
+    if (schedFormOpen && msgEditorRef.current) {
+      msgEditorRef.current.innerHTML = schedForm.emailMessage || '';
+    }
+  }, [schedFormOpen, schedEditId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1494,13 +1502,81 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                               placeholder="e.g. Weekly Learner Progress Report – May 2026"
                               className={inputCls} />
                           </div>
-                          {/* Message */}
+                          {/* Message – rich-text editor */}
                           <div className="col-span-2">
                             <label className={labelCls}>Your Message</label>
-                            <textarea value={schedForm.emailMessage} onChange={e => setSchedForm(p => ({ ...p, emailMessage: e.target.value }))}
-                              rows={4}
-                              placeholder="Add a personal message to accompany the report…"
-                              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300 resize-none" />
+                            <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-300 focus-within:border-transparent">
+                              {/* Toolbar */}
+                              <div className="flex items-center gap-0.5 px-2 py-1.5 bg-gray-50 border-b border-gray-100">
+                                {/* Bold */}
+                                <button type="button" title="Bold"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('bold'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 font-bold text-sm">B</button>
+                                {/* Italic */}
+                                <button type="button" title="Italic"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('italic'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 italic text-sm">I</button>
+                                {/* Underline */}
+                                <button type="button" title="Underline"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('underline'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 underline text-sm">U</button>
+                                {/* Strikethrough */}
+                                <button type="button" title="Strikethrough"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('strikeThrough'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-500 line-through text-sm">S</button>
+                                <div className="w-px h-4 bg-gray-200 mx-1" />
+                                {/* Bullet list */}
+                                <button type="button" title="Bullet list"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('insertUnorderedList'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-base leading-none">•≡</button>
+                                {/* Ordered list */}
+                                <button type="button" title="Numbered list"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('insertOrderedList'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-xs leading-none">1≡</button>
+                                <div className="w-px h-4 bg-gray-200 mx-1" />
+                                {/* Align left */}
+                                <button type="button" title="Align left"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('justifyLeft'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-xs">⬤≡</button>
+                                {/* Align center */}
+                                <button type="button" title="Align center"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('justifyCenter'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-xs">≡⬤≡</button>
+                                <div className="w-px h-4 bg-gray-200 mx-1" />
+                                {/* Emoji picker */}
+                                <div className="relative">
+                                  <button type="button" title="Insert emoji"
+                                    onClick={() => setMsgEmojiOpen(p => !p)}
+                                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-base">😊</button>
+                                  {msgEmojiOpen && (
+                                    <div className="absolute left-0 top-9 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-2 grid grid-cols-8 gap-0.5 w-60">
+                                      {['😊','😄','😂','🥰','😎','🤩','🎉','👏','✅','🚀','💡','📊','📈','⭐','🏆','💪','👍','❤️','🔔','📧','📅','⏰','🎯','💼','📝','🌟','✨','🔥','💯','👀','🙌','🤝','📌','🗓️','📣','💬','🛎️','⚡','🎓','🏅'].map(em => (
+                                        <button key={em} type="button"
+                                          onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('insertText', false, em); setMsgEmojiOpen(false); }}
+                                          className="text-lg hover:bg-gray-100 rounded p-0.5 text-center leading-tight">{em}</button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Clear formatting */}
+                                <button type="button" title="Clear formatting"
+                                  onMouseDown={e => { e.preventDefault(); document.execCommand('removeFormat'); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-400 text-xs ml-auto" style={{ fontSize: '10px' }}>T✕</button>
+                              </div>
+                              {/* Editable area */}
+                              <div
+                                ref={msgEditorRef}
+                                contentEditable
+                                suppressContentEditableWarning
+                                onInput={() => setSchedForm(p => ({ ...p, emailMessage: msgEditorRef.current?.innerHTML || '' }))}
+                                onClick={() => setMsgEmojiOpen(false)}
+                                data-placeholder="Add a personal message to accompany the report…"
+                                className={[
+                                  'w-full px-3 py-2 text-sm min-h-[100px] focus:outline-none',
+                                  '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-300',
+                                ].join(' ')}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
