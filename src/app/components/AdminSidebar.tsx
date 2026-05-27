@@ -164,7 +164,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
         { id: 'system-health', label: 'System Health', icon: Server },
 
         { id: 'ai-insights', label: 'AI Insights', icon: Sparkles, comingSoon: true },
-        { id: 'training-matrix', label: 'Training Matrix', icon: Grid3x3 },
+        { id: 'training-matrix', label: 'Training Matrix', icon: Grid3x3, comingSoon: true },
         { id: 'product-insights', label: 'Product Insights', icon: Package },
         { id: 'scheduled-reports', label: 'Scheduled Reports', icon: Clock },
         { id: 'report-log', label: 'Report Log', icon: ScrollText },
