@@ -192,6 +192,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
     closeDetail();
   };
   const deleteSegment = (id: string) => setSegments(prev => prev.filter(s => s.id !== id));
+  const [segDeleteConfirm, setSegDeleteConfirm] = useState<string | null>(null);
   const [analyticsFilter, setAnalyticsFilter] = useState<string>('All');
   // Slide-in navigation state
   const [currentSection, setCurrentSection] = useState<string | null>(null);
@@ -978,12 +979,24 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                           </div>
                         </div>
                         <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                          <button onClick={() => openEditSegment(seg)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white/60 rounded-lg transition-colors">
-                            <svg className="size-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                          </button>
-                          <button onClick={() => deleteSegment(seg.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white/60 rounded-lg transition-colors">
-                            <X className="size-3.5" />
-                          </button>
+                          {segDeleteConfirm === seg.id ? (
+                            <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 rounded-lg px-2 py-1">
+                              <span className="text-[10px] font-semibold text-rose-600 whitespace-nowrap">Delete?</span>
+                              <button onClick={() => { deleteSegment(seg.id); setSegDeleteConfirm(null); }}
+                                className="px-2 py-0.5 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-bold rounded transition-colors">Yes</button>
+                              <button onClick={() => setSegDeleteConfirm(null)}
+                                className="px-2 py-0.5 bg-white hover:bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 transition-colors">No</button>
+                            </div>
+                          ) : (
+                            <>
+                              <button onClick={() => openEditSegment(seg)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white/60 rounded-lg transition-colors">
+                                <svg className="size-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                              </button>
+                              <button onClick={() => setSegDeleteConfirm(seg.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white/60 rounded-lg transition-colors">
+                                <X className="size-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="px-5 py-3 space-y-2">
