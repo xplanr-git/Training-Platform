@@ -1324,14 +1324,15 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
             {/* Row 1: Enrollments bar + Engagement line */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group" onClick={() => openDetail('product-bar')}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">Most Popular Courses</p>
                     <p className="text-xs text-gray-400 mt-0.5">Enrollments vs completions</p>
                   </div>
-                  {/* Time range dropdown */}
-                  <div className="relative">
+                  {/* Time range dropdown — stop click bubbling to card */}
+                  <div className="relative flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <ChevronRight className="size-4 text-gray-300 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
                     <button
                       onClick={() => setProdBarRangeOpen(v => !v)}
                       className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -1979,6 +1980,16 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                   <Package className="size-3.5 text-indigo-600" />
                 </div>
                 <p className="font-semibold text-gray-900 text-sm flex-shrink-0">Course Performance — Per Course Radar</p>
+              </>)}
+              {currentSection === 'product-bar' && (<>
+                <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
+                <div className="size-7 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                  <BarChart2 className="size-3.5 text-indigo-600" />
+                </div>
+                <p className="font-semibold text-gray-900 text-sm flex-shrink-0">Most Popular — Per Course Breakdown</p>
+                <span className="ml-auto text-[11px] text-gray-400 font-medium">
+                  {prodBarRange === 7 ? 'Last 7 days' : prodBarRange === 30 ? 'Last 30 days' : prodBarRange === 180 ? 'Last 6 months' : 'Last year'}
+                </span>
               </>)}
               {activeSection && currentSection !== '__segment__' && currentSection !== 'product-radar' && (<>
                 <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
@@ -2917,6 +2928,85 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                             <Tooltip contentStyle={{ fontSize: 11, borderRadius: 6 }} formatter={(v: any) => `${v}`} />
                           </RadarChart>
                         </ResponsiveContainer>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Product Insights: Per-course bar chart grid ── */}
+            {currentSection === 'product-bar' && (() => {
+              const scale = prodBarRange / 365;
+              const COLORS = ['#6366f1','#14b8a6','#f59e0b','#3b82f6','#ec4899','#10b981','#8b5cf6','#f97316','#06b6d4','#84cc16','#a855f7','#ef4444','#0ea5e9'];
+              const rangeLabel = prodBarRange === 7 ? 'Last 7 days' : prodBarRange === 30 ? 'Last 30 days' : prodBarRange === 180 ? 'Last 6 months' : 'Last year';
+              const perCourseData = courses.map((course, ci) => {
+                const enrolled   = users.filter(u => u.enrolledCourses?.includes(course.id)).length || course.studentsEnrolled || 0;
+                const completion = Math.round(30 + (ci * 13) % 55);
+                const scaledEnrolled   = Math.max(1, Math.round(enrolled  * scale));
+                const scaledCompleted  = Math.max(0, Math.round(scaledEnrolled * (completion / 100)));
+                const scaledInProgress = Math.max(0, scaledEnrolled - scaledCompleted);
+                return {
+                  course,
+                  ci,
+                  color: COLORS[ci % COLORS.length],
+                  completion,
+                  barData: [{ name: rangeLabel, Enrolled: scaledEnrolled, Completed: scaledCompleted, 'In Progress': scaledInProgress }],
+                };
+              });
+              return (
+                <div className="space-y-4">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <BarChart2 className="size-4 text-indigo-400" />
+                      <p className="text-sm text-gray-600">Enrollments, completions and in-progress learners per course — <span className="font-semibold text-gray-800">{rangeLabel}</span></p>
+                    </div>
+                    {/* Range picker in detail view too */}
+                    <div className="relative">
+                      <button onClick={() => setProdBarRangeOpen(v => !v)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        {rangeLabel} <ChevronDown className={`size-3 transition-transform ${prodBarRangeOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {prodBarRangeOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                          {([{ value: 7, label: 'Last 7 days' }, { value: 30, label: 'Last 30 days' }, { value: 180, label: 'Last 6 months' }, { value: 365, label: 'Last year' }] as const).map(opt => (
+                            <button key={opt.value} onClick={() => { setProdBarRange(opt.value); setProdBarRangeOpen(false); }}
+                              className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodBarRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {perCourseData.map(({ course, ci, color, completion, barData: bd }) => (
+                      <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="text-xs font-semibold text-gray-800 leading-snug line-clamp-2">{course.title}</p>
+                          <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${course.level === 'Beginner' ? 'bg-green-50 text-green-600' : course.level === 'Intermediate' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                            {course.level}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mb-3">{course.category} · {completion}% completion</p>
+                        <ResponsiveContainer width="100%" height={130}>
+                          <BarChart data={bd} barCategoryGap="25%">
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                            <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#d1d5db' }} />
+                            <YAxis tick={{ fontSize: 9, fill: '#d1d5db' }} />
+                            <Tooltip contentStyle={{ fontSize: 11, borderRadius: 6 }} />
+                            <Bar dataKey="Enrolled"    fill={color}    radius={[3,3,0,0]} fillOpacity={0.9} />
+                            <Bar dataKey="Completed"   fill="#14b8a6"  radius={[3,3,0,0]} />
+                            <Bar dataKey="In Progress" fill="#fbbf24"  radius={[3,3,0,0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                        <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                          {[['Enrolled', color], ['Completed', '#14b8a6'], ['In Progress', '#fbbf24']].map(([lbl, clr]) => (
+                            <span key={lbl} className="flex items-center gap-1 text-[9px] text-gray-400">
+                              <span className="size-2 rounded-sm inline-block" style={{ background: clr }} />{lbl}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
