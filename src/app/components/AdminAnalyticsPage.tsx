@@ -62,6 +62,12 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [segAdvPickerCat, setSegAdvPickerCat] = useState<AdvFilterCat>('all');
   const [segFiltersApplied, setSegFiltersApplied] = useState(false);
   const [segMatchedUserIds, setSegMatchedUserIds] = useState<string[]>(() => users.map(u => u.id));
+
+  // Reset tab to 'all-reports' whenever the top-level analytics view changes
+  useEffect(() => {
+    setAnalyticsTab('all-reports');
+  }, [analyticsView]);
+
   // Recompute matched IDs whenever applied filters change
   useEffect(() => {
     if (!segFiltersApplied || segAdvFilters.length === 0) {
