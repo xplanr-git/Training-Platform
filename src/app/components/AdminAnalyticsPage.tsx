@@ -1505,63 +1505,95 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                           {/* Message – rich-text editor */}
                           <div className="col-span-2">
                             <label className={labelCls}>Your Message</label>
-                            <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-300 focus-within:border-transparent">
+                            {/* NOTE: no overflow-hidden here — lets emoji popover escape the border box */}
+                            <div className="border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-teal-300 focus-within:border-transparent">
                               {/* Toolbar */}
-                              <div className="flex items-center gap-0.5 px-2 py-1.5 bg-gray-50 border-b border-gray-100">
+                              <div className="flex items-center gap-0.5 px-2 py-1.5 bg-gray-50 border-b border-gray-100 rounded-t-lg">
                                 {/* Bold */}
                                 <button type="button" title="Bold"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('bold'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 font-bold text-sm">B</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('bold', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 font-bold text-sm select-none">B</button>
                                 {/* Italic */}
                                 <button type="button" title="Italic"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('italic'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 italic text-sm">I</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('italic', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 italic text-sm select-none">I</button>
                                 {/* Underline */}
                                 <button type="button" title="Underline"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('underline'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 underline text-sm">U</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('underline', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 underline text-sm select-none">U</button>
                                 {/* Strikethrough */}
                                 <button type="button" title="Strikethrough"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('strikeThrough'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-500 line-through text-sm">S</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('strikeThrough', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-500 line-through text-sm select-none">S</button>
                                 <div className="w-px h-4 bg-gray-200 mx-1" />
                                 {/* Bullet list */}
                                 <button type="button" title="Bullet list"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('insertUnorderedList'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-base leading-none">•≡</button>
-                                {/* Ordered list */}
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('insertUnorderedList', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  <svg width="15" height="13" viewBox="0 0 15 13" fill="currentColor">
+                                    <circle cx="1.5" cy="2" r="1.4"/><rect x="4.5" y="1.2" width="10" height="1.5" rx="0.75"/>
+                                    <circle cx="1.5" cy="6.5" r="1.4"/><rect x="4.5" y="5.7" width="10" height="1.5" rx="0.75"/>
+                                    <circle cx="1.5" cy="11" r="1.4"/><rect x="4.5" y="10.2" width="10" height="1.5" rx="0.75"/>
+                                  </svg>
+                                </button>
+                                {/* Numbered list */}
                                 <button type="button" title="Numbered list"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('insertOrderedList'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-xs leading-none">1≡</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('insertOrderedList', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  <svg width="15" height="13" viewBox="0 0 15 13" fill="currentColor" fontSize="4">
+                                    <text x="0" y="3.5" style={{ fontSize: '4.5px', fontFamily: 'sans-serif' }}>1.</text><rect x="4.5" y="1.2" width="10" height="1.5" rx="0.75"/>
+                                    <text x="0" y="8" style={{ fontSize: '4.5px', fontFamily: 'sans-serif' }}>2.</text><rect x="4.5" y="5.7" width="10" height="1.5" rx="0.75"/>
+                                    <text x="0" y="12.5" style={{ fontSize: '4.5px', fontFamily: 'sans-serif' }}>3.</text><rect x="4.5" y="10.2" width="10" height="1.5" rx="0.75"/>
+                                  </svg>
+                                </button>
                                 <div className="w-px h-4 bg-gray-200 mx-1" />
                                 {/* Align left */}
                                 <button type="button" title="Align left"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('justifyLeft'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-xs">⬤≡</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('justifyLeft', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  <svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                    <line x1="1" y1="1.5" x2="13" y2="1.5"/><line x1="1" y1="4.5" x2="9" y2="4.5"/>
+                                    <line x1="1" y1="7.5" x2="13" y2="7.5"/><line x1="1" y1="10.5" x2="8" y2="10.5"/>
+                                  </svg>
+                                </button>
                                 {/* Align center */}
                                 <button type="button" title="Align center"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('justifyCenter'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 text-xs">≡⬤≡</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('justifyCenter', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  <svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                    <line x1="1" y1="1.5" x2="13" y2="1.5"/><line x1="3" y1="4.5" x2="11" y2="4.5"/>
+                                    <line x1="1" y1="7.5" x2="13" y2="7.5"/><line x1="4" y1="10.5" x2="10" y2="10.5"/>
+                                  </svg>
+                                </button>
                                 <div className="w-px h-4 bg-gray-200 mx-1" />
                                 {/* Emoji picker */}
                                 <div className="relative">
                                   <button type="button" title="Insert emoji"
-                                    onClick={() => setMsgEmojiOpen(p => !p)}
-                                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-base">😊</button>
+                                    onMouseDown={e => { e.preventDefault(); setMsgEmojiOpen(p => !p); }}
+                                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-base select-none">😊</button>
                                   {msgEmojiOpen && (
-                                    <div className="absolute left-0 top-9 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-2 grid grid-cols-8 gap-0.5 w-60">
-                                      {['😊','😄','😂','🥰','😎','🤩','🎉','👏','✅','🚀','💡','📊','📈','⭐','🏆','💪','👍','❤️','🔔','📧','📅','⏰','🎯','💼','📝','🌟','✨','🔥','💯','👀','🙌','🤝','📌','🗓️','📣','💬','🛎️','⚡','🎓','🏅'].map(em => (
+                                    <div className="absolute left-0 top-8 z-[300] bg-white border border-gray-200 rounded-xl shadow-2xl p-2.5 grid grid-cols-8 gap-1 w-64">
+                                      {['😊','😄','😂','🥰','😎','🤩','🎉','👏',
+                                        '✅','🚀','💡','📊','📈','⭐','🏆','💪',
+                                        '👍','❤️','🔔','📧','📅','⏰','🎯','💼',
+                                        '📝','🌟','✨','🔥','💯','👀','🙌','🤝',
+                                        '📌','🗓️','📣','💬','⚡','🎓','🏅','🎁'].map(em => (
                                         <button key={em} type="button"
-                                          onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('insertText', false, em); setMsgEmojiOpen(false); }}
-                                          className="text-lg hover:bg-gray-100 rounded p-0.5 text-center leading-tight">{em}</button>
+                                          onMouseDown={e => {
+                                            e.preventDefault();
+                                            msgEditorRef.current?.focus();
+                                            document.execCommand('insertText', false, em);
+                                            setMsgEmojiOpen(false);
+                                          }}
+                                          className="w-7 h-7 flex items-center justify-center text-lg hover:bg-gray-100 rounded transition-colors">{em}</button>
                                       ))}
                                     </div>
                                   )}
                                 </div>
                                 {/* Clear formatting */}
                                 <button type="button" title="Clear formatting"
-                                  onMouseDown={e => { e.preventDefault(); document.execCommand('removeFormat'); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-400 text-xs ml-auto" style={{ fontSize: '10px' }}>T✕</button>
+                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('removeFormat', false); }}
+                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-400 ml-auto select-none text-[10px]">T✕</button>
                               </div>
                               {/* Editable area */}
                               <div
@@ -1569,12 +1601,9 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                                 contentEditable
                                 suppressContentEditableWarning
                                 onInput={() => setSchedForm(p => ({ ...p, emailMessage: msgEditorRef.current?.innerHTML || '' }))}
-                                onClick={() => setMsgEmojiOpen(false)}
+                                onMouseDown={() => setMsgEmojiOpen(false)}
                                 data-placeholder="Add a personal message to accompany the report…"
-                                className={[
-                                  'w-full px-3 py-2 text-sm min-h-[100px] focus:outline-none',
-                                  '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-300',
-                                ].join(' ')}
+                                className="w-full px-3 py-2 text-sm min-h-[100px] focus:outline-none rounded-b-lg [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-300 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5"
                               />
                             </div>
                           </div>
