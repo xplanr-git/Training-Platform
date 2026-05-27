@@ -1,6 +1,6 @@
 ﻿import { Course, User } from '@/app/types';
 
-import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package, Star, Clock, BarChart2, TrendingDown } from 'lucide-react';
+import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package, Star, Clock, BarChart2, TrendingDown, Pencil } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, Radar, Cell } from 'recharts';
 import { useState, useEffect } from 'react';
 
@@ -501,6 +501,38 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const PROD_COURSES_PER_PAGE = 15;
   const [prodBarRange, setProdBarRange] = useState<7 | 30 | 180 | 365>(30);
   const [prodBarRangeOpen, setProdBarRangeOpen] = useState(false);
+  const [prodLineRange, setProdLineRange] = useState<7 | 30 | 180 | 365>(30);
+  const [prodLineRangeOpen, setProdLineRangeOpen] = useState(false);
+  const [prodHardRange, setProdHardRange] = useState<7 | 30 | 180 | 365>(30);
+  const [prodHardRangeOpen, setProdHardRangeOpen] = useState(false);
+  const [prodDropRange, setProdDropRange] = useState<7 | 30 | 180 | 365>(30);
+  const [prodDropRangeOpen, setProdDropRangeOpen] = useState(false);
+
+  // ── Scheduled Reports state ───────────────────────────────────────────────
+  type ScheduledReport = {
+    id: string; name: string; reportType: string;
+    frequency: 'Daily' | 'Weekly' | 'Monthly';
+    time: string; dayLabel?: string;
+    recipients: string[]; format: 'PDF' | 'CSV' | 'Excel';
+    status: 'active' | 'paused';
+    lastSent?: string; nextRun: string; createdAt: string;
+  };
+  const [schedReports, setSchedReports] = useState<ScheduledReport[]>([
+    { id: 'sr1', name: 'Weekly Learner Progress',  reportType: 'User Progress',      frequency: 'Weekly',  time: '08:00', dayLabel: 'Monday',     recipients: ['admin@company.com', 'manager@company.com'], format: 'PDF',   status: 'active',  lastSent: '2 days ago',  nextRun: 'In 5 days',    createdAt: '2026-04-01' },
+    { id: 'sr2', name: 'Monthly Completion Summary',reportType: 'Product Insights',   frequency: 'Monthly', time: '09:00', dayLabel: '1st',        recipients: ['hr@company.com'],                           format: 'Excel', status: 'active',  lastSent: '12 days ago', nextRun: 'In 18 days',   createdAt: '2026-03-15' },
+    { id: 'sr3', name: 'Daily Engagement Digest',   reportType: 'User Activity',      frequency: 'Daily',   time: '07:30',                          recipients: ['team@company.com'],                         format: 'CSV',   status: 'paused',  lastSent: '5 days ago',  nextRun: 'Paused',        createdAt: '2026-02-20' },
+    { id: 'sr4', name: 'System Health Report',      reportType: 'System Health',      frequency: 'Weekly',  time: '06:00', dayLabel: 'Sunday',     recipients: ['devops@company.com'],                       format: 'PDF',   status: 'active',  lastSent: '6 days ago',  nextRun: 'Tomorrow',     createdAt: '2026-01-10' },
+    { id: 'sr5', name: 'Course Drop-off Alert',     reportType: 'Product Insights',   frequency: 'Weekly',  time: '10:00', dayLabel: 'Friday',     recipients: ['cto@company.com', 'admin@company.com'],     format: 'PDF',   status: 'active',  lastSent: '1 day ago',   nextRun: 'In 6 days',    createdAt: '2026-04-10' },
+  ]);
+  const [schedFilter, setSchedFilter] = useState<'all' | 'active' | 'paused'>('all');
+  const [schedSearch, setSchedSearch] = useState('');
+  const [schedPage, setSchedPage] = useState(1);
+  const SCHED_PER_PAGE = 15;
+  const [schedDeleteConfirm, setSchedDeleteConfirm] = useState<string | null>(null);
+  // New schedule form state
+  const [schedForm, setSchedForm] = useState({ name: '', reportType: 'User Progress', frequency: 'Weekly' as 'Daily'|'Weekly'|'Monthly', time: '08:00', dayLabel: 'Monday', recipients: '', format: 'PDF' as 'PDF'|'CSV'|'Excel' });
+  const [schedFormOpen, setSchedFormOpen] = useState(false);
+  const [schedEditId, setSchedEditId] = useState<string | null>(null);
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -805,7 +837,9 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         <div className="p-6 space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6 pb-0">
+        <div className="p-6">
+          <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {analyticsView === 'overview-analytics' && 'Reports Center'}
             {analyticsView === 'revenue' && 'Revenue Reports'}
@@ -816,6 +850,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             {analyticsView === 'ai-insights' && 'AI Insights'}
             {analyticsView === 'training-matrix' && 'Training Matrix'}
             {analyticsView === 'product-insights' && 'Product Insights'}
+            {analyticsView === 'scheduled-reports' && 'Scheduled Reports'}
           </h1>
           <p className="text-gray-600">
             {analyticsView === 'overview-analytics' && 'Track learner progress, engagement, and outcomes across your platform'}
@@ -827,7 +862,18 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             {analyticsView === 'ai-insights' && 'Intelligent analysis and recommendations powered by AI'}
             {analyticsView === 'training-matrix' && 'Visual overview of team training coverage and completion status'}
             {analyticsView === 'product-insights' && 'Deep-dive analytics into course performance, content quality and learner outcomes'}
+            {analyticsView === 'scheduled-reports' && 'Automate report delivery — set up recurring reports sent directly to your team'}
           </p>
+          </div>{/* end flex-1 */}
+          {analyticsView === 'scheduled-reports' && (
+            <button
+              onClick={() => { setSchedFormOpen(true); setSchedEditId(null); setSchedForm({ name: '', reportType: 'User Progress', frequency: 'Weekly', time: '08:00', dayLabel: 'Monday', recipients: '', format: 'PDF' }); }}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white text-sm font-semibold rounded-xl transition-colors flex-shrink-0 mt-1">
+              <Plus className="size-4" />
+              New Schedule
+            </button>
+          )}
+          </div>{/* end flex items-start */}
         </div>
         {/* Tabs — only for overview */}
         {analyticsView === 'overview-analytics' && (
@@ -1213,6 +1259,303 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         </div>
       )}
 
+      {/* ── Scheduled Reports ── */}
+      {analyticsView === 'scheduled-reports' && (() => {
+        const REPORT_TYPES = ['User Progress', 'User Activity', 'Users Growth', 'Product Insights', 'System Health', 'Engagement Report', 'Completion Report'];
+        const DAYS_WEEKLY  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+        const DAYS_MONTHLY = ['1st','2nd','3rd','5th','10th','15th','20th','Last'];
+
+        const filtered = schedReports.filter(r =>
+          (schedFilter === 'all' || r.status === schedFilter) &&
+          (schedSearch === '' || r.name.toLowerCase().includes(schedSearch.toLowerCase()) || r.reportType.toLowerCase().includes(schedSearch.toLowerCase()))
+        );
+        const schedTotalPages = Math.max(1, Math.ceil(filtered.length / SCHED_PER_PAGE));
+        const schedSafePage   = Math.min(schedPage, schedTotalPages);
+        const schedSlice      = filtered.slice((schedSafePage - 1) * SCHED_PER_PAGE, schedSafePage * SCHED_PER_PAGE);
+        const schedStart      = filtered.length === 0 ? 0 : (schedSafePage - 1) * SCHED_PER_PAGE + 1;
+        const schedEnd        = Math.min(schedSafePage * SCHED_PER_PAGE, filtered.length);
+
+        const toggleStatus = (id: string) =>
+          setSchedReports(prev => prev.map(r => r.id === id ? { ...r, status: r.status === 'active' ? 'paused' : 'active', nextRun: r.status === 'active' ? 'Paused' : 'Resuming...' } : r));
+
+        const deleteReport = (id: string) =>
+          setSchedReports(prev => prev.filter(r => r.id !== id));
+
+        const openEdit = (r: ScheduledReport) => {
+          setSchedEditId(r.id);
+          setSchedForm({ name: r.name, reportType: r.reportType, frequency: r.frequency, time: r.time, dayLabel: r.dayLabel || 'Monday', recipients: r.recipients.join(', '), format: r.format });
+          setSchedFormOpen(true);
+        };
+
+        const saveForm = () => {
+          const recips = schedForm.recipients.split(',').map(s => s.trim()).filter(Boolean);
+          if (!schedForm.name || recips.length === 0) return;
+          if (schedEditId) {
+            setSchedReports(prev => prev.map(r => r.id === schedEditId ? { ...r, name: schedForm.name, reportType: schedForm.reportType, frequency: schedForm.frequency, time: schedForm.time, dayLabel: schedForm.dayLabel, recipients: recips, format: schedForm.format } : r));
+          } else {
+            const newR: ScheduledReport = {
+              id: `sr${Date.now()}`, name: schedForm.name, reportType: schedForm.reportType,
+              frequency: schedForm.frequency, time: schedForm.time, dayLabel: schedForm.dayLabel,
+              recipients: recips, format: schedForm.format,
+              status: 'active', nextRun: 'Calculating…', createdAt: new Date().toISOString().slice(0, 10),
+            };
+            setSchedReports(prev => [newR, ...prev]);
+          }
+          setSchedFormOpen(false);
+          setSchedEditId(null);
+          setSchedForm({ name: '', reportType: 'User Progress', frequency: 'Weekly', time: '08:00', dayLabel: 'Monday', recipients: '', format: 'PDF' });
+        };
+
+        const fmtColor  = (f: string) => f === 'PDF' ? 'bg-rose-50 text-rose-600' : f === 'CSV' ? 'bg-teal-50 text-teal-600' : 'bg-indigo-50 text-indigo-600';
+        const freqColor = (f: string) => f === 'Daily' ? 'bg-blue-50 text-blue-600' : f === 'Weekly' ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600';
+
+        return (
+          <div className="p-6 space-y-5 max-w-full">
+            {/* Toolbar */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Search */}
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                <input value={schedSearch} onChange={e => { setSchedSearch(e.target.value); setSchedPage(1); }}
+                  placeholder="Search reports…"
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
+              </div>
+              {/* Status filter */}
+              <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                {(['all','active','paused'] as const).map(f => (
+                  <button key={f} onClick={() => { setSchedFilter(f); setSchedPage(1); }}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${schedFilter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-4 gap-4">
+              {[
+                { label: 'Total Schedules',  value: schedReports.length,                              accent: 'text-gray-800',    bg: 'bg-white' },
+                { label: 'Active',           value: schedReports.filter(r => r.status === 'active').length,  accent: 'text-teal-600',    bg: 'bg-teal-50' },
+                { label: 'Paused',           value: schedReports.filter(r => r.status === 'paused').length,  accent: 'text-amber-600',   bg: 'bg-amber-50' },
+                { label: 'Reports Sent',     value: '142',                                             accent: 'text-indigo-600',  bg: 'bg-indigo-50' },
+              ].map(s => (
+                <div key={s.label} className={`${s.bg} rounded-xl border border-gray-100 shadow-sm px-5 py-4`}>
+                  <p className={`text-2xl font-bold ${s.accent}`}>{s.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Create / Edit form */}
+            {schedFormOpen && (
+              <div className="bg-white rounded-xl border border-teal-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-lg bg-teal-50 flex items-center justify-center">
+                      <Calendar className="size-4 text-teal-500" />
+                    </div>
+                    <p className="font-semibold text-gray-900 text-sm">{schedEditId ? 'Edit Schedule' : 'New Scheduled Report'}</p>
+                  </div>
+                  <button onClick={() => { setSchedFormOpen(false); setSchedEditId(null); }} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <X className="size-4" />
+                  </button>
+                </div>
+                <div className="p-5 grid grid-cols-2 gap-4">
+                  {/* Report Name */}
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Report Name</label>
+                    <input value={schedForm.name} onChange={e => setSchedForm(p => ({ ...p, name: e.target.value }))}
+                      placeholder="e.g. Weekly Learner Progress"
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
+                  </div>
+                  {/* Report Type */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Report Type</label>
+                    <select value={schedForm.reportType} onChange={e => setSchedForm(p => ({ ...p, reportType: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white">
+                      {REPORT_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  {/* Format */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Export Format</label>
+                    <div className="flex gap-2">
+                      {(['PDF','CSV','Excel'] as const).map(f => (
+                        <button key={f} onClick={() => setSchedForm(p => ({ ...p, format: f }))}
+                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${schedForm.format === f ? 'border-teal-400 bg-teal-50 text-teal-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Frequency */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Frequency</label>
+                    <div className="flex gap-2">
+                      {(['Daily','Weekly','Monthly'] as const).map(f => (
+                        <button key={f} onClick={() => setSchedForm(p => ({ ...p, frequency: f }))}
+                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${schedForm.frequency === f ? 'border-indigo-400 bg-indigo-50 text-indigo-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Day + Time */}
+                  <div className="flex gap-2">
+                    {schedForm.frequency !== 'Daily' && (
+                      <div className="flex-1">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">{schedForm.frequency === 'Weekly' ? 'Day of Week' : 'Day of Month'}</label>
+                        <select value={schedForm.dayLabel} onChange={e => setSchedForm(p => ({ ...p, dayLabel: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white">
+                          {(schedForm.frequency === 'Weekly' ? DAYS_WEEKLY : DAYS_MONTHLY).map(d => <option key={d}>{d}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <div className={schedForm.frequency !== 'Daily' ? '' : 'flex-1'}>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Send Time</label>
+                      <input type="time" value={schedForm.time} onChange={e => setSchedForm(p => ({ ...p, time: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300" />
+                    </div>
+                  </div>
+                  {/* Recipients */}
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Recipients <span className="font-normal text-gray-400">(comma-separated emails)</span></label>
+                    <input value={schedForm.recipients} onChange={e => setSchedForm(p => ({ ...p, recipients: e.target.value }))}
+                      placeholder="admin@company.com, manager@company.com"
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
+                  </div>
+                  {/* Actions */}
+                  <div className="col-span-2 flex items-center justify-end gap-2 pt-1">
+                    <button onClick={() => { setSchedFormOpen(false); setSchedEditId(null); }}
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                      Cancel
+                    </button>
+                    <button onClick={saveForm}
+                      className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white text-sm font-semibold rounded-lg transition-colors">
+                      <CheckCircle className="size-3.5" />
+                      {schedEditId ? 'Save Changes' : 'Create Schedule'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Reports list */}
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="size-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+                  <Calendar className="size-7 text-gray-300" />
+                </div>
+                <p className="font-semibold text-gray-700 mb-1">No scheduled reports found</p>
+                <p className="text-sm text-gray-400">{schedSearch ? 'Try a different search term' : 'Create your first schedule using the button above'}</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                {/* Table header */}
+                <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50">
+                  {['Report Name', 'Type', 'Frequency', 'Recipients', 'Format', 'Next Run', ''].map(h => (
+                    <p key={h} className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</p>
+                  ))}
+                </div>
+                {/* Rows */}
+                <div className="divide-y divide-gray-50">
+                  {schedSlice.map(r => (
+                    <div key={r.id} className={`grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_auto] gap-4 px-5 py-3.5 items-center hover:bg-gray-50 transition-colors ${r.status === 'paused' ? 'opacity-60' : ''}`}>
+                      {/* Name */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className={`size-2 rounded-full flex-shrink-0 ${r.status === 'active' ? 'bg-teal-400' : 'bg-gray-300'}`} />
+                          <p className="text-sm font-semibold text-gray-800 truncate">{r.name}</p>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-0.5 pl-4">Created {r.createdAt} · Last sent: {r.lastSent ?? 'Never'}</p>
+                      </div>
+                      {/* Type */}
+                      <p className="text-xs text-gray-500 truncate">{r.reportType}</p>
+                      {/* Frequency */}
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold w-fit ${freqColor(r.frequency)}`}>
+                        {r.frequency}{r.dayLabel ? ` · ${r.dayLabel}` : ''}<br className="hidden" />
+                        <span className="ml-1 text-[9px] opacity-70">{r.time}</span>
+                      </span>
+                      {/* Recipients */}
+                      <div className="flex flex-wrap gap-1">
+                        {r.recipients.slice(0, 2).map(e => (
+                          <span key={e} className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded-full truncate max-w-[90px]">{e}</span>
+                        ))}
+                        {r.recipients.length > 2 && <span className="bg-gray-100 text-gray-500 text-[9px] px-1.5 py-0.5 rounded-full">+{r.recipients.length - 2}</span>}
+                      </div>
+                      {/* Format */}
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${fmtColor(r.format)}`}>{r.format}</span>
+                      {/* Next run */}
+                      <p className={`text-xs font-medium ${r.status === 'paused' ? 'text-gray-400' : 'text-gray-700'}`}>{r.nextRun}</p>
+                      {/* Actions */}
+                      <div className="flex items-center gap-1">
+                        {schedDeleteConfirm === r.id ? (
+                          // Inline confirmation
+                          <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 rounded-lg px-2 py-1">
+                            <span className="text-[10px] font-semibold text-rose-600 whitespace-nowrap">Delete?</span>
+                            <button onClick={() => { deleteReport(r.id); setSchedDeleteConfirm(null); }}
+                              className="px-2 py-0.5 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-bold rounded transition-colors">
+                              Yes
+                            </button>
+                            <button onClick={() => setSchedDeleteConfirm(null)}
+                              className="px-2 py-0.5 bg-white hover:bg-gray-100 text-gray-600 text-[10px] font-bold rounded border border-gray-200 transition-colors">
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button onClick={() => openEdit(r)} title="Edit"
+                              className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors">
+                              <Pencil className="size-3.5" />
+                            </button>
+                            <button onClick={() => toggleStatus(r.id)} title={r.status === 'active' ? 'Pause' : 'Resume'}
+                              className={`p-1.5 rounded-lg transition-colors ${r.status === 'active' ? 'text-gray-400 hover:text-amber-500 hover:bg-amber-50' : 'text-gray-400 hover:text-teal-500 hover:bg-teal-50'}`}>
+                              {r.status === 'active' ? <Activity className="size-3.5" /> : <CheckCircle className="size-3.5" />}
+                            </button>
+                            <button onClick={() => setSchedDeleteConfirm(r.id)} title="Delete"
+                              className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                              <X className="size-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Footer */}
+                <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-4">
+                  <p className="text-xs text-gray-400">
+                    {filtered.length === 0 ? 'No results' : <>Showing <span className="font-semibold text-gray-600">{schedStart}–{schedEnd}</span> of <span className="font-semibold text-gray-600">{filtered.length}</span> schedules</>}
+                  </p>
+                  {schedTotalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setSchedPage(p => Math.max(1, p - 1))} disabled={schedSafePage === 1}
+                        className="px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                        Prev
+                      </button>
+                      {Array.from({ length: schedTotalPages }, (_, i) => i + 1).map(n => (
+                        <button key={n} onClick={() => setSchedPage(n)}
+                          className={`size-7 text-xs font-medium rounded-lg transition-colors ${schedSafePage === n ? 'bg-teal-500 text-white' : 'text-gray-600 border border-gray-200 hover:bg-gray-100'}`}>
+                          {n}
+                        </button>
+                      ))}
+                      <button onClick={() => setSchedPage(p => Math.min(schedTotalPages, p + 1))} disabled={schedSafePage === schedTotalPages}
+                        className="px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                        Next
+                      </button>
+                    </div>
+                  )}
+                  <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors ml-auto">
+                    <Download className="size-3.5" />
+                    Export list
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* ── Product Insights ── */}
       {analyticsView === 'product-insights' && (() => {
         // ── derive per-course metrics ──────────────────────────────────────
@@ -1256,10 +1599,11 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         }));
 
         const byEngagement  = [...courseMetrics].sort((a, b) => b.engagementPct - a.engagementPct);
+        const lineScale     = prodLineRange === 7 ? 0.72 : prodLineRange === 30 ? 0.88 : prodLineRange === 180 ? 0.95 : 1;
         const lineData      = byEngagement.slice(0, 6).map(m => ({
           name: m.course.title.length > 14 ? m.course.title.slice(0, 14) + '…' : m.course.title,
-          Engagement: m.engagementPct,
-          Completion: m.completionPct,
+          Engagement: Math.min(100, Math.round(m.engagementPct * lineScale)),
+          Completion: Math.min(100, Math.round(m.completionPct * lineScale)),
         }));
 
         // Radar — 5 platform-level course metrics (normalised to 0-100)
@@ -1377,13 +1721,37 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:border-amber-200 hover:shadow-md transition-all cursor-pointer group" onClick={() => openDetail('product-line')}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">Engagement vs Completion</p>
                     <p className="text-xs text-gray-400 mt-0.5">Top engaged courses compared</p>
                   </div>
-                  <TrendingUp className="size-4 text-gray-300" />
+                  <div className="relative flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <ChevronRight className="size-4 text-gray-300 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+                    <button
+                      onClick={() => setProdLineRangeOpen(v => !v)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      {prodLineRange === 7 ? 'Last 7 days' : prodLineRange === 30 ? 'Last 30 days' : prodLineRange === 180 ? 'Last 6 months' : 'Last year'}
+                      <ChevronDown className={`size-3 transition-transform ${prodLineRangeOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {prodLineRangeOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                        {([
+                          { value: 7,   label: 'Last 7 days'   },
+                          { value: 30,  label: 'Last 30 days'  },
+                          { value: 180, label: 'Last 6 months' },
+                          { value: 365, label: 'Last year'     },
+                        ] as const).map(opt => (
+                          <button key={opt.value} onClick={() => { setProdLineRange(opt.value); setProdLineRangeOpen(false); }}
+                            className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodLineRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={lineData}>
@@ -1423,55 +1791,104 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                 </ResponsiveContainer>
               </button>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="size-7 rounded-lg bg-rose-50 flex items-center justify-center">
-                    <TrendingDown className="size-3.5 text-rose-500" />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:border-rose-200 hover:shadow-md transition-all cursor-pointer group" onClick={() => openDetail('product-hardest')}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="size-7 rounded-lg bg-rose-50 flex items-center justify-center">
+                      <TrendingDown className="size-3.5 text-rose-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">Hardest Courses</p>
+                      <p className="text-[11px] text-gray-400">Lowest completion rates</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Hardest Courses</p>
-                    <p className="text-[11px] text-gray-400">Lowest completion rates</p>
+                  <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <ChevronRight className="size-4 text-gray-300 group-hover:text-rose-400 group-hover:translate-x-0.5 transition-all" />
+                    <button onClick={() => setProdHardRangeOpen(v => !v)}
+                      className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      {prodHardRange === 7 ? 'Last 7d' : prodHardRange === 30 ? 'Last 30d' : prodHardRange === 180 ? 'Last 6mo' : 'Last year'}
+                      <ChevronDown className={`size-2.5 transition-transform ${prodHardRangeOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {prodHardRangeOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 w-32 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                        {([{ value: 7, label: 'Last 7 days' }, { value: 30, label: 'Last 30 days' }, { value: 180, label: 'Last 6 months' }, { value: 365, label: 'Last year' }] as const).map(opt => (
+                          <button key={opt.value} onClick={() => { setProdHardRange(opt.value); setProdHardRangeOpen(false); }}
+                            className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodHardRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2.5">
-                  {hardest.map((m, i) => (
-                    <div key={m.course.id} className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-700 truncate">{m.course.title}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-rose-400 rounded-full" style={{ width: `${m.completionPct}%` }} />
+                  {hardest.map((m, i) => {
+                    const scale = prodHardRange === 7 ? 0.72 : prodHardRange === 30 ? 0.88 : prodHardRange === 180 ? 0.95 : 1;
+                    const pct   = Math.max(0, Math.round(m.completionPct * scale));
+                    return (
+                      <div key={m.course.id} className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-700 truncate">{m.course.title}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-rose-400 rounded-full" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-[10px] text-rose-500 font-semibold flex-shrink-0">{pct}%</span>
                           </div>
-                          <span className="text-[10px] text-rose-500 font-semibold flex-shrink-0">{m.completionPct}%</span>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="size-7 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <TrendingDown className="size-3.5 text-amber-500" />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:border-amber-200 hover:shadow-md transition-all cursor-pointer group" onClick={() => openDetail('product-dropped')}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="size-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                      <TrendingDown className="size-3.5 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">Most Dropped</p>
+                      <p className="text-[11px] text-gray-400">Highest learner drop-off count</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Most Dropped</p>
-                    <p className="text-[11px] text-gray-400">Highest learner drop-off count</p>
+                  <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <ChevronRight className="size-4 text-gray-300 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+                    <button onClick={() => setProdDropRangeOpen(v => !v)}
+                      className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      {prodDropRange === 7 ? 'Last 7d' : prodDropRange === 30 ? 'Last 30d' : prodDropRange === 180 ? 'Last 6mo' : 'Last year'}
+                      <ChevronDown className={`size-2.5 transition-transform ${prodDropRangeOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {prodDropRangeOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 w-32 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                        {([{ value: 7, label: 'Last 7 days' }, { value: 30, label: 'Last 30 days' }, { value: 180, label: 'Last 6 months' }, { value: 365, label: 'Last year' }] as const).map(opt => (
+                          <button key={opt.value} onClick={() => { setProdDropRange(opt.value); setProdDropRangeOpen(false); }}
+                            className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodDropRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2.5">
-                  {mostDrop.map((m, i) => (
-                    <div key={m.course.id} className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-700 truncate">{m.course.title}</p>
-                        <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{m.droppedCt} learners dropped</p>
+                  {mostDrop.map((m, i) => {
+                    const scale      = prodDropRange === 7 ? 0.72 : prodDropRange === 30 ? 0.88 : prodDropRange === 180 ? 0.95 : 1;
+                    const scaledDrop = Math.max(0, Math.round(m.droppedCt * scale));
+                    const scaledEnrl = Math.max(0, Math.round(m.enrollCt  * scale));
+                    return (
+                      <div key={m.course.id} className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-700 truncate">{m.course.title}</p>
+                          <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{scaledDrop} learners dropped</p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 flex-shrink-0">{scaledEnrl} enrolled</span>
                       </div>
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">{m.enrollCt} enrolled</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1591,7 +2008,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
       })()}
 
       {/* ── Section nav rows (replace accordions) ── */}
-      {analyticsTab === 'all-reports' && analyticsView !== 'system-health' && analyticsView !== 'ai-insights' && analyticsView !== 'training-matrix' && analyticsView !== 'product-insights' && (
+      {analyticsTab === 'all-reports' && analyticsView !== 'system-health' && analyticsView !== 'ai-insights' && analyticsView !== 'training-matrix' && analyticsView !== 'product-insights' && analyticsView !== 'scheduled-reports' && (
         <div className="space-y-2">
           {sectionDefs.filter(s => showSection(s.name)).map(s => {
             /* ── User Progress: inline dropdown ── */
@@ -1991,7 +2408,37 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                   {prodBarRange === 7 ? 'Last 7 days' : prodBarRange === 30 ? 'Last 30 days' : prodBarRange === 180 ? 'Last 6 months' : 'Last year'}
                 </span>
               </>)}
-              {activeSection && currentSection !== '__segment__' && currentSection !== 'product-radar' && (<>
+              {currentSection === 'product-line' && (<>
+                <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
+                <div className="size-7 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="size-3.5 text-amber-500" />
+                </div>
+                <p className="font-semibold text-gray-900 text-sm flex-shrink-0">Engagement vs Completion — Per Course</p>
+                <span className="ml-auto text-[11px] text-gray-400 font-medium">
+                  {prodLineRange === 7 ? 'Last 7 days' : prodLineRange === 30 ? 'Last 30 days' : prodLineRange === 180 ? 'Last 6 months' : 'Last year'}
+                </span>
+              </>)}
+              {currentSection === 'product-hardest' && (<>
+                <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
+                <div className="size-7 rounded-lg bg-rose-50 flex items-center justify-center flex-shrink-0">
+                  <TrendingDown className="size-3.5 text-rose-500" />
+                </div>
+                <p className="font-semibold text-gray-900 text-sm flex-shrink-0">Hardest Courses — Completion Breakdown</p>
+                <span className="ml-auto text-[11px] text-gray-400 font-medium">
+                  {prodHardRange === 7 ? 'Last 7 days' : prodHardRange === 30 ? 'Last 30 days' : prodHardRange === 180 ? 'Last 6 months' : 'Last year'}
+                </span>
+              </>)}
+              {currentSection === 'product-dropped' && (<>
+                <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
+                <div className="size-7 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <TrendingDown className="size-3.5 text-amber-500" />
+                </div>
+                <p className="font-semibold text-gray-900 text-sm flex-shrink-0">Most Dropped — Drop-off Breakdown</p>
+                <span className="ml-auto text-[11px] text-gray-400 font-medium">
+                  {prodDropRange === 7 ? 'Last 7 days' : prodDropRange === 30 ? 'Last 30 days' : prodDropRange === 180 ? 'Last 6 months' : 'Last year'}
+                </span>
+              </>)}
+              {activeSection && currentSection !== '__segment__' && currentSection !== 'product-radar' && currentSection !== 'product-bar' && currentSection !== 'product-line' && currentSection !== 'product-hardest' && currentSection !== 'product-dropped' && (<>
                 <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
                 <div className={`size-7 rounded-lg ${activeSection.iconBg} flex items-center justify-center flex-shrink-0`}>
                   <activeSection.Icon className={`size-3.5 ${activeSection.iconColor}`} />
@@ -3009,6 +3456,287 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Product Insights: Hardest courses detail ── */}
+            {currentSection === 'product-hardest' && (() => {
+              const scale      = prodHardRange === 7 ? 0.72 : prodHardRange === 30 ? 0.88 : prodHardRange === 180 ? 0.95 : 1;
+              const rangeLabel = prodHardRange === 7 ? 'Last 7 days' : prodHardRange === 30 ? 'Last 30 days' : prodHardRange === 180 ? 'Last 6 months' : 'Last year';
+              const localMetrics = courses.map((course, ci) => {
+                const enrollCt      = users.filter(u => u.enrolledCourses?.includes(course.id)).length || course.studentsEnrolled || 0;
+                const completedCt   = users.filter(u => u.enrolledCourses?.includes(course.id) && course.modules?.every(m => m.lessons.every(l => u.completedLessons?.includes(l.id)))).length;
+                const completionPct = enrollCt > 0 ? Math.round((completedCt / enrollCt) * 100) : Math.round(30 + (ci * 13) % 55);
+                const droppedCt     = Math.round(enrollCt * ((100 - completionPct) / 100) * 0.4);
+                const rating        = course.rating || (3.5 + (ci * 0.3) % 1.5);
+                return { course, enrollCt, completionPct, droppedCt, rating };
+              });
+              const allSorted  = [...localMetrics].sort((a, b) => a.completionPct - b.completionPct);
+              return (
+                <div className="space-y-4">
+                  {/* Info bar */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TrendingDown className="size-4 text-rose-400" />
+                      <p className="text-sm text-gray-600">All courses ranked by completion rate — <span className="font-semibold text-gray-800">{rangeLabel}</span></p>
+                    </div>
+                    <div className="relative">
+                      <button onClick={() => setProdHardRangeOpen(v => !v)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        {rangeLabel} <ChevronDown className={`size-3 transition-transform ${prodHardRangeOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {prodHardRangeOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                          {([{ value: 7, label: 'Last 7 days' }, { value: 30, label: 'Last 30 days' }, { value: 180, label: 'Last 6 months' }, { value: 365, label: 'Last year' }] as const).map(opt => (
+                            <button key={opt.value} onClick={() => { setProdHardRange(opt.value); setProdHardRangeOpen(false); }}
+                              className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodHardRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Course grid */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {allSorted.map(({ course, completionPct, enrollCt, droppedCt, rating }, i) => {
+                      const pct        = Math.max(0, Math.round(completionPct * scale));
+                      const scaledEnrl = Math.max(0, Math.round(enrollCt * scale));
+                      const scaledDrop = Math.max(0, Math.round(droppedCt * scale));
+                      const difficulty = pct < 20 ? { label: 'Very Hard', color: 'text-rose-600', bg: 'bg-rose-50', bar: 'bg-rose-500' }
+                                       : pct < 40 ? { label: 'Hard',      color: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-400' }
+                                       : pct < 65 ? { label: 'Moderate',  color: 'text-amber-600', bg: 'bg-amber-50', bar: 'bg-amber-400' }
+                                       :            { label: 'Easy',      color: 'text-green-600', bg: 'bg-green-50', bar: 'bg-green-400' };
+                      return (
+                        <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-800 leading-snug line-clamp-2">{course.title}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{course.category}</p>
+                            </div>
+                            <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${difficulty.bg} ${difficulty.color}`}>
+                              {difficulty.label}
+                            </span>
+                          </div>
+                          {/* Completion bar */}
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] text-gray-500">Completion rate</span>
+                              <span className={`text-[11px] font-bold ${difficulty.color}`}>{pct}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full transition-all duration-500 ${difficulty.bar}`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                          {/* Stats grid */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-gray-50 rounded-lg p-2 text-center">
+                              <p className="text-[11px] font-bold text-gray-800">{scaledEnrl}</p>
+                              <p className="text-[9px] text-gray-400 mt-0.5">Enrolled</p>
+                            </div>
+                            <div className="bg-rose-50 rounded-lg p-2 text-center">
+                              <p className="text-[11px] font-bold text-rose-600">{scaledDrop}</p>
+                              <p className="text-[9px] text-gray-400 mt-0.5">Dropped</p>
+                            </div>
+                            <div className="bg-amber-50 rounded-lg p-2 text-center">
+                              <p className="text-[11px] font-bold text-amber-600">{rating.toFixed(1)}★</p>
+                              <p className="text-[9px] text-gray-400 mt-0.5">Rating</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-gray-50 flex items-center justify-between">
+                            <span className={`text-[10px] font-medium ${course.level === 'Beginner' ? 'text-green-500' : course.level === 'Intermediate' ? 'text-amber-500' : 'text-rose-500'}`}>{course.level}</span>
+                            <span className="text-[9px] text-gray-400">#{i + 1} hardest</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Product Insights: Most dropped detail ── */}
+            {currentSection === 'product-dropped' && (() => {
+              const scale      = prodDropRange === 7 ? 0.72 : prodDropRange === 30 ? 0.88 : prodDropRange === 180 ? 0.95 : 1;
+              const rangeLabel = prodDropRange === 7 ? 'Last 7 days' : prodDropRange === 30 ? 'Last 30 days' : prodDropRange === 180 ? 'Last 6 months' : 'Last year';
+              const localMetrics = courses.map((course, ci) => {
+                const enrollCt      = users.filter(u => u.enrolledCourses?.includes(course.id)).length || course.studentsEnrolled || 0;
+                const completedCt   = users.filter(u => u.enrolledCourses?.includes(course.id) && course.modules?.every(m => m.lessons.every(l => u.completedLessons?.includes(l.id)))).length;
+                const completionPct = enrollCt > 0 ? Math.round((completedCt / enrollCt) * 100) : Math.round(30 + (ci * 13) % 55);
+                const droppedCt     = Math.round(enrollCt * ((100 - completionPct) / 100) * 0.4);
+                const engagementPct = Math.round(40 + (ci * 17 + 11) % 50);
+                const rating        = course.rating || (3.5 + (ci * 0.3) % 1.5);
+                return { course, enrollCt, completionPct, droppedCt, engagementPct, rating };
+              });
+              const allSorted  = [...localMetrics].sort((a, b) => b.droppedCt - a.droppedCt);
+              return (
+                <div className="space-y-4">
+                  {/* Info bar */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TrendingDown className="size-4 text-amber-400" />
+                      <p className="text-sm text-gray-600">All courses ranked by learner drop-off — <span className="font-semibold text-gray-800">{rangeLabel}</span></p>
+                    </div>
+                    <div className="relative">
+                      <button onClick={() => setProdDropRangeOpen(v => !v)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        {rangeLabel} <ChevronDown className={`size-3 transition-transform ${prodDropRangeOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {prodDropRangeOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                          {([{ value: 7, label: 'Last 7 days' }, { value: 30, label: 'Last 30 days' }, { value: 180, label: 'Last 6 months' }, { value: 365, label: 'Last year' }] as const).map(opt => (
+                            <button key={opt.value} onClick={() => { setProdDropRange(opt.value); setProdDropRangeOpen(false); }}
+                              className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodDropRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Course grid */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {allSorted.map(({ course, completionPct, enrollCt, droppedCt, rating, engagementPct }, i) => {
+                      const scaledEnrl = Math.max(0, Math.round(enrollCt * scale));
+                      const scaledDrop = Math.max(0, Math.round(droppedCt * scale));
+                      const scaledCmp  = Math.max(0, Math.round(completionPct * scale));
+                      const dropRate   = scaledEnrl > 0 ? Math.round((scaledDrop / scaledEnrl) * 100) : 0;
+                      const risk       = dropRate > 50 ? { label: 'Critical', color: 'text-rose-600', bg: 'bg-rose-50', bar: 'bg-rose-500' }
+                                       : dropRate > 30 ? { label: 'High',     color: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-400' }
+                                       : dropRate > 15 ? { label: 'Medium',   color: 'text-amber-600', bg: 'bg-amber-50', bar: 'bg-amber-400' }
+                                       :                 { label: 'Low',      color: 'text-green-600', bg: 'bg-green-50', bar: 'bg-green-400' };
+                      return (
+                        <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-800 leading-snug line-clamp-2">{course.title}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{course.category}</p>
+                            </div>
+                            <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${risk.bg} ${risk.color}`}>
+                              {risk.label}
+                            </span>
+                          </div>
+                          {/* Drop-off bar */}
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] text-gray-500">Drop-off rate</span>
+                              <span className={`text-[11px] font-bold ${risk.color}`}>{dropRate}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full transition-all duration-500 ${risk.bar}`} style={{ width: `${dropRate}%` }} />
+                            </div>
+                          </div>
+                          {/* Stats grid */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-gray-50 rounded-lg p-2 text-center">
+                              <p className="text-[11px] font-bold text-gray-800">{scaledEnrl}</p>
+                              <p className="text-[9px] text-gray-400 mt-0.5">Enrolled</p>
+                            </div>
+                            <div className="bg-rose-50 rounded-lg p-2 text-center">
+                              <p className="text-[11px] font-bold text-rose-600">{scaledDrop}</p>
+                              <p className="text-[9px] text-gray-400 mt-0.5">Dropped</p>
+                            </div>
+                            <div className="bg-indigo-50 rounded-lg p-2 text-center">
+                              <p className="text-[11px] font-bold text-indigo-600">{scaledCmp}%</p>
+                              <p className="text-[9px] text-gray-400 mt-0.5">Completed</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] text-gray-400">{Math.round(engagementPct * scale)}% engagement</span>
+                            <span className="text-[9px] text-gray-400">#{i + 1} most dropped</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Product Insights: Per-course engagement vs completion line grid ── */}
+            {currentSection === 'product-line' && (() => {
+              const COLORS = ['#f59e0b','#6366f1','#14b8a6','#3b82f6','#ec4899','#10b981','#8b5cf6','#f97316','#06b6d4','#84cc16','#a855f7','#ef4444','#0ea5e9'];
+              const rangeLabel = prodLineRange === 7 ? 'Last 7 days' : prodLineRange === 30 ? 'Last 30 days' : prodLineRange === 180 ? 'Last 6 months' : 'Last year';
+              const points     = prodLineRange === 7 ? 7 : prodLineRange === 30 ? 6 : prodLineRange === 180 ? 6 : 12;
+              const pointLabel = prodLineRange === 7 ? (i: number) => `Day ${i + 1}` : prodLineRange === 30 ? (i: number) => `Wk ${i + 1}` : prodLineRange === 180 ? (i: number) => ['Jan','Feb','Mar','Apr','May','Jun'][i] : (i: number) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i];
+              const perCourseLines = courses.map((course, ci) => {
+                const baseEng  = Math.round(40 + (ci * 17 + 11) % 50);
+                const baseCmp  = Math.round(30 + (ci * 13) % 55);
+                const lineScale = prodLineRange === 7 ? 0.72 : prodLineRange === 30 ? 0.88 : prodLineRange === 180 ? 0.95 : 1;
+                const data = Array.from({ length: points }, (_, i) => {
+                  const progress = i / (points - 1);
+                  const noise    = (((ci * 7 + i * 13) % 20) - 10);
+                  return {
+                    name:       pointLabel(i),
+                    Engagement: Math.min(100, Math.max(0, Math.round((baseEng  * lineScale) * (0.6 + progress * 0.4) + noise))),
+                    Completion: Math.min(100, Math.max(0, Math.round((baseCmp  * lineScale) * (0.3 + progress * 0.7) + noise * 0.5))),
+                  };
+                });
+                return { course, ci, color: COLORS[ci % COLORS.length], data };
+              });
+              return (
+                <div className="space-y-4">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="size-4 text-amber-400" />
+                      <p className="text-sm text-gray-600">Engagement start → completion rate per course — <span className="font-semibold text-gray-800">{rangeLabel}</span></p>
+                    </div>
+                    <div className="relative">
+                      <button onClick={() => setProdLineRangeOpen(v => !v)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        {rangeLabel} <ChevronDown className={`size-3 transition-transform ${prodLineRangeOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {prodLineRangeOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                          {([{ value: 7, label: 'Last 7 days' }, { value: 30, label: 'Last 30 days' }, { value: 180, label: 'Last 6 months' }, { value: 365, label: 'Last year' }] as const).map(opt => (
+                            <button key={opt.value} onClick={() => { setProdLineRange(opt.value); setProdLineRangeOpen(false); }}
+                              className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodLineRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {perCourseLines.map(({ course, ci, color, data }) => {
+                      const lastEng = data[data.length - 1].Engagement;
+                      const lastCmp = data[data.length - 1].Completion;
+                      const gap     = lastEng - lastCmp;
+                      return (
+                        <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="text-xs font-semibold text-gray-800 leading-snug line-clamp-2">{course.title}</p>
+                            <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${course.level === 'Beginner' ? 'bg-green-50 text-green-600' : course.level === 'Intermediate' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                              {course.level}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[10px] text-gray-400 flex items-center gap-1"><Activity className="size-2.5 text-amber-400" />{lastEng}% eng</span>
+                            <span className="text-[10px] text-gray-400 flex items-center gap-1"><Award className="size-2.5 text-indigo-400" />{lastCmp}% cmp</span>
+                            <span className={`text-[10px] font-semibold ml-auto ${gap > 30 ? 'text-rose-500' : gap > 15 ? 'text-amber-500' : 'text-green-500'}`}>
+                              {gap > 30 ? '⚠ High drop-off' : gap > 15 ? '~ Some drop-off' : '✓ Healthy'}
+                            </span>
+                          </div>
+                          <ResponsiveContainer width="100%" height={120}>
+                            <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                              <XAxis dataKey="name" tick={{ fontSize: 8, fill: '#d1d5db' }} />
+                              <YAxis tick={{ fontSize: 8, fill: '#d1d5db' }} domain={[0, 100]} />
+                              <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6 }} formatter={(v: any) => `${v}%`} />
+                              <Line type="monotone" dataKey="Engagement" stroke="#f59e0b" strokeWidth={1.5} dot={false} />
+                              <Line type="monotone" dataKey="Completion" stroke="#6366f1" strokeWidth={1.5} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                          <div className="flex items-center gap-3 mt-1.5 justify-center">
+                            <span className="flex items-center gap-1 text-[9px] text-gray-400"><span className="size-2 rounded-full bg-amber-400 inline-block" />Engagement</span>
+                            <span className="flex items-center gap-1 text-[9px] text-gray-400"><span className="size-2 rounded-full bg-indigo-500 inline-block" />Completion</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );

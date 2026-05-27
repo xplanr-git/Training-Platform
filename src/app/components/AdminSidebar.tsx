@@ -241,7 +241,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
       )}
 
       {/* Navigation Menu */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
         {menuItems.map((item) => {
           const Icon = item.icon;
           
@@ -513,7 +513,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
             </div>
 
             {/* Sub-items */}
-            <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+            <nav className="flex-1 overflow-y-auto p-3 space-y-0.5 scrollbar-thin">
               {activeMenu.subItems
                 .filter(sub => {
                   if (sub.id === 'company-subscribers' && (isCompanyAdmin || isViewingCompanyPage)) return false;

@@ -48,7 +48,7 @@ export function AdminLayout({ currentUser, currentPage, onNavigate, onLogout, ch
         onBackToParentAdmin={onBackToParentAdmin}
         companyName={companyName}
       />
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
         {children}
       </div>
     </div>
