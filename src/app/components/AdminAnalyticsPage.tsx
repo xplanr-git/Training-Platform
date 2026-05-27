@@ -496,6 +496,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   }, [showFilterPicker]);
   const [progressStat, setProgressStat] = useState<'completion' | 'finished' | 'inprogress' | 'score'>('completion');
   const [prodStat, setProdStat] = useState<'courses' | 'completion' | 'rating' | 'enrollments' | 'dropoffs'>('courses');
+  const [prodTab, setProdTab] = useState<'analytics' | 'all-courses'>('analytics');
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -833,6 +834,20 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             ] as const).map(t => (
               <button key={t.key} onClick={() => setAnalyticsTab(t.key)}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${analyticsTab === t.key ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Product Insights tabs */}
+        {analyticsView === 'product-insights' && (
+          <div className="flex items-center gap-1 px-6 mt-4 border-t border-gray-100">
+            {([
+              { key: 'analytics',   label: 'Analytics'    },
+              { key: 'all-courses', label: 'All Courses'  },
+            ] as const).map(t => (
+              <button key={t.key} onClick={() => setProdTab(t.key)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${prodTab === t.key ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                 {t.label}
               </button>
             ))}
@@ -1266,6 +1281,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
         return (
           <div className="space-y-5">
+            {prodTab === 'analytics' && <>
             {/* KPI spotlight */}
             {(() => {
               const statOptions = [
@@ -1427,8 +1443,10 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
               </div>
             </div>
 
-            {/* Full course table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            </> /* end analytics tab */}
+
+            {/* All Courses tab */}
+            {prodTab === 'all-courses' && <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-gray-900 text-sm">All Courses Performance</p>
@@ -1492,7 +1510,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div>} {/* end all-courses tab */}
           </div>
         );
       })()}
