@@ -1,4 +1,5 @@
 ﻿import { Course, User } from '@/app/types';
+import { supabase } from '/utils/supabase/client';
 
 import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package, Star, Clock, BarChart2, TrendingDown, Pencil } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, Radar, Cell } from 'recharts';
@@ -45,13 +46,22 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [analyticsTab, setAnalyticsTab] = useState<'all-reports' | 'my-segments'>('all-reports');
 
   // ── Segment state ──────────────────────────────────────────────────────────
-  const [segments, setSegments] = useState<Segment[]>([
-    { id: 'seg1', name: 'Active Learners',    description: 'Users who completed at least one course in the last 30 days', color: 0, icon: '🎯', filters: { progressOp: '≥', progress: '50', period: 'Last 30 days' }, userCount: 28, createdAt: '2026-04-01' },
-    { id: 'seg2', name: 'At-Risk Users',      description: 'Enrolled users with no activity in the last 14 days',          color: 2, icon: '⚡', filters: { progressOp: '≤', progress: '20', period: 'Last 14 days' }, userCount: 9,  createdAt: '2026-04-10' },
-    { id: 'seg3', name: 'Top Performers',     description: 'Users with an average quiz score of 85% or higher',            color: 1, icon: '🏆', filters: { scoreOp: '≥', score: '85' },                               userCount: 14, createdAt: '2026-03-20' },
-    { id: 'seg4', name: 'New Users',          description: 'Users who registered in the last 30 days',                     color: 4, icon: '🌟', filters: { regPeriod: 'Last 30 days' },                                userCount: 11, createdAt: '2026-05-01' },
-    { id: 'seg5', name: 'Inactive Users',     description: 'Users who have not logged in for over 60 days',                color: 5, icon: '📊', filters: { period: 'Last 60 days', completed: 'false' },               userCount: 6,  createdAt: '2026-02-14' },
-  ]);
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [segmentsLoading, setSegmentsLoading] = useState(true);
+  const segKvPrefix = `analytics-segment:${companyId || 'global'}:`;
+
+  // Load segments from Supabase on mount / when companyId changes
+  useEffect(() => {
+    setSegmentsLoading(true);
+    supabase
+      .from('kv_store_d60f2898')
+      .select('value')
+      .like('key', `${segKvPrefix}%`)
+      .then(({ data }) => {
+        if (data) setSegments(data.map((r: { value: Segment }) => r.value));
+        setSegmentsLoading(false);
+      });
+  }, [companyId]);
   const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
   const [segStep, setSegStep] = useState<1 | 2>(1);
   const [segName, setSegName] = useState('');
@@ -175,23 +185,28 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
     setSegMatchedUserIds(users.map(u => u.id));
     setSegStep(1); openDetail('__segment__');
   };
-  const saveSegment = () => {
+  const saveSegment = async () => {
     const userCount = segMatchedUserIds.length;
     if (editingSegment) {
-      setSegments(prev => prev.map(s => s.id === editingSegment.id
-        ? { ...s, name: segName, description: segDesc, color: SEGMENT_COLORS[segColor].bg, icon: segIcon, filters: segFilters, userCount }
-        : s));
+      const updated: Segment = { ...editingSegment, name: segName, description: segDesc, color: SEGMENT_COLORS[segColor].bg, icon: segIcon, filters: segFilters, userCount };
+      setSegments(prev => prev.map(s => s.id === editingSegment.id ? updated : s));
+      await supabase.from('kv_store_d60f2898').upsert({ key: `${segKvPrefix}${updated.id}`, value: updated });
     } else {
-      setSegments(prev => [...prev, {
+      const newSeg: Segment = {
         id: Date.now().toString(), name: segName, description: segDesc,
         color: SEGMENT_COLORS[segColor].bg, icon: segIcon,
         filters: segFilters, userCount,
-        createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      }]);
+        createdAt: new Date().toISOString().slice(0, 10),
+      };
+      setSegments(prev => [...prev, newSeg]);
+      await supabase.from('kv_store_d60f2898').upsert({ key: `${segKvPrefix}${newSeg.id}`, value: newSeg });
     }
     closeDetail();
   };
-  const deleteSegment = (id: string) => setSegments(prev => prev.filter(s => s.id !== id));
+  const deleteSegment = async (id: string) => {
+    setSegments(prev => prev.filter(s => s.id !== id));
+    await supabase.from('kv_store_d60f2898').delete().eq('key', `${segKvPrefix}${id}`);
+  };
   const [segDeleteConfirm, setSegDeleteConfirm] = useState<string | null>(null);
   const [analyticsFilter, setAnalyticsFilter] = useState<string>('All');
   // Slide-in navigation state
@@ -945,7 +960,19 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
       {/* My Segments tab content */}
       {analyticsTab === 'my-segments' && (
         <>
-          {segments.length === 0 ? (
+          {segmentsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+                  <div className="bg-gray-100 px-5 py-4 h-16" />
+                  <div className="px-5 py-3 space-y-2">
+                    <div className="h-3 bg-gray-100 rounded w-1/3" />
+                    <div className="h-8 bg-gray-100 rounded w-full mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : segments.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm flex flex-col items-center justify-center py-24 px-8 text-center">
               <div className="size-16 rounded-2xl bg-teal-50 border-2 border-teal-100 flex items-center justify-center mb-4">
                 <Target className="size-7 text-teal-400" />
