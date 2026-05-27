@@ -45,7 +45,13 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [analyticsTab, setAnalyticsTab] = useState<'all-reports' | 'my-segments'>('all-reports');
 
   // ── Segment state ──────────────────────────────────────────────────────────
-  const [segments, setSegments] = useState<Segment[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([
+    { id: 'seg1', name: 'Active Learners',    description: 'Users who completed at least one course in the last 30 days', color: 0, icon: '🎯', filters: { progressOp: '≥', progress: '50', period: 'Last 30 days' }, userCount: 28, createdAt: '2026-04-01' },
+    { id: 'seg2', name: 'At-Risk Users',      description: 'Enrolled users with no activity in the last 14 days',          color: 2, icon: '⚡', filters: { progressOp: '≤', progress: '20', period: 'Last 14 days' }, userCount: 9,  createdAt: '2026-04-10' },
+    { id: 'seg3', name: 'Top Performers',     description: 'Users with an average quiz score of 85% or higher',            color: 1, icon: '🏆', filters: { scoreOp: '≥', score: '85' },                               userCount: 14, createdAt: '2026-03-20' },
+    { id: 'seg4', name: 'New Users',          description: 'Users who registered in the last 30 days',                     color: 4, icon: '🌟', filters: { regPeriod: 'Last 30 days' },                                userCount: 11, createdAt: '2026-05-01' },
+    { id: 'seg5', name: 'Inactive Users',     description: 'Users who have not logged in for over 60 days',                color: 5, icon: '📊', filters: { period: 'Last 60 days', completed: 'false' },               userCount: 6,  createdAt: '2026-02-14' },
+  ]);
   const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
   const [segStep, setSegStep] = useState<1 | 2>(1);
   const [segName, setSegName] = useState('');
