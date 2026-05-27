@@ -1355,9 +1355,15 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
             {/* Row 2: Radar + Hardest + Most dropped */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <p className="font-semibold text-gray-900 text-sm mb-1">Course Performance Overview</p>
-                <p className="text-xs text-gray-400 mb-3">Key metrics across the catalogue (normalised)</p>
+              <button
+                onClick={() => openDetail('product-radar')}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-left hover:border-indigo-200 hover:shadow-md transition-all group w-full"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-semibold text-gray-900 text-sm">Course Performance Overview</p>
+                  <ChevronRight className="size-4 text-gray-300 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <p className="text-xs text-gray-400 mb-3">Click to explore per-course radar charts</p>
                 <ResponsiveContainer width="100%" height={200}>
                   <RadarChart data={radarData}>
                     <PolarGrid stroke="#e5e7eb" />
@@ -1366,7 +1372,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                     <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: any) => `${v}`} />
                   </RadarChart>
                 </ResponsiveContainer>
-              </div>
+              </button>
 
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <div className="flex items-center gap-2 mb-3">
@@ -1875,7 +1881,14 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                 </div>
                 <p className="font-semibold text-gray-900 text-sm">{editingSegment ? 'Edit segment' : 'Create segment'}</p>
               </>)}
-              {activeSection && currentSection !== '__segment__' && (<>
+              {currentSection === 'product-radar' && (<>
+                <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
+                <div className="size-7 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                  <Package className="size-3.5 text-indigo-600" />
+                </div>
+                <p className="font-semibold text-gray-900 text-sm flex-shrink-0">Course Performance — Per Course Radar</p>
+              </>)}
+              {activeSection && currentSection !== '__segment__' && currentSection !== 'product-radar' && (<>
                 <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
                 <div className={`size-7 rounded-lg ${activeSection.iconBg} flex items-center justify-center flex-shrink-0`}>
                   <activeSection.Icon className={`size-3.5 ${activeSection.iconColor}`} />
@@ -2759,6 +2772,62 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                       </div>
                     );
                   })()}
+                </div>
+              );
+            })()}
+
+            {/* ── Product Insights: Per-course radar grid ── */}
+            {currentSection === 'product-radar' && (() => {
+              const RADAR_METRICS = ['Avg Study Time', 'Social Interactions', 'Certificates Issued', 'Enrollments', 'Avg Score'];
+              const courseRadars = courses.map((course, ci) => {
+                const enrolled   = users.filter(u => u.enrolledCourses?.includes(course.id)).length || course.studentsEnrolled || 0;
+                const totalMins  = (() => { const h = parseInt(course.duration?.match(/(\d+)\s*h/)?.[1] ?? '0'); const m = parseInt(course.duration?.match(/(\d+)\s*m/)?.[1] ?? '0'); return h * 60 + m || 45 + (ci * 20) % 90; })();
+                const completion = Math.round(30 + (ci * 13) % 55);
+                const maxMins    = 120;
+                return {
+                  course,
+                  data: [
+                    { subject: 'Avg Study Time',       value: Math.min(100, Math.round((totalMins * (completion / 100)) / maxMins * 100)) },
+                    { subject: 'Social Interactions',  value: Math.round(25 + (ci * 19 + 7) % 55) },
+                    { subject: 'Certificates Issued',  value: Math.round(completion * 0.75) },
+                    { subject: 'Enrollments',          value: Math.min(100, Math.round((enrolled / (users.length || 1)) * 100)) },
+                    { subject: 'Avg Score',            value: Math.round(50 + (ci * 11 + 3) % 45) },
+                  ],
+                  completion,
+                  enrolled,
+                };
+              });
+              const COLORS = ['#6366f1','#14b8a6','#f59e0b','#3b82f6','#ec4899','#10b981','#8b5cf6','#f97316','#06b6d4','#84cc16','#a855f7','#ef4444','#0ea5e9'];
+              return (
+                <div className="space-y-4">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-3 flex items-center gap-3">
+                    <BarChart2 className="size-4 text-indigo-400" />
+                    <p className="text-sm text-gray-600">Radar shows 5 key metrics per course — normalised to 0–100 for comparison.</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    {courseRadars.map(({ course, data, completion, enrolled }, ci) => (
+                      <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                        <div className="flex items-start justify-between mb-1 gap-2">
+                          <p className="text-xs font-semibold text-gray-800 leading-snug line-clamp-2">{course.title}</p>
+                          <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${course.level === 'Beginner' ? 'bg-green-50 text-green-600' : course.level === 'Intermediate' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                            {course.level}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-[10px] text-gray-400 flex items-center gap-1"><Users className="size-2.5" />{enrolled}</span>
+                          <span className="text-[10px] text-gray-400 flex items-center gap-1"><Award className="size-2.5" />{completion}%</span>
+                        </div>
+                        <ResponsiveContainer width="100%" height={160}>
+                          <RadarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+                            <PolarGrid stroke="#e5e7eb" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fontSize: 8, fill: '#9ca3af' }} />
+                            <Radar dataKey="value" stroke={COLORS[ci % COLORS.length]} fill={COLORS[ci % COLORS.length]} fillOpacity={0.18} strokeWidth={1.5} />
+                            <Tooltip contentStyle={{ fontSize: 11, borderRadius: 6 }} formatter={(v: any) => `${v}`} />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               );
             })()}
