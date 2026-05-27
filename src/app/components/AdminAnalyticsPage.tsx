@@ -510,19 +510,22 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
   // ── Scheduled Reports state ───────────────────────────────────────────────
   type ScheduledReport = {
-    id: string; name: string; reportType: string;
+    id: string; name: string; segment: string; reportType: string;
     frequency: 'Daily' | 'Weekly' | 'Monthly';
-    time: string; dayLabel?: string;
+    time: string; timezone: string; dayLabel?: string;
+    timePeriod: string;
     recipients: string[]; format: 'PDF' | 'CSV' | 'Excel';
+    notifyUsers: boolean;
+    emailTo: string[]; emailSubject: string; emailMessage: string;
     status: 'active' | 'paused';
     lastSent?: string; nextRun: string; createdAt: string;
   };
   const [schedReports, setSchedReports] = useState<ScheduledReport[]>([
-    { id: 'sr1', name: 'Weekly Learner Progress',  reportType: 'User Progress',      frequency: 'Weekly',  time: '08:00', dayLabel: 'Monday',     recipients: ['admin@company.com', 'manager@company.com'], format: 'PDF',   status: 'active',  lastSent: '2 days ago',  nextRun: 'In 5 days',    createdAt: '2026-04-01' },
-    { id: 'sr2', name: 'Monthly Completion Summary',reportType: 'Product Insights',   frequency: 'Monthly', time: '09:00', dayLabel: '1st',        recipients: ['hr@company.com'],                           format: 'Excel', status: 'active',  lastSent: '12 days ago', nextRun: 'In 18 days',   createdAt: '2026-03-15' },
-    { id: 'sr3', name: 'Daily Engagement Digest',   reportType: 'User Activity',      frequency: 'Daily',   time: '07:30',                          recipients: ['team@company.com'],                         format: 'CSV',   status: 'paused',  lastSent: '5 days ago',  nextRun: 'Paused',        createdAt: '2026-02-20' },
-    { id: 'sr4', name: 'System Health Report',      reportType: 'System Health',      frequency: 'Weekly',  time: '06:00', dayLabel: 'Sunday',     recipients: ['devops@company.com'],                       format: 'PDF',   status: 'active',  lastSent: '6 days ago',  nextRun: 'Tomorrow',     createdAt: '2026-01-10' },
-    { id: 'sr5', name: 'Course Drop-off Alert',     reportType: 'Product Insights',   frequency: 'Weekly',  time: '10:00', dayLabel: 'Friday',     recipients: ['cto@company.com', 'admin@company.com'],     format: 'PDF',   status: 'active',  lastSent: '1 day ago',   nextRun: 'In 6 days',    createdAt: '2026-04-10' },
+    { id: 'sr1', name: 'Weekly Learner Progress',   segment: 'All Users',      reportType: 'User Progress',    frequency: 'Weekly',  time: '08:00', timezone: 'UTC+8',  dayLabel: 'Monday',  timePeriod: 'Last 30 days', recipients: ['admin@company.com', 'manager@company.com'], format: 'PDF',   notifyUsers: true,  emailTo: ['admin@company.com'], emailSubject: 'Weekly Learner Progress Report', emailMessage: '',  status: 'active',  lastSent: '2 days ago',  nextRun: 'In 5 days',    createdAt: '2026-04-01' },
+    { id: 'sr2', name: 'Monthly Completion Summary', segment: 'Active Learners',reportType: 'Product Insights', frequency: 'Monthly', time: '09:00', timezone: 'UTC+0',  dayLabel: '1st',     timePeriod: 'Last 90 days', recipients: ['hr@company.com'],                           format: 'Excel', notifyUsers: false, emailTo: [],                   emailSubject: '',                               emailMessage: '',  status: 'active',  lastSent: '12 days ago', nextRun: 'In 18 days',   createdAt: '2026-03-15' },
+    { id: 'sr3', name: 'Daily Engagement Digest',    segment: 'All Users',      reportType: 'User Activity',    frequency: 'Daily',   time: '07:30', timezone: 'UTC-5',                       timePeriod: 'Last 7 days',  recipients: ['team@company.com'],                         format: 'CSV',   notifyUsers: false, emailTo: [],                   emailSubject: '',                               emailMessage: '',  status: 'paused',  lastSent: '5 days ago',  nextRun: 'Paused',       createdAt: '2026-02-20' },
+    { id: 'sr4', name: 'System Health Report',       segment: 'Admins',         reportType: 'System Health',    frequency: 'Weekly',  time: '06:00', timezone: 'UTC+0',  dayLabel: 'Sunday',  timePeriod: 'Last 7 days',  recipients: ['devops@company.com'],                       format: 'PDF',   notifyUsers: true,  emailTo: ['devops@company.com'],emailSubject: 'System Health Weekly',           emailMessage: '',  status: 'active',  lastSent: '6 days ago',  nextRun: 'Tomorrow',     createdAt: '2026-01-10' },
+    { id: 'sr5', name: 'Course Drop-off Alert',      segment: 'At-Risk Users',  reportType: 'Product Insights', frequency: 'Weekly',  time: '10:00', timezone: 'UTC+8',  dayLabel: 'Friday',  timePeriod: 'Last 30 days', recipients: ['cto@company.com', 'admin@company.com'],     format: 'PDF',   notifyUsers: true,  emailTo: ['cto@company.com'],  emailSubject: 'Course Drop-off Weekly Alert',   emailMessage: '',  status: 'active',  lastSent: '1 day ago',   nextRun: 'In 6 days',    createdAt: '2026-04-10' },
   ]);
   const [schedFilter, setSchedFilter] = useState<'all' | 'active' | 'paused'>('all');
   const [schedSearch, setSchedSearch] = useState('');
@@ -530,7 +533,19 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const SCHED_PER_PAGE = 15;
   const [schedDeleteConfirm, setSchedDeleteConfirm] = useState<string | null>(null);
   // New schedule form state
-  const [schedForm, setSchedForm] = useState({ name: '', reportType: 'User Progress', frequency: 'Weekly' as 'Daily'|'Weekly'|'Monthly', time: '08:00', dayLabel: 'Monday', recipients: '', format: 'PDF' as 'PDF'|'CSV'|'Excel' });
+  type SchedFormState = {
+    name: string; segment: string; reportType: string;
+    frequency: 'Daily' | 'Weekly' | 'Monthly'; time: string; timezone: string; dayLabel: string;
+    timePeriod: string; format: 'PDF' | 'CSV' | 'Excel';
+    notifyUsers: boolean; emailTo: string; emailSubject: string; emailMessage: string;
+  };
+  const SCHED_FORM_DEFAULT: SchedFormState = {
+    name: '', segment: 'All Users', reportType: 'User Progress',
+    frequency: 'Weekly', time: '08:00', timezone: 'UTC+8', dayLabel: 'Monday',
+    timePeriod: 'Last 30 days', format: 'PDF',
+    notifyUsers: false, emailTo: '', emailSubject: '', emailMessage: '',
+  };
+  const [schedForm, setSchedForm] = useState<SchedFormState>(SCHED_FORM_DEFAULT);
   const [schedFormOpen, setSchedFormOpen] = useState(false);
   const [schedEditId, setSchedEditId] = useState<string | null>(null);
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
@@ -1283,27 +1298,38 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
         const openEdit = (r: ScheduledReport) => {
           setSchedEditId(r.id);
-          setSchedForm({ name: r.name, reportType: r.reportType, frequency: r.frequency, time: r.time, dayLabel: r.dayLabel || 'Monday', recipients: r.recipients.join(', '), format: r.format });
+          setSchedForm({
+            name: r.name, segment: r.segment, reportType: r.reportType,
+            frequency: r.frequency, time: r.time, timezone: r.timezone, dayLabel: r.dayLabel || 'Monday',
+            timePeriod: r.timePeriod, format: r.format,
+            notifyUsers: r.notifyUsers, emailTo: r.emailTo.join(', '), emailSubject: r.emailSubject, emailMessage: r.emailMessage,
+          });
           setSchedFormOpen(true);
         };
 
         const saveForm = () => {
-          const recips = schedForm.recipients.split(',').map(s => s.trim()).filter(Boolean);
-          if (!schedForm.name || recips.length === 0) return;
+          if (!schedForm.name) return;
+          const emailToArr = schedForm.emailTo.split(',').map(s => s.trim()).filter(Boolean);
           if (schedEditId) {
-            setSchedReports(prev => prev.map(r => r.id === schedEditId ? { ...r, name: schedForm.name, reportType: schedForm.reportType, frequency: schedForm.frequency, time: schedForm.time, dayLabel: schedForm.dayLabel, recipients: recips, format: schedForm.format } : r));
+            setSchedReports(prev => prev.map(r => r.id === schedEditId ? {
+              ...r, name: schedForm.name, segment: schedForm.segment, reportType: schedForm.reportType,
+              frequency: schedForm.frequency, time: schedForm.time, timezone: schedForm.timezone, dayLabel: schedForm.dayLabel,
+              timePeriod: schedForm.timePeriod, format: schedForm.format,
+              notifyUsers: schedForm.notifyUsers, emailTo: emailToArr, emailSubject: schedForm.emailSubject, emailMessage: schedForm.emailMessage,
+            } : r));
           } else {
             const newR: ScheduledReport = {
-              id: `sr${Date.now()}`, name: schedForm.name, reportType: schedForm.reportType,
-              frequency: schedForm.frequency, time: schedForm.time, dayLabel: schedForm.dayLabel,
-              recipients: recips, format: schedForm.format,
+              id: `sr${Date.now()}`, name: schedForm.name, segment: schedForm.segment, reportType: schedForm.reportType,
+              frequency: schedForm.frequency, time: schedForm.time, timezone: schedForm.timezone, dayLabel: schedForm.dayLabel,
+              timePeriod: schedForm.timePeriod, recipients: emailToArr, format: schedForm.format,
+              notifyUsers: schedForm.notifyUsers, emailTo: emailToArr, emailSubject: schedForm.emailSubject, emailMessage: schedForm.emailMessage,
               status: 'active', nextRun: 'Calculating…', createdAt: new Date().toISOString().slice(0, 10),
             };
             setSchedReports(prev => [newR, ...prev]);
           }
           setSchedFormOpen(false);
           setSchedEditId(null);
-          setSchedForm({ name: '', reportType: 'User Progress', frequency: 'Weekly', time: '08:00', dayLabel: 'Monday', recipients: '', format: 'PDF' });
+          setSchedForm(SCHED_FORM_DEFAULT);
         };
 
         const fmtColor  = (f: string) => f === 'PDF' ? 'bg-rose-50 text-rose-600' : f === 'CSV' ? 'bg-teal-50 text-teal-600' : 'bg-indigo-50 text-indigo-600';
@@ -1347,98 +1373,201 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             </div>
 
             {/* Create / Edit form */}
-            {schedFormOpen && (
-              <div className="bg-white rounded-xl border border-teal-200 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                      <Calendar className="size-4 text-teal-500" />
-                    </div>
-                    <p className="font-semibold text-gray-900 text-sm">{schedEditId ? 'Edit Schedule' : 'New Scheduled Report'}</p>
-                  </div>
-                  <button onClick={() => { setSchedFormOpen(false); setSchedEditId(null); }} className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <X className="size-4" />
-                  </button>
+            {schedFormOpen && (() => {
+              const SEGMENTS    = ['All Users', 'Active Learners', 'At-Risk Users', 'Admins', 'New Users', 'Top Performers', 'Inactive Users'];
+              const TIME_PERIODS= ['Last 7 days', 'Last 30 days', 'Last 90 days', 'Last 6 months', 'Last 12 months', 'All time', 'Custom range'];
+              const TIMEZONES   = ['UTC-12','UTC-11','UTC-10','UTC-9','UTC-8','UTC-7','UTC-6','UTC-5','UTC-4','UTC-3','UTC-2','UTC-1','UTC+0','UTC+1','UTC+2','UTC+3','UTC+4','UTC+5','UTC+5:30','UTC+6','UTC+7','UTC+8','UTC+9','UTC+10','UTC+11','UTC+12'];
+              const inputCls    = 'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white placeholder:text-gray-300';
+              const labelCls    = 'block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide';
+              const sectionHdr  = (title: string, icon: JSX.Element) => (
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="size-6 rounded-md bg-teal-50 flex items-center justify-center flex-shrink-0">{icon}</div>
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">{title}</p>
+                  <div className="flex-1 h-px bg-gray-100" />
                 </div>
-                <div className="p-5 grid grid-cols-2 gap-4">
-                  {/* Report Name */}
-                  <div className="col-span-2">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Report Name</label>
-                    <input value={schedForm.name} onChange={e => setSchedForm(p => ({ ...p, name: e.target.value }))}
-                      placeholder="e.g. Weekly Learner Progress"
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
-                  </div>
-                  {/* Report Type */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Report Type</label>
-                    <select value={schedForm.reportType} onChange={e => setSchedForm(p => ({ ...p, reportType: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white">
-                      {REPORT_TYPES.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  {/* Format */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Export Format</label>
-                    <div className="flex gap-2">
-                      {(['PDF','CSV','Excel'] as const).map(f => (
-                        <button key={f} onClick={() => setSchedForm(p => ({ ...p, format: f }))}
-                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${schedForm.format === f ? 'border-teal-400 bg-teal-50 text-teal-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
-                          {f}
-                        </button>
-                      ))}
+              );
+              return (
+                <div className="bg-white rounded-xl border border-teal-200 shadow-sm overflow-hidden">
+                  {/* Form header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="size-9 rounded-xl bg-teal-500 flex items-center justify-center shadow-sm">
+                        <Calendar className="size-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm">{schedEditId ? 'Edit Scheduled Report' : 'New Scheduled Report'}</p>
+                        <p className="text-[11px] text-gray-400">Fill in the details below to {schedEditId ? 'update' : 'create'} your report schedule</p>
+                      </div>
                     </div>
+                    <button onClick={() => { setSchedFormOpen(false); setSchedEditId(null); setSchedForm(SCHED_FORM_DEFAULT); }} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                      <X className="size-4" />
+                    </button>
                   </div>
-                  {/* Frequency */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Frequency</label>
-                    <div className="flex gap-2">
-                      {(['Daily','Weekly','Monthly'] as const).map(f => (
-                        <button key={f} onClick={() => setSchedForm(p => ({ ...p, frequency: f }))}
-                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${schedForm.frequency === f ? 'border-indigo-400 bg-indigo-50 text-indigo-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
-                          {f}
-                        </button>
-                      ))}
+
+                  <div className="p-6 space-y-8">
+
+                    {/* ── Section 1: Report ── */}
+                    <div>
+                      {sectionHdr('Report', <BookOpen className="size-3 text-teal-500" />)}
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Report Title */}
+                        <div className="col-span-2">
+                          <label className={labelCls}>Report Title</label>
+                          <input value={schedForm.name} onChange={e => setSchedForm(p => ({ ...p, name: e.target.value }))}
+                            placeholder="e.g. Weekly Learner Progress"
+                            className={inputCls} />
+                        </div>
+                        {/* User's Segment */}
+                        <div>
+                          <label className={labelCls}>User's Segment</label>
+                          <select value={schedForm.segment} onChange={e => setSchedForm(p => ({ ...p, segment: e.target.value }))} className={inputCls}>
+                            {SEGMENTS.map(s => <option key={s}>{s}</option>)}
+                          </select>
+                        </div>
+                        {/* Report Type */}
+                        <div>
+                          <label className={labelCls}>Report Type</label>
+                          <select value={schedForm.reportType} onChange={e => setSchedForm(p => ({ ...p, reportType: e.target.value }))} className={inputCls}>
+                            {REPORT_TYPES.map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  {/* Day + Time */}
-                  <div className="flex gap-2">
-                    {schedForm.frequency !== 'Daily' && (
-                      <div className="flex-1">
-                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">{schedForm.frequency === 'Weekly' ? 'Day of Week' : 'Day of Month'}</label>
-                        <select value={schedForm.dayLabel} onChange={e => setSchedForm(p => ({ ...p, dayLabel: e.target.value }))}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white">
-                          {(schedForm.frequency === 'Weekly' ? DAYS_WEEKLY : DAYS_MONTHLY).map(d => <option key={d}>{d}</option>)}
-                        </select>
+
+                    {/* ── Section 2: Schedule ── */}
+                    <div>
+                      {sectionHdr('Schedule', <Clock className="size-3 text-teal-500" />)}
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Report Frequency */}
+                        <div className="col-span-2">
+                          <label className={labelCls}>Report Frequency</label>
+                          <div className="flex gap-2">
+                            {(['Daily','Weekly','Monthly'] as const).map(f => (
+                              <button key={f} onClick={() => setSchedForm(p => ({ ...p, frequency: f, dayLabel: f === 'Weekly' ? 'Monday' : f === 'Monthly' ? '1st' : p.dayLabel }))}
+                                className={`flex-1 py-2.5 text-xs font-semibold rounded-lg border transition-colors ${schedForm.frequency === f ? 'border-teal-400 bg-teal-50 text-teal-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                                {f}
+                              </button>
+                            ))}
+                          </div>
+                          {schedForm.frequency !== 'Daily' && (
+                            <div className="mt-3">
+                              <label className="block text-[11px] text-gray-400 mb-1.5">{schedForm.frequency === 'Weekly' ? 'Send on day' : 'Send on the'}</label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {(schedForm.frequency === 'Weekly' ? DAYS_WEEKLY : DAYS_MONTHLY).map(d => (
+                                  <button key={d} onClick={() => setSchedForm(p => ({ ...p, dayLabel: d }))}
+                                    className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${schedForm.dayLabel === d ? 'border-teal-400 bg-teal-50 text-teal-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                                    {d}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {/* Time + Timezone */}
+                        <div>
+                          <label className={labelCls}>Select Time</label>
+                          <input type="time" value={schedForm.time} onChange={e => setSchedForm(p => ({ ...p, time: e.target.value }))}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Timezone</label>
+                          <select value={schedForm.timezone} onChange={e => setSchedForm(p => ({ ...p, timezone: e.target.value }))} className={inputCls}>
+                            {TIMEZONES.map(tz => <option key={tz}>{tz}</option>)}
+                          </select>
+                        </div>
+                        {/* Set Time Period */}
+                        <div className="col-span-2">
+                          <label className={labelCls}>Set Time Period</label>
+                          <div className="flex flex-wrap gap-2">
+                            {TIME_PERIODS.map(tp => (
+                              <button key={tp} onClick={() => setSchedForm(p => ({ ...p, timePeriod: tp }))}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${schedForm.timePeriod === tp ? 'border-teal-400 bg-teal-50 text-teal-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                                {tp}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Section 3: Delivery ── */}
+                    <div>
+                      {sectionHdr('Delivery', <Download className="size-3 text-teal-500" />)}
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Select File Type */}
+                        <div>
+                          <label className={labelCls}>Select File Type</label>
+                          <div className="flex gap-2">
+                            {(['PDF','CSV','Excel'] as const).map(f => (
+                              <button key={f} onClick={() => setSchedForm(p => ({ ...p, format: f }))}
+                                className={`flex-1 py-2.5 text-xs font-semibold rounded-lg border transition-colors ${schedForm.format === f ? 'border-teal-400 bg-teal-50 text-teal-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                                {f}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Notify Users toggle */}
+                        <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-700">Notify Users</p>
+                            <p className="text-[11px] text-gray-400 mt-0.5">Send email notification when report is ready</p>
+                          </div>
+                          <button onClick={() => setSchedForm(p => ({ ...p, notifyUsers: !p.notifyUsers }))}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${schedForm.notifyUsers ? 'bg-teal-500' : 'bg-gray-200'}`}>
+                            <span className={`inline-block size-4 transform rounded-full bg-white shadow transition-transform ${schedForm.notifyUsers ? 'translate-x-6' : 'translate-x-1'}`} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Section 4: Email (shown when notifyUsers = true) ── */}
+                    {schedForm.notifyUsers && (
+                      <div>
+                        {sectionHdr('Email Notification', <Bookmark className="size-3 text-teal-500" />)}
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* To */}
+                          <div className="col-span-2">
+                            <label className={labelCls}>To <span className="normal-case font-normal text-gray-400">(comma-separated emails)</span></label>
+                            <input value={schedForm.emailTo} onChange={e => setSchedForm(p => ({ ...p, emailTo: e.target.value }))}
+                              placeholder="admin@company.com, manager@company.com"
+                              className={inputCls} />
+                          </div>
+                          {/* Subject */}
+                          <div className="col-span-2">
+                            <label className={labelCls}>Subject</label>
+                            <input value={schedForm.emailSubject} onChange={e => setSchedForm(p => ({ ...p, emailSubject: e.target.value }))}
+                              placeholder="e.g. Weekly Learner Progress Report – May 2026"
+                              className={inputCls} />
+                          </div>
+                          {/* Message */}
+                          <div className="col-span-2">
+                            <label className={labelCls}>Your Message</label>
+                            <textarea value={schedForm.emailMessage} onChange={e => setSchedForm(p => ({ ...p, emailMessage: e.target.value }))}
+                              rows={4}
+                              placeholder="Add a personal message to accompany the report…"
+                              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300 resize-none" />
+                          </div>
+                        </div>
                       </div>
                     )}
-                    <div className={schedForm.frequency !== 'Daily' ? '' : 'flex-1'}>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Send Time</label>
-                      <input type="time" value={schedForm.time} onChange={e => setSchedForm(p => ({ ...p, time: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300" />
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                      <button onClick={() => { setSchedFormOpen(false); setSchedEditId(null); setSchedForm(SCHED_FORM_DEFAULT); }}
+                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                        Cancel
+                      </button>
+                      <button onClick={saveForm} disabled={!schedForm.name}
+                        className="flex items-center gap-2 px-5 py-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors">
+                        <CheckCircle className="size-3.5" />
+                        {schedEditId ? 'Save Changes' : 'Create Schedule'}
+                      </button>
                     </div>
-                  </div>
-                  {/* Recipients */}
-                  <div className="col-span-2">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Recipients <span className="font-normal text-gray-400">(comma-separated emails)</span></label>
-                    <input value={schedForm.recipients} onChange={e => setSchedForm(p => ({ ...p, recipients: e.target.value }))}
-                      placeholder="admin@company.com, manager@company.com"
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
-                  </div>
-                  {/* Actions */}
-                  <div className="col-span-2 flex items-center justify-end gap-2 pt-1">
-                    <button onClick={() => { setSchedFormOpen(false); setSchedEditId(null); }}
-                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                      Cancel
-                    </button>
-                    <button onClick={saveForm}
-                      className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white text-sm font-semibold rounded-lg transition-colors">
-                      <CheckCircle className="size-3.5" />
-                      {schedEditId ? 'Save Changes' : 'Create Schedule'}
-                    </button>
+
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Reports list */}
             {filtered.length === 0 ? (
