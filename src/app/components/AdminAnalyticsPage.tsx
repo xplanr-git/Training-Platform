@@ -499,6 +499,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [prodTab, setProdTab] = useState<'analytics' | 'all-courses'>('analytics');
   const [prodCoursesPage, setProdCoursesPage] = useState(1);
   const PROD_COURSES_PER_PAGE = 15;
+  const [prodBarRange, setProdBarRange] = useState<7 | 30 | 180 | 365>(30);
+  const [prodBarRangeOpen, setProdBarRangeOpen] = useState(false);
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1328,10 +1330,38 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                     <p className="font-semibold text-gray-900 text-sm">Most Popular Courses</p>
                     <p className="text-xs text-gray-400 mt-0.5">Enrollments vs completions</p>
                   </div>
-                  <BarChart2 className="size-4 text-gray-300" />
+                  {/* Time range dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setProdBarRangeOpen(v => !v)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      {prodBarRange === 7 ? 'Last 7 days' : prodBarRange === 30 ? 'Last 30 days' : prodBarRange === 180 ? 'Last 6 months' : 'Last year'}
+                      <ChevronDown className={`size-3 transition-transform ${prodBarRangeOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {prodBarRangeOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                        {([
+                          { value: 7,   label: 'Last 7 days'   },
+                          { value: 30,  label: 'Last 30 days'  },
+                          { value: 180, label: 'Last 6 months' },
+                          { value: 365, label: 'Last year'     },
+                        ] as const).map(opt => (
+                          <button key={opt.value} onClick={() => { setProdBarRange(opt.value); setProdBarRangeOpen(false); }}
+                            className={`w-full text-left px-3 py-2 text-xs transition-colors ${prodBarRange === opt.value ? 'text-teal-600 font-semibold bg-teal-50' : 'text-gray-700 hover:bg-gray-50'}`}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={barData} barCategoryGap="30%">
+                  <BarChart data={top6Popular.map(m => ({
+                    name: m.course.title.length > 18 ? m.course.title.slice(0, 18) + '…' : m.course.title,
+                    Enrolled:  Math.round(m.enrollCt  * (prodBarRange / 365)),
+                    Completed: Math.round(m.enrollCt  * (prodBarRange / 365) * (m.completionPct / 100)),
+                  }))} barCategoryGap="30%">
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} />
                     <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} />
