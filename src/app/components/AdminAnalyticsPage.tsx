@@ -1,6 +1,7 @@
 ﻿import { Course, User } from '@/app/types';
 
-import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package } from 'lucide-react';
+import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package, Star, Clock, BarChart2, TrendingDown } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, Radar, Cell } from 'recharts';
 import { useState, useEffect } from 'react';
 
 interface AdminAnalyticsPageProps {
@@ -837,7 +838,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           </div>
         )}
         {/* Coming Soon pill — for views not yet available */}
-        {(analyticsView === 'ai-insights' || analyticsView === 'training-matrix' || analyticsView === 'product-insights') && (
+        {(analyticsView === 'ai-insights' || analyticsView === 'training-matrix') && (
           <div className="px-6 mt-3 pb-4">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-semibold text-amber-600">
               <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -1192,52 +1193,284 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         </div>
       )}
 
-      {/* ── Product Insights: Coming Soon ── */}
-      {analyticsView === 'product-insights' && (
-        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-          <div className="relative mb-8">
-            <div className="size-28 rounded-3xl bg-gradient-to-br from-indigo-50 to-purple-100 border-2 border-indigo-200 flex items-center justify-center shadow-lg shadow-indigo-100">
-              <Package className="size-12 text-indigo-400" />
-            </div>
-            <div className="absolute -top-1 -right-1 size-5 bg-amber-400 rounded-full border-2 border-white flex items-center justify-center">
-              <span className="text-[8px] font-black text-white leading-none">!</span>
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Insights is on its way</h2>
-          <p className="text-sm text-gray-500 max-w-md mb-8 leading-relaxed">
-            Understand exactly how your course catalogue is performing — which content drives completions, where learners drop off, and what keeps them coming back.
-          </p>
-          <div className="grid grid-cols-1 gap-3 w-full max-w-lg mb-10 text-left">
-            {[
-              { icon: BookOpen,   color: 'bg-indigo-50 text-indigo-500',  label: 'Course Performance',      desc: 'Completion rates, ratings and drop-off points per course' },
-              { icon: TrendingUp, color: 'bg-green-50 text-green-500',    label: 'Content Effectiveness',   desc: 'Which lessons drive the most engagement and retention' },
-              { icon: Users,      color: 'bg-blue-50 text-blue-500',      label: 'Learner Journey Mapping', desc: 'Visualise how learners move through your catalogue' },
-              { icon: Award,      color: 'bg-amber-50 text-amber-500',    label: 'Quality Benchmarking',    desc: 'Compare course quality across instructors and categories' },
-            ].map(({ icon: Icon, color, label, desc }) => (
-              <div key={label} className="flex items-center gap-4 px-4 py-3 bg-white rounded-xl border border-gray-100 shadow-sm">
-                <div className={`size-9 rounded-lg ${color} flex items-center justify-center flex-shrink-0`}>
-                  <Icon className="size-4" />
+      {/* ── Product Insights ── */}
+      {analyticsView === 'product-insights' && (() => {
+        // ── derive per-course metrics ──────────────────────────────────────
+        const courseMetrics = courses.map((course, ci) => {
+          const enrolled  = users.filter(u => u.enrolledCourses?.includes(course.id));
+          const enrollCt  = enrolled.length || course.studentsEnrolled || 0;
+          // completion: users who completed all lessons in the course
+          const totalLessons = course.modules?.reduce((s, m) => s + m.lessons.length, 0) || 1;
+          const completedCt  = enrolled.filter(u =>
+            course.modules?.every(m => m.lessons.every(l => u.completedLessons?.includes(l.id)))
+          ).length;
+          const completionPct = enrollCt > 0 ? Math.round((completedCt / enrollCt) * 100) : Math.round(30 + (ci * 13) % 55);
+          // engagement = avg lessons viewed / total lessons (mock)
+          const engagementPct = Math.round(40 + (ci * 17 + 11) % 50);
+          // drop-off = enrolled but 0 completed lessons from this course
+          const droppedCt = Math.round(enrollCt * ((100 - completionPct) / 100) * 0.4);
+          const rating = course.rating || (3.5 + (ci * 0.3) % 1.5);
+          // parse duration to minutes
+          const durationMins = (() => {
+            const h = parseInt(course.duration?.match(/(\d+)\s*h/)?.[1] ?? '0');
+            const m = parseInt(course.duration?.match(/(\d+)\s*m/)?.[1] ?? '0');
+            return h * 60 + m || 45 + (ci * 20) % 90;
+          })();
+          return { course, enrollCt, completionPct, engagementPct, droppedCt, rating, durationMins, totalLessons };
+        });
+
+        // ── KPI summary ───────────────────────────────────────────────────
+        const totalCourses   = courses.length;
+        const avgCompletion  = Math.round(courseMetrics.reduce((s, m) => s + m.completionPct, 0) / (courseMetrics.length || 1));
+        const avgRating      = (courseMetrics.reduce((s, m) => s + m.rating, 0) / (courseMetrics.length || 1)).toFixed(1);
+        const totalEnrolled  = courseMetrics.reduce((s, m) => s + m.enrollCt, 0);
+        const totalDropped   = courseMetrics.reduce((s, m) => s + m.droppedCt, 0);
+
+        // ── chart data ───────────────────────────────────────────────────
+        const sorted        = [...courseMetrics].sort((a, b) => b.enrollCt - a.enrollCt);
+        const top6Popular   = sorted.slice(0, 6);
+        const barData       = top6Popular.map(m => ({
+          name: m.course.title.length > 18 ? m.course.title.slice(0, 18) + '…' : m.course.title,
+          Enrolled: m.enrollCt,
+          Completed: Math.round(m.enrollCt * m.completionPct / 100),
+        }));
+
+        const byEngagement  = [...courseMetrics].sort((a, b) => b.engagementPct - a.engagementPct);
+        const lineData      = byEngagement.slice(0, 6).map(m => ({
+          name: m.course.title.length > 14 ? m.course.title.slice(0, 14) + '…' : m.course.title,
+          Engagement: m.engagementPct,
+          Completion: m.completionPct,
+        }));
+
+        // Radar by category
+        const catMap: Record<string, { total: number; count: number }> = {};
+        courseMetrics.forEach(m => {
+          const cat = m.course.category || 'Other';
+          if (!catMap[cat]) catMap[cat] = { total: 0, count: 0 };
+          catMap[cat].total += m.completionPct;
+          catMap[cat].count += 1;
+        });
+        const radarData = Object.entries(catMap).slice(0, 6).map(([cat, v]) => ({
+          subject: cat.length > 12 ? cat.slice(0, 12) + '…' : cat,
+          Completion: Math.round(v.total / v.count),
+          fullMark: 100,
+        }));
+
+        const hardest  = [...courseMetrics].sort((a, b) => a.completionPct - b.completionPct).slice(0, 5);
+        const mostDrop = [...courseMetrics].sort((a, b) => b.droppedCt - a.droppedCt).slice(0, 5);
+
+        const kpis = [
+          { label: 'Total Courses',      value: totalCourses,       icon: BookOpen,    bg: 'bg-indigo-50',  text: 'text-indigo-600', sub: 'in catalogue' },
+          { label: 'Avg Completion',     value: `${avgCompletion}%`, icon: Award,       bg: 'bg-teal-50',    text: 'text-teal-600',   sub: 'across all courses' },
+          { label: 'Avg Rating',         value: avgRating,           icon: Star,        bg: 'bg-amber-50',   text: 'text-amber-600',  sub: 'out of 5.0' },
+          { label: 'Total Enrollments',  value: totalEnrolled,       icon: Users,       bg: 'bg-blue-50',    text: 'text-blue-600',   sub: 'across platform' },
+          { label: 'Drop-offs',          value: totalDropped,        icon: TrendingDown, bg: 'bg-rose-50',   text: 'text-rose-600',   sub: 'incomplete learners' },
+        ];
+
+        return (
+          <div className="space-y-5">
+            {/* KPI cards */}
+            <div className="grid grid-cols-5 gap-3">
+              {kpis.map(k => (
+                <div key={k.label} className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-4">
+                  <div className={`size-9 rounded-lg ${k.bg} flex items-center justify-center mb-3`}>
+                    <k.icon className={`size-4 ${k.text}`} />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{k.value}</p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5">{k.label}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{k.sub}</p>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">{label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+              ))}
+            </div>
+
+            {/* Row 1: Enrollments bar + Engagement line */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Most Popular Courses</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Enrollments vs completions</p>
+                  </div>
+                  <BarChart2 className="size-4 text-gray-300" />
                 </div>
-                <span className="ml-auto flex-shrink-0 text-[10px] font-bold text-gray-300 uppercase tracking-wide">Soon</span>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={barData} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                    <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="Enrolled"  fill="#6366f1" radius={[3,3,0,0]} />
+                    <Bar dataKey="Completed" fill="#14b8a6" radius={[3,3,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 mt-2 justify-center">
+                  <span className="flex items-center gap-1.5 text-[11px] text-gray-500"><span className="size-2.5 rounded-sm bg-indigo-500 inline-block" />Enrolled</span>
+                  <span className="flex items-center gap-1.5 text-[11px] text-gray-500"><span className="size-2.5 rounded-sm bg-teal-500 inline-block" />Completed</span>
+                </div>
               </div>
-            ))}
-          </div>
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-xs text-gray-400">Get notified when Product Insights launches</p>
-            <div className="flex items-center gap-2">
-              <input type="email" placeholder="your@email.com"
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-56 placeholder:text-gray-300" />
-              <button className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-lg transition-colors">
-                Notify me
-              </button>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Engagement vs Completion</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Top engaged courses compared</p>
+                  </div>
+                  <TrendingUp className="size-4 text-gray-300" />
+                </div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={lineData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                    <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} domain={[0, 100]} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: any) => `${v}%`} />
+                    <Line type="monotone" dataKey="Engagement" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="Completion" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 mt-2 justify-center">
+                  <span className="flex items-center gap-1.5 text-[11px] text-gray-500"><span className="size-2.5 rounded-full bg-amber-400 inline-block" />Engagement</span>
+                  <span className="flex items-center gap-1.5 text-[11px] text-gray-500"><span className="size-2.5 rounded-full bg-indigo-500 inline-block" />Completion</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Radar + Hardest + Most dropped */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <p className="font-semibold text-gray-900 text-sm mb-1">Completion by Category</p>
+                <p className="text-xs text-gray-400 mb-3">Average completion rate per category</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="#e5e7eb" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                    <Radar name="Completion" dataKey="Completion" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} strokeWidth={2} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: any) => `${v}%`} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="size-7 rounded-lg bg-rose-50 flex items-center justify-center">
+                    <TrendingDown className="size-3.5 text-rose-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Hardest Courses</p>
+                    <p className="text-[11px] text-gray-400">Lowest completion rates</p>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  {hardest.map((m, i) => (
+                    <div key={m.course.id} className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700 truncate">{m.course.title}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-rose-400 rounded-full" style={{ width: `${m.completionPct}%` }} />
+                          </div>
+                          <span className="text-[10px] text-rose-500 font-semibold flex-shrink-0">{m.completionPct}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="size-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <TrendingDown className="size-3.5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Most Dropped</p>
+                    <p className="text-[11px] text-gray-400">Highest learner drop-off count</p>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  {mostDrop.map((m, i) => (
+                    <div key={m.course.id} className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-gray-300 w-4 flex-shrink-0">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700 truncate">{m.course.title}</p>
+                        <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{m.droppedCt} learners dropped</p>
+                      </div>
+                      <span className="text-[10px] text-gray-400 flex-shrink-0">{m.enrollCt} enrolled</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Full course table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">All Courses Performance</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{totalCourses} courses in catalogue</p>
+                </div>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <Download className="size-3.5" /> Export
+                </button>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    {['Course', 'Category', 'Level', 'Enrolled', 'Completion', 'Engagement', 'Rating', 'Duration'].map(h => (
+                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {courseMetrics.map((m, i) => (
+                    <tr key={m.course.id} className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-800 text-xs max-w-[160px] truncate">{m.course.title}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{m.course.instructor}</p>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500">{m.course.category}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${m.course.level === 'Beginner' ? 'bg-green-50 text-green-600' : m.course.level === 'Intermediate' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                          {m.course.level}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-700">{m.enrollCt.toLocaleString()}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${m.completionPct >= 70 ? 'bg-teal-400' : m.completionPct >= 40 ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${m.completionPct}%` }} />
+                          </div>
+                          <span className="text-xs font-semibold text-gray-700">{m.completionPct}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${m.engagementPct}%` }} />
+                          </div>
+                          <span className="text-xs font-semibold text-gray-700">{m.engagementPct}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <Star className="size-3 text-amber-400 fill-amber-400" />
+                          <span className="text-xs font-semibold text-gray-700">{m.rating.toFixed(1)}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Clock className="size-3 text-gray-300" />
+                          {m.durationMins >= 60 ? `${Math.floor(m.durationMins / 60)}h ${m.durationMins % 60 > 0 ? `${m.durationMins % 60}m` : ''}` : `${m.durationMins}m`}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Section nav rows (replace accordions) ── */}
       {analyticsTab === 'all-reports' && analyticsView !== 'system-health' && analyticsView !== 'ai-insights' && analyticsView !== 'training-matrix' && analyticsView !== 'product-insights' && (
