@@ -918,7 +918,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           </div>{/* end flex-1 */}
           {analyticsView === 'scheduled-reports' && (
             <button
-              onClick={() => { setSchedFormOpen(true); setSchedEditId(null); setSchedForm({ name: '', reportType: 'User Progress', frequency: 'Weekly', time: '08:00', dayLabel: 'Monday', recipients: '', format: 'PDF' }); }}
+              onClick={() => { setSchedFormOpen(true); setSchedEditId(null); setSchedForm(SCHED_FORM_DEFAULT); }}
               className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white text-sm font-semibold rounded-xl transition-colors flex-shrink-0 mt-1">
               <Plus className="size-4" />
               New Schedule
