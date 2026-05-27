@@ -1536,7 +1536,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             ) : (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 {/* Table header */}
-                <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50">
+                <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_7rem] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50">
                   {[
                     { label: 'Report Name', cls: '' },
                     { label: 'Type',        cls: 'text-center' },
@@ -1552,7 +1552,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                 {/* Rows */}
                 <div className="divide-y divide-gray-50">
                   {schedSlice.map(r => (
-                    <div key={r.id} className={`grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_auto] gap-4 px-5 py-3.5 items-center hover:bg-gray-50 transition-colors ${r.status === 'paused' ? 'opacity-60' : ''}`}>
+                    <div key={r.id} className={`grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_7rem] gap-4 px-5 py-3.5 items-center hover:bg-gray-50 transition-colors ${r.status === 'paused' ? 'opacity-60' : ''}`}>
                       {/* Name */}
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
