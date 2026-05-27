@@ -1,5 +1,6 @@
 ﻿import { Course, User } from '@/app/types';
 import { supabase } from '/utils/supabase/client';
+import { ComingSoonPage } from '@/app/components/AdminCommunicationsPage';
 
 import { TrendingUp, ChevronDown, ChevronRight, ArrowLeft, Users, BookOpen, Award, DollarSign, Activity, Info, X, Target, Zap, Server, AlertCircle, CheckCircle, XCircle, Wifi, Database, Search, Plus, Filter, Tag, Download, Calendar, Bookmark, MoreHorizontal, RotateCcw, Sparkles, Package, Star, Clock, BarChart2, TrendingDown, Pencil } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, Radar, Cell } from 'recharts';
@@ -1098,140 +1099,11 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         </div>
       </div>}
 
-      {/* â”€â”€ SECTION: System Health â”€â”€ */}
+      {/* ── SECTION: System Health (Coming Soon) ── */}
       {analyticsView === 'system-health' && (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <button onClick={() => toggleSection('system-health')} className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="size-9 rounded-xl bg-slate-100 flex items-center justify-center">
-                <Server className="size-[18px] text-slate-600" />
-              </div>
-              <div className="text-left">
-                <p className="font-semibold text-gray-900 text-sm">System Health</p>
-                <p className="text-xs text-gray-500 mt-0.5">Platform infrastructure, uptime & API integrations</p>
-              </div>
-            </div>
-            <ChevronDown className={`size-4 text-gray-400 transition-transform duration-200 ${openSections.has('system-health') ? 'rotate-180' : ''}`} />
-          </button>
-          {openSections.has('system-health') && (
-            <div className="border-t border-gray-100 p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-green-900 font-medium">Server Uptime</p>
-                      <button onClick={() => setActivePopover(activePopover === 'server-uptime' ? null : 'server-uptime')} className="hover:bg-white/50 rounded-full p-1 transition-colors"><Info className="size-3.5 text-green-700 cursor-pointer" /></button>
-                    </div>
-                    <CheckCircle className="size-5 text-green-600" />
-                  </div>
-                  {activePopover === 'server-uptime' && (
-                    <div className="absolute top-14 left-0 right-0 mx-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
-                      <div className="flex items-start justify-between mb-2"><h4 className="font-semibold text-gray-900">Server Uptime</h4><button onClick={() => setActivePopover(null)} className="text-gray-400 hover:text-gray-600"><X className="size-4" /></button></div>
-                      <p className="text-sm text-gray-600 leading-relaxed">The percentage of time the platform servers have been operational and accessible over the last 30 days. High uptime (99%+) ensures reliable service delivery and minimal disruptions to users.</p>
-                    </div>
-                  )}
-                  <p className="text-3xl font-bold text-green-900">{systemUptime}%</p>
-                  <p className="text-xs text-green-700 mt-1">Last 30 days</p>
-                </div>
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200 relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-yellow-900 font-medium">Error Rate</p>
-                      <button onClick={() => setActivePopover(activePopover === 'error-rate' ? null : 'error-rate')} className="hover:bg-white/50 rounded-full p-1 transition-colors"><Info className="size-3.5 text-yellow-700 cursor-pointer" /></button>
-                    </div>
-                    <AlertCircle className="size-5 text-yellow-600" />
-                  </div>
-                  {activePopover === 'error-rate' && (
-                    <div className="absolute top-14 left-0 right-0 mx-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
-                      <div className="flex items-start justify-between mb-2"><h4 className="font-semibold text-gray-900">Error Rate</h4><button onClick={() => setActivePopover(null)} className="text-gray-400 hover:text-gray-600"><X className="size-4" /></button></div>
-                      <p className="text-sm text-gray-600 leading-relaxed">The percentage of requests that resulted in server errors (5xx) or failed operations. A lower error rate indicates better system stability and code quality. Rates below 0.5% are considered excellent.</p>
-                    </div>
-                  )}
-                  <p className="text-3xl font-bold text-yellow-900">{errorRate}%</p>
-                  <p className="text-xs text-yellow-700 mt-1">Within normal range</p>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200 relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-blue-900 font-medium">Failed Transactions</p>
-                      <button onClick={() => setActivePopover(activePopover === 'failed-transactions' ? null : 'failed-transactions')} className="hover:bg-white/50 rounded-full p-1 transition-colors"><Info className="size-3.5 text-blue-700 cursor-pointer" /></button>
-                    </div>
-                    <Database className="size-5 text-blue-600" />
-                  </div>
-                  {activePopover === 'failed-transactions' && (
-                    <div className="absolute top-14 left-0 right-0 mx-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
-                      <div className="flex items-start justify-between mb-2"><h4 className="font-semibold text-gray-900">Failed Transactions</h4><button onClick={() => setActivePopover(null)} className="text-gray-400 hover:text-gray-600"><X className="size-4" /></button></div>
-                      <p className="text-sm text-gray-600 leading-relaxed">The number of payment or enrollment transactions that failed in the last 24 hours. This includes payment gateway rejections, timeout errors, and processing failures. Monitor to ensure revenue loss is minimized.</p>
-                    </div>
-                  )}
-                  <p className="text-3xl font-bold text-blue-900">{failedTransactions}</p>
-                  <p className="text-xs text-blue-700 mt-1">Last 24 hours</p>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-green-900 font-medium">System Status</p>
-                      <button onClick={() => setActivePopover(activePopover === 'system-status' ? null : 'system-status')} className="hover:bg-white/50 rounded-full p-1 transition-colors"><Info className="size-3.5 text-green-700 cursor-pointer" /></button>
-                    </div>
-                    <Wifi className="size-5 text-green-600" />
-                  </div>
-                  {activePopover === 'system-status' && (
-                    <div className="absolute top-14 left-0 right-0 mx-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
-                      <div className="flex items-start justify-between mb-2"><h4 className="font-semibold text-gray-900">System Status</h4><button onClick={() => setActivePopover(null)} className="text-gray-400 hover:text-gray-600"><X className="size-4" /></button></div>
-                      <p className="text-sm text-gray-600 leading-relaxed">Overall health indicator aggregating server uptime, error rates, and critical service availability. Green indicates all systems operational, yellow means degraded performance, red signals major issues requiring immediate attention.</p>
-                    </div>
-                  )}
-                  <p className="text-3xl font-bold text-green-900">Operational</p>
-                  <p className="text-xs text-green-700 mt-1">All systems normal</p>
-                </div>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><Wifi className="size-5 text-gray-600" />API & Integration Status</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {apiIntegrations.map((integration) => (
-                  <div key={integration.name} className={`border rounded-lg p-4 relative ${integration.status === 'operational' ? 'bg-green-50 border-green-200' : integration.status === 'degraded' ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'}`}>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-gray-900 text-sm">{integration.name}</h4>
-                          <button onClick={() => setActivePopover(activePopover === `api-${integration.name}` ? null : `api-${integration.name}`)} className="hover:bg-white/50 rounded-full p-1 transition-colors"><Info className="size-3.5 text-gray-600 cursor-pointer" /></button>
-                        </div>
-                        {activePopover === `api-${integration.name}` && (
-                          <div className="absolute top-12 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-30">
-                            <div className="flex items-start justify-between mb-2"><h4 className="font-semibold text-gray-900">{integration.name}</h4><button onClick={() => setActivePopover(null)} className="text-gray-400 hover:text-gray-600"><X className="size-4" /></button></div>
-                            <p className="text-sm text-gray-600 leading-relaxed">
-                              {integration.name === 'Payment Gateway' && "Manages all payment processing and transaction handling. Critical for course purchases and subscription billing. Response times under 300ms ensure smooth checkout experience."}
-                              {integration.name === 'Video CDN' && "Content delivery network for streaming course videos. Optimized for low latency and high availability. Fast response times ensure smooth video playback without buffering."}
-                              {integration.name === 'Email Service' && "Handles all transactional and marketing emails including enrollment confirmations, password resets, and course updates. Response times vary based on email queue size."}
-                              {integration.name === 'Analytics API' && "Collects and processes platform analytics data including user behavior, engagement metrics, and performance statistics. Higher response times may indicate heavy data processing."}
-                              {integration.name === 'User Authentication' && "Manages user login, registration, and session handling. Critical for platform access. Fast response times are essential for seamless user experience."}
-                              {integration.name === 'Cloud Storage' && "Stores course materials, user uploads, and platform assets. Response times affect file upload/download speeds and content access."}
-                            </p>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
-                          {integration.status === 'operational' && (<><CheckCircle className="size-4 text-green-600" /><span className="text-xs text-green-700 font-medium">Operational</span></>)}
-                          {integration.status === 'degraded' && (<><AlertCircle className="size-4 text-yellow-600" /><span className="text-xs text-yellow-700 font-medium">Degraded</span></>)}
-                          {integration.status === 'down' && (<><XCircle className="size-4 text-red-600" /><span className="text-xs text-red-700 font-medium">Down</span></>)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-1 mt-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Response Time</span>
-                        <span className={`font-medium ${integration.responseTime < 200 ? 'text-green-600' : integration.responseTime < 1000 ? 'text-yellow-600' : 'text-red-600'}`}>{integration.responseTime}ms</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${integration.responseTime < 200 ? 'bg-green-500' : integration.responseTime < 1000 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${Math.min((integration.responseTime / 2000) * 100, 100)}%` }} />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">Last check: {integration.lastCheck}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <ComingSoonPage section={'system-health'} />
       )}
+
 
       {/* ── AI Insights: Coming Soon ── */}
       {analyticsView === 'ai-insights' && (

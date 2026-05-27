@@ -161,7 +161,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
       icon: BarChart3,
       subItems: [
         { id: 'overview-analytics', label: 'Reports Center', icon: BarChart3 },
-        { id: 'system-health', label: 'System Health', icon: Server },
+        { id: 'system-health', label: 'System Health', icon: Server, comingSoon: true },
 
         { id: 'ai-insights', label: 'AI Insights', icon: Sparkles, comingSoon: true },
         { id: 'training-matrix', label: 'Training Matrix', icon: Grid3x3, comingSoon: true },

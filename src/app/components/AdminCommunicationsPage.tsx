@@ -10,6 +10,7 @@ import {
   GraduationCap, Users, LogIn, ShieldAlert, UserCheck, KeyRound, Gift as GiftIcon,
   RotateCcw, BadgeCheck, Repeat, XCircle, AlertCircle, UserCog, Handshake,
   Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, Quote, Code, FileCode, MoreHorizontal, Upload, Clock, Video, Mic, Zap,
+  Server, Activity,
 } from 'lucide-react';
 import { User } from '@/app/types';
 
@@ -5605,9 +5606,19 @@ const COMING_SOON_CONFIG: Record<string, {
       { icon: BarChart2, title: 'Automation analytics', desc: 'Track performance of every automated workflow'   },
     ],
   },
+  'system-health': {
+    icon: Server,
+    label: 'System Health',
+    description: "Real-time platform monitoring, uptime tracking, and infrastructure health dashboards are on the way.",
+    features: [
+      { icon: Activity,  title: 'Uptime monitoring',   desc: 'Live server status and availability tracking'    },
+      { icon: Bell,      title: 'Incident alerts',      desc: 'Instant notifications when issues are detected'  },
+      { icon: BarChart2, title: 'Performance metrics',  desc: 'Response times, error rates, and throughput'     },
+    ],
+  },
 };
 
-export function ComingSoonPage({ section }: { section: 'ecommerce' | 'marketing' | 'mobile' | 'automations' }) {
+export function ComingSoonPage({ section }: { section: 'ecommerce' | 'marketing' | 'mobile' | 'automations' | 'system-health' }) {
   const cfg = COMING_SOON_CONFIG[section];
   const Icon = cfg.icon;
   return (
