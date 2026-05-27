@@ -495,6 +495,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
     return () => document.removeEventListener('mousedown', handler);
   }, [showFilterPicker]);
   const [progressStat, setProgressStat] = useState<'completion' | 'finished' | 'inprogress' | 'score'>('completion');
+  const [prodStat, setProdStat] = useState<'courses' | 'completion' | 'rating' | 'enrollments' | 'dropoffs'>('courses');
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1259,29 +1260,45 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
         const hardest  = [...courseMetrics].sort((a, b) => a.completionPct - b.completionPct).slice(0, 5);
         const mostDrop = [...courseMetrics].sort((a, b) => b.droppedCt - a.droppedCt).slice(0, 5);
 
-        const kpis = [
-          { label: 'Total Courses',      value: totalCourses,       icon: BookOpen,    bg: 'bg-indigo-50',  text: 'text-indigo-600', sub: 'in catalogue' },
-          { label: 'Avg Completion',     value: `${avgCompletion}%`, icon: Award,       bg: 'bg-teal-50',    text: 'text-teal-600',   sub: 'across all courses' },
-          { label: 'Avg Rating',         value: avgRating,           icon: Star,        bg: 'bg-amber-50',   text: 'text-amber-600',  sub: 'out of 5.0' },
-          { label: 'Total Enrollments',  value: totalEnrolled,       icon: Users,       bg: 'bg-blue-50',    text: 'text-blue-600',   sub: 'across platform' },
-          { label: 'Drop-offs',          value: totalDropped,        icon: TrendingDown, bg: 'bg-rose-50',   text: 'text-rose-600',   sub: 'incomplete learners' },
-        ];
+
 
         return (
           <div className="space-y-5">
-            {/* KPI cards */}
-            <div className="grid grid-cols-5 gap-3">
-              {kpis.map(k => (
-                <div key={k.label} className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-4">
-                  <div className={`size-9 rounded-lg ${k.bg} flex items-center justify-center mb-3`}>
-                    <k.icon className={`size-4 ${k.text}`} />
+            {/* KPI spotlight */}
+            {(() => {
+              const statOptions = [
+                { key: 'courses',     label: 'Total Courses',     value: String(totalCourses),          sub: 'in your catalogue',              accent: 'text-indigo-600', ring: 'bg-indigo-500', bg: 'bg-indigo-50',  divider: 'bg-indigo-100',  activePill: 'bg-indigo-100'  },
+                { key: 'completion',  label: 'Avg Completion',    value: `${avgCompletion}%`,            sub: 'across all courses',             accent: 'text-teal-600',   ring: 'bg-teal-500',   bg: 'bg-teal-50',    divider: 'bg-teal-100',    activePill: 'bg-teal-100'    },
+                { key: 'rating',      label: 'Avg Rating',        value: `${avgRating} ★`,              sub: 'out of 5.0',                     accent: 'text-amber-600',  ring: 'bg-amber-500',  bg: 'bg-amber-50',   divider: 'bg-amber-100',   activePill: 'bg-amber-100'   },
+                { key: 'enrollments', label: 'Total Enrollments', value: totalEnrolled.toLocaleString(), sub: 'across platform',               accent: 'text-blue-600',   ring: 'bg-blue-500',   bg: 'bg-blue-50',    divider: 'bg-blue-100',    activePill: 'bg-blue-100'    },
+                { key: 'dropoffs',    label: 'Drop-offs',         value: String(totalDropped),           sub: 'learners who did not complete',  accent: 'text-rose-600',   ring: 'bg-rose-500',   bg: 'bg-rose-50',    divider: 'bg-rose-100',    activePill: 'bg-rose-100'    },
+              ] as const;
+              const active = statOptions.find(s => s.key === prodStat)!;
+              return (
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="flex items-stretch">
+                    <div className={`flex-1 px-6 py-5 flex flex-col justify-center transition-colors duration-300 ${active.bg}`}>
+                      <p className={`text-xs font-semibold uppercase tracking-wide mb-1 transition-colors duration-300 ${active.accent}`}>{active.label}</p>
+                      <p className="text-4xl font-bold text-gray-900 leading-none">{active.value}</p>
+                      <p className="text-xs text-gray-500 mt-1.5">{active.sub}</p>
+                    </div>
+                    <div className={`w-px my-4 transition-colors duration-300 ${active.divider}`} />
+                    <div className="flex flex-col justify-center gap-1 px-4 py-4">
+                      {statOptions.map(opt => (
+                        <button
+                          key={opt.key}
+                          onClick={() => setProdStat(opt.key)}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors w-full ${prodStat === opt.key ? opt.activePill : 'hover:bg-gray-50'}`}
+                        >
+                          <span className={`size-1.5 rounded-full flex-shrink-0 transition-colors ${prodStat === opt.key ? opt.ring : 'bg-gray-300'}`} />
+                          <span className={`text-xs font-medium whitespace-nowrap ${prodStat === opt.key ? 'text-gray-900' : 'text-gray-400'}`}>{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{k.value}</p>
-                  <p className="text-xs font-medium text-gray-500 mt-0.5">{k.label}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{k.sub}</p>
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* Row 1: Enrollments bar + Engagement line */}
             <div className="grid grid-cols-2 gap-4">
