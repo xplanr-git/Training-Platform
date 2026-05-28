@@ -1379,33 +1379,6 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           </div>
         );
 
-        const filterBar = (
-          <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-44">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
-              <input value={rlSearch} onChange={e => setRlSearch(e.target.value)}
-                placeholder="Search by name or recipient…"
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
-            </div>
-            <select value={rlStatus} onChange={e => setRlStatus(e.target.value)}
-              className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
-              {['All', 'Completed', 'In Progress', 'Failed', 'Pending'].map(s => <option key={s}>{s}</option>)}
-            </select>
-            <select value={rlType} onChange={e => setRlType(e.target.value)}
-              className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
-              {allTypes.map(s => <option key={s}>{s}</option>)}
-            </select>
-            <select value={rlDate} onChange={e => setRlDate(e.target.value)}
-              className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
-              {['All Time', 'Today', 'This Week', 'This Month', 'Last 30 Days', 'Custom'].map(s => <option key={s}>{s}</option>)}
-            </select>
-            <button className="ml-auto flex items-center gap-1.5 px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold rounded-xl transition-colors flex-shrink-0">
-              <Download className="size-3.5" />
-              Export CSV
-            </button>
-          </div>
-        );
-
         // Stats — single combined card
         const totalRuns  = MOCK_RUNS.length;
         const completedN = MOCK_RUNS.filter(r => r.status === 'Completed').length;
@@ -1421,35 +1394,64 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           { label: 'Pending',       value: pendingN,   pct: totalRuns ? Math.round(pendingN/totalRuns*100)   : 0, dot: 'bg-gray-300',    numColor: 'text-gray-500',    subColor: 'text-gray-300'    },
         ];
 
-        // Left display is driven by which breakdown row is selected + count/pct mode
         const selItem = STAT_ITEMS.find(s => s.label === rlSelectedStat) ?? STAT_ITEMS[0];
         const selMode = (rlStatMode[rlSelectedStat] ?? 'count') as 'count' | 'pct';
         const leftVal = selMode === 'count' ? selItem.value : `${selItem.pct}%`;
 
+        // All three panels merged into one card: stat | breakdown | filters
+        const filterBar = null; // rendered inline below
         const statCards = (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex divide-x divide-gray-100 overflow-hidden">
-            {/* Left — reflects selected breakdown item; click toggle to switch count/pct */}
-            <div className="flex flex-col justify-center px-6 py-5 flex-1 min-w-0">
+            {/* 1 — Big stat number */}
+            <div className="flex flex-col justify-center px-6 py-5 w-36 flex-shrink-0">
               <p className={`text-3xl font-bold tabular-nums transition-all ${selItem.numColor}`}>{leftVal}</p>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className={`size-2 rounded-full flex-shrink-0 ${selItem.dot}`} />
                 <p className={`text-xs ${selItem.subColor}`}>{selItem.label}</p>
               </div>
             </div>
-            {/* Right — breakdown list; clicking an item updates the left display */}
-            <div className="px-6 py-5 min-w-52 flex flex-col gap-1.5 justify-center">
+            {/* 2 — Breakdown list */}
+            <div className="px-5 py-4 flex flex-col gap-1 justify-center">
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Breakdown</p>
               <div className="space-y-0.5">
                 {STAT_ITEMS.map(s => {
                   const isActive = rlSelectedStat === s.label;
                   return (
                     <button key={s.label} type="button" onClick={() => setRlSelectedStat(s.label)}
-                      className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors text-left ${isActive ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
+                      className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg transition-colors text-left ${isActive ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
                       <span className={`size-2 rounded-full flex-shrink-0 ${s.dot}`} />
-                      <span className={`flex-1 text-xs transition-colors ${isActive ? 'text-gray-800 font-medium' : 'text-gray-400 hover:text-gray-600'}`}>{s.label}</span>
+                      <span className={`text-xs transition-colors whitespace-nowrap ${isActive ? 'text-gray-800 font-medium' : 'text-gray-400 hover:text-gray-600'}`}>{s.label}</span>
                     </button>
                   );
                 })}
+              </div>
+            </div>
+            {/* 3 — Filters (right side) */}
+            <div className="flex-1 flex flex-col justify-center gap-2.5 px-5 py-4">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Filters</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-36">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-gray-400" />
+                  <input value={rlSearch} onChange={e => setRlSearch(e.target.value)}
+                    placeholder="Search by name or recipient…"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
+                </div>
+                <select value={rlStatus} onChange={e => setRlStatus(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
+                  {['All', 'Completed', 'In Progress', 'Failed', 'Pending'].map(s => <option key={s}>{s}</option>)}
+                </select>
+                <select value={rlType} onChange={e => setRlType(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
+                  {allTypes.map(s => <option key={s}>{s}</option>)}
+                </select>
+                <select value={rlDate} onChange={e => setRlDate(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
+                  {['All Time', 'Today', 'This Week', 'This Month', 'Last 30 Days', 'Custom'].map(s => <option key={s}>{s}</option>)}
+                </select>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0">
+                  <Download className="size-3" />
+                  Export CSV
+                </button>
               </div>
             </div>
           </div>
@@ -1462,7 +1464,6 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             {/* ── All Reports tab ── */}
             {reportLogTab === 'all' && (
               <div className="space-y-4">
-                {filterBar}
                 {statCards}
 
                 {/* Table */}
