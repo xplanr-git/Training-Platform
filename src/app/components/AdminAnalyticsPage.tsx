@@ -1452,11 +1452,6 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                       className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors text-left ${isActive ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
                       <span className={`size-2 rounded-full flex-shrink-0 ${s.dot}`} />
                       <span className={`flex-1 text-xs transition-colors ${isActive ? 'text-gray-800 font-medium' : 'text-gray-400 hover:text-gray-600'}`}>{s.label}</span>
-                      {isActive && (
-                        <span className={`text-xs font-semibold tabular-nums ${s.numColor}`}>
-                          {selMode === 'count' ? s.value : `${s.pct}%`}
-                        </span>
-                      )}
                     </button>
                   );
                 })}
