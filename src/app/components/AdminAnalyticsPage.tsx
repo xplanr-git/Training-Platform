@@ -615,6 +615,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [rlType, setRlType] = useState('All');
   const [rlDate, setRlDate] = useState('All Time');
   const [calTooltipDay, setCalTooltipDay] = useState<number | null>(null);
+  // Track which stat-list items show 'pct' vs 'count' (toggled per click)
+  const [rlStatMode, setRlStatMode] = useState<Record<string, 'count' | 'pct'>>({});
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1435,29 +1437,37 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                 ))}
               </div>
             </div>
-            {/* Right — status breakdown list */}
-            <div className="px-6 py-5 min-w-56 flex flex-col gap-2 justify-center">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Success Rate</p>
-              {/* Progress bar */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${successRate}%` }} />
-                </div>
-                <span className="text-xs font-semibold text-gray-700 w-8 text-right">{successRate}%</span>
+            {/* Right — clickable status breakdown list */}
+            <div className="px-6 py-5 min-w-60 flex flex-col gap-2 justify-center">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Breakdown</p>
+                <span className="text-[10px] text-gray-300 italic">click to toggle</span>
               </div>
-              {/* Mini list */}
-              <div className="space-y-1 mt-1">
+              <div className="space-y-1.5">
                 {[
-                  { label: 'Completed',   value: completedN, pct: totalRuns ? Math.round(completedN/totalRuns*100) : 0, color: 'text-emerald-600' },
-                  { label: 'In Progress', value: inProgN,    pct: totalRuns ? Math.round(inProgN/totalRuns*100) : 0,    color: 'text-teal-600' },
-                  { label: 'Failed',      value: failedN,    pct: totalRuns ? Math.round(failedN/totalRuns*100) : 0,    color: 'text-red-500' },
-                  { label: 'Pending',     value: pendingN,   pct: totalRuns ? Math.round(pendingN/totalRuns*100) : 0,   color: 'text-gray-400' },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">{s.label}</span>
-                    <span className={`font-semibold ${s.color}`}>{s.value} <span className="text-gray-400 font-normal">({s.pct}%)</span></span>
-                  </div>
-                ))}
+                  { label: 'Completed',   value: completedN, pct: totalRuns ? Math.round(completedN/totalRuns*100) : 0, bar: 'bg-emerald-400', color: 'text-emerald-600', dot: 'bg-emerald-400' },
+                  { label: 'In Progress', value: inProgN,    pct: totalRuns ? Math.round(inProgN/totalRuns*100) : 0,    bar: 'bg-teal-400',    color: 'text-teal-600',    dot: 'bg-teal-400' },
+                  { label: 'Failed',      value: failedN,    pct: totalRuns ? Math.round(failedN/totalRuns*100) : 0,    bar: 'bg-red-400',     color: 'text-red-500',     dot: 'bg-red-400' },
+                  { label: 'Pending',     value: pendingN,   pct: totalRuns ? Math.round(pendingN/totalRuns*100) : 0,   bar: 'bg-gray-300',    color: 'text-gray-500',    dot: 'bg-gray-300' },
+                ].map(s => {
+                  const showPct = rlStatMode[s.label] === 'pct';
+                  return (
+                    <button key={s.label} type="button"
+                      onClick={() => setRlStatMode(prev => ({ ...prev, [s.label]: prev[s.label] === 'pct' ? 'count' : 'pct' }))}
+                      className="w-full flex items-center gap-2.5 group hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors text-left">
+                      <span className={`size-2 rounded-full flex-shrink-0 ${s.dot}`} />
+                      <span className="flex-1 text-xs text-gray-500 group-hover:text-gray-700 transition-colors">{s.label}</span>
+                      {/* Animated value — slides between count and pct */}
+                      <span className={`text-xs font-bold tabular-nums ${s.color} min-w-[3rem] text-right transition-all`}>
+                        {showPct ? `${s.pct}%` : s.value}
+                      </span>
+                      {/* Mini inline bar */}
+                      <div className="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
+                        <div className={`h-full rounded-full transition-all duration-500 ${s.bar}`} style={{ width: `${s.pct}%` }} />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
