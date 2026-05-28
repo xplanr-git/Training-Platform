@@ -1435,11 +1435,6 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                 <span className={`size-2 rounded-full flex-shrink-0 ${selItem.dot}`} />
                 <p className={`text-xs ${selItem.subColor}`}>{selItem.label}</p>
               </div>
-              <button type="button"
-                onClick={() => setRlStatMode(prev => ({ ...prev, [rlSelectedStat]: selMode === 'count' ? 'pct' : 'count' }))}
-                className="mt-2 self-start text-[10px] text-gray-300 hover:text-teal-500 transition-colors">
-                {selMode === 'count' ? 'Show %' : 'Show count'}
-              </button>
             </div>
             {/* Right — breakdown list; clicking an item updates the left display */}
             <div className="px-6 py-5 min-w-52 flex flex-col gap-1.5 justify-center">
