@@ -1442,14 +1442,9 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                       className="w-full flex items-center gap-2.5 group hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors text-left">
                       <span className={`size-2 rounded-full flex-shrink-0 ${s.dot}`} />
                       <span className="flex-1 text-xs text-gray-500 group-hover:text-gray-700 transition-colors">{s.label}</span>
-                      {/* Animated value — slides between count and pct */}
                       <span className={`text-xs font-bold tabular-nums ${s.color} min-w-[3rem] text-right transition-all`}>
                         {showPct ? `${s.pct}%` : s.value}
                       </span>
-                      {/* Mini inline bar */}
-                      <div className="w-14 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
-                        <div className={`h-full rounded-full transition-all duration-500 ${s.bar}`} style={{ width: `${s.pct}%` }} />
-                      </div>
                     </button>
                   );
                 })}
