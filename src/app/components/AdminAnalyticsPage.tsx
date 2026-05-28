@@ -618,6 +618,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   // Report Log breakdown: which item is selected + whether to show count or pct
   const [rlSelectedStat, setRlSelectedStat] = useState('Total Reports');
   const [rlStatMode, setRlStatMode] = useState<Record<string, 'count' | 'pct'>>({});
+  const [rlPage, setRlPage] = useState(1);
+  const RL_PER_PAGE = 15;
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1357,6 +1359,9 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           if (rlSearch && !r.name.toLowerCase().includes(rlSearch.toLowerCase()) && !r.recipients.join(' ').toLowerCase().includes(rlSearch.toLowerCase())) return false;
           return true;
         });
+        const rlTotalPages = Math.max(1, Math.ceil(filteredRuns.length / RL_PER_PAGE));
+        const rlSafePage   = Math.min(rlPage, rlTotalPages);
+        const pagedRuns    = filteredRuns.slice((rlSafePage - 1) * RL_PER_PAGE, rlSafePage * RL_PER_PAGE);
 
         const inProgressRuns = MOCK_RUNS.filter(r => r.status === 'In Progress');
 
@@ -1480,7 +1485,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                   </div>
                   {filteredRuns.length === 0 ? (
                     <div className="py-16 text-center text-gray-400 text-sm">No reports match your filters.</div>
-                  ) : filteredRuns.map(r => (
+                  ) : pagedRuns.map(r => (
                     <div key={r.id} className={`${COL} gap-3 px-5 py-3.5 border-b border-gray-50 hover:bg-gray-50/60 transition-colors items-center`}>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-800 truncate">{r.name}</p>
@@ -1516,6 +1521,26 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                       </div>
                     </div>
                   ))}
+                  {/* Pagination footer */}
+                  {rlTotalPages > 1 && (
+                    <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50/50">
+                      <span className="text-xs text-gray-400">
+                        Showing {(rlSafePage - 1) * RL_PER_PAGE + 1}–{Math.min(rlSafePage * RL_PER_PAGE, filteredRuns.length)} of {filteredRuns.length}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setRlPage(p => Math.max(1, p - 1))} disabled={rlSafePage === 1}
+                          className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">← Prev</button>
+                        {Array.from({ length: rlTotalPages }, (_, i) => i + 1).map(pg => (
+                          <button key={pg} onClick={() => setRlPage(pg)}
+                            className={`w-7 h-7 text-xs rounded-lg border transition-colors ${pg === rlSafePage ? 'bg-teal-500 border-teal-500 text-white font-semibold' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100'}`}>
+                            {pg}
+                          </button>
+                        ))}
+                        <button onClick={() => setRlPage(p => Math.min(rlTotalPages, p + 1))} disabled={rlSafePage === rlTotalPages}
+                          className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Next →</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
