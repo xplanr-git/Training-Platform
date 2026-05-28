@@ -926,6 +926,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             {analyticsView === 'training-matrix' && 'Training Matrix'}
             {analyticsView === 'product-insights' && 'Product Insights'}
             {analyticsView === 'scheduled-reports' && 'Scheduled Reports'}
+            {analyticsView === 'report-log' && 'Report Log'}
+            {analyticsView === 'activity-log' && 'Activity Log'}
           </h1>
           <p className="text-gray-600">
             {analyticsView === 'overview-analytics' && 'Track learner progress, engagement, and outcomes across your platform'}
@@ -938,6 +940,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             {analyticsView === 'training-matrix' && 'Visual overview of team training coverage and completion status'}
             {analyticsView === 'product-insights' && 'Deep-dive analytics into course performance, content quality and learner outcomes'}
             {analyticsView === 'scheduled-reports' && 'Automate report delivery — set up recurring reports sent directly to your team'}
+            {analyticsView === 'report-log' && 'Monitor, track and manage all generated reports across your platform'}
+            {analyticsView === 'activity-log' && 'Full audit trail of platform events and user actions'}
           </p>
           </div>{/* end flex-1 */}
           {analyticsView === 'scheduled-reports' && (
@@ -1228,6 +1232,372 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           </div>
         </div>
       )}
+
+      {/* ── Report Log ── */}
+      {analyticsView === 'report-log' && (() => {
+        type ReportRun = {
+          id: string;
+          name: string;
+          type: string;
+          generatedAt: string;
+          recipients: string[];
+          format: 'PDF' | 'CSV' | 'Excel';
+          status: 'Completed' | 'In Progress' | 'Failed' | 'Pending';
+          progress?: number;
+          eta?: string;
+          scheduleId: string;
+        };
+
+        const MOCK_RUNS: ReportRun[] = [
+          { id: 'run1',  name: 'Weekly Learner Progress',    type: 'User Progress',    generatedAt: '2026-05-26T09:00:00Z', recipients: ['admin@acme.com', 'hr@acme.com'],      format: 'PDF',   status: 'Completed',   scheduleId: schedReports[0]?.id || 'sr0' },
+          { id: 'run2',  name: 'Weekly Learner Progress',    type: 'User Progress',    generatedAt: '2026-05-19T09:00:00Z', recipients: ['admin@acme.com', 'hr@acme.com'],      format: 'PDF',   status: 'Completed',   scheduleId: schedReports[0]?.id || 'sr0' },
+          { id: 'run3',  name: 'Monthly Revenue Summary',    type: 'Revenue',          generatedAt: '2026-05-01T08:00:00Z', recipients: ['cfo@acme.com'],                       format: 'Excel', status: 'Completed',   scheduleId: schedReports[1]?.id || 'sr1' },
+          { id: 'run4',  name: 'Monthly Revenue Summary',    type: 'Revenue',          generatedAt: '2026-04-01T08:00:00Z', recipients: ['cfo@acme.com'],                       format: 'Excel', status: 'Failed',      scheduleId: schedReports[1]?.id || 'sr1' },
+          { id: 'run5',  name: 'Daily Active Users',         type: 'User Activity',    generatedAt: 'In Progress',          recipients: ['analytics@acme.com'],                 format: 'CSV',   status: 'In Progress', progress: 62, eta: '~2 min', scheduleId: schedReports[2]?.id || 'sr2' },
+          { id: 'run6',  name: 'Traffic Overview',           type: 'Traffic',          generatedAt: '2026-05-27T07:00:00Z', recipients: ['marketing@acme.com'],                 format: 'PDF',   status: 'Completed',   scheduleId: schedReports[3]?.id || 'sr3' },
+          { id: 'run7',  name: 'Traffic Overview',           type: 'Traffic',          generatedAt: '2026-05-20T07:00:00Z', recipients: ['marketing@acme.com'],                 format: 'PDF',   status: 'Completed',   scheduleId: schedReports[3]?.id || 'sr3' },
+          { id: 'run8',  name: 'Engagement Deep Dive',       type: 'Engagement Report',generatedAt: '2026-05-25T10:30:00Z', recipients: ['success@acme.com', 'pm@acme.com'],    format: 'PDF',   status: 'Completed',   scheduleId: schedReports[4]?.id || 'sr4' },
+          { id: 'run9',  name: 'Completion Rate Report',     type: 'Completion Report',generatedAt: 'In Progress',          recipients: ['l&d@acme.com'],                       format: 'CSV',   status: 'In Progress', progress: 28, eta: '~5 min', scheduleId: schedReports[5]?.id || 'sr5' },
+          { id: 'run10', name: 'System Health Digest',       type: 'System Health',    generatedAt: '2026-05-27T06:00:00Z', recipients: ['ops@acme.com'],                       format: 'PDF',   status: 'Completed',   scheduleId: schedReports[6]?.id || 'sr6' },
+          { id: 'run11', name: 'System Health Digest',       type: 'System Health',    generatedAt: '2026-05-26T06:00:00Z', recipients: ['ops@acme.com'],                       format: 'PDF',   status: 'Failed',      scheduleId: schedReports[6]?.id || 'sr6' },
+          { id: 'run12', name: 'New User Growth Report',     type: 'Users Growth',     generatedAt: '2026-05-01T08:00:00Z', recipients: ['growth@acme.com'],                    format: 'CSV',   status: 'Completed',   scheduleId: schedReports[7]?.id || 'sr7' },
+          { id: 'run13', name: 'Product Insights Monthly',   type: 'Product Insights', generatedAt: '',                     recipients: ['product@acme.com', 'ceo@acme.com'],   format: 'Excel', status: 'Pending',     scheduleId: schedReports[8]?.id || 'sr8' },
+          { id: 'run14', name: 'At-Risk Learner Snapshot',   type: 'User Progress',    generatedAt: '2026-05-24T11:00:00Z', recipients: ['coach@acme.com'],                     format: 'PDF',   status: 'Completed',   scheduleId: schedReports[9]?.id || 'sr9' },
+          { id: 'run15', name: 'AI Engagement Summary',      type: 'Engagement Report',generatedAt: 'In Progress',          recipients: ['ai-team@acme.com'],                   format: 'PDF',   status: 'In Progress', progress: 85, eta: '~1 min', scheduleId: schedReports[10]?.id || 'sr10' },
+        ];
+
+        // Derive upcoming from schedReports
+        type UpcomingRun = { id: string; name: string; type: string; scheduledFor: string; frequency: string; recipients: string[]; scheduleId: string; };
+        const upcomingRuns: UpcomingRun[] = schedReports
+          .filter(r => r.status === 'active')
+          .slice(0, 8)
+          .map((r, i) => {
+            const base = new Date('2026-05-28T00:00:00Z');
+            base.setDate(base.getDate() + i + 1);
+            return {
+              id: `up${r.id}`,
+              name: r.name,
+              type: r.reportType,
+              scheduledFor: base.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + r.time,
+              frequency: r.frequency,
+              recipients: r.emailTo,
+              scheduleId: r.id,
+            };
+          });
+
+        // Calendar: current month = May 2026
+        const CAL_YEAR = 2026, CAL_MONTH = 4; // 0-indexed May
+        const firstDay = new Date(CAL_YEAR, CAL_MONTH, 1).getDay(); // 0=Sun
+        const daysInMonth = new Date(CAL_YEAR, CAL_MONTH + 1, 0).getDate();
+        // Map day-of-month → count of runs
+        const calDayMap: Record<number, number> = {};
+        MOCK_RUNS.forEach(r => {
+          if (r.generatedAt && r.generatedAt !== 'In Progress' && r.generatedAt !== '') {
+            const d = new Date(r.generatedAt);
+            if (d.getFullYear() === CAL_YEAR && d.getMonth() === CAL_MONTH) {
+              calDayMap[d.getDate()] = (calDayMap[d.getDate()] || 0) + 1;
+            }
+          }
+        });
+        schedReports.filter(r => r.status === 'active').forEach((r, i) => {
+          const d = 28 + i + 1;
+          if (d <= 31) calDayMap[d] = (calDayMap[d] || 0) + 1;
+        });
+
+        const [reportLogTab, setReportLogTab] = useState<'all' | 'in-progress' | 'upcoming' | 'calendar'>('all');
+        const [rlSearch, setRlSearch] = useState('');
+        const [rlStatus, setRlStatus] = useState('All');
+        const [rlType, setRlType] = useState('All');
+        const [rlDate, setRlDate] = useState('All Time');
+        const [calTooltipDay, setCalTooltipDay] = useState<number | null>(null);
+
+        const statusBadge = (s: ReportRun['status']) => {
+          if (s === 'Completed')  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">Completed</span>;
+          if (s === 'In Progress') return <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-600 border border-teal-100"><span className="size-1.5 rounded-full bg-teal-400 animate-pulse" />In Progress</span>;
+          if (s === 'Failed')     return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-100">Failed</span>;
+          return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">Pending</span>;
+        };
+
+        const fmtBadge = (f: string) => f === 'PDF' ? 'bg-rose-50 text-rose-600 border-rose-100' : f === 'CSV' ? 'bg-teal-50 text-teal-600 border-teal-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100';
+
+        const allTypes = ['All', ...Array.from(new Set(MOCK_RUNS.map(r => r.type)))];
+
+        const filteredRuns = MOCK_RUNS.filter(r => {
+          if (rlStatus !== 'All' && r.status !== rlStatus) return false;
+          if (rlType !== 'All' && r.type !== rlType) return false;
+          if (rlSearch && !r.name.toLowerCase().includes(rlSearch.toLowerCase()) && !r.recipients.join(' ').toLowerCase().includes(rlSearch.toLowerCase())) return false;
+          return true;
+        });
+
+        const inProgressRuns = MOCK_RUNS.filter(r => r.status === 'In Progress');
+
+        const tabBar = (
+          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+            {([
+              { key: 'all',         label: 'All Reports'     },
+              { key: 'in-progress', label: 'In Progress'     },
+              { key: 'upcoming',    label: 'Upcoming Reports' },
+              { key: 'calendar',    label: 'Calendar View'   },
+            ] as const).map(t => (
+              <button key={t.key} onClick={() => setReportLogTab(t.key)}
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${reportLogTab === t.key ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                {t.label}
+                {t.key === 'in-progress' && inProgressRuns.length > 0 && (
+                  <span className="ml-1.5 inline-flex items-center justify-center size-4 rounded-full bg-teal-500 text-white text-[10px] font-bold">{inProgressRuns.length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        );
+
+        const filterBar = (
+          <div className="bg-white rounded-xl shadow-sm px-4 py-3 flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-44">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+              <input value={rlSearch} onChange={e => setRlSearch(e.target.value)}
+                placeholder="Search by name or recipient…"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300" />
+            </div>
+            <select value={rlStatus} onChange={e => setRlStatus(e.target.value)}
+              className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
+              {['All', 'Completed', 'In Progress', 'Failed', 'Pending'].map(s => <option key={s}>{s}</option>)}
+            </select>
+            <select value={rlType} onChange={e => setRlType(e.target.value)}
+              className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
+              {allTypes.map(s => <option key={s}>{s}</option>)}
+            </select>
+            <select value={rlDate} onChange={e => setRlDate(e.target.value)}
+              className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-300 text-gray-600 bg-white">
+              {['All Time', 'Today', 'This Week', 'This Month', 'Last 30 Days', 'Custom'].map(s => <option key={s}>{s}</option>)}
+            </select>
+            <button className="ml-auto flex items-center gap-1.5 px-3.5 py-2 bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold rounded-xl transition-colors flex-shrink-0">
+              <Download className="size-3.5" />
+              Export CSV
+            </button>
+          </div>
+        );
+
+        // Stats
+        const statCards = (
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: 'Total Reports',  value: MOCK_RUNS.length,                                            accent: 'text-gray-800',   bg: 'bg-white' },
+              { label: 'Completed',      value: MOCK_RUNS.filter(r => r.status === 'Completed').length,      accent: 'text-emerald-600',bg: 'bg-emerald-50' },
+              { label: 'In Progress',    value: MOCK_RUNS.filter(r => r.status === 'In Progress').length,    accent: 'text-teal-600',   bg: 'bg-teal-50' },
+              { label: 'Failed',         value: MOCK_RUNS.filter(r => r.status === 'Failed').length,         accent: 'text-red-600',    bg: 'bg-red-50' },
+            ].map(s => (
+              <div key={s.label} className={`${s.bg} rounded-xl border border-gray-100 shadow-sm px-5 py-4`}>
+                <p className={`text-2xl font-bold ${s.accent}`}>{s.value}</p>
+                <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        );
+
+        const COL = 'grid grid-cols-[2fr_1.2fr_1.4fr_1.6fr_0.8fr_1fr_1fr]';
+
+        return (
+          <div className="p-6 space-y-5 max-w-full">
+            {/* Tab bar */}
+            {tabBar}
+
+            {/* ── All Reports tab ── */}
+            {reportLogTab === 'all' && (
+              <div className="space-y-4">
+                {filterBar}
+                {statCards}
+
+                {/* Table */}
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  {/* Header */}
+                  <div className={`${COL} gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wide`}>
+                    <span>Report Name</span>
+                    <span>Type</span>
+                    <span>Generated</span>
+                    <span>Recipients</span>
+                    <span>Format</span>
+                    <span>Status</span>
+                    <span className="text-right">Actions</span>
+                  </div>
+                  {filteredRuns.length === 0 ? (
+                    <div className="py-16 text-center text-gray-400 text-sm">No reports match your filters.</div>
+                  ) : filteredRuns.map(r => (
+                    <div key={r.id} className={`${COL} gap-3 px-5 py-3.5 border-b border-gray-50 hover:bg-gray-50/60 transition-colors items-center`}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{r.name}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 truncate">{r.type}</span>
+                      <span className="text-xs text-gray-500 truncate">
+                        {r.generatedAt && r.generatedAt !== 'In Progress' && r.generatedAt !== ''
+                          ? new Date(r.generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                          : r.status === 'Pending' ? '—' : r.generatedAt}
+                      </span>
+                      <div className="flex flex-wrap gap-1 min-w-0">
+                        {r.recipients.slice(0, 2).map(rec => (
+                          <span key={rec} className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] truncate max-w-[100px]">{rec}</span>
+                        ))}
+                        {r.recipients.length > 2 && <span className="text-[10px] text-gray-400">+{r.recipients.length - 2}</span>}
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${fmtBadge(r.format)}`}>{r.format}</span>
+                      <span>{statusBadge(r.status)}</span>
+                      <div className="flex items-center justify-end gap-1">
+                        {r.status === 'Completed' && (
+                          <button title="Download" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                            <Download className="size-3.5" />
+                          </button>
+                        )}
+                        <button title="View" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                          <BookOpen className="size-3.5" />
+                        </button>
+                        {r.status === 'Failed' && (
+                          <button title="Retry" className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors">
+                            <RotateCcw className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── In Progress tab ── */}
+            {reportLogTab === 'in-progress' && (
+              <div className="space-y-4">
+                {inProgressRuns.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-sm py-16 text-center text-gray-400 text-sm">No reports currently running.</div>
+                ) : inProgressRuns.map(r => (
+                  <div key={r.id} className="bg-white rounded-xl shadow-sm border border-teal-100 px-6 py-5 space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-bold text-gray-900">{r.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{r.type} · {r.format} · {r.recipients.join(', ')}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        {statusBadge(r.status)}
+                        {r.eta && <p className="text-xs text-gray-400 mt-1">ETA {r.eta}</p>}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>Progress</span>
+                        <span>{r.progress ?? 0}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-teal-400 rounded-full transition-all duration-700"
+                          style={{ width: `${r.progress ?? 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── Upcoming tab ── */}
+            {reportLogTab === 'upcoming' && (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                {upcomingRuns.length === 0 ? (
+                  <div className="py-16 text-center text-gray-400 text-sm">No upcoming scheduled runs. Activate a schedule to see upcoming reports.</div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-[2fr_1.3fr_1.8fr_1fr_1.8fr_1fr] gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wide">
+                      <span>Report Name</span>
+                      <span>Type</span>
+                      <span>Scheduled For</span>
+                      <span>Frequency</span>
+                      <span>Recipients</span>
+                      <span className="text-right">Actions</span>
+                    </div>
+                    {upcomingRuns.map(r => (
+                      <div key={r.id} className="grid grid-cols-[2fr_1.3fr_1.8fr_1fr_1.8fr_1fr] gap-3 px-5 py-3.5 border-b border-gray-50 hover:bg-gray-50/60 transition-colors items-center">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{r.name}</p>
+                        <span className="text-xs text-gray-500 truncate">{r.type}</span>
+                        <span className="text-xs text-gray-600">{r.scheduledFor}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.frequency === 'Daily' ? 'bg-blue-50 text-blue-600' : r.frequency === 'Weekly' ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}>{r.frequency}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {r.recipients.slice(0, 2).map(rec => (
+                            <span key={rec} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded truncate max-w-[100px]">{rec}</span>
+                          ))}
+                          {r.recipients.length > 2 && <span className="text-[10px] text-gray-400">+{r.recipients.length - 2}</span>}
+                        </div>
+                        <div className="flex items-center justify-end gap-1">
+                          <button title="Edit" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button title="Skip" className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                            <X className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ── Calendar View tab ── */}
+            {reportLogTab === 'calendar' && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-800">May 2026</h3>
+                  <span className="text-xs text-gray-400">Dots indicate scheduled/completed reports</span>
+                </div>
+                {/* Day headers */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+                    <div key={d} className="text-center text-[11px] font-bold text-gray-400 uppercase py-1">{d}</div>
+                  ))}
+                </div>
+                {/* Calendar grid */}
+                <div className="grid grid-cols-7 gap-1 relative">
+                  {/* Leading empty cells */}
+                  {Array.from({ length: firstDay }).map((_, i) => (
+                    <div key={`e${i}`} className="h-16 rounded-xl bg-gray-50/50" />
+                  ))}
+                  {/* Day cells */}
+                  {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                    const count = calDayMap[day] || 0;
+                    const isToday = day === 28;
+                    return (
+                      <div
+                        key={day}
+                        onClick={() => setCalTooltipDay(calTooltipDay === day ? null : day)}
+                        className={`h-16 rounded-xl border transition-all cursor-pointer relative flex flex-col items-start p-2 ${isToday ? 'border-teal-400 bg-teal-50' : count > 0 ? 'border-gray-100 hover:border-teal-200 hover:bg-teal-50/30' : 'border-gray-100 hover:bg-gray-50'}`}
+                      >
+                        <span className={`text-sm font-semibold ${isToday ? 'text-teal-600' : 'text-gray-700'}`}>{day}</span>
+                        {count > 0 && (
+                          <div className="flex items-center gap-1 mt-auto">
+                            <span className="size-1.5 rounded-full bg-teal-400" />
+                            <span className="text-[10px] text-teal-600 font-semibold">{count}</span>
+                          </div>
+                        )}
+                        {/* Tooltip */}
+                        {calTooltipDay === day && count > 0 && (
+                          <div className="absolute z-10 top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-3 text-xs space-y-1.5">
+                            <p className="font-bold text-gray-700 mb-2">May {day} — {count} report{count !== 1 ? 's' : ''}</p>
+                            {MOCK_RUNS.filter(r => {
+                              if (!r.generatedAt || r.generatedAt === 'In Progress' || r.generatedAt === '') return false;
+                              const d = new Date(r.generatedAt);
+                              return d.getFullYear() === CAL_YEAR && d.getMonth() === CAL_MONTH && d.getDate() === day;
+                            }).map(r => (
+                              <div key={r.id} className="flex items-center gap-1.5">
+                                <span className={`size-1.5 rounded-full flex-shrink-0 ${r.status === 'Completed' ? 'bg-emerald-400' : r.status === 'Failed' ? 'bg-red-400' : 'bg-teal-400'}`} />
+                                <span className="text-gray-600 truncate">{r.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Scheduled Reports ── */}
       {analyticsView === 'scheduled-reports' && (() => {
@@ -2246,7 +2616,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
       })()}
 
       {/* ── Section nav rows (replace accordions) ── */}
-      {analyticsTab === 'all-reports' && analyticsView !== 'system-health' && analyticsView !== 'ai-insights' && analyticsView !== 'training-matrix' && analyticsView !== 'product-insights' && analyticsView !== 'scheduled-reports' && (
+      {analyticsTab === 'all-reports' && analyticsView !== 'system-health' && analyticsView !== 'ai-insights' && analyticsView !== 'training-matrix' && analyticsView !== 'product-insights' && analyticsView !== 'scheduled-reports' && analyticsView !== 'report-log' && (
         <div className="space-y-2">
           {sectionDefs.filter(s => showSection(s.name)).map(s => {
             /* ── User Progress: inline dropdown ── */
