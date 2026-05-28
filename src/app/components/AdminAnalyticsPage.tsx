@@ -615,7 +615,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [rlType, setRlType] = useState('All');
   const [rlDate, setRlDate] = useState('All Time');
   const [calTooltipDay, setCalTooltipDay] = useState<number | null>(null);
-  // Track which stat-list items show 'pct' vs 'count' (toggled per click)
+  // Report Log breakdown: which item is selected + whether to show count or pct
+  const [rlSelectedStat, setRlSelectedStat] = useState('Total Reports');
   const [rlStatMode, setRlStatMode] = useState<Record<string, 'count' | 'pct'>>({});
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
@@ -1405,47 +1406,55 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           </div>
         );
 
-        // Stats — single combined card: summary pills left, status list right
-        const totalRuns   = MOCK_RUNS.length;
-        const completedN  = MOCK_RUNS.filter(r => r.status === 'Completed').length;
-        const inProgN     = MOCK_RUNS.filter(r => r.status === 'In Progress').length;
-        const failedN     = MOCK_RUNS.filter(r => r.status === 'Failed').length;
-        const pendingN    = MOCK_RUNS.filter(r => r.status === 'Pending').length;
-        const successRate = totalRuns ? Math.round((completedN / totalRuns) * 100) : 0;
+        // Stats — single combined card
+        const totalRuns  = MOCK_RUNS.length;
+        const completedN = MOCK_RUNS.filter(r => r.status === 'Completed').length;
+        const inProgN    = MOCK_RUNS.filter(r => r.status === 'In Progress').length;
+        const failedN    = MOCK_RUNS.filter(r => r.status === 'Failed').length;
+        const pendingN   = MOCK_RUNS.filter(r => r.status === 'Pending').length;
+
+        const STAT_ITEMS = [
+          { label: 'Total Reports', value: totalRuns,  pct: 100,                                                  dot: 'bg-gray-400',    numColor: 'text-gray-800',    subColor: 'text-gray-400'    },
+          { label: 'Completed',     value: completedN, pct: totalRuns ? Math.round(completedN/totalRuns*100) : 0, dot: 'bg-emerald-400', numColor: 'text-emerald-600', subColor: 'text-emerald-400' },
+          { label: 'In Progress',   value: inProgN,    pct: totalRuns ? Math.round(inProgN/totalRuns*100)    : 0, dot: 'bg-teal-400',    numColor: 'text-teal-600',    subColor: 'text-teal-400'    },
+          { label: 'Failed',        value: failedN,    pct: totalRuns ? Math.round(failedN/totalRuns*100)    : 0, dot: 'bg-red-400',     numColor: 'text-red-500',     subColor: 'text-red-400'     },
+          { label: 'Pending',       value: pendingN,   pct: totalRuns ? Math.round(pendingN/totalRuns*100)   : 0, dot: 'bg-gray-300',    numColor: 'text-gray-500',    subColor: 'text-gray-300'    },
+        ];
+
+        // Left display is driven by which breakdown row is selected + count/pct mode
+        const selItem = STAT_ITEMS.find(s => s.label === rlSelectedStat) ?? STAT_ITEMS[0];
+        const selMode = (rlStatMode[rlSelectedStat] ?? 'count') as 'count' | 'pct';
+        const leftVal = selMode === 'count' ? selItem.value : `${selItem.pct}%`;
 
         const statCards = (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex divide-x divide-gray-100 overflow-hidden">
-            {/* Left — total count */}
-            <div className="flex items-center px-6 py-5 flex-1">
-              <div>
-                <p className="text-3xl font-bold text-gray-800">{totalRuns}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Total Reports</p>
+            {/* Left — reflects selected breakdown item; click toggle to switch count/pct */}
+            <div className="flex flex-col justify-center px-6 py-5 flex-1 min-w-0">
+              <p className={`text-3xl font-bold tabular-nums transition-all ${selItem.numColor}`}>{leftVal}</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className={`size-2 rounded-full flex-shrink-0 ${selItem.dot}`} />
+                <p className={`text-xs ${selItem.subColor}`}>{selItem.label}</p>
               </div>
+              <button type="button"
+                onClick={() => setRlStatMode(prev => ({ ...prev, [rlSelectedStat]: selMode === 'count' ? 'pct' : 'count' }))}
+                className="mt-2 self-start text-[10px] text-gray-300 hover:text-teal-500 transition-colors">
+                {selMode === 'count' ? 'Show %' : 'Show count'}
+              </button>
             </div>
-            {/* Right — clickable breakdown list; cycles none → count → pct → none */}
+            {/* Right — breakdown list; clicking an item updates the left display */}
             <div className="px-6 py-5 min-w-52 flex flex-col gap-1.5 justify-center">
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Breakdown</p>
               <div className="space-y-0.5">
-                {[
-                  { label: 'Total Reports', value: totalRuns,  pct: 100,                                                         dot: 'bg-gray-400',    color: 'text-gray-700'    },
-                  { label: 'Completed',     value: completedN, pct: totalRuns ? Math.round(completedN/totalRuns*100) : 0,         dot: 'bg-emerald-400', color: 'text-emerald-600' },
-                  { label: 'In Progress',   value: inProgN,    pct: totalRuns ? Math.round(inProgN/totalRuns*100)    : 0,         dot: 'bg-teal-400',    color: 'text-teal-600'    },
-                  { label: 'Failed',        value: failedN,    pct: totalRuns ? Math.round(failedN/totalRuns*100)    : 0,         dot: 'bg-red-400',     color: 'text-red-500'     },
-                  { label: 'Pending',       value: pendingN,   pct: totalRuns ? Math.round(pendingN/totalRuns*100)   : 0,         dot: 'bg-gray-300',    color: 'text-gray-500'    },
-                ].map(s => {
-                  const mode = rlStatMode[s.label] as 'none'|'count'|'pct' | undefined ?? 'none';
-                  const cycle = () => setRlStatMode(prev => {
-                    const cur = (prev[s.label] ?? 'none') as 'none'|'count'|'pct';
-                    return { ...prev, [s.label]: cur === 'none' ? 'count' : cur === 'count' ? 'pct' : 'none' };
-                  });
+                {STAT_ITEMS.map(s => {
+                  const isActive = rlSelectedStat === s.label;
                   return (
-                    <button key={s.label} type="button" onClick={cycle}
-                      className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors group text-left">
+                    <button key={s.label} type="button" onClick={() => setRlSelectedStat(s.label)}
+                      className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors text-left ${isActive ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
                       <span className={`size-2 rounded-full flex-shrink-0 ${s.dot}`} />
-                      <span className="flex-1 text-xs text-gray-500 group-hover:text-gray-700 transition-colors">{s.label}</span>
-                      {mode !== 'none' && (
-                        <span className={`text-xs font-semibold tabular-nums ${s.color}`}>
-                          {mode === 'count' ? s.value : `${s.pct}%`}
+                      <span className={`flex-1 text-xs transition-colors ${isActive ? 'text-gray-800 font-medium' : 'text-gray-400 hover:text-gray-600'}`}>{s.label}</span>
+                      {isActive && (
+                        <span className={`text-xs font-semibold tabular-nums ${s.numColor}`}>
+                          {selMode === 'count' ? s.value : `${s.pct}%`}
                         </span>
                       )}
                     </button>
