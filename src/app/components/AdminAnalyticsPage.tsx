@@ -620,6 +620,7 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [rlStatMode, setRlStatMode] = useState<Record<string, 'count' | 'pct'>>({});
   const [rlPage, setRlPage] = useState(1);
   const RL_PER_PAGE = 15;
+  const [rlEditOpen, setRlEditOpen] = useState(false);
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1464,8 +1465,154 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
         const COL = 'grid grid-cols-[2fr_1.2fr_1.4fr_1.6fr_0.8fr_1fr_1fr]';
 
+        // ── Shared helpers for the edit slide panel ──
+        const inputCls  = 'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-300 placeholder:text-gray-300';
+        const labelCls  = 'block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1';
+        const rlSaveEdit = async () => {
+          if (!schedForm.name || !schedEditId) return;
+          const emailToArr = schedForm.emailTo.split(',').map((s: string) => s.trim()).filter(Boolean);
+          let updated: ScheduledReport | undefined;
+          setSchedReports(prev => prev.map(r => {
+            if (r.id !== schedEditId) return r;
+            updated = { ...r, name: schedForm.name, segment: schedForm.segment, reportType: schedForm.reportType,
+              frequency: schedForm.frequency, time: schedForm.time, timezone: schedForm.timezone, dayLabel: schedForm.dayLabel,
+              timePeriod: schedForm.timePeriod, format: schedForm.format,
+              notifyUsers: schedForm.notifyUsers, emailTo: emailToArr, emailSubject: schedForm.emailSubject, emailMessage: schedForm.emailMessage };
+            return updated!;
+          }));
+          if (updated) await supabase.from('kv_store_d60f2898').upsert({ key: `${schedKvPrefix}${schedEditId}`, value: updated });
+          setRlEditOpen(false); setSchedEditId(null); setSchedForm(SCHED_FORM_DEFAULT);
+        };
+
+        const DEFAULT_SEGMENTS = ['All Users','New Users','Active Users','Inactive Users','Paid Users','Free Users'];
+        const FREQ_DAYS: Record<string, string[]> = { Daily: [], Weekly: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], Monthly: ['1st','15th','Last day'] };
+
         return (
           <div className="p-6 space-y-5 max-w-full">
+
+            {/* ── Edit Schedule slide panel ── */}
+            {rlEditOpen && (
+              <div className="fixed inset-0 z-50 flex">
+                {/* Backdrop */}
+                <div className="flex-1 bg-black/20" onClick={() => { setRlEditOpen(false); setSchedEditId(null); setSchedForm(SCHED_FORM_DEFAULT); }} />
+                {/* Panel slides in from right */}
+                <div className="w-full max-w-2xl bg-white shadow-2xl flex flex-col overflow-y-auto animate-in slide-in-from-right duration-300">
+                  {/* Panel header */}
+                  <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+                    <button onClick={() => { setRlEditOpen(false); setSchedEditId(null); setSchedForm(SCHED_FORM_DEFAULT); }}
+                      className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-teal-600 transition-colors font-medium">
+                      <ArrowLeft className="size-4" /> Back to Report Log
+                    </button>
+                    <div className="w-px h-5 bg-gray-200" />
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">Edit Schedule</p>
+                      <p className="text-xs text-gray-400">{schedForm.name || 'Untitled schedule'}</p>
+                    </div>
+                  </div>
+                  {/* Form body */}
+                  <div className="flex-1 px-6 py-5 space-y-6 overflow-y-auto">
+                    {/* Basic info */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Basic Info</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <label className={labelCls}>Report Title</label>
+                          <input value={schedForm.name} onChange={e => setSchedForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Weekly Learner Progress" className={inputCls} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>User's Segment</label>
+                          <select value={schedForm.segment} onChange={e => setSchedForm(p => ({ ...p, segment: e.target.value }))} className={inputCls}>
+                            <optgroup label="Default">{DEFAULT_SEGMENTS.map(s => <option key={s}>{s}</option>)}</optgroup>
+                            {segments.length > 0 && <optgroup label="My Segments">{segments.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}</optgroup>}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelCls}>Report Type</label>
+                          <select value={schedForm.reportType} onChange={e => setSchedForm(p => ({ ...p, reportType: e.target.value }))} className={inputCls}>
+                            {['User Progress','Revenue','Traffic','User Behavior','Login Stats','Engagement Report','Completion Report','Product Insights'].map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Schedule */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Schedule</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={labelCls}>Frequency</label>
+                          <select value={schedForm.frequency} onChange={e => setSchedForm(p => ({ ...p, frequency: e.target.value as 'Daily'|'Weekly'|'Monthly', dayLabel: '' }))} className={inputCls}>
+                            {['Daily','Weekly','Monthly'].map(f => <option key={f}>{f}</option>)}
+                          </select>
+                        </div>
+                        {schedForm.frequency !== 'Daily' && (
+                          <div>
+                            <label className={labelCls}>{schedForm.frequency === 'Weekly' ? 'Day of Week' : 'Day of Month'}</label>
+                            <select value={schedForm.dayLabel} onChange={e => setSchedForm(p => ({ ...p, dayLabel: e.target.value }))} className={inputCls}>
+                              {FREQ_DAYS[schedForm.frequency].map(d => <option key={d}>{d}</option>)}
+                            </select>
+                          </div>
+                        )}
+                        <div>
+                          <label className={labelCls}>Time</label>
+                          <input type="time" value={schedForm.time} onChange={e => setSchedForm(p => ({ ...p, time: e.target.value }))} className={inputCls} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Timezone</label>
+                          <select value={schedForm.timezone} onChange={e => setSchedForm(p => ({ ...p, timezone: e.target.value }))} className={inputCls}>
+                            {['UTC-8','UTC-5','UTC','UTC+1','UTC+3','UTC+5:30','UTC+8','UTC+9','UTC+10'].map(tz => <option key={tz}>{tz}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelCls}>Time Period</label>
+                          <select value={schedForm.timePeriod} onChange={e => setSchedForm(p => ({ ...p, timePeriod: e.target.value }))} className={inputCls}>
+                            {['Last 7 days','Last 14 days','Last 30 days','Last 60 days','Last 90 days','Year to date','All time'].map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelCls}>File Format</label>
+                          <select value={schedForm.format} onChange={e => setSchedForm(p => ({ ...p, format: e.target.value as 'PDF'|'CSV'|'Excel' }))} className={inputCls}>
+                            {['PDF','CSV','Excel'].map(f => <option key={f}>{f}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Notification */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Notification</p>
+                      <label className="flex items-center gap-2.5 cursor-pointer mb-4">
+                        <div onClick={() => setSchedForm(p => ({ ...p, notifyUsers: !p.notifyUsers }))}
+                          className={`relative w-9 h-5 rounded-full transition-colors ${schedForm.notifyUsers ? 'bg-teal-500' : 'bg-gray-200'}`}>
+                          <span className={`absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow transition-transform ${schedForm.notifyUsers ? 'translate-x-4' : ''}`} />
+                        </div>
+                        <span className="text-sm text-gray-600">Notify users by email</span>
+                      </label>
+                      {schedForm.notifyUsers && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="col-span-2">
+                            <label className={labelCls}>To</label>
+                            <input value={schedForm.emailTo} onChange={e => setSchedForm(p => ({ ...p, emailTo: e.target.value }))} placeholder="email@example.com, …" className={inputCls} />
+                          </div>
+                          <div className="col-span-2">
+                            <label className={labelCls}>Subject</label>
+                            <input value={schedForm.emailSubject} onChange={e => setSchedForm(p => ({ ...p, emailSubject: e.target.value }))} placeholder="e.g. Weekly Learner Progress Report" className={inputCls} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Footer */}
+                  <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+                    <button onClick={() => { setRlEditOpen(false); setSchedEditId(null); setSchedForm(SCHED_FORM_DEFAULT); }}
+                      className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                    <button onClick={rlSaveEdit} disabled={!schedForm.name}
+                      className="flex items-center gap-2 px-5 py-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors">
+                      <CheckCircle className="size-4" /> Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ── All Reports tab ── */}
             {reportLogTab === 'all' && (
               <div className="space-y-4">
@@ -1607,7 +1754,22 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                           {r.recipients.length > 2 && <span className="text-[10px] text-gray-400">+{r.recipients.length - 2}</span>}
                         </div>
                         <div className="flex items-center justify-end gap-1">
-                          <button title="Edit" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                          <button title="Edit"
+                            onClick={() => {
+                              const sr = schedReports.find(s => s.id === r.scheduleId);
+                              if (sr) {
+                                setSchedEditId(sr.id);
+                                setSchedForm({
+                                  name: sr.name, segment: sr.segment, reportType: sr.reportType,
+                                  frequency: sr.frequency, time: sr.time, timezone: sr.timezone, dayLabel: sr.dayLabel || 'Monday',
+                                  timePeriod: sr.timePeriod, format: sr.format,
+                                  notifyUsers: sr.notifyUsers, emailTo: sr.emailTo.join(', '),
+                                  emailSubject: sr.emailSubject, emailMessage: sr.emailMessage,
+                                });
+                              }
+                              setRlEditOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-500 transition-colors">
                             <Pencil className="size-3.5" />
                           </button>
                           <button title="Skip" className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
