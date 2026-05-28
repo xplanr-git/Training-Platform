@@ -608,6 +608,13 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
       msgEditorRef.current.innerHTML = schedForm.emailMessage || '';
     }
   }, [schedFormOpen, schedEditId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ── Report Log state (must live at component top-level, not inside IIFE) ──
+  const [reportLogTab, setReportLogTab] = useState<'all' | 'in-progress' | 'upcoming' | 'calendar'>('all');
+  const [rlSearch, setRlSearch] = useState('');
+  const [rlStatus, setRlStatus] = useState('All');
+  const [rlType, setRlType] = useState('All');
+  const [rlDate, setRlDate] = useState('All Time');
+  const [calTooltipDay, setCalTooltipDay] = useState<number | null>(null);
   const [activityStat, setActivityStat] = useState<'active' | 'loggedin' | 'notenrolled' | 'avglogins'>('active');
   const [growthStat, setGrowthStat] = useState<'total' | 'new' | 'returning' | 'churn'>('total');
   const [engagementStat, setEngagementStat] = useState<'interactions' | 'bounce' | 'pages' | 'session'>('interactions');
@@ -1303,13 +1310,6 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           const d = 28 + i + 1;
           if (d <= 31) calDayMap[d] = (calDayMap[d] || 0) + 1;
         });
-
-        const [reportLogTab, setReportLogTab] = useState<'all' | 'in-progress' | 'upcoming' | 'calendar'>('all');
-        const [rlSearch, setRlSearch] = useState('');
-        const [rlStatus, setRlStatus] = useState('All');
-        const [rlType, setRlType] = useState('All');
-        const [rlDate, setRlDate] = useState('All Time');
-        const [calTooltipDay, setCalTooltipDay] = useState<number | null>(null);
 
         const statusBadge = (s: ReportRun['status']) => {
           if (s === 'Completed')  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">Completed</span>;
