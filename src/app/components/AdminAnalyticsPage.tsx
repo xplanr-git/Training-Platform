@@ -587,6 +587,21 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
   const [schedEditId, setSchedEditId] = useState<string | null>(null);
   const [msgEmojiOpen, setMsgEmojiOpen] = useState(false);
   const msgEditorRef = useRef<HTMLDivElement>(null);
+  const [msgFmt, setMsgFmt] = useState({ bold: false, italic: false, underline: false, strike: false, ul: false, ol: false, left: false, center: false });
+  const refreshFmt = () => {
+    try {
+      setMsgFmt({
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        strike: document.queryCommandState('strikeThrough'),
+        ul: document.queryCommandState('insertUnorderedList'),
+        ol: document.queryCommandState('insertOrderedList'),
+        left: document.queryCommandState('justifyLeft'),
+        center: document.queryCommandState('justifyCenter'),
+      });
+    } catch { /* ignore */ }
+  };
   // Sync contenteditable innerHTML when the schedule form opens or switches to edit mode
   useEffect(() => {
     if (schedFormOpen && msgEditorRef.current) {
@@ -1508,28 +1523,39 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                             {/* NOTE: no overflow-hidden here — lets emoji popover escape the border box */}
                             <div className="border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-teal-300 focus-within:border-transparent">
                               {/* Toolbar */}
+                              {(() => {
+                                // active = teal highlight, inactive = gray hover
+                                const fb = (on: boolean, extra = '') =>
+                                  `w-7 h-7 flex items-center justify-center rounded select-none transition-colors ${extra} ${on ? 'bg-teal-50 text-teal-600 ring-1 ring-inset ring-teal-200' : 'hover:bg-gray-200 text-gray-700'}`;
+                                const run = (cmd: string, after?: () => void) => {
+                                  msgEditorRef.current?.focus();
+                                  document.execCommand(cmd, false);
+                                  requestAnimationFrame(refreshFmt);
+                                  after?.();
+                                };
+                                return (
                               <div className="flex items-center gap-0.5 px-2 py-1.5 bg-gray-50 border-b border-gray-100 rounded-t-lg">
                                 {/* Bold */}
                                 <button type="button" title="Bold"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('bold', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 font-bold text-sm select-none">B</button>
+                                  onMouseDown={e => { e.preventDefault(); run('bold'); }}
+                                  className={`${fb(msgFmt.bold, 'font-bold text-sm')}`}>B</button>
                                 {/* Italic */}
                                 <button type="button" title="Italic"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('italic', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 italic text-sm select-none">I</button>
+                                  onMouseDown={e => { e.preventDefault(); run('italic'); }}
+                                  className={`${fb(msgFmt.italic, 'italic text-sm')}`}>I</button>
                                 {/* Underline */}
                                 <button type="button" title="Underline"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('underline', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 underline text-sm select-none">U</button>
+                                  onMouseDown={e => { e.preventDefault(); run('underline'); }}
+                                  className={`${fb(msgFmt.underline, 'underline text-sm')}`}>U</button>
                                 {/* Strikethrough */}
                                 <button type="button" title="Strikethrough"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('strikeThrough', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-500 line-through text-sm select-none">S</button>
+                                  onMouseDown={e => { e.preventDefault(); run('strikeThrough'); }}
+                                  className={`${fb(msgFmt.strike, 'line-through text-sm')}`}>S</button>
                                 <div className="w-px h-4 bg-gray-200 mx-1" />
                                 {/* Bullet list */}
                                 <button type="button" title="Bullet list"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('insertUnorderedList', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  onMouseDown={e => { e.preventDefault(); run('insertUnorderedList'); }}
+                                  className={fb(msgFmt.ul)}>
                                   <svg width="15" height="13" viewBox="0 0 15 13" fill="currentColor">
                                     <circle cx="1.5" cy="2" r="1.4"/><rect x="4.5" y="1.2" width="10" height="1.5" rx="0.75"/>
                                     <circle cx="1.5" cy="6.5" r="1.4"/><rect x="4.5" y="5.7" width="10" height="1.5" rx="0.75"/>
@@ -1538,8 +1564,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                                 </button>
                                 {/* Numbered list */}
                                 <button type="button" title="Numbered list"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('insertOrderedList', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  onMouseDown={e => { e.preventDefault(); run('insertOrderedList'); }}
+                                  className={fb(msgFmt.ol)}>
                                   <svg width="15" height="13" viewBox="0 0 15 13" fill="currentColor" fontSize="4">
                                     <text x="0" y="3.5" style={{ fontSize: '4.5px', fontFamily: 'sans-serif' }}>1.</text><rect x="4.5" y="1.2" width="10" height="1.5" rx="0.75"/>
                                     <text x="0" y="8" style={{ fontSize: '4.5px', fontFamily: 'sans-serif' }}>2.</text><rect x="4.5" y="5.7" width="10" height="1.5" rx="0.75"/>
@@ -1549,8 +1575,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                                 <div className="w-px h-4 bg-gray-200 mx-1" />
                                 {/* Align left */}
                                 <button type="button" title="Align left"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('justifyLeft', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  onMouseDown={e => { e.preventDefault(); run('justifyLeft'); }}
+                                  className={fb(msgFmt.left)}>
                                   <svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                                     <line x1="1" y1="1.5" x2="13" y2="1.5"/><line x1="1" y1="4.5" x2="9" y2="4.5"/>
                                     <line x1="1" y1="7.5" x2="13" y2="7.5"/><line x1="1" y1="10.5" x2="8" y2="10.5"/>
@@ -1558,8 +1584,8 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                                 </button>
                                 {/* Align center */}
                                 <button type="button" title="Align center"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('justifyCenter', false); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-700 select-none">
+                                  onMouseDown={e => { e.preventDefault(); run('justifyCenter'); }}
+                                  className={fb(msgFmt.center)}>
                                   <svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                                     <line x1="1" y1="1.5" x2="13" y2="1.5"/><line x1="3" y1="4.5" x2="11" y2="4.5"/>
                                     <line x1="1" y1="7.5" x2="13" y2="7.5"/><line x1="4" y1="10.5" x2="10" y2="10.5"/>
@@ -1592,9 +1618,11 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                                 </div>
                                 {/* Clear formatting */}
                                 <button type="button" title="Clear formatting"
-                                  onMouseDown={e => { e.preventDefault(); msgEditorRef.current?.focus(); document.execCommand('removeFormat', false); }}
+                                  onMouseDown={e => { e.preventDefault(); run('removeFormat', () => refreshFmt()); }}
                                   className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 text-gray-400 ml-auto select-none text-[10px]">T✕</button>
                               </div>
+                                );
+                              })()}
                               {/* Editable area */}
                               <div
                                 ref={msgEditorRef}
@@ -1602,6 +1630,9 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                                 suppressContentEditableWarning
                                 onInput={() => setSchedForm(p => ({ ...p, emailMessage: msgEditorRef.current?.innerHTML || '' }))}
                                 onMouseDown={() => setMsgEmojiOpen(false)}
+                                onMouseUp={refreshFmt}
+                                onKeyUp={refreshFmt}
+                                onSelect={refreshFmt}
                                 data-placeholder="Add a personal message to accompany the report…"
                                 className="w-full px-3 py-2 text-sm min-h-[100px] focus:outline-none rounded-b-lg [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-gray-300 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5"
                               />
