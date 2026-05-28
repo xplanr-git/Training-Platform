@@ -1403,20 +1403,63 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
           </div>
         );
 
-        // Stats
+        // Stats — single combined card: summary pills left, status list right
+        const totalRuns   = MOCK_RUNS.length;
+        const completedN  = MOCK_RUNS.filter(r => r.status === 'Completed').length;
+        const inProgN     = MOCK_RUNS.filter(r => r.status === 'In Progress').length;
+        const failedN     = MOCK_RUNS.filter(r => r.status === 'Failed').length;
+        const pendingN    = MOCK_RUNS.filter(r => r.status === 'Pending').length;
+        const successRate = totalRuns ? Math.round((completedN / totalRuns) * 100) : 0;
+
         const statCards = (
-          <div className="grid grid-cols-4 gap-4">
-            {[
-              { label: 'Total Reports',  value: MOCK_RUNS.length,                                            accent: 'text-gray-800',   bg: 'bg-white' },
-              { label: 'Completed',      value: MOCK_RUNS.filter(r => r.status === 'Completed').length,      accent: 'text-emerald-600',bg: 'bg-emerald-50' },
-              { label: 'In Progress',    value: MOCK_RUNS.filter(r => r.status === 'In Progress').length,    accent: 'text-teal-600',   bg: 'bg-teal-50' },
-              { label: 'Failed',         value: MOCK_RUNS.filter(r => r.status === 'Failed').length,         accent: 'text-red-600',    bg: 'bg-red-50' },
-            ].map(s => (
-              <div key={s.label} className={`${s.bg} rounded-xl border border-gray-100 shadow-sm px-5 py-4`}>
-                <p className={`text-2xl font-bold ${s.accent}`}>{s.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex divide-x divide-gray-100 overflow-hidden">
+            {/* Left — big number summary pills */}
+            <div className="flex items-center gap-6 px-6 py-5 flex-1">
+              <div>
+                <p className="text-3xl font-bold text-gray-800">{totalRuns}</p>
+                <p className="text-xs text-gray-500 mt-0.5">Total Reports</p>
               </div>
-            ))}
+              <div className="w-px h-10 bg-gray-100" />
+              <div className="flex flex-wrap gap-3">
+                {[
+                  { label: 'Completed',   value: completedN, dot: 'bg-emerald-400', text: 'text-emerald-700', pill: 'bg-emerald-50 border-emerald-100' },
+                  { label: 'In Progress', value: inProgN,    dot: 'bg-teal-400',    text: 'text-teal-700',    pill: 'bg-teal-50 border-teal-100' },
+                  { label: 'Failed',      value: failedN,    dot: 'bg-red-400',     text: 'text-red-700',     pill: 'bg-red-50 border-red-100' },
+                  { label: 'Pending',     value: pendingN,   dot: 'bg-gray-300',    text: 'text-gray-600',    pill: 'bg-gray-50 border-gray-200' },
+                ].map(s => (
+                  <div key={s.label} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${s.pill}`}>
+                    <span className={`size-2 rounded-full ${s.dot} flex-shrink-0`} />
+                    <span className={`text-sm font-bold ${s.text}`}>{s.value}</span>
+                    <span className="text-xs text-gray-500">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Right — status breakdown list */}
+            <div className="px-6 py-5 min-w-56 flex flex-col gap-2 justify-center">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Success Rate</p>
+              {/* Progress bar */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${successRate}%` }} />
+                </div>
+                <span className="text-xs font-semibold text-gray-700 w-8 text-right">{successRate}%</span>
+              </div>
+              {/* Mini list */}
+              <div className="space-y-1 mt-1">
+                {[
+                  { label: 'Completed',   value: completedN, pct: totalRuns ? Math.round(completedN/totalRuns*100) : 0, color: 'text-emerald-600' },
+                  { label: 'In Progress', value: inProgN,    pct: totalRuns ? Math.round(inProgN/totalRuns*100) : 0,    color: 'text-teal-600' },
+                  { label: 'Failed',      value: failedN,    pct: totalRuns ? Math.round(failedN/totalRuns*100) : 0,    color: 'text-red-500' },
+                  { label: 'Pending',     value: pendingN,   pct: totalRuns ? Math.round(pendingN/totalRuns*100) : 0,   color: 'text-gray-400' },
+                ].map(s => (
+                  <div key={s.label} className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">{s.label}</span>
+                    <span className={`font-semibold ${s.color}`}>{s.value} <span className="text-gray-400 font-normal">({s.pct}%)</span></span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         );
 
