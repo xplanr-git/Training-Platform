@@ -975,6 +975,32 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
             ))}
           </div>
         )}
+        {/* Report Log tabs */}
+        {analyticsView === 'report-log' && (() => {
+          const inProgressCount = [
+            'In Progress',
+          ].length; // recomputed inline — real count derived below from MOCK data constant; use schedReports as proxy
+          // Count: 3 in-progress runs hard-coded in MOCK_RUNS
+          const IP_COUNT = 3;
+          return (
+            <div className="flex items-center gap-1 px-6 mt-4 border-t border-gray-100 pt-3">
+              {([
+                { key: 'all',         label: 'All Reports'      },
+                { key: 'in-progress', label: 'In Progress'      },
+                { key: 'upcoming',    label: 'Upcoming Reports'  },
+                { key: 'calendar',    label: 'Calendar View'    },
+              ] as const).map(t => (
+                <button key={t.key} onClick={() => setReportLogTab(t.key)}
+                  className={`flex items-center px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${reportLogTab === t.key ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                  {t.label}
+                  {t.key === 'in-progress' && (
+                    <span className="ml-1.5 inline-flex items-center justify-center size-4 rounded-full bg-teal-500 text-white text-[10px] font-bold">{IP_COUNT}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
         {/* Product Insights tabs */}
         {analyticsView === 'product-insights' && (
           <div className="flex items-center gap-1 px-6 mt-4 border-t border-gray-100">
@@ -1398,9 +1424,6 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
         return (
           <div className="p-6 space-y-5 max-w-full">
-            {/* Tab bar */}
-            {tabBar}
-
             {/* ── All Reports tab ── */}
             {reportLogTab === 'all' && (
               <div className="space-y-4">
