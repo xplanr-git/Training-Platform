@@ -1422,32 +1422,21 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
                 <p className="text-xs text-gray-500 mt-0.5">Total Reports</p>
               </div>
             </div>
-            {/* Right — clickable status breakdown list */}
-            <div className="px-6 py-5 min-w-60 flex flex-col gap-2 justify-center">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Breakdown</p>
-                <span className="text-[10px] text-gray-300 italic">click to toggle</span>
-              </div>
+            {/* Right — status breakdown list */}
+            <div className="px-6 py-5 min-w-48 flex flex-col gap-1.5 justify-center">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Breakdown</p>
               <div className="space-y-1.5">
                 {[
-                  { label: 'Completed',   value: completedN, pct: totalRuns ? Math.round(completedN/totalRuns*100) : 0, bar: 'bg-emerald-400', color: 'text-emerald-600', dot: 'bg-emerald-400' },
-                  { label: 'In Progress', value: inProgN,    pct: totalRuns ? Math.round(inProgN/totalRuns*100) : 0,    bar: 'bg-teal-400',    color: 'text-teal-600',    dot: 'bg-teal-400' },
-                  { label: 'Failed',      value: failedN,    pct: totalRuns ? Math.round(failedN/totalRuns*100) : 0,    bar: 'bg-red-400',     color: 'text-red-500',     dot: 'bg-red-400' },
-                  { label: 'Pending',     value: pendingN,   pct: totalRuns ? Math.round(pendingN/totalRuns*100) : 0,   bar: 'bg-gray-300',    color: 'text-gray-500',    dot: 'bg-gray-300' },
-                ].map(s => {
-                  const showPct = rlStatMode[s.label] === 'pct';
-                  return (
-                    <button key={s.label} type="button"
-                      onClick={() => setRlStatMode(prev => ({ ...prev, [s.label]: prev[s.label] === 'pct' ? 'count' : 'pct' }))}
-                      className="w-full flex items-center gap-2.5 group hover:bg-gray-50 rounded-lg px-2 py-1.5 transition-colors text-left">
-                      <span className={`size-2 rounded-full flex-shrink-0 ${s.dot}`} />
-                      <span className="flex-1 text-xs text-gray-500 group-hover:text-gray-700 transition-colors">{s.label}</span>
-                      <span className={`text-xs font-bold tabular-nums ${s.color} min-w-[3rem] text-right transition-all`}>
-                        {showPct ? `${s.pct}%` : s.value}
-                      </span>
-                    </button>
-                  );
-                })}
+                  { label: 'Completed',   dot: 'bg-emerald-400' },
+                  { label: 'In Progress', dot: 'bg-teal-400'    },
+                  { label: 'Failed',      dot: 'bg-red-400'     },
+                  { label: 'Pending',     dot: 'bg-gray-300'    },
+                ].map(s => (
+                  <div key={s.label} className="flex items-center gap-2.5 px-2 py-1">
+                    <span className={`size-2 rounded-full flex-shrink-0 ${s.dot}`} />
+                    <span className="text-xs text-gray-500">{s.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
