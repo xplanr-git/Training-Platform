@@ -1415,26 +1415,11 @@ export function AdminAnalyticsPage({ courses, users, analyticsView, setAnalytics
 
         const statCards = (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex divide-x divide-gray-100 overflow-hidden">
-            {/* Left — big number summary pills */}
-            <div className="flex items-center gap-6 px-6 py-5 flex-1">
+            {/* Left — total count */}
+            <div className="flex items-center px-6 py-5 flex-1">
               <div>
                 <p className="text-3xl font-bold text-gray-800">{totalRuns}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Total Reports</p>
-              </div>
-              <div className="w-px h-10 bg-gray-100" />
-              <div className="flex flex-wrap gap-3">
-                {[
-                  { label: 'Completed',   value: completedN, dot: 'bg-emerald-400', text: 'text-emerald-700', pill: 'bg-emerald-50 border-emerald-100' },
-                  { label: 'In Progress', value: inProgN,    dot: 'bg-teal-400',    text: 'text-teal-700',    pill: 'bg-teal-50 border-teal-100' },
-                  { label: 'Failed',      value: failedN,    dot: 'bg-red-400',     text: 'text-red-700',     pill: 'bg-red-50 border-red-100' },
-                  { label: 'Pending',     value: pendingN,   dot: 'bg-gray-300',    text: 'text-gray-600',    pill: 'bg-gray-50 border-gray-200' },
-                ].map(s => (
-                  <div key={s.label} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${s.pill}`}>
-                    <span className={`size-2 rounded-full ${s.dot} flex-shrink-0`} />
-                    <span className={`text-sm font-bold ${s.text}`}>{s.value}</span>
-                    <span className="text-xs text-gray-500">{s.label}</span>
-                  </div>
-                ))}
               </div>
             </div>
             {/* Right — clickable status breakdown list */}
