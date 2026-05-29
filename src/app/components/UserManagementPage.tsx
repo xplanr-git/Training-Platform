@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Course } from '@/app/types';
+import { supabase } from '/utils/supabase/client';
 import { Search, Mail, Building2, BookOpen, Award, Edit, Trash2, ArrowLeft, Filter, Download, X, ChevronDown, ChevronUp, UserPlus, Upload, BookMarked, Tag, BookX, Bell, Ban, AlertTriangle, ChevronRight } from 'lucide-react';
 import { CompanySubscribers } from '@/app/components/CompanySubscribers';
 import { RolesPermissionsPage } from '@/app/components/RolesPermissionsPage';
@@ -36,8 +37,34 @@ export function UserManagementPage({ users, courses, onBack, onViewCompanyAdmin,
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageForm, setMessageForm] = useState({ subject: '', body: '', sendCopy: false });
 
+  // Local users state — starts from the prop, allows adding new users
+  const [localUsers, setLocalUsers] = useState<User[]>(users);
+
+  // KV store prefixes for persistence
+  const kvAdded   = `platform_user_added:${companyId || 'global'}:`;
+  const kvDeleted = `platform_user_deleted:${companyId || 'global'}:`;
+
+  // Load persisted added/deleted users from Supabase KV on mount
+  useEffect(() => {
+    const load = async () => {
+      const [addedRes, deletedRes] = await Promise.all([
+        supabase.from('kv_store_d60f2898').select('value').like('key', `${kvAdded}%`),
+        supabase.from('kv_store_d60f2898').select('value').like('key', `${kvDeleted}%`),
+      ]);
+      const addedUsers: User[] = (addedRes.data ?? []).map((r: any) => r.value as User);
+      const deletedIds: Set<string> = new Set((deletedRes.data ?? []).map((r: any) => (r.value as string)));
+      setLocalUsers([
+        ...addedUsers,
+        ...users.filter(u => !deletedIds.has(u.id)),
+      ]);
+    };
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Add New User modal tab
   const [addUserTab, setAddUserTab] = useState<'detail' | 'enrollment'>('detail');
+  const [showCompanyDrop, setShowCompanyDrop] = useState(false);
 
   // Enrollment tab state
   const [enrollment, setEnrollment] = useState({
@@ -54,6 +81,48 @@ export function UserManagementPage({ users, courses, onBack, onViewCompanyAdmin,
     markCompleted: false,
     additionalNotes: '',
   });
+
+  // Edit User modal
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editUserForm, setEditUserForm] = useState({
+    name: '', email: '', company: '', role: 'Employee', position: '',
+    yearsInCompany: 0, tags: [] as string[], emailConsent: false,
+  });
+  const [editUserTab, setEditUserTab] = useState<'detail' | 'enrollment'>('detail');
+
+  // Delete confirmation modal
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+
+  const openDeleteConfirm = (user: User, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingUser(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const openEditUser = (user: User, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingUser(user);
+    setEditUserForm({
+      name: user.name,
+      email: user.email,
+      company: user.company,
+      role: user.role || 'Employee',
+      position: user.position || '',
+      yearsInCompany: user.yearsInCompany ?? 0,
+      tags: (user as any).tags ?? [],
+      emailConsent: (user as any).emailConsent ?? false,
+    });
+    setEditUserTab('detail');
+    setShowEditUserModal(true);
+  };
+
+  // Admin access check — only platform or company admins can edit users
+  const isAdminUser = currentUser && (
+    currentUser.role === 'platform_admin' ||
+    currentUser.role === 'company_admin'
+  );
 
   // Bulk action state
   const [showBulkMenu, setShowBulkMenu] = useState(false);
@@ -99,8 +168,8 @@ export function UserManagementPage({ users, courses, onBack, onViewCompanyAdmin,
     return companyMap[id] || null;
   };
 
-  // Use users as-is — App.tsx already filters by company via getCompanyUsers
-  const usersToDisplay = users;
+  // Use localUsers — allows newly added users to appear without a prop change
+  const usersToDisplay = localUsers;
 
   // Get unique companies from filtered users
   const companies = ['all', ...new Set(usersToDisplay.map(user => user.company))];
@@ -511,10 +580,20 @@ export function UserManagementPage({ users, courses, onBack, onViewCompanyAdmin,
                           </div>
                         </div>
                         <div className="flex gap-2 ml-4">
-                          <button className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors">
-                            <Edit className="size-4" />
-                          </button>
-                          <button className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors">
+                          {isAdminUser && (
+                            <button
+                              onClick={(e) => openEditUser(user, e)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Edit user"
+                            >
+                              <Edit className="size-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => openDeleteConfirm(user, e)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete user"
+                          >
                             <Trash2 className="size-4" />
                           </button>
                         </div>
@@ -762,14 +841,47 @@ export function UserManagementPage({ users, courses, onBack, onViewCompanyAdmin,
                   Company <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
                     value={newUserForm.company}
                     onChange={(e) => setNewUserForm({ ...newUserForm, company: e.target.value })}
+                    onFocus={() => setShowCompanyDrop(true)}
+                    onBlur={() => setTimeout(() => setShowCompanyDrop(false), 150)}
                     placeholder="Company name"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {showCompanyDrop && (() => {
+                    const adminCompany = currentUser?.company;
+                    const filtered = [...new Set(usersToDisplay.map(u => u.company))]
+                      .filter(c => c !== adminCompany && c.toLowerCase().includes(newUserForm.company.toLowerCase()))
+                      .sort();
+                    const showAdmin = adminCompany && adminCompany.toLowerCase().includes(newUserForm.company.toLowerCase());
+                    if (!showAdmin && filtered.length === 0) return null;
+                    return (
+                      <div className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                        {showAdmin && (
+                          <button type="button"
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={() => { setNewUserForm(f => ({ ...f, company: adminCompany! })); setShowCompanyDrop(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-blue-50 border-b border-gray-100">
+                            <Building2 className="size-4 text-blue-500 shrink-0" />
+                            <span className="flex-1 font-medium text-gray-800">{adminCompany}</span>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full uppercase tracking-wide">Your Company</span>
+                          </button>
+                        )}
+                        {filtered.map(c => (
+                          <button type="button" key={c}
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={() => { setNewUserForm(f => ({ ...f, company: c })); setShowCompanyDrop(false); }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 text-gray-700">
+                            <Building2 className="size-4 text-gray-400 shrink-0" />
+                            {c}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1041,8 +1153,20 @@ export function UserManagementPage({ users, courses, onBack, onViewCompanyAdmin,
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    alert(`User "${newUserForm.name}" has been added successfully!`);
+                  onClick={async () => {
+                    const newUser: User = {
+                      id: `user-${Date.now()}`,
+                      name: newUserForm.name,
+                      email: newUserForm.email,
+                      company: newUserForm.company,
+                      role: newUserForm.role,
+                      position: newUserForm.position || undefined,
+                      yearsInCompany: newUserForm.yearsInCompany,
+                      enrolledCourses: enrollment.productId ? [enrollment.productId] : [],
+                      completedLessons: [],
+                    };
+                    setLocalUsers(prev => [newUser, ...prev]);
+                    await supabase.from('kv_store_d60f2898').upsert({ key: `${kvAdded}${newUser.id}`, value: newUser });
                     setShowAddUserModal(false);
                     setAddUserTab('detail');
                     setNewUserForm({ name: '', email: '', company: '', role: 'Employee', position: '', yearsInCompany: 0, tags: [], emailConsent: false, validationRules: true });
@@ -1226,6 +1350,296 @@ export function UserManagementPage({ users, courses, onBack, onViewCompanyAdmin,
                 <Mail className="size-4" /> Send Message
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {showDeleteConfirm && deletingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 flex items-start gap-4">
+              <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="size-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-gray-900">Delete User</h2>
+                <p className="text-sm text-gray-500 mt-0.5">This action cannot be undone.</p>
+              </div>
+              <button onClick={() => { setShowDeleteConfirm(false); setDeletingUser(null); }}
+                className="p-1.5 hover:bg-gray-100 rounded-lg shrink-0">
+                <X className="size-4 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 pb-6">
+              <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-red-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                    {deletingUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{deletingUser.name}</p>
+                    <p className="text-xs text-gray-500">{deletingUser.email}</p>
+                    <p className="text-xs text-gray-500">{deletingUser.company}</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-1">
+                Are you sure you want to permanently delete <span className="font-semibold text-gray-900">{deletingUser.name}</span>?
+              </p>
+              <p className="text-xs text-gray-400">
+                All their progress, enrollments, and data will be removed from the platform.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setDeletingUser(null); }}
+                className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors font-medium">
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setLocalUsers(prev => prev.filter(u => u.id !== deletingUser.id));
+                  // If it's a KV-added user, remove from KV; otherwise mark as deleted
+                  const isKvUser = deletingUser.id.startsWith('user-');
+                  if (isKvUser) {
+                    await supabase.from('kv_store_d60f2898').delete().eq('key', `${kvAdded}${deletingUser.id}`);
+                  } else {
+                    await supabase.from('kv_store_d60f2898').upsert({ key: `${kvDeleted}${deletingUser.id}`, value: deletingUser.id });
+                  }
+                  setShowDeleteConfirm(false);
+                  setDeletingUser(null);
+                  if (selectedUser?.id === deletingUser.id) setSelectedUser(null);
+                }}
+                className="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                <Trash2 className="size-4" /> Delete User
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit User Modal ── */}
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+
+            {/* Header */}
+            <div className="px-6 pt-6 pb-0 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shrink-0">
+                    {editingUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Edit User</h2>
+                    <p className="text-xs text-gray-500">{editingUser.email}</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowEditUserModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <X className="size-5 text-gray-400" />
+                </button>
+              </div>
+              {/* Tabs */}
+              <div className="flex gap-0">
+                {([['detail', 'User Detail'], ['enrollment', 'Enrollment']] as const).map(([key, label]) => (
+                  <button key={key} onClick={() => setEditUserTab(key)}
+                    className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${editUserTab === key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Body — scrollable */}
+            <div className="overflow-y-auto flex-1">
+
+              {/* ── Detail Tab ── */}
+              {editUserTab === 'detail' && (
+                <div className="p-6 space-y-5">
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name <span className="text-red-500">*</span></label>
+                      <input type="text" value={editUserForm.name}
+                        onChange={e => setEditUserForm(f => ({ ...f, name: e.target.value }))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address <span className="text-red-500">*</span></label>
+                      <input type="email" value={editUserForm.email}
+                        onChange={e => setEditUserForm(f => ({ ...f, email: e.target.value }))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Company <span className="text-red-500">*</span></label>
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                        <select value={editUserForm.company}
+                          onChange={e => setEditUserForm(f => ({ ...f, company: e.target.value }))}
+                          className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none">
+                          {/* Current company first */}
+                          {editingUser && (
+                            <option value={editingUser.company}>{editingUser.company} (current)</option>
+                          )}
+                          {/* All other unique companies */}
+                          {[...new Set(usersToDisplay.map(u => u.company))]
+                            .filter(c => c !== editingUser?.company)
+                            .sort()
+                            .map(c => <option key={c} value={c}>{c}</option>)
+                          }
+                        </select>
+                      </div>
+                      {editUserForm.company !== editingUser?.company && (
+                        <button type="button"
+                          onClick={() => setEditUserForm(f => ({ ...f, company: editingUser?.company ?? f.company }))}
+                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1">
+                          ↩ Reset to current: {editingUser?.company}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Role <span className="text-red-500">*</span></label>
+                      <select value={editUserForm.role}
+                        onChange={e => setEditUserForm(f => ({ ...f, role: e.target.value }))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none">
+                        <option value="Employee">Employee</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Company Admin">Company Admin</option>
+                        <option value="Parent Admin">Parent Admin</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Years in Company</label>
+                      <input type="number" min="0" step="0.5" value={editUserForm.yearsInCompany}
+                        onChange={e => setEditUserForm(f => ({ ...f, yearsInCompany: parseFloat(e.target.value) || 0 }))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Position / Job Title</label>
+                    <input type="text" value={editUserForm.position}
+                      onChange={e => setEditUserForm(f => ({ ...f, position: e.target.value }))}
+                      placeholder="e.g. Senior Developer, Marketing Manager"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+
+                  {/* Tags */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                    <div className="flex flex-wrap gap-2">
+                      {availableTags.map(tag => {
+                        const selected = editUserForm.tags.includes(tag);
+                        return (
+                          <button key={tag} type="button"
+                            onClick={() => setEditUserForm(f => ({ ...f, tags: selected ? f.tags.filter(t => t !== tag) : [...f.tags, tag] }))}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'}`}>
+                            {selected && <span className="mr-1">✓</span>}{tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Email Consent toggle */}
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800">Email Consent</p>
+                      <p className="text-xs text-gray-500 mt-0.5">User has granted permission to receive promotional emails.</p>
+                    </div>
+                    <div className="cursor-pointer shrink-0 mt-0.5"
+                      onClick={() => setEditUserForm(f => ({ ...f, emailConsent: !f.emailConsent }))}>
+                      <div className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${editUserForm.emailConsent ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                        <span className={`inline-block h-5 w-5 mt-0.5 rounded-full bg-white shadow transition-transform ${editUserForm.emailConsent ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* ── Enrollment Tab ── */}
+              {editUserTab === 'enrollment' && (
+                <div className="p-6 space-y-4">
+                  <p className="text-sm font-medium text-gray-700 mb-1">Currently Enrolled Courses</p>
+                  {editingUser.enrolledCourses.length === 0
+                    ? <p className="text-sm text-gray-400 py-4 text-center">No courses enrolled.</p>
+                    : editingUser.enrolledCourses.map(courseId => {
+                        const course = courses.find(c => c.id === courseId);
+                        if (!course) return null;
+                        return (
+                          <div key={courseId} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl">
+                            <img src={course.imageUrl} alt={course.title} className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{course.title}</p>
+                              <p className="text-xs text-gray-500">{course.instructor}</p>
+                            </div>
+                            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium shrink-0">Enrolled</span>
+                          </div>
+                        );
+                      })
+                  }
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Enroll in Additional Course</p>
+                    <select className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none">
+                      <option value="">— Select a course —</option>
+                      {courses.filter(c => !editingUser.enrolledCourses.includes(c.id)).map(c => (
+                        <option key={c.id} value={c.id}>{c.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between gap-3">
+              <div className="flex gap-2">
+                {editUserTab === 'detail' && (
+                  <button onClick={() => setEditUserTab('enrollment')}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 flex items-center gap-1.5">
+                    Next: Enrollment <ChevronRight className="size-4" />
+                  </button>
+                )}
+                {editUserTab === 'enrollment' && (
+                  <button onClick={() => setEditUserTab('detail')}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
+                    ← Back
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowEditUserModal(false)}
+                  className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
+                  Cancel
+                </button>
+                <button
+                  disabled={!editUserForm.name.trim() || !editUserForm.email.trim() || !editUserForm.company.trim()}
+                  onClick={() => {
+                    alert(`User "${editUserForm.name}" has been updated successfully!`);
+                    setShowEditUserModal(false);
+                  }}
+                  className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
+                  <Edit className="size-4" /> Save Changes
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

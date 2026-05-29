@@ -541,7 +541,7 @@ export function HomePage({ courses, onCourseClick, enrolledCourseIds, isLoggedIn
 
       {/* All Courses or Marketing CTA */}
       {isLoggedIn ? (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 bg-gray-50">
+        <section id="all-courses" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 bg-gray-50">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">All Courses</h2>

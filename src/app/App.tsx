@@ -286,6 +286,14 @@ export default function App() {
   };
 
   const handleCourseClick = (courseId: string) => {
+    if (!courseId) {
+      // "Browse Courses" from empty state → go to home and scroll to the courses section
+      setCurrentPage('home');
+      setTimeout(() => {
+        document.getElementById('all-courses')?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+      return;
+    }
     setSelectedCourseId(courseId);
     setCurrentPage('course-detail');
   };
@@ -341,6 +349,16 @@ export default function App() {
   };
 
   const selectedCourse = selectedCourseId ? courses.find(c => c.id === selectedCourseId) : null;
+
+  // Courses visible to the current user — employees only see their company's courses
+  const visibleCourses = (() => {
+    if (!currentUser || currentUser.role === 'platform_admin' || currentUser.role === 'company_admin') {
+      return courses;
+    }
+    // Regular employees: show courses matching their company OR universal (no companyId) courses
+    const userCompanyId = currentUser.company.toLowerCase().replace(/\s+/g, '-');
+    return courses.filter(c => !c.companyId || c.companyId === userCompanyId);
+  })();
 
   // Check if current page is an admin page
   const isAdminPage = ['admin', 'manage-admins', 'roles-permissions', 'admin-courses', 'user-management', 'admin-analytics', 'admin-settings', 'admin-communications', 'company-subscribers', 'company-admin'].includes(currentPage);
@@ -430,7 +448,7 @@ export default function App() {
       {/* Regular user pages */}
       {currentPage === 'home' && (
         <HomePage
-          courses={courses}
+          courses={visibleCourses}
           onCourseClick={handleCourseClick}
           enrolledCourseIds={currentUser?.enrolledCourses || []}
           isLoggedIn={!!currentUser}
@@ -460,7 +478,7 @@ export default function App() {
       {currentPage === 'dashboard' && currentUser && (
         <DashboardPage
           currentUser={currentUser}
-          courses={courses}
+          courses={visibleCourses}
           onCourseClick={handleCourseClick}
           onContinueLearning={handleStartLearning}
         />
