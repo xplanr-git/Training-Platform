@@ -657,7 +657,7 @@ export default function App() {
                 <AdminCommunicationsPage users={getCompanyUsers(selectedCompanyId)} currentSubPage={currentSubPage} onNavigate={handleAdminNavigate} onSubPageChange={setCurrentSubPage} />
               )}
 
-              {currentSubPage && (currentSubPage === 'company-profile' || currentSubPage === 'community-access' || currentSubPage === 'notifications' || currentSubPage === 'security' || currentSubPage === 'team-management' || currentSubPage === 'billing' || currentSubPage === 'privacy' || currentSubPage === 'preferences') && (
+              {currentSubPage && ['company-profile','community-access','notifications','security','team-management','billing','privacy','preferences','school-info','site-domain-email','site-language','copyright-protection','privacy-gdpr'].includes(currentSubPage) && (
                 <AdminSettingsPage activeSection={currentSubPage as any} companyId={selectedCompanyId} companyName={getCompanyName(selectedCompanyId)} />
               )}
 
