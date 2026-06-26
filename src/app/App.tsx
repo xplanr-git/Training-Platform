@@ -286,6 +286,14 @@ export default function App() {
   };
 
   const handleCourseClick = (courseId: string) => {
+    if (!courseId) {
+      // "Browse Courses" from empty state → go to home and scroll to the courses section
+      setCurrentPage('home');
+      setTimeout(() => {
+        document.getElementById('all-courses')?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+      return;
+    }
     setSelectedCourseId(courseId);
     setCurrentPage('course-detail');
   };
@@ -341,6 +349,16 @@ export default function App() {
   };
 
   const selectedCourse = selectedCourseId ? courses.find(c => c.id === selectedCourseId) : null;
+
+  // Courses visible to the current user — employees only see their company's courses
+  const visibleCourses = (() => {
+    if (!currentUser || currentUser.role === 'platform_admin' || currentUser.role === 'company_admin') {
+      return courses;
+    }
+    // Regular employees: show courses matching their company OR universal (no companyId) courses
+    const userCompanyId = currentUser.company.toLowerCase().replace(/\s+/g, '-');
+    return courses.filter(c => !c.companyId || c.companyId === userCompanyId);
+  })();
 
   // Check if current page is an admin page
   const isAdminPage = ['admin', 'manage-admins', 'roles-permissions', 'admin-courses', 'user-management', 'admin-analytics', 'admin-settings', 'admin-communications', 'company-subscribers', 'company-admin'].includes(currentPage);
@@ -430,7 +448,7 @@ export default function App() {
       {/* Regular user pages */}
       {currentPage === 'home' && (
         <HomePage
-          courses={courses}
+          courses={visibleCourses}
           onCourseClick={handleCourseClick}
           enrolledCourseIds={currentUser?.enrolledCourses || []}
           isLoggedIn={!!currentUser}
@@ -460,7 +478,7 @@ export default function App() {
       {currentPage === 'dashboard' && currentUser && (
         <DashboardPage
           currentUser={currentUser}
-          courses={courses}
+          courses={visibleCourses}
           onCourseClick={handleCourseClick}
           onContinueLearning={handleStartLearning}
         />
@@ -620,7 +638,7 @@ export default function App() {
               )}
 
               {currentSubPage === 'user-activity' && (
-                <ApprovalsPage users={getCompanyUsers(selectedCompanyId)} />
+                <ApprovalsPage users={getCompanyUsers(selectedCompanyId)} companyId={selectedCompanyId} />
               )}
 
               {currentSubPage && (currentSubPage === 'all-users' || currentSubPage === 'approvals' || currentSubPage === 'add-user' || currentSubPage === 'user-roles') && (
@@ -639,7 +657,7 @@ export default function App() {
                 <AdminCommunicationsPage users={getCompanyUsers(selectedCompanyId)} currentSubPage={currentSubPage} onNavigate={handleAdminNavigate} onSubPageChange={setCurrentSubPage} />
               )}
 
-              {currentSubPage && (currentSubPage === 'company-profile' || currentSubPage === 'community-access' || currentSubPage === 'notifications' || currentSubPage === 'security' || currentSubPage === 'team-management' || currentSubPage === 'billing' || currentSubPage === 'privacy' || currentSubPage === 'preferences') && (
+              {currentSubPage && ['company-profile','community-access','notifications','security','team-management','billing','privacy','preferences','school-info','site-domain-email','site-language','copyright-protection','privacy-gdpr'].includes(currentSubPage) && (
                 <AdminSettingsPage activeSection={currentSubPage as any} companyId={selectedCompanyId} companyName={getCompanyName(selectedCompanyId)} />
               )}
 
@@ -658,11 +676,12 @@ export default function App() {
               {currentSubPage === 'leads' && (
                 <LeadsPage
                   onNavigateToWebsite={() => setCurrentSubPage('website-builder')}
+                  companyId={selectedCompanyId}
                 />
               )}
 
               {currentSubPage === 'user-groups' && (
-                <UserGroupsPage users={getCompanyUsers(selectedCompanyId)} />
+                <UserGroupsPage users={getCompanyUsers(selectedCompanyId)} companyId={selectedCompanyId} />
               )}
 
               {currentSubPage === 'multiple-seats' && (
@@ -670,11 +689,11 @@ export default function App() {
               )}
 
               {currentSubPage === 'tags' && (
-                <TagsPage users={getCompanyUsers(selectedCompanyId)} />
+                <TagsPage users={getCompanyUsers(selectedCompanyId)} companyId={selectedCompanyId} />
               )}
 
               {currentSubPage === 'user-fields' && (
-                <UserFieldsPage />
+                <UserFieldsPage companyId={selectedCompanyId} />
               )}
 
               {currentSubPage && ['offers','gifts','licenses','custom-deals','payments','plans','cart-checkout'].includes(currentSubPage) && (
@@ -687,6 +706,10 @@ export default function App() {
 
               {currentSubPage && ['mobile-design','app-settings','in-app-products','stores-setup','launch','mobile-analytics'].includes(currentSubPage) && (
                 <ComingSoonPage section="mobile" />
+              )}
+
+              {currentSubPage === 'automations' && (
+                <ComingSoonPage section="automations" />
               )}
 
               {currentSubPage && !currentSubPage.includes('analytics') && !currentSubPage.includes('course') && !currentSubPage.includes('website') && currentSubPage !== 'overview' && currentSubPage !== 'all-courses' && currentSubPage !== 'add-course' && currentSubPage !== 'manage-courses' && currentSubPage !== 'course-analytics' && currentSubPage !== 'all-users' && currentSubPage !== 'add-user' && currentSubPage !== 'user-roles' && currentSubPage !== 'user-activity' && currentSubPage !== 'certificates' && currentSubPage !== 'review-center' && currentSubPage !== 'gradebook' && currentSubPage !== 'activity-matrix' && currentSubPage !== 'question-banks' && currentSubPage !== 'programs-subscription' && currentSubPage !== 'leads' && currentSubPage !== 'user-groups' && currentSubPage !== 'multiple-seats' && currentSubPage !== 'tags' && currentSubPage !== 'user-fields' && currentSubPage !== 'user-activity' && currentSubPage !== 'approvals' && currentSubPage !== 'email-templates' && currentSubPage !== 'send-email' && currentSubPage !== 'inbox' && currentSubPage !== 'users2' && currentSubPage !== 'push-notifications' && currentSubPage !== 'community' && currentSubPage !== 'mass-emails' && currentSubPage !== 'school-emails' && currentSubPage !== 'email-integration' && currentSubPage !== 'settings' && currentSubPage !== 'company-profile' && currentSubPage !== 'notifications' && currentSubPage !== 'security' && currentSubPage !== 'team-management' && currentSubPage !== 'billing' && currentSubPage !== 'privacy' && currentSubPage !== 'preferences' && (

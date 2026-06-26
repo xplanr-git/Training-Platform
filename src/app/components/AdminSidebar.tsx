@@ -1,4 +1,4 @@
-import { Home, BookOpen, Users, BarChart3, Settings, GraduationCap, LogOut, ChevronDown, ChevronRight, LayoutDashboard, TrendingUp, DollarSign, Award, FolderOpen, Plus, Edit, Eye, UserPlus, Shield, Search, Bell, Globe, Lock, CreditCard, Activity, MousePointer, LogIn, MessageSquare, Mail, Send, Inbox, Users2, Check, Building2, ChevronLeft, Server, Layout, Compass, FileText, Maximize2, GitBranch, Menu, Package, ClipboardList, Grid3x3, Star, HelpCircle, FileCheck2, Tag, Zap, Layers, MessageCircle, Mails, BellRing, Plug, ShoppingCart, Gift, Key, Handshake, LayoutList, ShoppingBag, Megaphone, Share2, FileInput, CheckSquare, ThumbsUp, Sparkles, Clock, ScrollText, Smartphone, Palette, Sliders, Store, Rocket, Repeat, FolderTree, BookMarked, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Home, BookOpen, Users, BarChart3, Settings, GraduationCap, LogOut, ChevronDown, ChevronRight, LayoutDashboard, TrendingUp, DollarSign, Award, FolderOpen, Plus, Edit, Eye, UserPlus, Shield, Search, Bell, Globe, Lock, CreditCard, Activity, MousePointer, LogIn, MessageSquare, Mail, Send, Inbox, Users2, Check, Building2, ChevronLeft, Server, Layout, Compass, FileText, Maximize2, GitBranch, Menu, Package, ClipboardList, Grid3x3, Star, HelpCircle, FileCheck2, Tag, Zap, Layers, MessageCircle, Mails, BellRing, Plug, ShoppingCart, Gift, Key, Handshake, LayoutList, ShoppingBag, Megaphone, Share2, FileInput, CheckSquare, ThumbsUp, Sparkles, Clock, ScrollText, Smartphone, Palette, Sliders, Store, Rocket, Repeat, FolderTree, BookMarked, PanelLeftClose, PanelLeftOpen, Info, AtSign, Languages, Copyright, ShieldCheck } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import logoImage from 'figma:asset/4d915a981a9217f9ee2238527a51376f1592134f.png';
 
@@ -22,9 +22,19 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const [slidePanelMenu, setSlidePanelMenu] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [schoolSettingsExpanded, setSchoolSettingsExpanded] = useState(false);
+
+  const schoolSubItems = [
+    { id: 'school-info',          label: 'School Info',            icon: Info },
+    { id: 'site-domain-email',    label: 'Site Domain & Email',    icon: AtSign },
+    { id: 'community-access',     label: 'Community Access',       icon: Users2 },
+    { id: 'site-language',        label: 'Site Language',          icon: Languages },
+    { id: 'copyright-protection', label: 'Copyright Protection',   icon: Copyright },
+    { id: 'privacy-gdpr',         label: 'Privacy / GDPR',         icon: ShieldCheck },
+  ];
 
   // Track previous page so the Settings back button can return there
-  const SETTINGS_SUB_PAGES = ['company-profile', 'community-access', 'notifications', 'security', 'team-management', 'billing', 'privacy', 'preferences'];
+  const SETTINGS_SUB_PAGES = ['company-profile', 'community-access', 'notifications', 'security', 'team-management', 'billing', 'privacy', 'preferences', 'school-info', 'site-domain-email', 'site-language', 'copyright-protection', 'privacy-gdpr'];
   const prevPageRef    = useRef(currentPage);
   const prevSubPageRef = useRef(currentSubPage);
   const prevNavBeforeSettings = useRef<{ page: string; subPage: string } | null>(null);
@@ -105,7 +115,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
         { id: 'leads', label: 'Leads', icon: UserPlus },
         { id: 'user-groups', label: 'User Groups', icon: Users2 },
         { id: 'multiple-seats', label: 'Multiple Seats', icon: Layers },
-        { id: 'automations', label: 'Automations', icon: Zap },
+        { id: 'automations', label: 'Automations', icon: Zap, comingSoon: true },
         { id: 'tags', label: 'Tags', icon: Tag },
         { id: 'user-fields', label: 'User Fields', icon: ClipboardList },
         { id: 'approvals', label: 'Approvals', icon: Check },
@@ -160,16 +170,12 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
       label: 'Reports', 
       icon: BarChart3,
       subItems: [
-        { id: 'overview-analytics', label: 'Overview', icon: BarChart3 },
-        { id: 'revenue', label: 'Revenue Reports', icon: DollarSign },
-        { id: 'traffic', label: 'Traffic Analysis', icon: Eye },
-        { id: 'user-behavior', label: 'User Behavior', icon: MousePointer },
-        { id: 'login-stats', label: 'Login Statistics', icon: LogIn },
-        { id: 'system-health', label: 'System Health', icon: Server },
-        { id: 'report-center', label: 'Report Center', icon: FileText },
-        { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
-        { id: 'training-matrix', label: 'Training Matrix', icon: Grid3x3 },
-        { id: 'product-insights', label: 'Product Insights', icon: Package },
+        { id: 'overview-analytics', label: 'Reports Center', icon: BarChart3 },
+        { id: 'system-health', label: 'System Health', icon: Server, comingSoon: true },
+
+        { id: 'ai-insights', label: 'AI Insights', icon: Sparkles, comingSoon: true },
+        { id: 'training-matrix', label: 'Training Matrix', icon: Grid3x3, comingSoon: true },
+        { id: 'product-insights', label: 'Product Insights', icon: Package  },
         { id: 'scheduled-reports', label: 'Scheduled Reports', icon: Clock },
         { id: 'report-log', label: 'Report Log', icon: ScrollText },
         { id: 'activity-log', label: 'Activity Log', icon: Activity },
@@ -186,7 +192,6 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
         { id: 'in-app-products', label: 'In-app Products', icon: Package },
         { id: 'stores-setup', label: 'Stores Set Up', icon: Store },
         { id: 'launch', label: 'Launch', icon: Rocket },
-        { id: 'mobile-analytics', label: 'Analytics', icon: TrendingUp },
       ]
     },
     { 
@@ -194,8 +199,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
       label: 'Settings', 
       icon: Settings,
       subItems: [
-        { id: 'company-profile',   label: 'Company Profile',   icon: Building2 },
-        { id: 'community-access',  label: 'Community Access',  icon: Users2 },
+        { id: 'company-profile',   label: 'School Settings',   icon: Building2 },
         { id: 'notifications',     label: 'Notifications',     icon: Bell },
         { id: 'security',          label: 'Security',          icon: Lock },
         { id: 'team-management',   label: 'Team Management',   icon: Users },
@@ -245,7 +249,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
       )}
 
       {/* Navigation Menu */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
         {menuItems.map((item) => {
           const Icon = item.icon;
           
@@ -281,11 +285,12 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                 onClick={() => {
                   if (item.subItems.length > 0) {
                     if (item.id === 'admin-settings' && !isCollapsed) {
-                      // Settings → slide-in panel
+                      // Settings → slide-in panel, default to School Info
                       setSlidePanelMenu(item.id);
                       setExpandedMenu(item.id);
+                      setSchoolSettingsExpanded(true);
                       if (!isViewingCompanyPage) onNavigate(item.id as any);
-                      if (onSubPageChange) onSubPageChange(item.subItems[0].id);
+                      if (onSubPageChange) onSubPageChange('school-info');
                     } else {
                       // All other menus → original dropdown behaviour
                       if (isViewingCompanyPage) {
@@ -380,12 +385,17 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                             }
                             if (item.id === 'admin-analytics' && onAnalyticsViewChange) {
                               onAnalyticsViewChange(subItem.id);
+                              // In company-admin mode, also ensure the analytics page is mounted
+                              // by keeping currentSubPage as an analytics-routed value
+                              if (isViewingCompanyPage && onSubPageChange) {
+                                onSubPageChange('overview-analytics');
+                              }
                             } else if (onSubPageChange) {
                               onSubPageChange(subItem.id);
                             }
                           }}
                           className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors ${
-                            isSubItemActive
+                            isSubItemActive && !(subItem as any).comingSoon
                               ? 'bg-blue-50 text-blue-600 font-medium'
                               : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                           }`}
@@ -403,7 +413,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                               </div>
                             </div>
                           )}
-                          {isSubItemActive && <div className="size-2 bg-teal-500 rounded-full" />}
+                          {isSubItemActive && !(subItem as any).comingSoon && <div className="size-2 bg-teal-500 rounded-full" />}
                         </button>
                       );
                     })}
@@ -512,7 +522,7 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
             </div>
 
             {/* Sub-items */}
-            <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+            <nav className="flex-1 overflow-y-auto p-3 space-y-0.5 scrollbar-thin">
               {activeMenu.subItems
                 .filter(sub => {
                   if (sub.id === 'company-subscribers' && (isCompanyAdmin || isViewingCompanyPage)) return false;
@@ -525,6 +535,57 @@ export function AdminSidebar({ currentPage, onNavigate, onLogout, userName, anal
                   const isSubActive =
                     (activeMenu.id === 'admin-analytics' && analyticsView === sub.id) ||
                     (activeMenu.id !== 'admin-analytics' && currentSubPage === sub.id);
+
+                  // School Settings — expandable group
+                  if (sub.id === 'company-profile') {
+                    const isSchoolActive = schoolSubItems.some(s => currentSubPage === s.id) || currentSubPage === 'company-profile';
+                    return (
+                      <div key={sub.id}>
+                        <button
+                          onClick={() => setSchoolSettingsExpanded(e => !e)}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                            isSchoolActive && !schoolSettingsExpanded
+                              ? 'bg-blue-50 text-blue-600 font-medium'
+                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          }`}
+                        >
+                          <SubIcon className="size-4 shrink-0" />
+                          <span className="flex-1 text-left">School Settings</span>
+                          {schoolSettingsExpanded
+                            ? <ChevronDown className="size-3.5 shrink-0" />
+                            : <ChevronRight className="size-3.5 shrink-0" />
+                          }
+                        </button>
+                        {schoolSettingsExpanded && (
+                          <div className="ml-4 mt-0.5 space-y-0.5">
+                            {schoolSubItems.map(s => {
+                              const SIcon = s.icon;
+                              const isActive = currentSubPage === s.id;
+                              return (
+                                <button
+                                  key={s.id}
+                                  onClick={() => {
+                                    if (!isViewingCompanyPage && currentPage !== activeMenu.id) onNavigate(activeMenu.id as any);
+                                    if (onSubPageChange) onSubPageChange(s.id);
+                                  }}
+                                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-colors ${
+                                    isActive
+                                      ? 'bg-blue-50 text-blue-600 font-medium'
+                                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                                  }`}
+                                >
+                                  <SIcon className="size-3.5 shrink-0" />
+                                  <span className="flex-1 text-left">{s.label}</span>
+                                  {isActive && <div className="size-1.5 bg-teal-500 rounded-full shrink-0" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <button
                       key={sub.id}

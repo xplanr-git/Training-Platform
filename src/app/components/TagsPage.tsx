@@ -5,6 +5,7 @@ import {
   ChevronDown, AlertTriangle, Pipette,
 } from 'lucide-react';
 import { User } from '@/app/types';
+import { supabase } from '/utils/supabase/client';
 
 /* ══════════════════════════════════════════════════════════════
    Color conversion utilities
@@ -693,10 +694,25 @@ function TagCard({ tag, users, onEdit, onDelete, onDuplicate }: TagCardProps) {
 /* ══════════════════════════════════════════════════════════════
    Main Page
 ══════════════════════════════════════════════════════════════ */
-export interface TagsPageProps { users?: User[] }
+export interface TagsPageProps { users?: User[]; companyId?: string | null; }
 
-export function TagsPage({ users = [] }: TagsPageProps) {
-  const [tags, setTags] = useState<AppTag[]>(SEED_TAGS);
+export function TagsPage({ users = [], companyId = 'global' }: TagsPageProps) {
+  const [tags, setTags] = useState<AppTag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+
+  useEffect(() => {
+    setTagsLoading(true);
+    const prefix = `tag:${companyId}:`;
+    supabase
+      .from('kv_store_d60f2898')
+      .select('value')
+      .like('key', `${prefix}%`)
+      .then(({ data }) => {
+        if (data && data.length > 0) setTags(data.map((r: any) => r.value));
+        else setTags(SEED_TAGS); // fallback to seeds if nothing in DB yet
+        setTagsLoading(false);
+      });
+  }, [companyId]);
   const [search, setSearch] = useState('');
   const [scopeFilter, setScopeFilter] = useState<'all' | TagScope>('all');
   const [sortBy, setSortBy] = useState<'name' | 'users' | 'created'>('name');
@@ -727,30 +743,37 @@ export function TagsPage({ users = [] }: TagsPageProps) {
     return list;
   }, [tags, search, scopeFilter, sortBy, sortAsc]);
 
-  const handleSave = (data: Omit<AppTag, 'id' | 'createdAt' | 'userIds'>) => {
+  const handleSave = async (data: Omit<AppTag, 'id' | 'createdAt' | 'userIds'>) => {
     if (editTag) {
-      setTags(prev => prev.map(t => t.id === editTag.id ? { ...t, ...data } : t));
+      const savedTag = { ...editTag, ...data };
+      setTags(prev => prev.map(t => t.id === editTag.id ? savedTag : t));
+      await supabase.from('kv_store_d60f2898').upsert({ key: `tag:${companyId}:${savedTag.id}`, value: savedTag });
     } else {
-      setTags(prev => [{
+      const savedTag: AppTag = {
         ...data, id: `t-${Date.now()}`,
         createdAt: new Date().toISOString().slice(0, 10), userIds: [],
-      }, ...prev]);
+      };
+      setTags(prev => [savedTag, ...prev]);
+      await supabase.from('kv_store_d60f2898').upsert({ key: `tag:${companyId}:${savedTag.id}`, value: savedTag });
     }
     setEditTag(null);
   };
 
-  const handleDelete = (tag: AppTag) => {
+  const handleDelete = async (tag: AppTag) => {
     setTags(prev => prev.filter(t => t.id !== tag.id));
     setSelected(s => { const n = new Set(s); n.delete(tag.id); return n; });
     setDeleteTag(null);
+    await supabase.from('kv_store_d60f2898').delete().eq('key', `tag:${companyId}:${tag.id}`);
   };
 
-  const handleDuplicate = (tag: AppTag) => {
-    setTags(prev => [{
+  const handleDuplicate = async (tag: AppTag) => {
+    const dupTag: AppTag = {
       ...tag, id: `t-${Date.now()}`,
       name: `${tag.name} (Copy)`,
       createdAt: new Date().toISOString().slice(0, 10), userIds: [],
-    }, ...prev]);
+    };
+    setTags(prev => [dupTag, ...prev]);
+    await supabase.from('kv_store_d60f2898').upsert({ key: `tag:${companyId}:${dupTag.id}`, value: dupTag });
   };
 
   const toggleSelect = (id: string) =>
