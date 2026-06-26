@@ -38,6 +38,13 @@ const DEMO_ACCOUNTS: AccountDef[] = [
     company: 'Demo Company',
     role: 'company_admin',
   },
+  {
+    email: 'aljamorabo@gmail.com',
+    password: 'outdure',
+    name: 'Al Jamorabo',
+    company: 'Outdure',
+    role: 'employee',
+  },
 ];
 
 type Status = 'idle' | 'running' | 'ok' | 'exists' | 'error';

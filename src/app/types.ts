@@ -15,6 +15,7 @@ export interface CourseCategory {
   name: string;
   description?: string;
   color?: string;
+  icon?: string; // lucide icon name
   parentCategoryId?: string; // For subcategories
 }
 

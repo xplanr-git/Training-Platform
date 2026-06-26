@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Save, Bell, Lock, Globe, Mail, CreditCard, Users as UsersIcon, Shield, Download, CheckCircle2, Calendar, Eye, EyeOff, Trash2, FileText, Monitor, Moon, Sun, Languages, Palette, Layout, Clock, Zap, UserPlus, MoreVertical, Edit, X } from 'lucide-react';
+import { Save, Bell, Lock, Globe, Mail, CreditCard, Users as UsersIcon, Shield, Download, CheckCircle2, Calendar, Eye, EyeOff, Trash2, FileText, Monitor, Moon, Sun, Languages, Palette, Layout, Clock, Zap, UserPlus, MoreVertical, Edit, X, Phone, MapPin, Linkedin, Twitter, Facebook, Instagram, Youtube, Hash, Building2, Info, Link, AlertCircle, RefreshCw, Copy, ExternalLink, Server } from 'lucide-react';
 import { supabase } from '/utils/supabase/client';
 
 interface AdminSettingsPageProps {
-  activeSection?: 'company-profile' | 'notifications' | 'security' | 'team-management' | 'billing' | 'privacy' | 'preferences';
+  activeSection?: 'company-profile' | 'community-access' | 'notifications' | 'security' | 'team-management' | 'billing' | 'privacy' | 'preferences' | 'school-info' | 'site-domain-email' | 'site-language' | 'copyright-protection' | 'privacy-gdpr';
   companyId?: string | null;
   companyName?: string;
 }
@@ -60,6 +60,89 @@ export function AdminSettingsPage({ activeSection = 'company-profile', companyId
   const [autoSave, setAutoSave] = useState(true);
   const [keyboardShortcuts, setKeyboardShortcuts] = useState(true);
 
+  // School Info state
+  const [schoolInfo, setSchoolInfo] = useState({
+    schoolName: companyName || '',
+    schoolDescription: '',
+    schoolId: companyId || '',
+    companyName: companyName || '',
+    timeZone: 'UTC+10 (AEST)',
+    shortDate: 'DD/MM/YYYY',
+    longDate: 'DD MMMM YYYY',
+    contactEmail: '',
+    salesEmail: '',
+    phoneNumber: '',
+    linkedInOrgId: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postCode: '',
+    country: '',
+    socialTwitter: '',
+    socialFacebook: '',
+    socialInstagram: '',
+    socialLinkedIn: '',
+    socialYouTube: '',
+  });
+  const [schoolInfoSaved, setSchoolInfoSaved] = useState(false);
+
+  // Copyright Protection state
+  const [copyright, setCopyright] = useState({
+    videoWatermarkEnabled: true,
+    videoWatermarkText: companyName || '',
+    videoWatermarkPosition: 'bottom-right',
+    videoWatermarkSize: 'medium',
+    videoWatermarkTransparency: 70,
+    pdfWatermarkEnabled: true,
+    pdfWatermarkText: companyName || '',
+    pdfWatermarkPosition: 'center',
+    pdfWatermarkSize: 'medium',
+    pdfAllowDownload: false,
+    pdfAllowCopy: false,
+    pdfAllowPrint: false,
+    ebookAllowCopy: false,
+  });
+  const [copyrightSaved, setCopyrightSaved] = useState(false);
+  const handleCopyrightSave = () => { setCopyrightSaved(true); setTimeout(() => setCopyrightSaved(false), 3000); };
+
+  // Privacy / GDPR state
+  const [privacyGdpr, setPrivacyGdpr] = useState({
+    gdprEnabled: true,
+    cookieConsentEnabled: true,
+    cookieBannerText: 'We use cookies to improve your experience. By continuing, you agree to our cookie policy.',
+    cookiePosition: 'bottom',
+    analyticsTracking: true,
+    marketingCookies: false,
+    thirdPartySharing: false,
+    dataRetentionPeriod: '2-years',
+    activityLogRetention: '1-year',
+    allowDataExport: true,
+    allowDataDeletion: true,
+    privacyPolicyUrl: '',
+    termsOfServiceUrl: '',
+    dpaAccepted: false,
+  });
+  const [privacyGdprSaved, setPrivacyGdprSaved] = useState(false);
+  const handlePrivacyGdprSave = () => { setPrivacyGdprSaved(true); setTimeout(() => setPrivacyGdprSaved(false), 3000); };
+
+  const handleSchoolInfoSave = () => {
+    setSchoolInfoSaved(true);
+    setTimeout(() => setSchoolInfoSaved(false), 3000);
+  };
+
+  // Site Domain & Email state
+  const [domainTab, setDomainTab] = useState<'site-domain' | 'email-domain'>('site-domain');
+  const [siteDomain, setSiteDomain] = useState({ customDomain: '', subdomain: companyId || 'myschool', sslEnabled: true, verificationStatus: 'unverified' as 'unverified' | 'verifying' | 'verified' });
+  const [emailDomain, setEmailDomain] = useState({ fromName: companyName || '', fromEmail: '', replyTo: '', emailDomain: '', verificationStatus: 'unverified' as 'unverified' | 'verifying' | 'verified' });
+  const [copiedRecord, setCopiedRecord] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedRecord(key);
+    setTimeout(() => setCopiedRecord(null), 2000);
+  };
+
   // Fetch company details when companyId is available
   useEffect(() => {
     const fetchCompanyDetails = async () => {
@@ -107,12 +190,30 @@ export function AdminSettingsPage({ activeSection = 'company-profile', companyId
     fetchCompanyDetails();
   }, [companyId, companyName]);
 
+  const sectionMeta: Record<string, { title: string; description: string }> = {
+    'company-profile':       { title: companyId ? 'School Settings'          : 'General Settings',         description: companyId ? 'Manage your school\'s core configuration.'                     : 'Manage your platform configuration and preferences.' },
+    'school-info':           { title: 'School Info',                                                        description: 'Set your school name, contact details, address and social presence.' },
+    'site-domain-email':     { title: 'Site Domain & Email',                                               description: 'Configure your custom domain and email sending settings.' },
+    'site-language':         { title: 'Site Language',                                                      description: 'Set the default language and locale for your school.' },
+    'copyright-protection':  { title: 'Copyright Protection',                                              description: 'Control content protection and copyright settings for your courses.' },
+    'privacy-gdpr':          { title: 'Privacy / GDPR',                                                    description: 'Manage data privacy, consent, and GDPR compliance settings.' },
+    'community-access':      { title: 'Community Access',                                                   description: 'Control who can join, post, and interact in your community spaces.' },
+    'notifications':         { title: 'Notifications',                                                      description: 'Choose which events trigger email or push notifications.' },
+    'security':              { title: 'Security',                                                           description: 'Manage authentication, two-factor settings and sign-up rules.' },
+    'team-management':       { title: 'Team Management',                                                    description: 'Invite and manage admins, roles and permissions for your team.' },
+    'billing':               { title: 'Billing',                                                            description: 'View your plan, payment methods and billing history.' },
+    'privacy':               { title: 'Privacy',                                                            description: 'Control data retention, tracking and user privacy preferences.' },
+    'preferences':           { title: 'Preferences',                                                        description: 'Customise your dashboard layout, language and display options.' },
+  };
+
+  const meta = sectionMeta[activeSection ?? ''] ?? { title: 'Settings', description: 'Manage your platform configuration and preferences.' };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Platform Settings</h1>
-        <p className="text-gray-600">Manage your platform configuration and preferences</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-1">{meta.title}</h1>
+        <p className="text-gray-500">{meta.description}</p>
       </div>
 
       {/* Settings Content - Full Width */}
@@ -121,7 +222,7 @@ export function AdminSettingsPage({ activeSection = 'company-profile', companyId
         {activeSection === 'company-profile' && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              {companyId ? 'Company Profile' : 'General Settings'}
+              {companyId ? 'School Settings' : 'General Settings'}
             </h2>
             <div className="space-y-6">
               {isLoadingCompany && companyId && (
@@ -1254,13 +1355,938 @@ export function AdminSettingsPage({ activeSection = 'company-profile', companyId
           </div>
         )}
 
+        {/* Community Access Settings */}
+        {activeSection === 'community-access' && (
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-8">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Community Access</h2>
+              <p className="text-sm text-gray-500">Control visibility, posting rights, and membership rules for your community spaces.</p>
+            </div>
+
+            {/* Visibility */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-1">Community visibility</p>
+              <p className="text-xs text-gray-500 mb-3">Control who can see this community and its content.</p>
+              <div className="space-y-2">
+                {[
+                  { val: 'public',  label: 'Public',          desc: 'Anyone on the platform can find and view this community.' },
+                  { val: 'members', label: 'Members only',     desc: 'Only members can see posts and activity.' },
+                  { val: 'private', label: 'Private (hidden)', desc: 'Hidden from discovery — accessible by direct invite only.' },
+                ].map(opt => (
+                  <label key={opt.val} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors">
+                    <input type="radio" name="ca-visibility" defaultChecked={opt.val === 'members'} className="mt-0.5 accent-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100" />
+
+            {/* Who can post */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-1">Who can post</p>
+              <p className="text-xs text-gray-500 mb-3">Set which members are allowed to create new posts.</p>
+              <div className="space-y-2">
+                {[
+                  { val: 'everyone', label: 'Everyone',      desc: 'All community members can post.' },
+                  { val: 'members',  label: 'Members only',  desc: 'Only approved members can post.', default: true },
+                  { val: 'admins',   label: 'Admins only',   desc: 'Only admins and staff can post; others can reply.' },
+                ].map(opt => (
+                  <label key={opt.val} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors">
+                    <input type="radio" name="ca-whocanpost" defaultChecked={!!opt.default} className="mt-0.5 accent-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100" />
+
+            {/* Membership */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-1">Membership</p>
+              <p className="text-xs text-gray-500 mb-3">Choose how new members can join this community.</p>
+              <div className="space-y-2">
+                {[
+                  { val: 'open',     label: 'Open',              desc: 'Anyone can join without approval.' },
+                  { val: 'approval', label: 'Requires approval', desc: 'Admin must approve membership requests.', default: true },
+                  { val: 'invite',   label: 'Invite only',       desc: 'New members can only join via a direct invite.' },
+                ].map(opt => (
+                  <label key={opt.val} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors">
+                    <input type="radio" name="ca-membership" defaultChecked={!!opt.default} className="mt-0.5 accent-blue-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100" />
+
+            {/* Toggle options */}
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-gray-800">Additional access options</p>
+              {[
+                { id: 'ca-guest',    label: 'Allow guest preview',   desc: 'Non-members can browse posts without joining.',                          defaultChecked: false },
+                { id: 'ca-approval', label: 'Require post approval', desc: 'New posts from non-admin members are held for review before publishing.', defaultChecked: true },
+                { id: 'ca-dms',      label: 'Allow direct messages', desc: 'Members can send direct messages to each other within this space.',       defaultChecked: true },
+              ].map(opt => (
+                <div key={opt.id} className="flex items-start justify-between gap-4 p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{opt.label}</p>
+                    <p className="text-sm text-gray-600 mt-0.5">{opt.desc}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                    <input type="checkbox" defaultChecked={opt.defaultChecked} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── School Info ── */}
+        {activeSection === 'school-info' && (
+          <div className="space-y-6">
+            {/* Success banner */}
+            {schoolInfoSaved && (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                <CheckCircle2 className="size-5 text-green-600 shrink-0" />
+                <p className="text-sm font-medium text-green-800">School information saved successfully.</p>
+              </div>
+            )}
+
+            {/* Basic Info */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Info className="size-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-gray-900">Basic Information</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {[
+                  { key: 'schoolName',    label: 'School Name',        type: 'text',  placeholder: 'e.g. Outdure Academy' },
+                  { key: 'schoolId',      label: 'School ID',          type: 'text',  placeholder: 'Auto-generated',       readOnly: true },
+                  { key: 'companyName',   label: 'Company Name',       type: 'text',  placeholder: 'e.g. Outdure Pty Ltd' },
+                ].map(f => (
+                  <div key={f.key} className={f.key === 'schoolName' ? 'md:col-span-2' : ''}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{f.label}</label>
+                    <input
+                      type={f.type}
+                      value={(schoolInfo as any)[f.key]}
+                      readOnly={f.readOnly}
+                      placeholder={f.placeholder}
+                      onChange={e => !f.readOnly && setSchoolInfo(s => ({ ...s, [f.key]: e.target.value }))}
+                      className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${f.readOnly ? 'bg-gray-50 text-gray-500' : ''}`}
+                    />
+                  </div>
+                ))}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">School Description</label>
+                  <textarea
+                    rows={3}
+                    value={schoolInfo.schoolDescription}
+                    placeholder="Briefly describe your school or organisation…"
+                    onChange={e => setSchoolInfo(s => ({ ...s, schoolDescription: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Date & Time */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Clock className="size-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-gray-900">Date & Time</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Time Zone</label>
+                  <select
+                    value={schoolInfo.timeZone}
+                    onChange={e => setSchoolInfo(s => ({ ...s, timeZone: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {['UTC-12:00','UTC-8:00 (PST)','UTC-5:00 (EST)','UTC+0:00 (GMT)','UTC+1:00 (CET)','UTC+5:30 (IST)','UTC+8:00 (SGT)','UTC+9:00 (JST)','UTC+10 (AEST)','UTC+13:00 (NZDT)'].map(tz => (
+                      <option key={tz}>{tz}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Short Date Format</label>
+                  <select
+                    value={schoolInfo.shortDate}
+                    onChange={e => setSchoolInfo(s => ({ ...s, shortDate: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {['DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD','D MMM YY'].map(f => <option key={f}>{f}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Long Date Format</label>
+                  <select
+                    value={schoolInfo.longDate}
+                    onChange={e => setSchoolInfo(s => ({ ...s, longDate: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {['DD MMMM YYYY','MMMM DD, YYYY','dddd, DD MMMM YYYY','D MMM YYYY'].map(f => <option key={f}>{f}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Details */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Mail className="size-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-gray-900">Contact Details</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {[
+                  { key: 'contactEmail', label: 'Contact E-mail',  type: 'email', placeholder: 'contact@school.com',  icon: <Mail className="size-4 text-gray-400" /> },
+                  { key: 'salesEmail',   label: 'Sales E-mail',    type: 'email', placeholder: 'sales@school.com',    icon: <Mail className="size-4 text-gray-400" /> },
+                  { key: 'phoneNumber',  label: 'Phone Number',    type: 'tel',   placeholder: '+61 400 000 000',     icon: <Phone className="size-4 text-gray-400" /> },
+                  { key: 'linkedInOrgId',label: 'LinkedIn Org ID', type: 'text',  placeholder: 'e.g. outdure-pty-ltd',icon: <Linkedin className="size-4 text-gray-400" /> },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{f.label}</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">{f.icon}</div>
+                      <input
+                        type={f.type}
+                        value={(schoolInfo as any)[f.key]}
+                        placeholder={f.placeholder}
+                        onChange={e => setSchoolInfo(s => ({ ...s, [f.key]: e.target.value }))}
+                        className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Address */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <MapPin className="size-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-gray-900">Address</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Line 1</label>
+                  <input type="text" value={schoolInfo.addressLine1} placeholder="Street address" onChange={e => setSchoolInfo(s => ({ ...s, addressLine1: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Address Line 2 <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <input type="text" value={schoolInfo.addressLine2} placeholder="Suite, floor, unit…" onChange={e => setSchoolInfo(s => ({ ...s, addressLine2: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                {[
+                  { key: 'city',     label: 'City',        placeholder: 'e.g. Sydney' },
+                  { key: 'state',    label: 'State',       placeholder: 'e.g. NSW' },
+                  { key: 'postCode', label: 'Post Code',   placeholder: 'e.g. 2000' },
+                  { key: 'country',  label: 'Country',     placeholder: 'e.g. Australia' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{f.label}</label>
+                    <input type="text" value={(schoolInfo as any)[f.key]} placeholder={f.placeholder} onChange={e => setSchoolInfo(s => ({ ...s, [f.key]: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Social Details */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Hash className="size-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-gray-900">Social Details</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {[
+                  { key: 'socialTwitter',   label: 'X / Twitter',  placeholder: 'https://x.com/yourhandle',          icon: <Twitter className="size-4 text-gray-400" /> },
+                  { key: 'socialFacebook',  label: 'Facebook',     placeholder: 'https://facebook.com/yourpage',     icon: <Facebook className="size-4 text-gray-400" /> },
+                  { key: 'socialInstagram', label: 'Instagram',    placeholder: 'https://instagram.com/yourhandle',  icon: <Instagram className="size-4 text-gray-400" /> },
+                  { key: 'socialLinkedIn',  label: 'LinkedIn',     placeholder: 'https://linkedin.com/company/you',  icon: <Linkedin className="size-4 text-gray-400" /> },
+                  { key: 'socialYouTube',   label: 'YouTube',      placeholder: 'https://youtube.com/@yourchannel',  icon: <Youtube className="size-4 text-gray-400" /> },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{f.label}</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">{f.icon}</div>
+                      <input
+                        type="url"
+                        value={(schoolInfo as any)[f.key]}
+                        placeholder={f.placeholder}
+                        onChange={e => setSchoolInfo(s => ({ ...s, [f.key]: e.target.value }))}
+                        className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Save */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSchoolInfoSave}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
+              >
+                <Save className="size-4" />
+                Save School Info
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Site Domain & Email ── */}
+        {activeSection === 'site-domain-email' && (
+          <div className="space-y-6">
+            {/* Tabs */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="flex border-b border-gray-200">
+                {([
+                  { id: 'site-domain',  label: 'Site Domain',  icon: <Globe className="size-4" /> },
+                  { id: 'email-domain', label: 'Email Domain', icon: <Mail className="size-4" /> },
+                ] as const).map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setDomainTab(tab.id)}
+                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                      domainTab === tab.id
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Site Domain tab ── */}
+              {domainTab === 'site-domain' && (
+                <div className="p-6 space-y-6">
+                  {/* Default subdomain */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Default Platform URL</label>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                        <input
+                          type="text"
+                          value={siteDomain.subdomain}
+                          onChange={e => setSiteDomain(s => ({ ...s, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                          className="flex-1 px-4 py-2.5 text-sm bg-transparent focus:outline-none text-gray-900"
+                        />
+                        <span className="px-3 py-2.5 text-sm text-gray-400 bg-gray-100 border-l border-gray-200 whitespace-nowrap">.teachly.com</span>
+                      </div>
+                      <a href="#" className="p-2.5 text-gray-400 hover:text-blue-600 transition-colors" title="Open">
+                        <ExternalLink className="size-4" />
+                      </a>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1.5">Your school is accessible at <span className="font-mono text-gray-600">{siteDomain.subdomain || 'myschool'}.teachly.com</span></p>
+                  </div>
+
+                  <div className="border-t border-gray-100" />
+
+                  {/* Custom domain */}
+                  <div>
+                    <div className="flex items-start justify-between mb-1.5">
+                      <label className="text-sm font-medium text-gray-700">Custom Domain</label>
+                      {siteDomain.verificationStatus === 'verified' && (
+                        <span className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="size-3" /> Verified
+                        </span>
+                      )}
+                      {siteDomain.verificationStatus === 'unverified' && siteDomain.customDomain && (
+                        <span className="flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                          <AlertCircle className="size-3" /> Not verified
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+                        <span className="px-3 py-2.5 text-sm text-gray-400 bg-gray-50 border-r border-gray-200">https://</span>
+                        <input
+                          type="text"
+                          value={siteDomain.customDomain}
+                          onChange={e => setSiteDomain(s => ({ ...s, customDomain: e.target.value, verificationStatus: 'unverified' }))}
+                          placeholder="learn.yourcompany.com"
+                          className="flex-1 px-4 py-2.5 text-sm focus:outline-none"
+                        />
+                      </div>
+                      <button
+                        onClick={() => siteDomain.customDomain && setSiteDomain(s => ({ ...s, verificationStatus: 'verified' }))}
+                        disabled={!siteDomain.customDomain}
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                      >
+                        <RefreshCw className="size-3.5" />
+                        Verify
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1.5">Point your domain's CNAME record to <span className="font-mono text-gray-600">cname.teachly.com</span> before verifying.</p>
+                  </div>
+
+                  {/* DNS records */}
+                  {siteDomain.customDomain && (
+                    <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+                        <Server className="size-4 text-gray-500" />
+                        <p className="text-sm font-medium text-gray-700">Required DNS Records</p>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {[
+                          { type: 'CNAME', name: siteDomain.customDomain, value: 'cname.teachly.com', key: 'cname' },
+                          { type: 'TXT',   name: `_verify.${siteDomain.customDomain}`, value: `teachly-verify=${siteDomain.subdomain}-abc123`, key: 'txt' },
+                        ].map(rec => (
+                          <div key={rec.key} className="px-4 py-3 flex items-center gap-4">
+                            <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded shrink-0">{rec.type}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-gray-500 truncate font-mono">{rec.name}</p>
+                              <p className="text-xs text-gray-800 truncate font-mono mt-0.5">{rec.value}</p>
+                            </div>
+                            <button onClick={() => copyToClipboard(rec.value, rec.key)} className="shrink-0 p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
+                              {copiedRecord === rec.key ? <CheckCircle2 className="size-4 text-green-500" /> : <Copy className="size-4" />}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SSL */}
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Lock className="size-5 text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">SSL Certificate</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Automatically provisioned via Let's Encrypt</p>
+                      </div>
+                    </div>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${siteDomain.sslEnabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {siteDomain.sslEnabled ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                      <Save className="size-4" /> Save Domain Settings
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Email Domain tab ── */}
+              {domainTab === 'email-domain' && (
+                <div className="p-6 space-y-6">
+                  {/* Sender info */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-800 mb-4">Sender Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">From Name</label>
+                        <input
+                          type="text"
+                          value={emailDomain.fromName}
+                          onChange={e => setEmailDomain(d => ({ ...d, fromName: e.target.value }))}
+                          placeholder="e.g. Outdure Academy"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">From Email Address</label>
+                        <input
+                          type="email"
+                          value={emailDomain.fromEmail}
+                          onChange={e => setEmailDomain(d => ({ ...d, fromEmail: e.target.value }))}
+                          placeholder="noreply@yourcompany.com"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1.5">Reply-To Address <span className="text-gray-400 font-normal">(optional)</span></label>
+                        <input
+                          type="email"
+                          value={emailDomain.replyTo}
+                          onChange={e => setEmailDomain(d => ({ ...d, replyTo: e.target.value }))}
+                          placeholder="support@yourcompany.com"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-100" />
+
+                  {/* Custom email domain */}
+                  <div>
+                    <div className="flex items-start justify-between mb-1.5">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800">Custom Email Domain</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Send emails from your own domain instead of @teachly.com</p>
+                      </div>
+                      {emailDomain.verificationStatus === 'verified' && (
+                        <span className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full mt-0.5">
+                          <CheckCircle2 className="size-3" /> Verified
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <input
+                        type="text"
+                        value={emailDomain.emailDomain}
+                        onChange={e => setEmailDomain(d => ({ ...d, emailDomain: e.target.value, verificationStatus: 'unverified' }))}
+                        placeholder="yourcompany.com"
+                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={() => emailDomain.emailDomain && setEmailDomain(d => ({ ...d, verificationStatus: 'verified' }))}
+                        disabled={!emailDomain.emailDomain}
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                      >
+                        <RefreshCw className="size-3.5" /> Verify Domain
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* DNS records for email */}
+                  {emailDomain.emailDomain && (
+                    <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+                        <Server className="size-4 text-gray-500" />
+                        <p className="text-sm font-medium text-gray-700">Required DNS Records</p>
+                        <span className="text-xs text-gray-400 ml-1">— add these to your DNS provider</span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {[
+                          { type: 'TXT', name: emailDomain.emailDomain, value: `v=spf1 include:sendgrid.net include:teachly.com ~all`, key: 'spf', label: 'SPF' },
+                          { type: 'CNAME', name: `em._domainkey.${emailDomain.emailDomain}`, value: `em.dkim.teachly.com`, key: 'dkim1', label: 'DKIM' },
+                          { type: 'CNAME', name: `em2._domainkey.${emailDomain.emailDomain}`, value: `em2.dkim.teachly.com`, key: 'dkim2', label: 'DKIM 2' },
+                          { type: 'CNAME', name: `bounce.${emailDomain.emailDomain}`, value: `bounce.teachly.com`, key: 'bounce', label: 'Bounce' },
+                        ].map(rec => (
+                          <div key={rec.key} className="px-4 py-3 flex items-start gap-3">
+                            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                              <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{rec.type}</span>
+                              <span className="text-xs text-gray-400">{rec.label}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-gray-500 truncate font-mono">{rec.name}</p>
+                              <p className="text-xs text-gray-800 truncate font-mono mt-0.5">{rec.value}</p>
+                            </div>
+                            <button onClick={() => copyToClipboard(rec.value, rec.key)} className="shrink-0 p-1.5 text-gray-400 hover:text-blue-600 transition-colors mt-0.5">
+                              {copiedRecord === rec.key ? <CheckCircle2 className="size-4 text-green-500" /> : <Copy className="size-4" />}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                      <Save className="size-4" /> Save Email Settings
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Copyright Protection ── */}
+        {activeSection === 'copyright-protection' && (
+          <div className="space-y-6">
+            {copyrightSaved && (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                <CheckCircle2 className="size-5 text-green-600 shrink-0" />
+                <p className="text-sm font-medium text-green-800">Copyright protection settings saved.</p>
+              </div>
+            )}
+
+            {/* ── Video Watermark ── */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Eye className="size-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Video Watermark</h2>
+                    <p className="text-xs text-gray-500">Overlay your branding on all video content</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={copyright.videoWatermarkEnabled} onChange={e => setCopyright(c => ({ ...c, videoWatermarkEnabled: e.target.checked }))} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                </label>
+              </div>
+
+              {copyright.videoWatermarkEnabled && (
+                <div className="space-y-4 pt-2 border-t border-gray-100">
+                  {/* Watermark text */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Video Watermark Settings — Text</label>
+                    <input
+                      type="text"
+                      value={copyright.videoWatermarkText}
+                      onChange={e => setCopyright(c => ({ ...c, videoWatermarkText: e.target.value }))}
+                      placeholder="e.g. © Outdure Academy"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">This text will appear as an overlay on all videos.</p>
+                  </div>
+
+                  {/* Position + Size */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">Video Watermark Position</label>
+                      <select value={copyright.videoWatermarkPosition} onChange={e => setCopyright(c => ({ ...c, videoWatermarkPosition: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        {['top-left','top-center','top-right','center','bottom-left','bottom-center','bottom-right'].map(p => (
+                          <option key={p} value={p}>{p.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">Video Watermark Size</label>
+                      <select value={copyright.videoWatermarkSize} onChange={e => setCopyright(c => ({ ...c, videoWatermarkSize: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        {['small','medium','large'].map(s => <option key={s} value={s}>{s.replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Transparency slider */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium text-gray-700">Video Watermark Transparency</label>
+                      <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{copyright.videoWatermarkTransparency}%</span>
+                    </div>
+                    <input
+                      type="range" min={0} max={100} step={5}
+                      value={copyright.videoWatermarkTransparency}
+                      onChange={e => setCopyright(c => ({ ...c, videoWatermarkTransparency: Number(e.target.value) }))}
+                      className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <span>0% (invisible)</span>
+                      <span>50% (semi)</span>
+                      <span>100% (solid)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── PDF Watermark ── */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-red-50 flex items-center justify-center">
+                    <FileText className="size-4 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">PDF Watermark</h2>
+                    <p className="text-xs text-gray-500">Stamp your branding on all PDF documents</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={copyright.pdfWatermarkEnabled} onChange={e => setCopyright(c => ({ ...c, pdfWatermarkEnabled: e.target.checked }))} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                </label>
+              </div>
+
+              {copyright.pdfWatermarkEnabled && (
+                <div className="space-y-4 pt-2 border-t border-gray-100">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">PDF Watermark Settings — Text</label>
+                    <input
+                      type="text"
+                      value={copyright.pdfWatermarkText}
+                      onChange={e => setCopyright(c => ({ ...c, pdfWatermarkText: e.target.value }))}
+                      placeholder="e.g. Confidential — Outdure Academy"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">PDF Watermark Position</label>
+                      <select value={copyright.pdfWatermarkPosition} onChange={e => setCopyright(c => ({ ...c, pdfWatermarkPosition: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        {['top-left','top-center','top-right','center','bottom-left','bottom-center','bottom-right'].map(p => (
+                          <option key={p} value={p}>{p.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">PDF Watermark Size</label>
+                      <select value={copyright.pdfWatermarkSize} onChange={e => setCopyright(c => ({ ...c, pdfWatermarkSize: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        {['small','medium','large'].map(s => <option key={s} value={s}>{s.replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── PDF & Ebook Permissions ── */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="size-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <Lock className="size-4 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">PDF & Ebook Permissions</h2>
+                  <p className="text-xs text-gray-500">Control what users can do with your protected documents</p>
+                </div>
+              </div>
+
+              {[
+                { key: 'pdfAllowDownload', label: 'PDF File Downloads',  desc: 'Allow users to download PDF files to their device.' },
+                { key: 'pdfAllowCopy',     label: 'PDF File Copy',        desc: 'Allow users to copy text from PDF documents.' },
+                { key: 'pdfAllowPrint',    label: 'PDF File Print',       desc: 'Allow users to print PDF documents.' },
+                { key: 'ebookAllowCopy',   label: 'Ebook Content Copy',   desc: 'Allow users to copy text from ebook content.' },
+              ].map(item => (
+                <div key={item.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-xs font-medium ${(copyright as any)[item.key] ? 'text-green-600' : 'text-red-500'}`}>
+                      {(copyright as any)[item.key] ? 'Allowed' : 'Blocked'}
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(copyright as any)[item.key]}
+                        onChange={e => setCopyright(c => ({ ...c, [item.key]: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end">
+              <button onClick={handleCopyrightSave} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <Save className="size-4" /> Save Protection Settings
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Privacy / GDPR ── */}
+        {activeSection === 'privacy-gdpr' && (
+          <div className="space-y-6">
+            {privacyGdprSaved && (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                <CheckCircle2 className="size-5 text-green-600 shrink-0" />
+                <p className="text-sm font-medium text-green-800">Privacy & GDPR settings saved.</p>
+              </div>
+            )}
+
+            {/* GDPR Compliance */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="size-8 rounded-lg bg-blue-50 flex items-center justify-center"><Shield className="size-4 text-blue-600" /></div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">GDPR Compliance</h2>
+                  <p className="text-xs text-gray-500">Enable GDPR-compliant data handling across your platform</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">GDPR Mode</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Activates consent flows, data rights and retention controls</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={privacyGdpr.gdprEnabled} onChange={e => setPrivacyGdpr(p => ({ ...p, gdprEnabled: e.target.checked }))} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                </label>
+              </div>
+
+              {/* Legal document links */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Privacy Policy URL</label>
+                  <input type="url" value={privacyGdpr.privacyPolicyUrl} onChange={e => setPrivacyGdpr(p => ({ ...p, privacyPolicyUrl: e.target.value }))} placeholder="https://yoursite.com/privacy" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Terms of Service URL</label>
+                  <input type="url" value={privacyGdpr.termsOfServiceUrl} onChange={e => setPrivacyGdpr(p => ({ ...p, termsOfServiceUrl: e.target.value }))} placeholder="https://yoursite.com/terms" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+
+              {/* DPA */}
+              <div className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <input type="checkbox" id="dpa" checked={privacyGdpr.dpaAccepted} onChange={e => setPrivacyGdpr(p => ({ ...p, dpaAccepted: e.target.checked }))} className="mt-0.5 accent-blue-600 size-4 shrink-0" />
+                <label htmlFor="dpa" className="cursor-pointer">
+                  <p className="text-sm font-medium text-gray-900">Data Processing Agreement (DPA)</p>
+                  <p className="text-xs text-gray-500 mt-0.5">I confirm that a DPA is in place between my organisation and Teachly, covering GDPR-compliant data processing.</p>
+                </label>
+              </div>
+            </div>
+
+            {/* Cookie Consent */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-amber-50 flex items-center justify-center"><Bell className="size-4 text-amber-600" /></div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Cookie Consent Banner</h2>
+                    <p className="text-xs text-gray-500">Display a consent banner to visitors</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={privacyGdpr.cookieConsentEnabled} onChange={e => setPrivacyGdpr(p => ({ ...p, cookieConsentEnabled: e.target.checked }))} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                </label>
+              </div>
+
+              {privacyGdpr.cookieConsentEnabled && (
+                <div className="space-y-4 pt-2 border-t border-gray-100">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Banner Message</label>
+                    <textarea rows={3} value={privacyGdpr.cookieBannerText} onChange={e => setPrivacyGdpr(p => ({ ...p, cookieBannerText: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Banner Position</label>
+                    <select value={privacyGdpr.cookiePosition} onChange={e => setPrivacyGdpr(p => ({ ...p, cookiePosition: e.target.value }))} className="w-full md:w-48 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                      <option value="bottom">Bottom</option>
+                      <option value="top">Top</option>
+                      <option value="bottom-left">Bottom Left</option>
+                      <option value="bottom-right">Bottom Right</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tracking & Data Sharing */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="size-8 rounded-lg bg-purple-50 flex items-center justify-center"><Eye className="size-4 text-purple-600" /></div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">Tracking & Data Sharing</h2>
+                  <p className="text-xs text-gray-500">Control what data is collected and shared</p>
+                </div>
+              </div>
+              {[
+                { key: 'analyticsTracking', label: 'Analytics Tracking',    desc: 'Allow platform analytics to track user behaviour and course engagement.' },
+                { key: 'marketingCookies',  label: 'Marketing Cookies',     desc: 'Allow marketing cookies for retargeting and ad measurement.' },
+                { key: 'thirdPartySharing', label: 'Third-Party Sharing',   desc: 'Share anonymised usage data with approved third-party analytics providers.' },
+              ].map(item => (
+                <div key={item.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input type="checkbox" checked={(privacyGdpr as any)[item.key]} onChange={e => setPrivacyGdpr(p => ({ ...p, [item.key]: e.target.checked }))} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            {/* Data Retention */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="size-8 rounded-lg bg-green-50 flex items-center justify-center"><Clock className="size-4 text-green-600" /></div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">Data Retention</h2>
+                  <p className="text-xs text-gray-500">Define how long user data is kept after account deletion</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">User Data Retention</label>
+                  <select value={privacyGdpr.dataRetentionPeriod} onChange={e => setPrivacyGdpr(p => ({ ...p, dataRetentionPeriod: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="30-days">30 days after deletion</option>
+                    <option value="90-days">90 days after deletion</option>
+                    <option value="1-year">1 year after deletion</option>
+                    <option value="2-years">2 years after deletion</option>
+                    <option value="indefinite">Indefinite</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Activity Log Retention</label>
+                  <select value={privacyGdpr.activityLogRetention} onChange={e => setPrivacyGdpr(p => ({ ...p, activityLogRetention: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="3-months">3 months</option>
+                    <option value="6-months">6 months</option>
+                    <option value="1-year">1 year</option>
+                    <option value="2-years">2 years</option>
+                    <option value="indefinite">Indefinite</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Data Subject Rights */}
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="size-8 rounded-lg bg-red-50 flex items-center justify-center"><Trash2 className="size-4 text-red-500" /></div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">Data Subject Rights</h2>
+                  <p className="text-xs text-gray-500">Allow users to exercise their GDPR data rights</p>
+                </div>
+              </div>
+              {[
+                { key: 'allowDataExport',   label: 'Allow Data Export Requests',    desc: 'Users can request a full export of their personal data (Right to Portability).' },
+                { key: 'allowDataDeletion', label: 'Allow Data Deletion Requests',  desc: 'Users can request permanent deletion of their account and data (Right to Erasure).' },
+              ].map(item => (
+                <div key={item.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input type="checkbox" checked={(privacyGdpr as any)[item.key]} onChange={e => setPrivacyGdpr(p => ({ ...p, [item.key]: e.target.checked }))} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+                  </label>
+                </div>
+              ))}
+
+              {/* Pending requests summary */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                  <div><p className="text-xs font-medium text-blue-800">Export Requests</p><p className="text-xl font-bold text-blue-700 mt-0.5">3</p></div>
+                  <button className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors">View →</button>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-lg">
+                  <div><p className="text-xs font-medium text-red-800">Deletion Requests</p><p className="text-xl font-bold text-red-700 mt-0.5">1</p></div>
+                  <button className="text-xs font-medium text-red-600 hover:text-red-800 transition-colors">View →</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button onClick={handlePrivacyGdprSave} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <Save className="size-4" /> Save Privacy Settings
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Save Button */}
+        {activeSection !== 'school-info' && activeSection !== 'site-domain-email' && activeSection !== 'copyright-protection' && activeSection !== 'privacy-gdpr' && (
         <div className="flex justify-end">
           <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
             <Save className="size-4" />
             Save Changes
           </button>
         </div>
+        )}
       </div>
     </div>
   );

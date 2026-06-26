@@ -51,6 +51,8 @@ interface CourseBuilderPageProps {
   course: Course;
   onBack: () => void;
   onSave?: (course: Course) => void;
+  onNavigateToEmailTemplates?: () => void;
+  onNavigateToPushNotifications?: () => void;
 }
 
 interface Activity {
@@ -300,7 +302,7 @@ function DraggableSection({ section, index, moveSection, toggleSection, editSect
   );
 }
 
-export function CourseBuilderPage({ course, onBack, onSave }: CourseBuilderPageProps) {
+export function CourseBuilderPage({ course, onBack, onSave, onNavigateToEmailTemplates, onNavigateToPushNotifications }: CourseBuilderPageProps) {
   const [activeSidebarItem, setActiveSidebarItem] = useState<string>('course-outline');
   const [dashboardTab, setDashboardTab] = useState<string>('overview');
   const [sections, setSections] = useState<Section[]>([]);
@@ -333,6 +335,7 @@ export function CourseBuilderPage({ course, onBack, onSave }: CourseBuilderPageP
     language: course.language || 'English',
     instructor: course.instructor,
     duration: course.duration,
+    imageUrl: course.imageUrl || course.thumbnail,
     certificateEnabled: course.certificateEnabled ?? true,
     allowComments: course.allowComments ?? true,
     allowReviews: course.allowReviews ?? true
@@ -1551,7 +1554,7 @@ export function CourseBuilderPage({ course, onBack, onSave }: CourseBuilderPageP
 
             {/* General Settings Tab */}
             {activeSidebarItem === 'general' && (
-              <GeneralSettings settings={courseSettings} onUpdate={setCourseSettings} />
+              <GeneralSettings settings={courseSettings} onUpdate={setCourseSettings} onNavigateToEmailTemplates={onNavigateToEmailTemplates} onNavigateToPushNotifications={onNavigateToPushNotifications} />
             )}
 
             {/* Access Settings Tab */}

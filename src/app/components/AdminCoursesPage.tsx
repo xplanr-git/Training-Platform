@@ -1,6 +1,6 @@
 import { Course, CourseCategory } from '@/app/types';
-import { Plus, Search, Edit, Trash2, Eye, Filter, Building2, Award, Info, X, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, Search, Edit, Trash2, Eye, Filter, Building2, Award, Info, X, ChevronDown, Download, TrendingUp, LayoutTemplate, Upload, FileUp, CheckCircle2 } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { CourseCatalog } from './CourseCatalog';
 import { CourseBuilderPage } from './CourseBuilderPage';
 import { supabase } from '/utils/supabase/client';
@@ -13,10 +13,13 @@ interface AdminCoursesPageProps {
   onSubPageChange?: (subPage: string) => void;
   onCourseClick?: (courseId: string) => void;
   onUpdateCategories?: (categories: CourseCategory[]) => void;
+  onUpdateCourseAssignments?: (updates: { id: string; categoryId?: string }[]) => void;
   onCoursesRefresh?: () => void;
+  onNavigateToEmailTemplates?: () => void;
+  onNavigateToPushNotifications?: () => void;
 }
 
-export function AdminCoursesPage({ courses, categories, companyId, currentSubPage = 'all-courses', onSubPageChange, onCourseClick, onUpdateCategories, onCoursesRefresh }: AdminCoursesPageProps) {
+export function AdminCoursesPage({ courses, categories, companyId, currentSubPage = 'all-courses', onSubPageChange, onCourseClick, onUpdateCategories, onUpdateCourseAssignments, onCoursesRefresh, onNavigateToEmailTemplates, onNavigateToPushNotifications }: AdminCoursesPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [levelFilter, setLevelFilter] = useState<string>('all');
@@ -31,6 +34,55 @@ export function AdminCoursesPage({ courses, categories, companyId, currentSubPag
   const [programName, setProgramName] = useState('');
   const [programDescription, setProgramDescription] = useState('');
   const [programType, setProgramType] = useState<'free' | 'one-time' | 'installment' | 'subscription'>('free');
+
+  // Certificate template state
+  const defaultCertFields = {
+    instructor: 'Course Instructor',
+    organisation: 'Outdure Academy',
+    department: 'Human Resources',
+    dateOfIssue: 'May 13, 2026',
+    duration: '',
+    certNumber: '',
+    secondSignatory: '',
+    footerNote: 'This certificate is awarded in recognition of successful course completion.',
+    showLogo: true,
+    showSignatureLine: true,
+    showDateLine: true,
+    showCourseName: true,
+    showDuration: false,
+    showCertNumber: false,
+    showSecondSignatory: false,
+    // Uploaded certificate fields
+    uploadedFileUrl: '',
+    uploadedFileName: '',
+    overlayTint: '#000000',
+    overlayTintOpacity: 0,
+    // Per-element overlay config (uploaded certs) — x/y = % from top-left
+    overlayNameX: 50,    overlayNameY: 44,    overlayNameColor: '#1a1a1a', overlayNameFontSize: 28, overlayNameBold: true,  overlayNameItalic: true,  overlayNameVisible: true,
+    overlayCourseX: 50,  overlayCourseY: 58,  overlayCourseColor: '#374151', overlayCourseFontSize: 16, overlayCourseBold: true,  overlayCourseItalic: false, overlayCourseVisible: true,
+    overlayDateX: 50,    overlayDateY: 70,    overlayDateColor: '#6b7280', overlayDateFontSize: 13, overlayDateBold: false, overlayDateItalic: false, overlayDateVisible: true,
+    overlayInstructorX: 30, overlayInstructorY: 82, overlayInstructorColor: '#374151', overlayInstructorFontSize: 12, overlayInstructorBold: false, overlayInstructorItalic: false, overlayInstructorVisible: false,
+    overlayCertNumX: 50, overlayCertNumY: 90, overlayCertNumColor: '#9ca3af', overlayCertNumFontSize: 10, overlayCertNumBold: false, overlayCertNumItalic: false, overlayCertNumVisible: false,
+  };
+  const [certTemplates, setCertTemplates] = useState([
+    { id: 0, name: 'Professional Certificate', courses: 15, color: '#1d4ed8', accent: '#3b82f6', description: 'Awarded to professionals who complete advanced training.', ...defaultCertFields },
+    { id: 1, name: 'Course Completion',        courses: 8,  color: '#047857', accent: '#10b981', description: 'Awarded upon successful completion of a course.',         ...defaultCertFields },
+    { id: 2, name: 'Excellence Award',          courses: 12, color: '#7c3aed', accent: '#8b5cf6', description: 'Recognises outstanding performance and dedication.',       ...defaultCertFields },
+    { id: 3, name: 'Mastery Certificate',       courses: 23, color: '#b45309', accent: '#f59e0b', description: 'Awarded to learners who demonstrate deep mastery.',        ...defaultCertFields },
+  ]);
+  const [editingCertId, setEditingCertId] = useState<number | null>(null);
+  const [previewingCertId, setPreviewingCertId] = useState<number | null>(null);
+  const [certDraft, setCertDraft] = useState<typeof certTemplates[0] | null>(null);
+  const [certIsNew, setCertIsNew] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'unreviewed' | 'reviewed'>('all');
+  const [replyModal, setReplyModal] = useState<{ student: string; initials: string; color: string; course: string; rating: number; comment: string; time: string; replied: boolean; existingReply?: string } | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadDragging, setUploadDragging] = useState(false);
+  const [uploadTemplateName, setUploadTemplateName] = useState('');
+  const [uploadDone, setUploadDone] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   // Course creation form state
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
@@ -55,6 +107,8 @@ export function AdminCoursesPage({ courses, categories, companyId, currentSubPag
             onCoursesRefresh();
           }
         }}
+        onNavigateToEmailTemplates={onNavigateToEmailTemplates}
+        onNavigateToPushNotifications={onNavigateToPushNotifications}
         onSave={(updatedCourse) => {
           // Update the selected course with the new data
           setSelectedCourseForBuilder(updatedCourse);
@@ -211,6 +265,7 @@ export function AdminCoursesPage({ courses, categories, companyId, currentSubPag
             alert('Import course functionality coming soon!');
           }}
           onUpdateCategories={onUpdateCategories}
+          onUpdateCourseAssignments={onUpdateCourseAssignments}
         />
       )}
 
@@ -1035,10 +1090,28 @@ export function AdminCoursesPage({ courses, categories, companyId, currentSubPag
                 </div>
                 <p className="text-gray-600">Manage course completion certificates</p>
               </div>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+              <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setUploadFile(null); setUploadTemplateName(''); setUploadDone(false); setShowUploadModal(true); }}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm font-medium">
+                <Upload className="size-4" />
+                Upload Certificate
+              </button>
+              <button
+                onClick={() => {
+                  const newId = Date.now();
+                  const newTpl = { id: newId, name: 'New Template', courses: 0, color: '#1d4ed8', accent: '#3b82f6', description: 'Enter a description for this certificate.', ...defaultCertFields };
+                  setCertTemplates(prev => [...prev, newTpl]);
+                  setCertDraft(newTpl);
+                  setEditingCertId(newId);
+                  setCertIsNew(true);
+                  setPreviewingCertId(null);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                 <Plus className="size-4" />
                 Create Template
               </button>
+              </div>
             </div>
             {activePopover === 'certificates' && (
               <div className="absolute top-20 left-6 right-6 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-20">
@@ -1055,43 +1128,729 @@ export function AdminCoursesPage({ courses, categories, companyId, currentSubPag
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-sm text-gray-600 mb-1">Total Issued</p>
-              <p className="text-3xl font-bold text-gray-900">2,847</p>
+          {/* Certificate Analytics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Total Issued',      value: '2,847', sub: '+12% vs last month',  icon: Award,       color: 'text-blue-600',   bg: 'bg-blue-50',   border: 'border-l-4 border-blue-500' },
+              { label: 'Issued This Month', value: '156',   sub: '↑ 23 from last month',    icon: TrendingUp,      color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-l-4 border-green-500' },
+              { label: 'Revoked',           value: '14',    sub: '0.49% of total issued',   icon: X,               color: 'text-red-500',    bg: 'bg-red-50',    border: 'border-l-4 border-red-400' },
+              { label: 'Active Templates',  value: '4',     sub: '4 in use across courses', icon: LayoutTemplate,  color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-l-4 border-purple-500' },
+            ].map(({ label, value, sub, icon: Icon, color, bg, border }) => (
+              <div key={label} className={`bg-white rounded-lg shadow-sm p-5 ${border}`}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{label}</p>
+                    <p className="text-3xl font-bold text-gray-900">{value}</p>
+                    <p className="text-xs text-gray-400 mt-1">{sub}</p>
+                  </div>
+                  <div className={`size-10 ${bg} rounded-lg flex items-center justify-center shrink-0`}>
+                    <Icon className={`size-5 ${color}`} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Most Awarded + Issuance Trend side-by-side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+            {/* Most Awarded Certificates */}
+            <div className="bg-white rounded-lg shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Most Awarded Certificates</h3>
+              <div className="space-y-3">
+                {[
+                  { name: 'Professional Certificate', count: 1204, pct: 100 },
+                  { name: 'Course Completion',        count: 892,  pct: 74  },
+                  { name: 'Excellence Award',          count: 481,  pct: 40  },
+                  { name: 'Mastery Certificate',       count: 270,  pct: 22  },
+                ].map(({ name, count, pct }) => (
+                  <div key={name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-gray-700 flex items-center gap-2">
+                        <Award className="size-3.5 text-blue-500" />
+                        {name}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900">{count.toLocaleString()}</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-sm text-gray-600 mb-1">This Month</p>
-              <p className="text-3xl font-bold text-gray-900">156</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-sm text-gray-600 mb-1">Templates</p>
-              <p className="text-3xl font-bold text-gray-900">8</p>
+
+            {/* Monthly Issuance Breakdown */}
+            <div className="bg-white rounded-lg shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Monthly Issuance (Last 6 Months)</h3>
+              <div className="space-y-2.5">
+                {[
+                  { month: 'May 2026',      count: 156, max: 210 },
+                  { month: 'April 2026',    count: 210, max: 210 },
+                  { month: 'March 2026',    count: 184, max: 210 },
+                  { month: 'February 2026', count: 143, max: 210 },
+                  { month: 'January 2026',  count: 98,  max: 210 },
+                  { month: 'December 2025', count: 127, max: 210 },
+                ].map(({ month, count, max }) => (
+                  <div key={month} className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500 w-28 shrink-0">{month}</span>
+                    <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded flex items-center justify-end pr-2 transition-all"
+                        style={{ width: `${(count / max) * 100}%` }}
+                      >
+                        <span className="text-[10px] text-white font-semibold">{count}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs text-gray-400">Peak month: April 2026</span>
+                <span className="text-xs font-semibold text-blue-600">918 total in period</span>
+              </div>
             </div>
           </div>
 
+          {/* Awards Issued */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Certificate Templates</h2>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Awards Issued</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Certificates and awards granted to learners</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search learners..."
+                    className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent w-52"
+                  />
+                </div>
+                <button className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                  <Filter className="size-4" />
+                  Filter
+                </button>
+                <button className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                  <Download className="size-4" />
+                  Export
+                </button>
+              </div>
+            </div>
+
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide pb-3 pr-4">Learner</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide pb-3 pr-4">Certificate</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide pb-3 pr-4">Course</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide pb-3 pr-4">Date Issued</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide pb-3 pr-4">Status</th>
+                  <th className="pb-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[
+                  { name: 'Sarah Johnson',  email: 'sarah.j@example.com',  initials: 'SJ', color: 'bg-purple-100 text-purple-700', cert: 'Professional Certificate', course: 'React Advanced',        date: 'May 10, 2026', status: 'Active' },
+                  { name: 'Mike Chen',      email: 'mike.c@example.com',   initials: 'MC', color: 'bg-blue-100 text-blue-700',   cert: 'Course Completion',        course: 'Python for Data',      date: 'May 8, 2026',  status: 'Active' },
+                  { name: 'Emma Davis',     email: 'emma.d@example.com',   initials: 'ED', color: 'bg-green-100 text-green-700', cert: 'Excellence Award',          course: 'UI/UX Design',         date: 'May 5, 2026',  status: 'Active' },
+                  { name: 'John Smith',     email: 'john.s@example.com',   initials: 'JS', color: 'bg-orange-100 text-orange-700',cert: 'Mastery Certificate',      course: 'Node.js Fundamentals', date: 'Apr 29, 2026', status: 'Active' },
+                  { name: 'Aisha Patel',    email: 'aisha.p@example.com',  initials: 'AP', color: 'bg-teal-100 text-teal-700',   cert: 'Course Completion',        course: 'Cloud Architecture',   date: 'Apr 22, 2026', status: 'Active' },
+                  { name: 'Lucas Wright',   email: 'lucas.w@example.com',  initials: 'LW', color: 'bg-red-100 text-red-700',     cert: 'Professional Certificate', course: 'Cybersecurity Basics', date: 'Apr 18, 2026', status: 'Revoked' },
+                  { name: 'Chloe Martinez', email: 'chloe.m@example.com',  initials: 'CM', color: 'bg-pink-100 text-pink-700',   cert: 'Excellence Award',          course: 'Digital Marketing',    date: 'Apr 10, 2026', status: 'Expired' },
+                ].map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50 transition-colors group">
+                    {/* Learner */}
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`size-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${row.color}`}>
+                          {row.initials}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{row.name}</p>
+                          <p className="text-xs text-gray-400">{row.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    {/* Certificate */}
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-2">
+                        <Award className="size-4 text-blue-500 shrink-0" />
+                        <span className="text-gray-700">{row.cert}</span>
+                      </div>
+                    </td>
+                    {/* Course */}
+                    <td className="py-3 pr-4 text-gray-600">{row.course}</td>
+                    {/* Date */}
+                    <td className="py-3 pr-4 text-gray-500">{row.date}</td>
+                    {/* Status */}
+                    <td className="py-3 pr-4">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        row.status === 'Active'  ? 'bg-green-100 text-green-700' :
+                        row.status === 'Expired' ? 'bg-gray-100 text-gray-500'  :
+                                                   'bg-red-100 text-red-600'
+                      }`}>
+                        {row.status}
+                      </span>
+                    </td>
+                    {/* Actions */}
+                    <td className="py-3 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button title="View certificate" className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <Eye className="size-4" />
+                        </button>
+                        <button title="Download" className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                          <Download className="size-4" />
+                        </button>
+                        <button title="Revoke" className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+              <p className="text-sm text-gray-500">Showing 7 of 2,847 awards</p>
+              <div className="flex items-center gap-1">
+                <button className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-40" disabled>Previous</button>
+                <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">1</button>
+                <button className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">2</button>
+                <button className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">3</button>
+                <button className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Next</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Certificate Templates */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-semibold text-gray-900">Certificate Templates</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <Upload className="size-4" /> Upload Certificate
+                </button>
+                <button
+                  onClick={() => {
+                    const newId = Date.now();
+                    const newTpl = { id: newId, name: 'New Template', courses: 0, color: '#1d4ed8', accent: '#3b82f6', description: 'Enter a description for this certificate.', ...defaultCertFields };
+                    setCertTemplates(prev => [...prev, newTpl]);
+                    setCertDraft(newTpl);
+                    setEditingCertId(newId);
+                    setCertIsNew(true);
+                    setPreviewingCertId(null);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="size-4" /> Create Template
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {['Professional Certificate', 'Course Completion', 'Excellence Award', 'Mastery Certificate'].map((template, index) => (
-                <div key={index} className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer">
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg h-32 mb-3 flex items-center justify-center">
-                    <Award className="size-12 text-blue-600" />
+              {certTemplates.map((tpl) => (
+                <div key={tpl.id} className="border-2 border-gray-200 hover:border-blue-300 rounded-lg p-4 transition-colors">
+                  {/* Thumbnail */}
+                  <div
+                    className="rounded-lg h-32 mb-3 flex items-center justify-center relative overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, ${tpl.color}18, ${tpl.accent}30)` }}
+                  >
+                    <div className="absolute inset-3 border-2 rounded flex flex-col items-center justify-center" style={{ borderColor: `${tpl.accent}60` }}>
+                      <Award className="size-7 mb-1" style={{ color: tpl.color }} />
+                      <span className="text-[9px] font-bold text-center px-2 leading-tight" style={{ color: tpl.color }}>
+                        {tpl.name}
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-gray-900">{template}</h3>
-                  <p className="text-sm text-gray-600 mt-1">Used in {Math.floor(Math.random() * 20 + 5)} courses</p>
+                  <h3 className="font-semibold text-gray-900">{tpl.name}</h3>
+                  <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{tpl.description}</p>
+                  <p className="text-xs text-gray-400 mt-1">Used in {tpl.courses} courses</p>
                   <div className="flex gap-2 mt-3">
-                    <button className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                    <button
+                      onClick={() => { setEditingCertId(tpl.id); setCertDraft({ ...tpl }); setCertIsNew(false); setPreviewingCertId(null); }}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
                       Edit
                     </button>
-                    <button className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                    <button
+                      onClick={() => { setPreviewingCertId(tpl.id); setEditingCertId(null); setCertDraft(null); }}
+                      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
                       Preview
                     </button>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* ── Edit Modal ───────────────────────────────────────────────── */}
+            {editingCertId !== null && certDraft && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setEditingCertId(null); setCertDraft(null); }}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden" onClick={e => e.stopPropagation()}>
+
+                  {/* Modal header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-900">{certIsNew ? 'Create Certificate Template' : 'Edit Certificate Template'}</h2>
+                    <button
+                      onClick={() => { setEditingCertId(null); setCertDraft(null); }}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <X className="size-5" />
+                    </button>
+                  </div>
+
+                  {/* Modal body */}
+                  <div className="flex divide-x divide-gray-100" style={{ height: 'min(72vh, 640px)', overflow: 'hidden' }}>
+
+                    {/* Left — all editable fields */}
+                    <div className="flex-1 p-6 overflow-y-auto space-y-5">
+
+                      {/* ── Identity ── */}
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Identity</p>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Template Name</label>
+                            <input type="text" value={certDraft.name}
+                              onChange={e => setCertDraft({ ...certDraft, name: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Organisation / Issuer</label>
+                            <input type="text" value={certDraft.organisation}
+                              onChange={e => setCertDraft({ ...certDraft, organisation: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Issuing Department</label>
+                            <input type="text" value={certDraft.department}
+                              onChange={e => setCertDraft({ ...certDraft, department: e.target.value })}
+                              placeholder="e.g. HR, Safety Officer"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Number</label>
+                            <input type="text" value={certDraft.certNumber}
+                              onChange={e => setCertDraft({ ...certDraft, certNumber: e.target.value })}
+                              placeholder="e.g. CERT-2026-001 (leave blank to auto-generate)"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                            <textarea value={certDraft.description}
+                              onChange={e => setCertDraft({ ...certDraft, description: e.target.value })}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Footer Note</label>
+                            <textarea value={certDraft.footerNote}
+                              onChange={e => setCertDraft({ ...certDraft, footerNote: e.target.value })}
+                              rows={2}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Signature & Date ── */}
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Signature & Date</p>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Training Facilitator / Signatory</label>
+                            <input type="text" value={certDraft.instructor}
+                              onChange={e => setCertDraft({ ...certDraft, instructor: e.target.value })}
+                              placeholder="e.g. Course Instructor"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Second Signatory <span className="text-gray-400 font-normal">(HR Manager / Department Head)</span></label>
+                            <input type="text" value={certDraft.secondSignatory}
+                              onChange={e => setCertDraft({ ...certDraft, secondSignatory: e.target.value })}
+                              placeholder="e.g. HR Manager"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Date of Issue</label>
+                            <input type="text" value={certDraft.dateOfIssue}
+                              onChange={e => setCertDraft({ ...certDraft, dateOfIssue: e.target.value })}
+                              placeholder="e.g. May 13, 2026"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Training Duration</label>
+                            <input type="text" value={certDraft.duration}
+                              onChange={e => setCertDraft({ ...certDraft, duration: e.target.value })}
+                              placeholder="e.g. 8 hours, 2 days"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Appearance ── */}
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Appearance</p>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Primary Colour</label>
+                            <div className="flex items-center gap-2">
+                              <input type="color" value={certDraft.color}
+                                onChange={e => setCertDraft({ ...certDraft, color: e.target.value })}
+                                className="h-9 w-12 rounded border border-gray-200 cursor-pointer" />
+                              <span className="text-xs text-gray-500 font-mono">{certDraft.color}</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Accent Colour</label>
+                            <div className="flex items-center gap-2">
+                              <input type="color" value={certDraft.accent}
+                                onChange={e => setCertDraft({ ...certDraft, accent: e.target.value })}
+                                className="h-9 w-12 rounded border border-gray-200 cursor-pointer" />
+                              <span className="text-xs text-gray-500 font-mono">{certDraft.accent}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {[
+                            { key: 'showLogo',             label: 'Show award icon / logo' },
+                            { key: 'showCourseName',       label: 'Show course name pill' },
+                            { key: 'showSignatureLine',    label: 'Show training facilitator signature' },
+                            { key: 'showSecondSignatory',  label: 'Show second signatory line' },
+                            { key: 'showDateLine',         label: 'Show date of issue line' },
+                            { key: 'showDuration',         label: 'Show training duration' },
+                            { key: 'showCertNumber',       label: 'Show certificate number' },
+                          ].map(({ key, label }) => (
+                            <div key={key} className="flex items-center gap-2.5 cursor-pointer group"
+                              onClick={() => setCertDraft(d => ({ ...d!, [key]: !(d as any)[key] }))}>
+                              <div
+                                className={`relative inline-flex h-5 w-9 rounded-full transition-colors shrink-0 ${(certDraft as any)[key] ? 'bg-blue-500' : 'bg-gray-300'}`}
+                              >
+                                <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${(certDraft as any)[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                              </div>
+                              <span className="text-sm text-gray-700">{label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Right — live preview / overlay canvas */}
+                    <div className="flex-1 p-4 flex flex-col bg-gray-50 overflow-y-auto">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                        {(certDraft as any).uploadedFileUrl ? 'Certificate Preview' : 'Live Preview'}
+                      </p>
+
+                      {/* ── Uploaded certificate preview ── */}
+                      {(certDraft as any).uploadedFileUrl ? (
+                        <div className="flex-1 rounded-xl overflow-hidden border border-gray-200 bg-white flex items-center justify-center" style={{ minHeight: '400px' }}>
+                          {!(certDraft as any).uploadedFileName?.endsWith('.pdf') ? (
+                            <img src={(certDraft as any).uploadedFileUrl} alt="Certificate" className="w-full h-full object-contain" />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center gap-2 text-gray-400">
+                              <FileUp className="size-10" />
+                              <p className="text-xs">{(certDraft as any).uploadedFileName}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* ── Generated template preview ── */
+                        <div
+                          className="flex-1 rounded-xl relative overflow-hidden border flex items-center justify-center"
+                          style={{ background: `linear-gradient(135deg, ${certDraft.color}10, ${certDraft.accent}1e)`, borderColor: `${certDraft.accent}40`, minHeight: '320px' }}
+                        >
+                          {/* Corner accents */}
+                          <div className="absolute top-3 left-3 size-5 border-t-2 border-l-2" style={{ borderColor: certDraft.accent }} />
+                          <div className="absolute top-3 right-3 size-5 border-t-2 border-r-2" style={{ borderColor: certDraft.accent }} />
+                          <div className="absolute bottom-3 left-3 size-5 border-b-2 border-l-2" style={{ borderColor: certDraft.accent }} />
+                          <div className="absolute bottom-3 right-3 size-5 border-b-2 border-r-2" style={{ borderColor: certDraft.accent }} />
+
+                          <div className="text-center px-8 py-6 w-full">
+                            {certDraft.showLogo && <Award className="size-10 mx-auto mb-2" style={{ color: certDraft.color }} />}
+                            <p className="text-[8px] font-bold uppercase tracking-[0.3em] mb-0 text-gray-400">{certDraft.organisation}</p>
+                            <p className="text-[7px] uppercase tracking-[0.15em] text-gray-300 mb-1">{certDraft.department}</p>
+                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: certDraft.accent }}>This is to certify that</p>
+                            <p className="text-lg font-bold text-gray-800 italic mb-0.5">Student Full Name</p>
+                            <p className="text-[10px] text-gray-400 mb-3">has successfully completed</p>
+                            {certDraft.showCourseName && (
+                              <div className="inline-block px-4 py-1 rounded-full mb-1" style={{ backgroundColor: `${certDraft.color}18` }}>
+                                <p className="text-sm font-bold" style={{ color: certDraft.color }}>{certDraft.name || 'Template Name'}</p>
+                              </div>
+                            )}
+                            {certDraft.showDuration && certDraft.duration && (
+                              <p className="text-[9px] text-gray-400 mt-1">Duration: <span className="font-semibold text-gray-600">{certDraft.duration}</span></p>
+                            )}
+                            <p className="text-[10px] text-gray-400 mt-1 line-clamp-2 max-w-[220px] mx-auto">{certDraft.description}</p>
+                            {(certDraft.showSignatureLine || certDraft.showSecondSignatory || certDraft.showDateLine) && (
+                              <div className="flex items-end justify-center gap-5 mt-4 flex-wrap">
+                                {certDraft.showSignatureLine && (
+                                  <div className="text-center">
+                                    <div className="h-px w-20 mb-1" style={{ backgroundColor: certDraft.accent }} />
+                                    <p className="text-[9px] font-semibold text-gray-700">{certDraft.instructor || 'Facilitator'}</p>
+                                    <p className="text-[7px] text-gray-400">Training Facilitator</p>
+                                  </div>
+                                )}
+                                {certDraft.showSecondSignatory && certDraft.secondSignatory && (
+                                  <div className="text-center">
+                                    <div className="h-px w-20 mb-1" style={{ backgroundColor: certDraft.accent }} />
+                                    <p className="text-[9px] font-semibold text-gray-700">{certDraft.secondSignatory}</p>
+                                    <p className="text-[7px] text-gray-400">HR Manager</p>
+                                  </div>
+                                )}
+                                {certDraft.showDateLine && (
+                                  <div className="text-center">
+                                    <div className="h-px w-20 mb-1" style={{ backgroundColor: certDraft.accent }} />
+                                    <p className="text-[9px] font-semibold text-gray-700">{certDraft.dateOfIssue}</p>
+                                    <p className="text-[7px] text-gray-400">Date of Issue</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {(certDraft.showCertNumber && certDraft.certNumber) && (
+                              <p className="text-[7px] text-gray-300 mt-3 font-mono tracking-wider">№ {certDraft.certNumber}</p>
+                            )}
+                            {certDraft.footerNote && (
+                              <p className="text-[8px] text-gray-300 mt-2 max-w-[200px] mx-auto leading-relaxed">{certDraft.footerNote}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Modal footer */}
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
+                    <button
+                      onClick={() => { setCertTemplates(prev => prev.filter(t => t.id !== editingCertId)); setEditingCertId(null); setCertDraft(null); }}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="size-4" /> Delete template
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setEditingCertId(null); setCertDraft(null); }}
+                        className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => { setCertTemplates(prev => prev.map(t => t.id === editingCertId ? { ...certDraft } : t)); setEditingCertId(null); setCertDraft(null); }}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Save changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Upload Certificate Modal ── */}
+            {showUploadModal && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowUploadModal(false)}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">Upload Certificate</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Upload an existing certificate design (PDF or image)</p>
+                    </div>
+                    <button onClick={() => setShowUploadModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <X className="size-5" />
+                    </button>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-6 space-y-5">
+                    {!uploadDone ? (
+                      <>
+                        {/* Template name */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Template Name</label>
+                          <input
+                            type="text"
+                            value={uploadTemplateName}
+                            onChange={e => setUploadTemplateName(e.target.value)}
+                            placeholder="e.g. Safety Training Certificate"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+
+                        {/* Drop zone */}
+                        <div
+                          onDragOver={e => { e.preventDefault(); setUploadDragging(true); }}
+                          onDragLeave={() => setUploadDragging(false)}
+                          onDrop={e => {
+                            e.preventDefault();
+                            setUploadDragging(false);
+                            const f = e.dataTransfer.files[0];
+                            if (f) setUploadFile(f);
+                          }}
+                          onClick={() => uploadInputRef.current?.click()}
+                          className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                            uploadDragging ? 'border-blue-400 bg-blue-50' : uploadFile ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40'
+                          }`}
+                        >
+                          <input
+                            ref={uploadInputRef}
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg,.svg"
+                            className="hidden"
+                            onChange={e => { const f = e.target.files?.[0]; if (f) setUploadFile(f); }}
+                          />
+                          {uploadFile ? (
+                            <>
+                              <FileUp className="size-10 mx-auto mb-3 text-green-500" />
+                              <p className="text-sm font-semibold text-green-700">{uploadFile.name}</p>
+                              <p className="text-xs text-green-500 mt-1">{(uploadFile.size / 1024).toFixed(1)} KB — click to replace</p>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="size-10 mx-auto mb-3 text-gray-300" />
+                              <p className="text-sm font-semibold text-gray-600">Drag & drop your file here</p>
+                              <p className="text-xs text-gray-400 mt-1">or click to browse — PDF, PNG, JPG, SVG up to 10 MB</p>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Supported formats note */}
+                        <div className="flex flex-wrap gap-2">
+                          {['PDF', 'PNG', 'JPG', 'SVG'].map(fmt => (
+                            <span key={fmt} className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded font-mono">.{fmt.toLowerCase()}</span>
+                          ))}
+                          <span className="text-xs text-gray-400 self-center ml-1">Max 10 MB per file</span>
+                        </div>
+                      </>
+                    ) : (
+                      /* Success state */
+                      <div className="text-center py-6">
+                        <CheckCircle2 className="size-14 mx-auto mb-4 text-green-500" />
+                        <p className="text-lg font-semibold text-gray-800">Certificate uploaded!</p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          <span className="font-medium text-gray-600">{uploadTemplateName || uploadFile?.name}</span> has been added to your templates.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                    {!uploadDone ? (
+                      <>
+                        <button onClick={() => setShowUploadModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                          Cancel
+                        </button>
+                        <button
+                          disabled={!uploadFile}
+                          onClick={() => {
+                            if (!uploadFile) return;
+                            const newId = Date.now();
+                            const label = uploadTemplateName.trim() || uploadFile.name.replace(/\.[^.]+$/, '');
+                            const previewUrl = URL.createObjectURL(uploadFile);
+                            const newTpl = {
+                              ...defaultCertFields,
+                              id: newId,
+                              name: label,
+                              courses: 0,
+                              color: '#047857',
+                              accent: '#10b981',
+                              description: `Uploaded from ${uploadFile.name}`,
+                              organisation: uploadTemplateName || label,
+                              uploadedFileUrl: previewUrl,
+                              uploadedFileName: uploadFile.name,
+                            };
+                            setCertTemplates(prev => [...prev, newTpl as any]);
+                            setUploadDone(true);
+                          }}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                        >
+                          <Upload className="size-4" /> Upload & Add Template
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setShowUploadModal(false)}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Done
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Full Preview Modal Overlay */}
+            {previewingCertId !== null && (() => {
+              const tpl = certTemplates.find(t => t.id === previewingCertId);
+              if (!tpl) return null;
+              return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6" onClick={() => setPreviewingCertId(null)}>
+                  <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-2" onClick={e => e.stopPropagation()}>
+                    {/* Certificate */}
+                    <div
+                      className="rounded-xl p-10 relative overflow-hidden"
+                      style={{ background: `linear-gradient(135deg, ${tpl.color}12, ${tpl.accent}20)` }}
+                    >
+                      {/* Decorative corner accents */}
+                      <div className="absolute top-4 left-4 size-8 border-t-2 border-l-2 rounded-tl" style={{ borderColor: tpl.accent }} />
+                      <div className="absolute top-4 right-4 size-8 border-t-2 border-r-2 rounded-tr" style={{ borderColor: tpl.accent }} />
+                      <div className="absolute bottom-4 left-4 size-8 border-b-2 border-l-2 rounded-bl" style={{ borderColor: tpl.accent }} />
+                      <div className="absolute bottom-4 right-4 size-8 border-b-2 border-r-2 rounded-br" style={{ borderColor: tpl.accent }} />
+
+                      <div className="text-center">
+                        <Award className="size-14 mx-auto mb-4" style={{ color: tpl.color }} />
+                        <p className="text-xs font-bold uppercase tracking-[0.3em] mb-2" style={{ color: tpl.accent }}>This is to certify that</p>
+                        <p className="text-3xl font-bold text-gray-800 mb-1 italic">Student Full Name</p>
+                        <p className="text-sm text-gray-500 mb-6">has successfully completed</p>
+                        <div className="inline-block px-6 py-2 rounded-full mb-2" style={{ backgroundColor: `${tpl.color}18` }}>
+                          <p className="text-xl font-bold" style={{ color: tpl.color }}>{tpl.name}</p>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-2 mb-8 max-w-sm mx-auto">{tpl.description}</p>
+
+                        <div className="flex items-end justify-center gap-16 mt-4">
+                          <div className="text-center">
+                            <div className="h-px w-32 mb-2" style={{ backgroundColor: tpl.accent }} />
+                            <p className="text-xs font-semibold text-gray-700">Instructor Signature</p>
+                            <p className="text-[10px] text-gray-400">Course Instructor</p>
+                          </div>
+                          <div className="text-center">
+                            <div className="h-px w-32 mb-2" style={{ backgroundColor: tpl.accent }} />
+                            <p className="text-xs font-semibold text-gray-700">May 13, 2026</p>
+                            <p className="text-[10px] text-gray-400">Date of Issue</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Modal footer */}
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <p className="text-sm text-gray-500">Preview only — actual certificates include real student data</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setPreviewingCertId(null); setEditingCertId(tpl.id); setCertDraft({ ...tpl }); setCertIsNew(false); }}
+                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                        >
+                          Edit Template
+                        </button>
+                        <button onClick={() => setPreviewingCertId(null)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
+
         </div>
       )}
 
@@ -1124,6 +1883,96 @@ export function AdminCoursesPage({ courses, categories, companyId, currentSubPag
             )}
           </div>
 
+
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Recent Reviews</h2>
+              <span className="text-sm text-gray-400">Showing latest 5</span>
+            </div>
+
+            {/* Filter tabs */}
+            <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg w-fit mb-5">
+              {([
+                { key: 'all',        label: 'All' },
+                { key: 'unreviewed', label: 'Unreviewed / Ungraded' },
+                { key: 'reviewed',   label: 'Reviewed / Graded' },
+              ] as const).map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setReviewFilter(tab.key)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    reviewFilter === tab.key
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { student: 'John Smith',    initials: 'JS', color: 'bg-blue-100 text-blue-700',    course: 'Leadership Fundamentals', rating: 5, comment: 'Excellent course! Very practical and well-structured.',          time: '2 hours ago', replied: true,  existingReply: 'Thank you, John! We are thrilled you found the course practical and well-structured. Your feedback means a lot to our team.' },
+                { student: 'Sarah Johnson', initials: 'SJ', color: 'bg-purple-100 text-purple-700', course: 'Data Analytics',          rating: 4, comment: 'Good content but could use more hands-on examples.',           time: '5 hours ago', replied: false },
+                { student: 'Michael Chen',  initials: 'MC', color: 'bg-green-100 text-green-700',   course: 'Project Management',      rating: 5, comment: 'Best course I have taken. Instructor is amazing!',             time: '1 day ago',   replied: true,  existingReply: 'We are so glad to hear that, Michael! We will pass your kind words on to the instructor. Hope to see you in future courses!' },
+                { student: 'Aisha Patel',   initials: 'AP', color: 'bg-amber-100 text-amber-700',   course: 'Cloud Architecture',      rating: 3, comment: 'Content is solid but pacing felt rushed in module 3.',         time: '2 days ago',  replied: false },
+                { student: 'Lucas Wright',  initials: 'LW', color: 'bg-rose-100 text-rose-700',     course: 'Cybersecurity Basics',    rating: 5, comment: 'Incredibly thorough. Would recommend to any IT professional.', time: '3 days ago',  replied: false },
+              ].filter(r =>
+                reviewFilter === 'all' ? true :
+                reviewFilter === 'reviewed' ? r.replied :
+                !r.replied
+              ).map((review, index) => (
+                <div key={index} className="border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:bg-gray-50/50 transition-colors">
+                  {/* Course badge + rating */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-medium text-blue-700">
+                      <Award className="size-3" />
+                      {review.course}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} className={`text-base leading-none ${i < review.rating ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+                        ))}
+                      </div>
+                      {review.replied ? (
+                        <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-100 text-[10px] font-medium text-green-700">
+                          <CheckCircle2 className="size-3" /> Replied
+                        </span>
+                      ) : (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100 text-[10px] font-medium text-amber-700">
+                          Awaiting reply
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Reviewer + comment */}
+                  <div className="flex items-start gap-3">
+                    <div className={`size-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${review.color}`}>
+                      {review.initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 leading-tight">{review.student}</p>
+                      <p className="text-sm text-gray-600 mt-1">{review.comment}</p>
+                    </div>
+                  </div>
+                  {/* Footer */}
+                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-gray-100">
+                    <p className="text-xs text-gray-400">{review.time}</p>
+                    <button
+                      onClick={() => { setReplyModal(review as any); setReplyText(''); }}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                      {review.replied ? 'View reply' : 'Reply'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <p className="text-sm text-gray-600 mb-1">Total Reviews</p>
@@ -1143,35 +1992,95 @@ export function AdminCoursesPage({ courses, categories, companyId, currentSubPag
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Reviews</h2>
-            <div className="space-y-4">
-              {[
-                { student: 'John Smith', course: 'Leadership Fundamentals', rating: 5, comment: 'Excellent course! Very practical and well-structured.', time: '2 hours ago' },
-                { student: 'Sarah Johnson', course: 'Data Analytics', rating: 4, comment: 'Good content but could use more hands-on examples.', time: '5 hours ago' },
-                { student: 'Michael Chen', course: 'Project Management', rating: 5, comment: 'Best course I have taken. Instructor is amazing!', time: '1 day ago' },
-              ].map((review, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-gray-900">{review.student}</p>
-                      <p className="text-sm text-gray-600">{review.course}</p>
+          {/* ── Reply Modal ── */}
+          {replyModal && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setReplyModal(null)}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {replyModal.replied ? 'Review & Reply' : 'Reply to Review'}
+                  </h3>
+                  <button onClick={() => setReplyModal(null)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
+                    <X className="size-4" />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5 space-y-4">
+                  {/* Course badge */}
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-medium text-blue-700">
+                    <Award className="size-3" />
+                    {replyModal.course}
+                  </span>
+
+                  {/* Review card */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`size-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${replyModal.color}`}>
+                          {replyModal.initials}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 leading-tight">{replyModal.student}</p>
+                          <p className="text-xs text-gray-400">{replyModal.time}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} className={`text-sm leading-none ${i < replyModal.rating ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={i < review.rating ? 'text-yellow-500' : 'text-gray-300'}>★</span>
-                      ))}
-                    </div>
+                    <p className="text-sm text-gray-700 leading-relaxed">{replyModal.comment}</p>
                   </div>
-                  <p className="text-gray-700 mb-2">{review.comment}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500">{review.time}</p>
-                    <button className="text-sm text-blue-600 hover:text-blue-700">Reply</button>
+
+                  {/* Existing reply (if any) */}
+                  {replyModal.replied && replyModal.existingReply && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Your reply</p>
+                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="size-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                            <span className="text-[10px] font-bold text-white">A</span>
+                          </div>
+                          <p className="text-xs font-semibold text-blue-800">Admin</p>
+                        </div>
+                        <p className="text-sm text-blue-900 leading-relaxed">{replyModal.existingReply}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reply textarea */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      {replyModal.replied ? 'Write a follow-up' : 'Write a reply'}
+                    </p>
+                    <textarea
+                      rows={3}
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      placeholder="Write your response to this review..."
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    />
                   </div>
                 </div>
-              ))}
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                  <button onClick={() => setReplyModal(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!replyText.trim()}
+                    onClick={() => setReplyModal(null)}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Send reply
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

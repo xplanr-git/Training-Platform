@@ -11,6 +11,7 @@ interface CourseCatalogProps {
   onCreateCourse?: () => void;
   onImportCourse?: () => void;
   onUpdateCategories?: (categories: CourseCategory[]) => void;
+  onUpdateCourseAssignments?: (updates: { id: string; categoryId?: string }[]) => void;
 }
 
 export function CourseCatalog({
@@ -20,6 +21,7 @@ export function CourseCatalog({
   onCreateCourse,
   onImportCourse,
   onUpdateCategories,
+  onUpdateCourseAssignments,
 }: CourseCatalogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('all');
@@ -337,8 +339,10 @@ export function CourseCatalog({
       {showCategoryManager && onUpdateCategories && (
         <CategoryManagerModal
           categories={categories}
+          courses={courses}
           onClose={() => setShowCategoryManager(false)}
           onSave={onUpdateCategories}
+          onSaveCourses={onUpdateCourseAssignments}
         />
       )}
     </div>
