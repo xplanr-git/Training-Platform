@@ -10,7 +10,8 @@
     "migrate": "drizzle-kit migrate",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
-    "check": "drizzle-kit check"
+    "check": "drizzle-kit check",
+    "migrate:v1": "tsx migrate-v1-to-v2.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.36.4",
