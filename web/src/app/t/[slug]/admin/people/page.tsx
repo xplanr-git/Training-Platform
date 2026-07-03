@@ -1,10 +1,102 @@
-export default function People() {
+import { db, eq, desc, memberships, users } from '@training-platform/db';
+import { withTenant } from '@/lib/tenant';
+import { InviteForm } from './invite-form';
+import { setMemberRole, setMemberStatus } from './actions';
+
+const ROLE_LABELS: Record<string, string> = {
+  company_admin: 'Admin',
+  instructor: 'Instructor',
+  learner: 'Learner',
+  platform_admin: 'Platform',
+};
+
+export default async function People({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const ctx = await withTenant();
+
+  const rows = ctx.tenantId
+    ? await db
+        .select({
+          id: memberships.id,
+          userId: memberships.userId,
+          role: memberships.role,
+          status: memberships.status,
+          name: users.name,
+          email: users.email,
+        })
+        .from(memberships)
+        .innerJoin(users, eq(users.id, memberships.userId))
+        .where(eq(memberships.tenantId, ctx.tenantId))
+        .orderBy(desc(memberships.createdAt))
+    : [];
+
   return (
     <div>
       <h1 className="text-2xl font-semibold">People</h1>
-      <p className="mt-2 text-muted">
-        Membership list, invitations, and role management land in Phase C (C5).
-      </p>
+      <p className="mt-1 text-muted">Invite and manage members of your academy.</p>
+
+      <div className="mt-6">
+        <InviteForm tenantSlug={slug} />
+      </div>
+
+      <div className="mt-6 overflow-x-auto rounded-[--radius-card] border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-surface-muted text-left text-muted">
+            <tr>
+              <th className="px-4 py-2 font-medium">Name</th>
+              <th className="px-4 py-2 font-medium">Email</th>
+              <th className="px-4 py-2 font-medium">Role</th>
+              <th className="px-4 py-2 font-medium">Status</th>
+              <th className="px-4 py-2 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((m) => (
+              <tr key={m.id} className="border-t border-border">
+                <td className="px-4 py-3">{m.name || '—'}</td>
+                <td className="px-4 py-3">{m.email}</td>
+                <td className="px-4 py-3">
+                  <form action={setMemberRole.bind(null, slug, m.id, nextRole(m.role))}>
+                    <button className="hover:underline" title="Cycle role">
+                      {ROLE_LABELS[m.role] ?? m.role}
+                    </button>
+                  </form>
+                </td>
+                <td className="px-4 py-3 capitalize">{m.status}</td>
+                <td className="px-4 py-3">
+                  {m.status === 'deactivated' ? (
+                    <form action={setMemberStatus.bind(null, slug, m.id, 'active')}>
+                      <button className="text-brand-600 hover:underline">Reactivate</button>
+                    </form>
+                  ) : (
+                    <form action={setMemberStatus.bind(null, slug, m.id, 'deactivated')}>
+                      <button className="text-muted hover:underline">Deactivate</button>
+                    </form>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-muted">
+                  No members yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
+}
+
+/** Cycles learner → instructor → company_admin → learner for quick role edits. */
+function nextRole(role: string): 'company_admin' | 'instructor' | 'learner' {
+  if (role === 'learner') return 'instructor';
+  if (role === 'instructor') return 'company_admin';
+  return 'learner';
 }
