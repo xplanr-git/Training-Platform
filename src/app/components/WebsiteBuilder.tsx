@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Course } from '@/app/types';
 import { EditableContent } from './EditableContent';
 import { Plus, Grip, Eye, EyeOff, Trash2, ChevronUp, ChevronDown, ChevronRight, Palette, Type, Image as ImageIcon, Monitor, Smartphone, Check, Users, DollarSign, HelpCircle, TrendingUp, Building2, Video, Copy, Settings, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline, List, Link2, Sparkles, ArrowLeft, Loader2, Layout, PanelTop, FileText, Globe, MousePointerClick, Maximize, Filter, BookOpen, Layers, Zap, MessageSquare, Rss, Upload, X } from 'lucide-react';
-import { supabase } from '/utils/supabase/client';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { supabase, authHeaders } from '/utils/supabase/client';
+import { projectId } from '/utils/supabase/info';
 import { courses as availableCourses } from '../data/courses';
 import { CoursePlayerPreviewModal } from './course-builder/CoursePlayerPreviewModal';
 import { defaultPlayerSettings } from './course-builder/coursePlayerSettings';
@@ -1374,7 +1374,7 @@ export function WebsiteBuilder({ companyName, courses: propCourses, companyId: p
     setPlayerPreviewSettings(defaultPlayerSettings);
     try {
       const base = `https://${projectId}.supabase.co/functions/v1/make-server-d60f2898`;
-      const headers = { Authorization: `Bearer ${publicAnonKey}` };
+      const headers = await authHeaders();
       const [sectionsRes, settingsRes] = await Promise.all([
         fetch(`${base}/courses/${courseData.linkedCourseId}/sections`, { headers }),
         fetch(`${base}/courses/${courseData.linkedCourseId}/player-settings`, { headers }),

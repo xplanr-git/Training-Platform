@@ -4,11 +4,10 @@ import { GraduationCap, Mail, Lock, Info } from 'lucide-react';
 interface LoginPageProps {
   onLogin: (email: string, password: string) => void;
   onNavigateToSignup: () => void;
-  onNavigateToAdminSetup?: () => void;
   onBack: () => void;
 }
 
-export function LoginPage({ onLogin, onNavigateToSignup, onNavigateToAdminSetup, onBack }: LoginPageProps) {
+export function LoginPage({ onLogin, onNavigateToSignup, onBack }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

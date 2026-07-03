@@ -20,17 +20,68 @@ const supabaseAuth = createClient(
 // Enable logger
 app.use('*', logger(console.log));
 
-// Enable CORS for all routes and methods
+// Allowed origins for CORS — comma-separated list in ALLOWED_ORIGINS env var.
+// Defaults cover local dev; production origins must be set explicitly.
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ??
+  'http://localhost:5173,http://localhost:5174')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+// Enable CORS for all routes and methods, restricted to known app origins
 app.use(
   "/*",
   cors({
-    origin: "*",
+    origin: (origin) => (ALLOWED_ORIGINS.includes(origin) ? origin : null),
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
   }),
 );
+
+// --- Authentication & authorization middleware ---------------------------------
+// Resolves the caller from the Supabase JWT in the Authorization header.
+// Role is read from the KV profile, falling back to auth user_metadata.
+async function resolveUser(c: any) {
+  const authHeader = c.req.header('Authorization');
+  const token = authHeader?.split(' ')[1];
+  if (!token) return null;
+
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+
+  const profile = await kv.get(`user:${user.id}`);
+  const role = profile?.role || user.user_metadata?.role || 'employee';
+  const company = profile?.company || user.user_metadata?.company || null;
+  const companyId = company ? String(company).toLowerCase().replace(/\s+/g, '-') : null;
+
+  return { id: user.id, email: user.email, role, company, companyId, profile };
+}
+
+// Requires a valid authenticated session.
+const requireAuth = async (c: any, next: any) => {
+  const user = await resolveUser(c);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  c.set('user', user);
+  await next();
+};
+
+// Requires the caller to hold one of the given roles.
+const requireRole = (...roles: string[]) => async (c: any, next: any) => {
+  const user = await resolveUser(c);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  if (!roles.includes(user.role)) return c.json({ error: 'Forbidden' }, 403);
+  c.set('user', user);
+  await next();
+};
+
+// Asserts the caller may act on the given company (platform admins may act on any).
+function assertCompanyAccess(c: any, companyId: string) {
+  const user = c.get('user');
+  if (user?.role === 'platform_admin') return true;
+  return user?.companyId === companyId;
+}
 
 // Health check endpoint
 app.get("/make-server-d60f2898/health", (c) => {
@@ -132,35 +183,8 @@ app.post("/make-server-d60f2898/auth/signin", async (c) => {
 
     console.log(`Login attempt for email: ${email}`);
 
-    // Check for hard-coded admin credentials
-    const ADMIN_EMAIL = 'curtis@outdure.com';
-    const ADMIN_PASSWORD = 'outdure';
-    
-    if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
-      // Return hard-coded admin user
-      const adminUser = {
-        id: 'admin-001',
-        email: ADMIN_EMAIL,
-        name: 'Curtis Matthews',
-        company: 'Outdure',
-        role: 'platform_admin',
-        enrolledCourses: [],
-        completedLessons: []
-      };
-
-      // Generate a mock access token for the admin
-      const accessToken = `admin-token-${Date.now()}`;
-      
-      console.log('Hard-coded admin login successful');
-      
-      return c.json({ 
-        success: true,
-        accessToken,
-        user: adminUser
-      });
-    }
-
-    // Regular user authentication via Supabase client
+    // All users — including platform admins — authenticate through Supabase Auth.
+    // Demo accounts are provisioned in migration 006_fix_demo_users.sql.
     console.log('Attempting Supabase authentication via client...');
     
     const { data: authData, error: authError } = await supabaseAuth.auth.signInWithPassword({
@@ -214,23 +238,7 @@ app.get("/make-server-d60f2898/auth/me", async (c) => {
       return c.json({ error: 'No authorization token' }, 401);
     }
 
-    // Check if it's the hard-coded admin token
-    if (accessToken.startsWith('admin-token-')) {
-      return c.json({ 
-        success: true,
-        user: {
-          id: 'admin-001',
-          email: 'curtis@outdure.com',
-          name: 'Curtis Matthews',
-          company: 'Outdure',
-          role: 'platform_admin',
-          enrolledCourses: [],
-          completedLessons: []
-        }
-      });
-    }
-
-    // Regular user token validation
+    // Validate the token against Supabase Auth
     const { data: { user }, error } = await supabase.auth.getUser(accessToken);
 
     if (error || !user) {
@@ -258,83 +266,8 @@ app.get("/make-server-d60f2898/auth/me", async (c) => {
   }
 });
 
-// Initialize admin user endpoint (one-time setup)
-app.post("/make-server-d60f2898/auth/init-admin", async (c) => {
-  try {
-    const email = 'curtis@outdure.com';
-    const password = 'outdure';
-    const name = 'Curtis Matthews';
-    const company = 'Outdure';
-
-    // Check if user already exists
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const userExists = existingUsers?.users?.some(u => u.email === email);
-
-    if (userExists) {
-      return c.json({ message: 'Admin user already exists', email });
-    }
-
-    // Create admin user with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      user_metadata: { 
-        name,
-        company,
-        role: 'platform_admin', // Platform admin has access to all companies
-        created_at: new Date().toISOString()
-      },
-      email_confirm: true
-    });
-
-    if (authError) {
-      console.error('Init admin error:', authError);
-      return c.json({ error: authError.message }, 400);
-    }
-
-    // Store user profile in KV store
-    const userId = authData.user?.id;
-    if (userId) {
-      await kv.set(`user:${userId}`, {
-        id: userId,
-        email,
-        name,
-        company,
-        role: 'platform_admin',
-        enrolledCourses: [],
-        completedLessons: [],
-        createdAt: new Date().toISOString()
-      });
-
-      // Create Outdure company record
-      const companyId = 'outdure';
-      await kv.set(`company:${companyId}`, {
-        id: companyId,
-        name: company,
-        adminUserId: userId,
-        createdAt: new Date().toISOString(),
-        settings: {}
-      });
-    }
-
-    return c.json({ 
-      success: true,
-      message: 'Admin user created successfully',
-      user: {
-        id: userId,
-        email,
-        name,
-        company
-      }
-    });
-  } catch (error: any) {
-    console.error('Init admin error:', error);
-    return c.json({ error: error.message || 'Failed to create admin user' }, 500);
-  }
-});
-
-// Create platform admin endpoint
-app.post("/make-server-d60f2898/admin/create", async (c) => {
+// Create platform admin endpoint — platform admins only
+app.post("/make-server-d60f2898/admin/create", requireRole('platform_admin'), async (c) => {
   try {
     const body = await c.req.json();
     const { email, password, name } = body;
@@ -411,28 +344,18 @@ app.post("/make-server-d60f2898/admin/create", async (c) => {
   }
 });
 
-// Get all platform admins endpoint
-app.get("/make-server-d60f2898/admin/list", async (c) => {
+// Get all platform admins endpoint — platform admins only
+app.get("/make-server-d60f2898/admin/list", requireRole('platform_admin'), async (c) => {
   try {
     // Get all admin records
     const adminRecords = await kv.getByPrefix('admin:');
-    
-    // Always include the hard-coded owner admin
-    const ownerAdmin = {
-      id: 'admin-001',
-      name: 'Curtis Matthews',
-      email: 'curtis@outdure.com',
-      createdAt: '2024-01-01',
-      lastLogin: '2 hours ago',
-      isOwner: true
-    };
 
-    const admins = [ownerAdmin, ...adminRecords.map(record => ({
+    const admins = adminRecords.map(record => ({
       ...record,
       lastLogin: 'Never' // TODO: Track actual last login
-    }))];
+    }));
 
-    return c.json({ 
+    return c.json({
       success: true,
       admins
     });
@@ -442,8 +365,8 @@ app.get("/make-server-d60f2898/admin/list", async (c) => {
   }
 });
 
-// Delete platform admin endpoint
-app.delete("/make-server-d60f2898/admin/:adminId", async (c) => {
+// Delete platform admin endpoint — platform admins only
+app.delete("/make-server-d60f2898/admin/:adminId", requireRole('platform_admin'), async (c) => {
   try {
     const adminId = c.req.param('adminId');
 
@@ -451,9 +374,9 @@ app.delete("/make-server-d60f2898/admin/:adminId", async (c) => {
       return c.json({ error: 'Missing admin ID' }, 400);
     }
 
-    // Prevent deleting the owner
-    if (adminId === 'admin-001') {
-      return c.json({ error: 'Cannot delete owner admin' }, 403);
+    // A platform admin cannot delete their own account
+    if (adminId === c.get('user')?.id) {
+      return c.json({ error: 'Cannot delete your own admin account' }, 403);
     }
 
     // Delete from Supabase Auth
@@ -478,8 +401,8 @@ app.delete("/make-server-d60f2898/admin/:adminId", async (c) => {
   }
 });
 
-// Get all companies with statistics endpoint
-app.get("/make-server-d60f2898/companies", async (c) => {
+// Get all companies with statistics endpoint — platform admins only
+app.get("/make-server-d60f2898/companies", requireRole('platform_admin'), async (c) => {
   try {
     console.log('Fetching all companies...');
     
@@ -578,12 +501,16 @@ app.get("/make-server-d60f2898/companies", async (c) => {
 });
 
 // Get company details by ID endpoint
-app.get("/make-server-d60f2898/company/:companyId", async (c) => {
+app.get("/make-server-d60f2898/company/:companyId", requireAuth, async (c) => {
   try {
     const companyId = c.req.param('companyId');
-    
+
     if (!companyId) {
       return c.json({ error: 'Missing company ID' }, 400);
+    }
+
+    if (!assertCompanyAccess(c, companyId)) {
+      return c.json({ error: 'Forbidden' }, 403);
     }
 
     console.log(`Fetching company details for: ${companyId}`);
@@ -623,7 +550,7 @@ app.get("/make-server-d60f2898/company/:companyId", async (c) => {
 });
 
 // Create course endpoint
-app.post("/make-server-d60f2898/courses", async (c) => {
+app.post("/make-server-d60f2898/courses", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const body = await c.req.json();
     const { 
@@ -682,7 +609,7 @@ app.post("/make-server-d60f2898/courses", async (c) => {
 });
 
 // Get courses by company ID endpoint
-app.get("/make-server-d60f2898/courses/company/:companyId", async (c) => {
+app.get("/make-server-d60f2898/courses/company/:companyId", requireAuth, async (c) => {
   try {
     const companyId = c.req.param('companyId');
     
@@ -711,7 +638,7 @@ app.get("/make-server-d60f2898/courses/company/:companyId", async (c) => {
 });
 
 // Get single course endpoint
-app.get("/make-server-d60f2898/courses/:courseId", async (c) => {
+app.get("/make-server-d60f2898/courses/:courseId", requireAuth, async (c) => {
   try {
     const courseId = c.req.param('courseId');
     
@@ -739,7 +666,7 @@ app.get("/make-server-d60f2898/courses/:courseId", async (c) => {
 });
 
 // Update course endpoint
-app.put("/make-server-d60f2898/courses/:courseId", async (c) => {
+app.put("/make-server-d60f2898/courses/:courseId", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     const body = await c.req.json();
@@ -782,7 +709,7 @@ app.put("/make-server-d60f2898/courses/:courseId", async (c) => {
 });
 
 // Delete course endpoint
-app.delete("/make-server-d60f2898/courses/:courseId", async (c) => {
+app.delete("/make-server-d60f2898/courses/:courseId", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     
@@ -827,7 +754,7 @@ app.delete("/make-server-d60f2898/courses/:courseId", async (c) => {
 });
 
 // Save course sections endpoint
-app.put("/make-server-d60f2898/courses/:courseId/sections", async (c) => {
+app.put("/make-server-d60f2898/courses/:courseId/sections", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     const body = await c.req.json();
@@ -921,7 +848,7 @@ app.put("/make-server-d60f2898/courses/:courseId/sections", async (c) => {
 });
 
 // Get course sections endpoint
-app.get("/make-server-d60f2898/courses/:courseId/sections", async (c) => {
+app.get("/make-server-d60f2898/courses/:courseId/sections", requireAuth, async (c) => {
   try {
     const courseId = c.req.param('courseId');
     
@@ -966,7 +893,7 @@ app.get("/make-server-d60f2898/courses/:courseId/sections", async (c) => {
 });
 
 // Save course settings endpoint (general, access, pricing)
-app.put("/make-server-d60f2898/courses/:courseId/settings", async (c) => {
+app.put("/make-server-d60f2898/courses/:courseId/settings", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     const body = await c.req.json();
@@ -1034,7 +961,7 @@ app.put("/make-server-d60f2898/courses/:courseId/settings", async (c) => {
 });
 
 // Update single activity endpoint
-app.put("/make-server-d60f2898/courses/:courseId/sections/:sectionId/activities/:activityId", async (c) => {
+app.put("/make-server-d60f2898/courses/:courseId/sections/:sectionId/activities/:activityId", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     const sectionId = c.req.param('sectionId');
@@ -1088,14 +1015,18 @@ app.put("/make-server-d60f2898/courses/:courseId/sections/:sectionId/activities/
 });
 
 // Save website configuration endpoint
-app.post("/make-server-d60f2898/website/:companyId", async (c) => {
+app.post("/make-server-d60f2898/website/:companyId", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const companyId = c.req.param('companyId');
     const body = await c.req.json();
     const { sections, pages } = body;
-    
+
     if (!companyId) {
       return c.json({ error: 'Missing company ID' }, 400);
+    }
+
+    if (!assertCompanyAccess(c, companyId)) {
+      return c.json({ error: 'Forbidden' }, 403);
     }
 
     console.log(`Saving website configuration for company: ${companyId}`);
@@ -1114,14 +1045,18 @@ app.post("/make-server-d60f2898/website/:companyId", async (c) => {
 });
 
 // Save website settings endpoint
-app.post("/make-server-d60f2898/website-settings/:companyId", async (c) => {
+app.post("/make-server-d60f2898/website-settings/:companyId", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const companyId = c.req.param('companyId');
     const body = await c.req.json();
     const { settings } = body;
-    
+
     if (!companyId) {
       return c.json({ error: 'Missing company ID' }, 400);
+    }
+
+    if (!assertCompanyAccess(c, companyId)) {
+      return c.json({ error: 'Forbidden' }, 403);
     }
 
     console.log(`Saving website settings for company: ${companyId}`);
@@ -1139,7 +1074,7 @@ app.post("/make-server-d60f2898/website-settings/:companyId", async (c) => {
 });
 
 // Get website configuration endpoint
-app.get("/make-server-d60f2898/website/:companyId", async (c) => {
+app.get("/make-server-d60f2898/website/:companyId", requireAuth, async (c) => {
   try {
     const companyId = c.req.param('companyId');
     
@@ -1174,7 +1109,7 @@ app.get("/make-server-d60f2898/website/:companyId", async (c) => {
 });
 
 // Get website settings endpoint
-app.get("/make-server-d60f2898/website-settings/:companyId", async (c) => {
+app.get("/make-server-d60f2898/website-settings/:companyId", requireAuth, async (c) => {
   try {
     const companyId = c.req.param('companyId');
     
@@ -1197,7 +1132,7 @@ app.get("/make-server-d60f2898/website-settings/:companyId", async (c) => {
 });
 
 // Get course player settings endpoint
-app.get("/make-server-d60f2898/courses/:courseId/player-settings", async (c) => {
+app.get("/make-server-d60f2898/courses/:courseId/player-settings", requireAuth, async (c) => {
   try {
     const courseId = c.req.param('courseId');
     if (!courseId) {
@@ -1213,7 +1148,7 @@ app.get("/make-server-d60f2898/courses/:courseId/player-settings", async (c) => 
 });
 
 // Save course player settings endpoint
-app.put("/make-server-d60f2898/courses/:courseId/player-settings", async (c) => {
+app.put("/make-server-d60f2898/courses/:courseId/player-settings", requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     const body = await c.req.json();
@@ -1255,7 +1190,7 @@ const VIDEO_BUCKET = 'make-d60f2898-videos';
 })();
 
 // Get a signed upload URL so the frontend can PUT a video file directly
-app.post('/make-server-d60f2898/courses/:courseId/video-library/upload-url', async (c) => {
+app.post('/make-server-d60f2898/courses/:courseId/video-library/upload-url', requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     const { fileName, fileType } = await c.req.json();
@@ -1279,7 +1214,7 @@ app.post('/make-server-d60f2898/courses/:courseId/video-library/upload-url', asy
 });
 
 // Save video metadata after the upload completes
-app.post('/make-server-d60f2898/courses/:courseId/video-library', async (c) => {
+app.post('/make-server-d60f2898/courses/:courseId/video-library', requireRole('company_admin', 'platform_admin'), async (c) => {
   try {
     const courseId = c.req.param('courseId');
     const { title, fileName, storagePath, fileSize, mimeType } = await c.req.json();
@@ -1309,7 +1244,7 @@ app.post('/make-server-d60f2898/courses/:courseId/video-library', async (c) => {
 });
 
 // List all videos uploaded to a course's video library
-app.get('/make-server-d60f2898/courses/:courseId/video-library', async (c) => {
+app.get('/make-server-d60f2898/courses/:courseId/video-library', requireAuth, async (c) => {
   try {
     const courseId = c.req.param('courseId');
     if (!courseId) return c.json({ error: 'Missing courseId' }, 400);

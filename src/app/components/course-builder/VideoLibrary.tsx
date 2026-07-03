@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Upload, Search, PlayCircle, Film, Loader2, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { projectId } from '/utils/supabase/info';
+import { authHeaders } from '/utils/supabase/client';
 
 interface Activity {
   id: string;
@@ -96,7 +97,7 @@ export function VideoLibrary({ sections = [], courseId }: VideoLibraryProps) {
     setLoadingLibrary(true);
     try {
       const res = await fetch(`${BASE_URL}/courses/${courseId}/video-library`, {
-        headers: { Authorization: `Bearer ${publicAnonKey}` },
+        headers: await authHeaders(),
       });
       const data = await res.json();
       if (data.success) {
@@ -139,10 +140,7 @@ export function VideoLibrary({ sections = [], courseId }: VideoLibraryProps) {
       // Step 1 — get a signed upload URL from the server
       const urlRes = await fetch(`${BASE_URL}/courses/${courseId}/video-library/upload-url`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${publicAnonKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ fileName: file.name, fileType: file.type }),
       });
       const urlData = await urlRes.json();
@@ -156,10 +154,7 @@ export function VideoLibrary({ sections = [], courseId }: VideoLibraryProps) {
       // Step 3 — save metadata to KV store
       const metaRes = await fetch(`${BASE_URL}/courses/${courseId}/video-library`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${publicAnonKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           title: file.name.replace(/\.[^.]+$/, ''),
           fileName: file.name,

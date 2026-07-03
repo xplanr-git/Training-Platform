@@ -21,15 +21,7 @@ import { AdminCoursesPage } from '@/app/components/AdminCoursesPage';
 import { AdminAnalyticsPage } from '@/app/components/AdminAnalyticsPage';
 import { AdminSettingsPage } from '@/app/components/AdminSettingsPage';
 import { AdminCommunicationsPage, ComingSoonPage } from '@/app/components/AdminCommunicationsPage';
-import { CompanySubscribers } from '@/app/components/CompanySubscribers';
 import { CompanyAdminHomepage } from '@/app/components/CompanyAdminHomepage';
-import { AdminSetupPage } from '@/app/components/AdminSetupPage';
-import { WebsiteDesignTemplatePage } from '@/app/components/WebsiteDesignTemplatePage';
-import { WebsiteDesignExplorerPage } from '@/app/components/WebsiteDesignExplorerPage';
-import { WebsiteBlogPage } from '@/app/components/WebsiteBlogPage';
-import { WebsitePopupsPage } from '@/app/components/WebsitePopupsPage';
-import { WebsiteFunnelsPage } from '@/app/components/WebsiteFunnelsPage';
-import { WebsiteNavigationPage } from '@/app/components/WebsiteNavigationPage';
 import { WebsiteSettingsPage } from '@/app/components/WebsiteSettingsPage';
 import { WebsiteBuilder } from '@/app/components/WebsiteBuilder';
 import { LeadsPage } from '@/app/components/LeadsPage';
@@ -57,7 +49,7 @@ export default function App() {
   }
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentPage, setCurrentPage] = useState<'home' | 'courses' | 'dashboard' | 'login' | 'signup' | 'admin-setup' | 'course-detail' | 'learn' | 'admin' | 'manage-admins' | 'roles-permissions' | 'admin-courses' | 'user-management' | 'admin-analytics' | 'admin-settings' | 'admin-communications' | 'company-subscribers' | 'company-admin'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'login' | 'signup' | 'course-detail' | 'learn' | 'admin' | 'manage-admins' | 'roles-permissions' | 'admin-courses' | 'user-management' | 'admin-analytics' | 'admin-settings' | 'admin-communications' | 'company-admin'>('home');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [analyticsView, setAnalyticsView] = useState<string>('overview-analytics');
   const [currentSubPage, setCurrentSubPage] = useState<string>('');
@@ -361,7 +353,7 @@ export default function App() {
   })();
 
   // Check if current page is an admin page
-  const isAdminPage = ['admin', 'manage-admins', 'roles-permissions', 'admin-courses', 'user-management', 'admin-analytics', 'admin-settings', 'admin-communications', 'company-subscribers', 'company-admin'].includes(currentPage);
+  const isAdminPage = ['admin', 'manage-admins', 'roles-permissions', 'admin-courses', 'user-management', 'admin-analytics', 'admin-settings', 'admin-communications', 'company-admin'].includes(currentPage);
 
   // Determine user roles from current user
   const isParentAdmin = currentUser?.role === 'platform_admin';
@@ -488,7 +480,6 @@ export default function App() {
         <LoginPage
           onLogin={handleLogin}
           onNavigateToSignup={() => setCurrentPage('signup')}
-          onNavigateToAdminSetup={() => setCurrentPage('admin-setup')}
           onBack={() => setCurrentPage('home')}
         />
       )}
@@ -498,13 +489,6 @@ export default function App() {
           onSignup={handleSignup}
           onNavigateToLogin={() => setCurrentPage('login')}
           onBack={() => setCurrentPage('home')}
-        />
-      )}
-
-      {currentPage === 'admin-setup' && (
-        <AdminSetupPage
-          onBack={() => setCurrentPage('login')}
-          onAdminCreated={() => setCurrentPage('login')}
         />
       )}
 

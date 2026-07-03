@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Eye, Save, Plus, GripVertical, Edit2, Trash2, Video, FileText, CheckSquare, Settings, BarChart3, BookOpen, Layout, Clock, Users, PlayCircle, ChevronDown, ChevronRight, Lock, Globe, DollarSign, TrendingUp, Award, Search, X, Presentation, Music, Headphones, Youtube, MonitorPlay, Calendar, GraduationCap, MessageCircle, AlignLeft, List, HelpCircle, FileQuestion, Target, Edit, Camera, Mic, BookMarked, Feather, ClipboardList, LayoutList, UserCircle, Clipboard, Hourglass, Gift, ShieldCheck, ThumbsUp, UserPlus, ShoppingCart, Armchair, Code, Link, Lightbulb, MessagesSquare, Megaphone, Share2, FolderOpen, Activity as ActivityIcon, PieChart, Star, ClipboardCheck, Upload, Zap, Library } from 'lucide-react';
 import { Course } from '@/app/types';
-import { supabase } from '/utils/supabase/client';
+import { supabase, authHeaders } from '/utils/supabase/client';
 import { toast } from 'sonner';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { projectId } from '/utils/supabase/info';
 import * as pdfjsLib from 'pdfjs-dist';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -509,7 +509,7 @@ export function CourseBuilderPage({ course, onBack, onSave, onNavigateToEmailTem
     try {
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-d60f2898/courses/${course.id}/player-settings`,
-        { headers: { Authorization: `Bearer ${publicAnonKey}` } }
+        { headers: await authHeaders() }
       );
       const data = await res.json();
       if (data.success && data.settings) {
@@ -534,7 +534,7 @@ export function CourseBuilderPage({ course, onBack, onSave, onNavigateToEmailTem
       `https://${projectId}.supabase.co/functions/v1/make-server-d60f2898/courses/${course.id}/player-settings`,
       {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}` },
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ settings: playerSettings }),
       }
     );
