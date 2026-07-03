@@ -36,3 +36,6 @@ supabase/.branches/
 supabase/.temp/
 
 .claude/settings.local.json
+
+# db package
+db/node_modules

@@ -1,0 +1,23 @@
+{
+  "name": "@training-platform/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "v2 Drizzle schema, migrations, and query helpers (source of truth for the database).",
+  "main": "index.ts",
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "push": "drizzle-kit push",
+    "studio": "drizzle-kit studio",
+    "check": "drizzle-kit check"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.36.4",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.28.1",
+    "@types/node": "^20.14.0"
+  }
+}
