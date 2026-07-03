@@ -10,6 +10,10 @@
 import { auditLog } from './schema';
 import type { Db } from './client';
 
+// The transaction handle passed to db.transaction(async (tx) => …). Accepting
+// `Db | Tx` lets audited() run either standalone or inside a transaction.
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
 export interface AuditEntry {
   tenantId: string | null;
   actorUserId: string | null;
@@ -33,7 +37,7 @@ export interface AuditEntry {
  *                         before, after: row });
  *   });
  */
-export async function audited(tx: Db, entry: AuditEntry): Promise<void> {
+export async function audited(tx: Db | Tx, entry: AuditEntry): Promise<void> {
   await tx.insert(auditLog).values({
     tenantId: entry.tenantId,
     actorUserId: entry.actorUserId,

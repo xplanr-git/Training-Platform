@@ -1,12 +1,16 @@
 /**
- * Database client for the v2 schema.
+ * Drizzle client for the v2 schema.
  *
- * Two connection modes:
- *  - `db`        — request-scoped, RLS-enforced. Use in Server Actions / route
- *                  handlers where the caller's JWT is present. All tenant scoping
- *                  is handled by RLS from the JWT claims.
- *  - `serviceDb` — service-role, bypasses RLS. Use ONLY in trusted server code
- *                  (webhooks, Inngest jobs, tenant provisioning). Never expose.
+ * IMPORTANT: this is a DIRECT Postgres connection. It connects as the database
+ * role in DATABASE_URL (service/owner), so it BYPASSES row-level security. RLS
+ * protects the Supabase-JS / PostGREST path (browser + session-scoped server
+ * queries); it does NOT constrain this connection.
+ *
+ * Use `db` only in trusted server-only code — tenant provisioning, Stripe
+ * webhooks, Inngest jobs, aggregations, migrations — and ALWAYS scope queries
+ * by `tenant_id` yourself (call withTenant() first to resolve/verify the
+ * tenant). For request-scoped, RLS-enforced reads/writes on behalf of a user,
+ * use the Supabase client instead.
  */
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
