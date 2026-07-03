@@ -12,6 +12,13 @@
       "runtimeExecutable": "supabase",
       "runtimeArgs": ["start"],
       "port": 54321
+    },
+    {
+      "name": "web-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "web",
+      "port": 3000
     }
   ]
 }
