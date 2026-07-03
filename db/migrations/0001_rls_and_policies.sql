@@ -217,6 +217,20 @@ create trigger audit_log_no_update
   before update or delete on public.audit_log
   for each row execute function public.forbid_mutation();
 
+-- ── Table privileges ─────────────────────────────────────────────────────
+-- RLS filters rows, but the role still needs table-level privileges to reach
+-- it. Tables created via raw SQL don't inherit these automatically, so grant
+-- them explicitly. Append-only violations on progress_events/audit_log are
+-- still blocked by their triggers and the absence of UPDATE/DELETE policies.
+grant usage on schema public to authenticated, anon, service_role;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant all on all tables in schema public to service_role;
+
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to authenticated;
+alter default privileges in schema public
+  grant all on tables to service_role;
+
 -- ── Seed system roles ────────────────────────────────────────────────────
 insert into public.roles (tenant_id, name, is_system)
 values (null, 'platform_admin', true),
