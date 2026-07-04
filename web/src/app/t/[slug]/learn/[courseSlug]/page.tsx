@@ -68,6 +68,17 @@ export default async function Learn({
 
   const progress = await getCourseProgress(enrollment.id, course.id);
 
+  // Ordered flat lesson list (section, then lesson position) → first incomplete
+  // lesson to resume at (falls back to the first lesson, or review if done).
+  const sectionOrder = new Map(sectionRows.map((s, i) => [s.id, i]));
+  const orderedLessons = [...lessonRows].sort((a, b) => {
+    const sa = sectionOrder.get(a.sectionId) ?? 0;
+    const sb = sectionOrder.get(b.sectionId) ?? 0;
+    return sa - sb || a.position - b.position;
+  });
+  const resumeLesson =
+    orderedLessons.find((l) => !progress.completed.has(l.id)) ?? orderedLessons[0];
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-14">
       <Link href="/dashboard" className="text-sm text-muted hover:underline">
@@ -80,6 +91,19 @@ export default async function Learn({
       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
         <div className="h-full bg-brand-600" style={{ width: `${progress.percent}%` }} />
       </div>
+
+      {resumeLesson && (
+        <Link
+          href={`/learn/${courseSlug}/${resumeLesson.id}`}
+          className="mt-4 inline-block rounded-md bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700"
+        >
+          {progress.done === 0
+            ? 'Start course'
+            : progress.isComplete
+              ? 'Review course'
+              : 'Continue where you left off'}
+        </Link>
+      )}
 
       <div className="mt-6 space-y-5">
         {sectionRows.map((s) => (
