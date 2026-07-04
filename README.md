@@ -1,11 +1,15 @@
+# Training Platform
 
-  # Training Platform
+Multi-tenant SaaS LMS. **[CLAUDE.md](CLAUDE.md) is the source of truth**;
+[ARCHITECTURE.md](ARCHITECTURE.md) summarises the as-built v2 design.
 
-  This is a code bundle for Training Platform. The original project is available at https://www.figma.com/design/JlXPORZELZh5dSLEB81loE/Training-Platform.
+## Layout
 
-  ## Running the code
+- **`web/`** — Next.js 15 app (the v2 product). `cd web && npm install && npm run dev`.
+- **`db/`** — Drizzle schema + migrations (`@training-platform/db`). See [db/README.md](db/README.md).
+- **`src/`** — legacy Vite prototype (hotfixed, retired at cutover). `npm run dev` from root.
 
-  Run `npm i` to install the dependencies.
+## Going live
 
-  Run `npm run dev` to start the development server.
-  
+See **[DEPLOY.md](DEPLOY.md)** for the full deployment runbook (Supabase v2
+project, env, Stripe, Vercel, data migration, cutover).
