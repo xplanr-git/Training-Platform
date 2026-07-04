@@ -195,3 +195,33 @@ export async function moveSection(
   });
   revalidateBuilder(slug, courseId);
 }
+
+/** Swaps a lesson with its neighbour within the same section to reorder. */
+export async function moveLesson(
+  slug: string,
+  courseId: string,
+  sectionId: string,
+  lessonId: string,
+  dir: 'up' | 'down',
+) {
+  const ctx = await withTenant();
+  if (!ctx.tenantId) throw new Error('No tenant context');
+
+  const ordered = await db
+    .select({ id: lessons.id, position: lessons.position })
+    .from(lessons)
+    .where(eq(lessons.sectionId, sectionId))
+    .orderBy(asc(lessons.position));
+
+  const idx = ordered.findIndex((l) => l.id === lessonId);
+  const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+
+  const a = ordered[idx];
+  const b = ordered[swapIdx];
+  await db.transaction(async (tx) => {
+    await tx.update(lessons).set({ position: b.position }).where(eq(lessons.id, a.id));
+    await tx.update(lessons).set({ position: a.position }).where(eq(lessons.id, b.id));
+  });
+  revalidateBuilder(slug, courseId);
+}

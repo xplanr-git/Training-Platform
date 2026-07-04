@@ -8,6 +8,8 @@ import {
   moveSection,
   addLesson,
   deleteLesson,
+  moveLesson,
+  updateLesson,
 } from './actions';
 
 const TYPE_LABEL: Record<string, string> = {
@@ -78,29 +80,65 @@ export default async function CourseBuilder({
             </header>
 
             <ul className="divide-y divide-border">
-              {(lessonsBySection.get(s.id) ?? []).map((l) => (
-                <li key={l.id} className="flex items-center justify-between px-4 py-2 text-sm">
-                  <span>
-                    <span className="mr-2 rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-muted">
-                      {TYPE_LABEL[l.type] ?? l.type}
-                    </span>
-                    {l.title}
-                  </span>
-                  <span className="flex items-center gap-3">
-                    {l.type === 'quiz' && (
-                      <Link
-                        href={`/admin/courses/${courseId}/builder/quiz/${l.id}`}
-                        className="text-xs text-brand-700 hover:underline"
-                      >
-                        Edit quiz
-                      </Link>
+              {(lessonsBySection.get(s.id) ?? []).map((l, li, arr) => {
+                const c = (l.content ?? {}) as Record<string, string>;
+                return (
+                  <li key={l.id} className="px-4 py-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span>
+                        <span className="mr-2 rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-muted">
+                          {TYPE_LABEL[l.type] ?? l.type}
+                        </span>
+                        {l.title}
+                      </span>
+                      <span className="flex items-center gap-2 text-xs text-muted">
+                        <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')}>
+                          <button disabled={li === 0} className="disabled:opacity-30 hover:text-foreground">↑</button>
+                        </form>
+                        <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'down')}>
+                          <button disabled={li === arr.length - 1} className="disabled:opacity-30 hover:text-foreground">↓</button>
+                        </form>
+                        {l.type === 'quiz' && (
+                          <Link
+                            href={`/admin/courses/${courseId}/builder/quiz/${l.id}`}
+                            className="text-brand-700 hover:underline"
+                          >
+                            Edit quiz
+                          </Link>
+                        )}
+                        <form action={deleteLesson.bind(null, slug, courseId, l.id)}>
+                          <button className="text-red-600 hover:underline">Remove</button>
+                        </form>
+                      </span>
+                    </div>
+
+                    {l.type !== 'quiz' && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-xs text-brand-700">Edit</summary>
+                        <form
+                          action={updateLesson.bind(null, slug, courseId, l.id)}
+                          className="mt-2 flex flex-wrap items-end gap-2"
+                        >
+                          <input
+                            name="title"
+                            defaultValue={l.title}
+                            className="rounded-md border border-border px-2 py-1 text-sm"
+                          />
+                          <select name="type" defaultValue={l.type} className="rounded-md border border-border px-2 py-1 text-sm">
+                            <option value="text">Text</option>
+                            <option value="video">Video</option>
+                            <option value="pdf">PDF</option>
+                          </select>
+                          <input name="body" defaultValue={c.body ?? ''} placeholder="Text body" className="rounded-md border border-border px-2 py-1 text-sm" />
+                          <input name="youtubeUrl" defaultValue={c.youtubeUrl ?? ''} placeholder="YouTube URL" className="rounded-md border border-border px-2 py-1 text-sm" />
+                          <input name="url" defaultValue={c.url ?? ''} placeholder="PDF URL" className="rounded-md border border-border px-2 py-1 text-sm" />
+                          <button className="rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700">Save</button>
+                        </form>
+                      </details>
                     )}
-                    <form action={deleteLesson.bind(null, slug, courseId, l.id)}>
-                      <button className="text-xs text-red-600 hover:underline">Remove</button>
-                    </form>
-                  </span>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
               {(lessonsBySection.get(s.id) ?? []).length === 0 && (
                 <li className="px-4 py-2 text-sm text-muted">No lessons yet.</li>
               )}
