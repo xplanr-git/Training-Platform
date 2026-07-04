@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { db, eq, and, desc, enrollments, courses } from '@training-platform/db';
+import { db, eq, and, desc, enrollments, courses, certificates } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { getCourseProgress } from '@/lib/progress';
 
@@ -18,9 +18,11 @@ export default async function LearnerDashboard() {
       slug: courses.slug,
       status: enrollments.status,
       completedAt: enrollments.completedAt,
+      certCode: certificates.verificationCode,
     })
     .from(enrollments)
     .innerJoin(courses, eq(courses.id, enrollments.courseId))
+    .leftJoin(certificates, eq(certificates.enrollmentId, enrollments.id))
     .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.tenantId, ctx.tenantId)))
     .orderBy(desc(enrollments.startedAt));
 
@@ -46,16 +48,25 @@ export default async function LearnerDashboard() {
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {withProgress.map((r) => (
-            <Link
+            <div
               key={r.courseId}
-              href={`/learn/${r.slug}`}
-              className="rounded-[--radius-card] border border-border bg-surface p-5 hover:shadow-md"
+              className="rounded-[--radius-card] border border-border bg-surface p-5"
             >
-              <h2 className="font-semibold">{r.title}</h2>
+              <Link href={`/learn/${r.slug}`} className="hover:underline">
+                <h2 className="font-semibold">{r.title}</h2>
+              </Link>
               <p className="mt-1 text-sm text-muted">
                 {r.completedAt ? 'Completed' : `${r.percent}% complete`}
               </p>
-            </Link>
+              {r.certCode && (
+                <a
+                  href={`/verify/${r.certCode}`}
+                  className="mt-2 inline-block text-sm text-brand-700 hover:underline"
+                >
+                  View certificate →
+                </a>
+              )}
+            </div>
           ))}
         </div>
       )}
