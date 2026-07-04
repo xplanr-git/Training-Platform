@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db, eq, and, courses } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
-import { updateCourse } from '../actions';
+import { updateCourse, deleteCourse } from '../actions';
 
 export default async function EditCourse({
   params,
@@ -100,6 +100,19 @@ export default async function EditCourse({
           Save changes
         </button>
       </form>
+
+      <div className="mt-10 border-t border-border pt-6">
+        <h2 className="text-sm font-medium text-red-700">Danger zone</h2>
+        <p className="mt-1 text-sm text-muted">
+          Permanently delete this course and all its sections, lessons, quizzes,
+          and enrollments. This cannot be undone.
+        </p>
+        <form action={deleteCourse.bind(null, slug, courseId)} className="mt-3">
+          <button className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
+            Delete course
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

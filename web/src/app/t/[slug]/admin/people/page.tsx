@@ -1,4 +1,4 @@
-import { db, eq, desc, memberships, users } from '@training-platform/db';
+import { db, and, or, eq, ilike, desc, memberships, users } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
 import { InviteForm } from './invite-form';
 import { setMemberRole, setMemberStatus } from './actions';
@@ -12,11 +12,22 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default async function People({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { slug } = await params;
+  const { q } = await searchParams;
+  const query = (q ?? '').trim();
   const ctx = await withTenant();
+
+  const filters = ctx.tenantId ? [eq(memberships.tenantId, ctx.tenantId)] : [];
+  if (ctx.tenantId && query) {
+    filters.push(
+      or(ilike(users.name, `%${query}%`), ilike(users.email, `%${query}%`))!,
+    );
+  }
 
   const rows = ctx.tenantId
     ? await db
@@ -30,7 +41,7 @@ export default async function People({
         })
         .from(memberships)
         .innerJoin(users, eq(users.id, memberships.userId))
-        .where(eq(memberships.tenantId, ctx.tenantId))
+        .where(and(...filters))
         .orderBy(desc(memberships.createdAt))
     : [];
 
@@ -42,6 +53,19 @@ export default async function People({
       <div className="mt-6">
         <InviteForm tenantSlug={slug} />
       </div>
+
+      <form method="get" className="mt-4 flex max-w-sm gap-2">
+        <input
+          type="search"
+          name="q"
+          defaultValue={query}
+          placeholder="Search people…"
+          className="flex-1 rounded-md border border-border px-3 py-1.5 text-sm"
+        />
+        <button className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted">
+          Search
+        </button>
+      </form>
 
       <div className="mt-6 overflow-x-auto rounded-[--radius-card] border border-border">
         <table className="w-full text-sm">

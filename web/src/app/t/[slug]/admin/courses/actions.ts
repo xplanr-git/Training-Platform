@@ -143,3 +143,40 @@ export async function setCourseStatus(
 
   revalidatePath(`/t/${tenantSlug}/admin/courses`);
 }
+
+/**
+ * Permanently deletes a course. Sections, lessons, quizzes, enrollments, etc.
+ * cascade via FK onDelete. Audited. Redirects to the course list.
+ */
+export async function deleteCourse(tenantSlug: string, courseId: string) {
+  const ctx = await withTenant();
+  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
+    throw new Error('Forbidden');
+  }
+  if (!ctx.tenantId) throw new Error('No tenant context');
+
+  await db.transaction(async (tx) => {
+    const [before] = await tx
+      .select()
+      .from(courses)
+      .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId!)))
+      .limit(1);
+    if (!before) throw new Error('Course not found');
+
+    await tx
+      .delete(courses)
+      .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId!)));
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'course.delete',
+      resourceType: 'course',
+      resourceId: courseId,
+      before,
+    });
+  });
+
+  revalidatePath(`/t/${tenantSlug}/admin/courses`);
+  redirect(`/admin/courses`);
+}
