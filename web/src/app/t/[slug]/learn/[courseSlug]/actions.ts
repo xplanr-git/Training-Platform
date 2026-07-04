@@ -13,17 +13,122 @@ import {
   courses,
   tenants,
   users,
+  quizzes,
+  quizQuestions,
+  quizAttempts,
+  quizAnswers,
 } from '@training-platform/db';
-import { getTenantContext } from '@/lib/tenant';
+import { getTenantContext, type TenantContext } from '@/lib/tenant';
 import { getCourseProgress } from '@/lib/progress';
 import { env } from '@/lib/env';
 import { buildCredential } from '@/lib/certificate';
+import { gradeQuiz } from '@/lib/quiz';
+
+async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
+  const [enr] = await db
+    .select({ id: enrollments.id, status: enrollments.status })
+    .from(enrollments)
+    .where(
+      and(
+        eq(enrollments.id, enrollmentId),
+        eq(enrollments.userId, ctx.userId),
+        eq(enrollments.tenantId, ctx.tenantId!),
+      ),
+    )
+    .limit(1);
+  if (!enr) throw new Error('Enrollment not found');
+  return enr;
+}
 
 /**
- * Records a lesson completion as an append-only progress_event, then derives
- * course completion. When every lesson is done, marks the enrollment completed
- * (this is the trigger point for certificate issuance in D5).
+ * Records a lesson as completed (append-only event) and, if that finishes the
+ * course, marks the enrollment completed and issues the certificate. Shared by
+ * manual completion and quiz-pass completion.
  */
+async function recordLessonCompleted(
+  ctx: TenantContext,
+  courseId: string,
+  enrollmentId: string,
+  enrollmentStatus: string,
+  lessonId: string,
+) {
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId!,
+    enrollmentId,
+    lessonId,
+    eventType: 'completed',
+    payload: {},
+  });
+
+  const progress = await getCourseProgress(enrollmentId, courseId);
+  if (!progress.isComplete || enrollmentStatus === 'completed') return;
+
+  const [meta] = await db
+    .select({
+      courseTitle: courses.title,
+      tenantName: tenants.name,
+      learnerName: users.name,
+      learnerEmail: users.email,
+    })
+    .from(courses)
+    .innerJoin(tenants, eq(tenants.id, courses.tenantId))
+    .innerJoin(users, eq(users.id, ctx.userId))
+    .where(eq(courses.id, courseId))
+    .limit(1);
+
+  const code = crypto.randomUUID();
+  const issuedAt = new Date();
+  const verifyUrl = `https://${env.rootDomain()}/verify/${code}`;
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(enrollments)
+      .set({ status: 'completed', completedAt: issuedAt })
+      .where(eq(enrollments.id, enrollmentId));
+
+    const [existingCert] = await tx
+      .select({ id: certificates.id })
+      .from(certificates)
+      .where(eq(certificates.enrollmentId, enrollmentId))
+      .limit(1);
+
+    if (!existingCert && meta) {
+      await tx.insert(certificates).values({
+        tenantId: ctx.tenantId!,
+        enrollmentId,
+        verificationCode: code,
+        issuedAt,
+        credential: buildCredential({
+          verificationCode: code,
+          learnerName: meta.learnerName,
+          learnerEmail: meta.learnerEmail,
+          courseTitle: meta.courseTitle,
+          tenantName: meta.tenantName,
+          issuedAt: issuedAt.toISOString(),
+          verifyUrl,
+        }),
+      });
+      await audited(tx, {
+        tenantId: ctx.tenantId,
+        actorUserId: ctx.userId,
+        action: 'certificate.issue',
+        resourceType: 'certificate',
+        resourceId: code,
+        after: { courseId },
+      });
+    }
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'enrollment.completed',
+      resourceType: 'enrollment',
+      resourceId: enrollmentId,
+      after: { courseId },
+    });
+  });
+}
+
 export async function markLessonComplete(
   tenantSlug: string,
   courseSlug: string,
@@ -34,101 +139,92 @@ export async function markLessonComplete(
 ) {
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect('/login');
+  const enr = await verifyEnrollment(ctx, enrollmentId);
 
-  // Verify the enrollment belongs to this user (Drizzle bypasses RLS).
-  const [enr] = await db
-    .select({ id: enrollments.id, status: enrollments.status })
-    .from(enrollments)
-    .where(
-      and(
-        eq(enrollments.id, enrollmentId),
-        eq(enrollments.userId, ctx.userId),
-        eq(enrollments.tenantId, ctx.tenantId),
-      ),
-    )
-    .limit(1);
-  if (!enr) throw new Error('Enrollment not found');
-
-  await db.insert(progressEvents).values({
-    tenantId: ctx.tenantId,
-    enrollmentId,
-    lessonId,
-    eventType: 'completed',
-    payload: {},
-  });
-
-  const progress = await getCourseProgress(enrollmentId, courseId);
-  if (progress.isComplete && enr.status !== 'completed') {
-    // Gather the facts needed to mint a certificate.
-    const [meta] = await db
-      .select({
-        courseTitle: courses.title,
-        tenantName: tenants.name,
-        learnerName: users.name,
-        learnerEmail: users.email,
-      })
-      .from(courses)
-      .innerJoin(tenants, eq(tenants.id, courses.tenantId))
-      .innerJoin(users, eq(users.id, ctx.userId))
-      .where(eq(courses.id, courseId))
-      .limit(1);
-
-    const code = crypto.randomUUID();
-    const issuedAt = new Date();
-    const verifyUrl = `https://${env.rootDomain()}/verify/${code}`;
-
-    await db.transaction(async (tx) => {
-      await tx
-        .update(enrollments)
-        .set({ status: 'completed', completedAt: issuedAt })
-        .where(eq(enrollments.id, enrollmentId));
-
-      // Idempotent: only one certificate per enrollment.
-      const [existingCert] = await tx
-        .select({ id: certificates.id })
-        .from(certificates)
-        .where(eq(certificates.enrollmentId, enrollmentId))
-        .limit(1);
-
-      if (!existingCert && meta) {
-        const credential = buildCredential({
-          verificationCode: code,
-          learnerName: meta.learnerName,
-          learnerEmail: meta.learnerEmail,
-          courseTitle: meta.courseTitle,
-          tenantName: meta.tenantName,
-          issuedAt: issuedAt.toISOString(),
-          verifyUrl,
-        });
-        await tx.insert(certificates).values({
-          tenantId: ctx.tenantId!,
-          enrollmentId,
-          verificationCode: code,
-          issuedAt,
-          credential,
-        });
-        await audited(tx, {
-          tenantId: ctx.tenantId,
-          actorUserId: ctx.userId,
-          action: 'certificate.issue',
-          resourceType: 'certificate',
-          resourceId: code,
-          after: { courseId },
-        });
-      }
-
-      await audited(tx, {
-        tenantId: ctx.tenantId,
-        actorUserId: ctx.userId,
-        action: 'enrollment.completed',
-        resourceType: 'enrollment',
-        resourceId: enrollmentId,
-        after: { courseId },
-      });
-    });
-  }
+  await recordLessonCompleted(ctx, courseId, enrollmentId, enr.status, lessonId);
 
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}`);
   revalidatePath(`/t/${tenantSlug}/dashboard`);
   redirect(nextHref ?? `/learn/${courseSlug}`);
+}
+
+/**
+ * Grades a quiz submission server-side, stores the attempt + per-question
+ * answers, and — if the score meets the pass threshold — records the quiz
+ * lesson as completed (which can complete the course). A failing attempt is
+ * recorded but does not complete the lesson; the learner can retry.
+ */
+export async function submitQuizAttempt(
+  tenantSlug: string,
+  courseSlug: string,
+  courseId: string,
+  enrollmentId: string,
+  lessonId: string,
+  quizId: string,
+  formData: FormData,
+) {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  const enr = await verifyEnrollment(ctx, enrollmentId);
+
+  const [quiz] = await db
+    .select({ settings: quizzes.settings })
+    .from(quizzes)
+    .where(and(eq(quizzes.id, quizId), eq(quizzes.tenantId, ctx.tenantId)))
+    .limit(1);
+  const threshold = (quiz?.settings as { passThreshold?: number })?.passThreshold ?? 70;
+
+  const questions = await db
+    .select()
+    .from(quizQuestions)
+    .where(eq(quizQuestions.quizId, quizId));
+
+  const responses: Record<string, number[]> = {};
+  for (const q of questions) {
+    responses[q.id] = formData
+      .getAll(`q_${q.id}`)
+      .map((v) => Number(v))
+      .filter((n) => Number.isInteger(n));
+  }
+  const result = gradeQuiz(
+    questions.map((q) => ({ id: q.id, correct: q.correct as number[], points: q.points })),
+    responses,
+    threshold,
+  );
+  const { score, passed } = result;
+
+  await db.transaction(async (tx) => {
+    const [attempt] = await tx
+      .insert(quizAttempts)
+      .values({
+        tenantId: ctx.tenantId!,
+        enrollmentId,
+        quizId,
+        submittedAt: new Date(),
+        score: String(score),
+        passed,
+      })
+      .returning();
+    if (result.perQuestion.length > 0) {
+      await tx.insert(quizAnswers).values(
+        result.perQuestion.map((g) => ({
+          tenantId: ctx.tenantId!,
+          attemptId: attempt.id,
+          questionId: g.questionId,
+          response: { selected: g.selected },
+          isCorrect: g.isCorrect,
+          pointsAwarded: g.pointsAwarded,
+        })),
+      );
+    }
+  });
+
+  if (passed) {
+    await recordLessonCompleted(ctx, courseId, enrollmentId, enr.status, lessonId);
+  }
+
+  revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}/${lessonId}`);
+  revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}`);
+  revalidatePath(`/t/${tenantSlug}/dashboard`);
+  redirect(`/learn/${courseSlug}/${lessonId}?score=${score}&passed=${passed ? 1 : 0}`);
 }

@@ -9,10 +9,12 @@ import {
   sections,
   lessons,
   enrollments,
+  quizzes,
+  quizQuestions,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { getCourseProgress } from '@/lib/progress';
-import { markLessonComplete } from '../actions';
+import { markLessonComplete, submitQuizAttempt } from '../actions';
 
 function youtubeEmbed(url: string): string | null {
   const m = url.match(
@@ -21,12 +23,23 @@ function youtubeEmbed(url: string): string | null {
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
 }
 
+function loadQuestions(quizId: string) {
+  return db
+    .select()
+    .from(quizQuestions)
+    .where(eq(quizQuestions.quizId, quizId))
+    .orderBy(asc(quizQuestions.position));
+}
+
 export default async function LessonPlayer({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; courseSlug: string; lessonId: string }>;
+  searchParams: Promise<{ score?: string; passed?: string }>;
 }) {
   const { slug, courseSlug, lessonId } = await params;
+  const { score, passed } = await searchParams;
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect(`/login?next=${encodeURIComponent(`/learn/${courseSlug}`)}`);
 
@@ -74,6 +87,20 @@ export default async function LessonPlayer({
   const content = (lesson.content ?? {}) as Record<string, string>;
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
 
+  // Quiz lessons load their questions; completion happens via a passing attempt.
+  let quiz: { id: string } | null = null;
+  let questions: Awaited<ReturnType<typeof loadQuestions>> = [];
+  if (lesson.type === 'quiz') {
+    const [q] = await db
+      .select({ id: quizzes.id })
+      .from(quizzes)
+      .where(eq(quizzes.lessonId, lesson.id))
+      .limit(1);
+    quiz = q ?? null;
+    if (quiz) questions = await loadQuestions(quiz.id);
+  }
+  const isQuiz = lesson.type === 'quiz';
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <div className="flex items-center justify-between text-sm">
@@ -112,8 +139,65 @@ export default async function LessonPlayer({
           ) : (
             <p className="text-muted">No PDF attached.</p>
           ))}
-        {lesson.type === 'quiz' && (
-          <p className="text-muted">Quiz playback lands in D4.</p>
+        {isQuiz && (
+          <div>
+            {score !== undefined && (
+              <p
+                className={`mb-4 rounded-md px-3 py-2 text-sm ${
+                  passed === '1' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}
+              >
+                You scored {score}%. {passed === '1' ? 'Passed!' : 'Not passed — try again.'}
+              </p>
+            )}
+            {done ? (
+              <p className="text-sm font-medium text-green-600">
+                ✓ You have passed this quiz.
+              </p>
+            ) : questions.length === 0 ? (
+              <p className="text-muted">This quiz has no questions yet.</p>
+            ) : (
+              <form
+                action={submitQuizAttempt.bind(
+                  null,
+                  slug,
+                  courseSlug,
+                  course.id,
+                  enrollment.id,
+                  lesson.id,
+                  quiz!.id,
+                )}
+                className="space-y-5"
+              >
+                {questions.map((q, qi) => {
+                  const opts = q.options as string[];
+                  const multi = q.type === 'multi_select';
+                  return (
+                    <fieldset key={q.id} className="rounded-[--radius-card] border border-border p-4">
+                      <legend className="px-1 text-sm font-medium">
+                        {qi + 1}. {q.prompt}
+                      </legend>
+                      <div className="mt-2 space-y-1">
+                        {opts.map((o, oi) => (
+                          <label key={oi} className="flex items-center gap-2 text-sm">
+                            <input
+                              type={multi ? 'checkbox' : 'radio'}
+                              name={`q_${q.id}`}
+                              value={oi}
+                            />
+                            {o}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  );
+                })}
+                <button className="rounded-md bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                  Submit quiz
+                </button>
+              </form>
+            )}
+          </div>
         )}
       </div>
 
@@ -128,6 +212,8 @@ export default async function LessonPlayer({
 
         {done ? (
           <span className="text-sm font-medium text-green-600">✓ Completed</span>
+        ) : isQuiz ? (
+          <span className="text-sm text-muted">Pass the quiz to complete</span>
         ) : (
           <form
             action={markLessonComplete.bind(

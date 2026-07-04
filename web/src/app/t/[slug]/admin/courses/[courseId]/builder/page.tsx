@@ -86,9 +86,19 @@ export default async function CourseBuilder({
                     </span>
                     {l.title}
                   </span>
-                  <form action={deleteLesson.bind(null, slug, courseId, l.id)}>
-                    <button className="text-xs text-red-600 hover:underline">Remove</button>
-                  </form>
+                  <span className="flex items-center gap-3">
+                    {l.type === 'quiz' && (
+                      <Link
+                        href={`/admin/courses/${courseId}/builder/quiz/${l.id}`}
+                        className="text-xs text-brand-700 hover:underline"
+                      >
+                        Edit quiz
+                      </Link>
+                    )}
+                    <form action={deleteLesson.bind(null, slug, courseId, l.id)}>
+                      <button className="text-xs text-red-600 hover:underline">Remove</button>
+                    </form>
+                  </span>
                 </li>
               ))}
               {(lessonsBySection.get(s.id) ?? []).length === 0 && (

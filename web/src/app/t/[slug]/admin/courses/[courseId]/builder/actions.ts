@@ -10,6 +10,7 @@ import {
   courses,
   sections,
   lessons,
+  quizzes,
 } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
 
@@ -114,6 +115,14 @@ export async function addLesson(
         content: contentFor(type, formData),
       })
       .returning();
+    // A quiz lesson gets a backing quiz row (default 70% pass threshold).
+    if (type === 'quiz') {
+      await tx.insert(quizzes).values({
+        tenantId: ctx.tenantId!,
+        lessonId: lesson.id,
+        settings: { passThreshold: 70 },
+      });
+    }
     await audited(tx, {
       tenantId: ctx.tenantId,
       actorUserId: ctx.userId,
