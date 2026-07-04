@@ -11,6 +11,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { getCourseProgress } from '@/lib/progress';
 
 const TYPE_LABEL: Record<string, string> = {
   text: 'Text',
@@ -65,12 +66,20 @@ export default async function Learn({
     bySection.set(l.sectionId, arr);
   }
 
+  const progress = await getCourseProgress(enrollment.id, course.id);
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-14">
       <Link href="/dashboard" className="text-sm text-muted hover:underline">
         ← Your learning
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">{course.title}</h1>
+      <div className="mt-2 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">{course.title}</h1>
+        <span className="text-sm text-muted">{progress.percent}% complete</span>
+      </div>
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+        <div className="h-full bg-brand-600" style={{ width: `${progress.percent}%` }} />
+      </div>
 
       <div className="mt-6 space-y-5">
         {sectionRows.map((s) => (
@@ -78,11 +87,21 @@ export default async function Learn({
             <h2 className="font-medium">{s.title}</h2>
             <ul className="mt-2 divide-y divide-border rounded-[--radius-card] border border-border">
               {(bySection.get(s.id) ?? []).map((l) => (
-                <li key={l.id} className="px-4 py-2 text-sm">
-                  <span className="mr-2 rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-muted">
-                    {TYPE_LABEL[l.type] ?? l.type}
-                  </span>
-                  {l.title}
+                <li key={l.id}>
+                  <Link
+                    href={`/learn/${courseSlug}/${l.id}`}
+                    className="flex items-center justify-between px-4 py-2 text-sm hover:bg-surface-muted"
+                  >
+                    <span>
+                      <span className="mr-2 rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-muted">
+                        {TYPE_LABEL[l.type] ?? l.type}
+                      </span>
+                      {l.title}
+                    </span>
+                    {progress.completed.has(l.id) && (
+                      <span className="text-green-600" aria-label="completed">✓</span>
+                    )}
+                  </Link>
                 </li>
               ))}
               {(bySection.get(s.id) ?? []).length === 0 && (

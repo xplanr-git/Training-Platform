@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { db, eq, and, desc, enrollments, courses } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { getCourseProgress } from '@/lib/progress';
 
 /** Learner dashboard: the courses this user is enrolled in for this tenant. */
 export default async function LearnerDashboard() {
@@ -11,6 +12,7 @@ export default async function LearnerDashboard() {
 
   const rows = await db
     .select({
+      enrollmentId: enrollments.id,
       courseId: courses.id,
       title: courses.title,
       slug: courses.slug,
@@ -22,11 +24,18 @@ export default async function LearnerDashboard() {
     .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.tenantId, ctx.tenantId)))
     .orderBy(desc(enrollments.startedAt));
 
+  const withProgress = await Promise.all(
+    rows.map(async (r) => ({
+      ...r,
+      percent: (await getCourseProgress(r.enrollmentId, r.courseId)).percent,
+    })),
+  );
+
   return (
     <main className="mx-auto max-w-4xl px-6 py-14">
       <h1 className="text-2xl font-semibold">Your learning</h1>
 
-      {rows.length === 0 ? (
+      {withProgress.length === 0 ? (
         <p className="mt-6 text-muted">
           You&apos;re not enrolled in any courses yet.{' '}
           <Link href="/" className="text-brand-700 hover:underline">
@@ -36,7 +45,7 @@ export default async function LearnerDashboard() {
         </p>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {rows.map((r) => (
+          {withProgress.map((r) => (
             <Link
               key={r.courseId}
               href={`/learn/${r.slug}`}
@@ -44,7 +53,7 @@ export default async function LearnerDashboard() {
             >
               <h2 className="font-semibold">{r.title}</h2>
               <p className="mt-1 text-sm text-muted">
-                {r.completedAt ? 'Completed' : r.status === 'active' ? '0% complete' : r.status}
+                {r.completedAt ? 'Completed' : `${r.percent}% complete`}
               </p>
             </Link>
           ))}
