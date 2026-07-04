@@ -8,9 +8,12 @@ import {
   orders,
   enrollments,
   subscriptions,
+  courses,
+  tenants,
 } from '@training-platform/db';
 import { stripe } from '@/lib/stripe';
 import { env } from '@/lib/env';
+import { sendReceiptEmail, sendEnrollmentEmail } from '@/lib/email';
 
 // Stripe signature verification needs the raw body → Node runtime.
 export const runtime = 'nodejs';
@@ -112,6 +115,38 @@ async function handleCoursePurchase(
       after: { courseId, amount: session.amount_total },
     });
   });
+
+  // Best-effort receipt + enrollment emails.
+  const buyerEmail = session.customer_details?.email ?? session.customer_email;
+  if (buyerEmail) {
+    try {
+      const [course] = await db
+        .select({ title: courses.title, slug: courses.slug })
+        .from(courses)
+        .where(eq(courses.id, courseId))
+        .limit(1);
+      const [tenant] = await db
+        .select({ slug: tenants.slug })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      if (course && tenant) {
+        const root = env.rootDomain();
+        const origin = root.startsWith('localhost')
+          ? `http://${tenant.slug}.${root}`
+          : `https://${tenant.slug}.${root}`;
+        await sendReceiptEmail(
+          buyerEmail,
+          course.title,
+          String((session.amount_total ?? 0) / 100),
+          (session.currency ?? 'usd').toUpperCase(),
+        );
+        await sendEnrollmentEmail(buyerEmail, course.title, `${origin}/learn/${course.slug}`);
+      }
+    } catch (e) {
+      console.error('purchase emails failed:', e);
+    }
+  }
 }
 
 async function handleSubscriptionCheckout(

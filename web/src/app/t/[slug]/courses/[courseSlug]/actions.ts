@@ -6,6 +6,7 @@ import { db, audited, eq, and, courses, enrollments } from '@training-platform/d
 import { getTenantContext } from '@/lib/tenant';
 import { stripe } from '@/lib/stripe';
 import { env } from '@/lib/env';
+import { sendEnrollmentEmail } from '@/lib/email';
 
 function tenantOrigin(slug: string): string {
   const root = env.rootDomain();
@@ -26,7 +27,7 @@ export async function enrollFree(
   if (!ctx.tenantId) throw new Error('No tenant context');
 
   const [course] = await db
-    .select({ id: courses.id, status: courses.status })
+    .select({ id: courses.id, status: courses.status, title: courses.title })
     .from(courses)
     .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
     .limit(1);
@@ -60,6 +61,18 @@ export async function enrollFree(
       });
     });
     revalidatePath(`/t/${tenantSlug}/dashboard`);
+
+    if (ctx.email) {
+      try {
+        await sendEnrollmentEmail(
+          ctx.email,
+          course.title,
+          `${tenantOrigin(tenantSlug)}/learn/${courseSlug}`,
+        );
+      } catch (e) {
+        console.error('enrollment email failed:', e);
+      }
+    }
   }
 
   redirect(`/learn/${courseSlug}`);

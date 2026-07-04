@@ -11,6 +11,8 @@ import {
 } from '@training-platform/db';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { normalizeSlug, validateSlug } from '@/lib/slug';
+import { sendWelcomeEmail } from '@/lib/email';
+import { env } from '@/lib/env';
 
 export interface ProvisionResult {
   ok: boolean;
@@ -114,6 +116,16 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
     await admin.auth.admin.deleteUser(userId).catch(() => {});
     const message = e instanceof Error ? e.message : 'Provisioning failed.';
     return { ok: false, error: message };
+  }
+
+  const root = env.rootDomain();
+  const origin = root.startsWith('localhost')
+    ? `http://${slug}.${root}`
+    : `https://${slug}.${root}`;
+  try {
+    await sendWelcomeEmail(email, name, companyName, `${origin}/admin`);
+  } catch (e) {
+    console.error('welcome email failed:', e);
   }
 
   return { ok: true, slug };

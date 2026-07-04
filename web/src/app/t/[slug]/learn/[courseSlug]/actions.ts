@@ -23,6 +23,7 @@ import { getCourseProgress } from '@/lib/progress';
 import { env } from '@/lib/env';
 import { buildCredential } from '@/lib/certificate';
 import { gradeQuiz } from '@/lib/quiz';
+import { sendCertificateEmail } from '@/lib/email';
 
 async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
   const [enr] = await db
@@ -127,6 +128,14 @@ async function recordLessonCompleted(
       after: { courseId },
     });
   });
+
+  if (meta?.learnerEmail) {
+    try {
+      await sendCertificateEmail(meta.learnerEmail, meta.courseTitle, verifyUrl);
+    } catch (e) {
+      console.error('certificate email failed:', e);
+    }
+  }
 }
 
 export async function markLessonComplete(

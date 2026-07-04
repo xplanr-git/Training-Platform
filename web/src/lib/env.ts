@@ -21,4 +21,8 @@ export const env = {
     const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000';
     return root.startsWith('localhost') ? `http://${root}` : `https://${root}`;
   },
+  resendApiKey: () => process.env.RESEND_API_KEY ?? null,
+  emailFrom: () =>
+    process.env.EMAIL_FROM ??
+    `noreply@${(process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost').split(':')[0]}`,
 } as const;
