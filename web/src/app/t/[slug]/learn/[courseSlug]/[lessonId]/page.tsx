@@ -133,9 +133,19 @@ export default async function LessonPlayer({
           ))}
         {lesson.type === 'pdf' &&
           (content.url ? (
-            <a href={content.url} target="_blank" rel="noreferrer" className="text-brand-700 hover:underline">
-              Open PDF
-            </a>
+            <div>
+              <div className="h-[70vh] w-full overflow-hidden rounded-[--radius-card] border border-border">
+                <iframe src={content.url} className="h-full w-full" title={lesson.title} />
+              </div>
+              <a
+                href={content.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-block text-sm text-brand-700 hover:underline"
+              >
+                Open PDF in new tab
+              </a>
+            </div>
           ) : (
             <p className="text-muted">No PDF attached.</p>
           ))}
