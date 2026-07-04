@@ -42,6 +42,7 @@ export default async function CoursesList({
         <input
           type="search"
           name="q"
+          aria-label="Search courses"
           defaultValue={query}
           placeholder="Search courses…"
           className="flex-1 rounded-md border border-border px-3 py-1.5 text-sm"

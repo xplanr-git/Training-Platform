@@ -60,6 +60,7 @@ export default async function TenantHome({
           <input
             type="search"
             name="q"
+            aria-label="Search courses"
             defaultValue={query}
             placeholder="Search courses…"
             className="flex-1 rounded-md border border-border px-3 py-2 text-sm"

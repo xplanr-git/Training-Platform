@@ -68,10 +68,10 @@ export default async function CourseBuilder({
               <h2 className="font-medium">{s.title}</h2>
               <div className="flex items-center gap-2 text-xs text-muted">
                 <form action={moveSection.bind(null, slug, courseId, s.id, 'up')}>
-                  <button disabled={i === 0} className="disabled:opacity-30 hover:text-foreground">↑</button>
+                  <button aria-label="Move section up" disabled={i === 0} className="disabled:opacity-30 hover:text-foreground">↑</button>
                 </form>
                 <form action={moveSection.bind(null, slug, courseId, s.id, 'down')}>
-                  <button disabled={i === sectionRows.length - 1} className="disabled:opacity-30 hover:text-foreground">↓</button>
+                  <button aria-label="Move section down" disabled={i === sectionRows.length - 1} className="disabled:opacity-30 hover:text-foreground">↓</button>
                 </form>
                 <form action={deleteSection.bind(null, slug, courseId, s.id)}>
                   <button className="text-red-600 hover:underline">Delete</button>
@@ -93,10 +93,10 @@ export default async function CourseBuilder({
                       </span>
                       <span className="flex items-center gap-2 text-xs text-muted">
                         <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')}>
-                          <button disabled={li === 0} className="disabled:opacity-30 hover:text-foreground">↑</button>
+                          <button aria-label="Move lesson up" disabled={li === 0} className="disabled:opacity-30 hover:text-foreground">↑</button>
                         </form>
                         <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'down')}>
-                          <button disabled={li === arr.length - 1} className="disabled:opacity-30 hover:text-foreground">↓</button>
+                          <button aria-label="Move lesson down" disabled={li === arr.length - 1} className="disabled:opacity-30 hover:text-foreground">↓</button>
                         </form>
                         {l.type === 'quiz' && (
                           <Link

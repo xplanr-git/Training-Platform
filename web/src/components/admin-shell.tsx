@@ -30,7 +30,11 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-screen bg-surface-muted">
+      <a href="#main-content" className="sr-only skip-link">
+        Skip to content
+      </a>
       <aside
+        aria-label="Admin navigation"
         className={`flex flex-col border-r border-border bg-surface transition-all ${
           collapsed ? 'w-16' : 'w-64'
         }`}
@@ -71,6 +75,7 @@ export function AdminShell({
                     <li key={item.id}>
                       <Link
                         href={href}
+                        aria-current={isActive ? 'page' : undefined}
                         className={`flex items-center justify-between rounded px-2 py-1.5 text-sm ${
                           isActive
                             ? 'bg-brand-50 font-medium text-brand-700'
@@ -99,7 +104,9 @@ export function AdminShell({
         )}
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      <main id="main-content" className="flex-1 overflow-y-auto p-8">
+        {children}
+      </main>
     </div>
   );
 }

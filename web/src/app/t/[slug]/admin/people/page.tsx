@@ -58,6 +58,7 @@ export default async function People({
         <input
           type="search"
           name="q"
+          aria-label="Search people"
           defaultValue={query}
           placeholder="Search people…"
           className="flex-1 rounded-md border border-border px-3 py-1.5 text-sm"
