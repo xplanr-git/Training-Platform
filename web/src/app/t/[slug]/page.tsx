@@ -14,10 +14,17 @@ export default async function TenantHome({
   const { slug } = await params;
 
   const [tenant] = await db
-    .select({ id: tenants.id, name: tenants.name })
+    .select({ id: tenants.id, name: tenants.name, branding: tenants.branding })
     .from(tenants)
     .where(eq(tenants.slug, slug))
     .limit(1);
+
+  const branding = (tenant?.branding ?? {}) as {
+    tagline?: string;
+    logoUrl?: string;
+    primaryColor?: string;
+  };
+  const accent = branding.primaryColor || undefined;
 
   const catalog = tenant
     ? await db
@@ -30,8 +37,16 @@ export default async function TenantHome({
   return (
     <main className="mx-auto max-w-5xl px-6 py-14">
       <header className="mb-10">
-        <h1 className="text-3xl font-semibold">{tenant?.name ?? slug}</h1>
-        <p className="mt-2 text-muted">Browse our courses and start learning.</p>
+        {branding.logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={branding.logoUrl} alt={tenant?.name ?? slug} className="mb-4 h-12 w-auto" />
+        )}
+        <h1 className="text-3xl font-semibold" style={accent ? { color: accent } : undefined}>
+          {tenant?.name ?? slug}
+        </h1>
+        <p className="mt-2 text-muted">
+          {branding.tagline || 'Browse our courses and start learning.'}
+        </p>
       </header>
 
       {catalog.length === 0 ? (
@@ -48,7 +63,10 @@ export default async function TenantHome({
               <p className="mt-1 line-clamp-3 flex-1 text-sm text-muted">
                 {c.description || 'No description yet.'}
               </p>
-              <span className="mt-3 text-sm font-medium text-brand-700">
+              <span
+                className="mt-3 text-sm font-medium text-brand-700"
+                style={accent ? { color: accent } : undefined}
+              >
                 {c.price ? `${c.currency} ${c.price}` : 'Free'}
               </span>
             </Link>

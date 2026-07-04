@@ -119,6 +119,8 @@ export const tenants = pgTable('tenants', {
   planId: text('plan_id').notNull().default('trial'),
   customDomain: text('custom_domain').unique(),
   status: tenantStatus('status').notNull().default('trial'),
+  // Storefront branding: { tagline, logoUrl, primaryColor }.
+  branding: jsonb('branding').notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
