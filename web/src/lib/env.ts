@@ -14,4 +14,11 @@ export const env = {
     required('SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE_KEY),
   databaseUrl: () => required('DATABASE_URL', process.env.DATABASE_URL),
   rootDomain: () => process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000',
+  stripeSecretKey: () => required('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY),
+  stripeWebhookSecret: () =>
+    required('STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET),
+  appOrigin: () => {
+    const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000';
+    return root.startsWith('localhost') ? `http://${root}` : `https://${root}`;
+  },
 } as const;

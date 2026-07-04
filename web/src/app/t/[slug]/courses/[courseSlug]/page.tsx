@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db, and, eq, tenants, courses, enrollments } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
-import { enrollFree } from './actions';
+import { enrollFree, startCoursePurchase } from './actions';
 
 /**
  * Public course landing page. Shows a published course and an enroll CTA.
@@ -75,12 +75,11 @@ export default async function CourseLanding({
             Sign in to enroll
           </Link>
         ) : course.price ? (
-          <Link
-            href={`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`}
-            className="inline-block rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            Buy — {course.currency} {course.price}
-          </Link>
+          <form action={startCoursePurchase.bind(null, slug, course.id, courseSlug)}>
+            <button className="rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700">
+              Buy — {course.currency} {course.price}
+            </button>
+          </form>
         ) : (
           <form action={enrollFree.bind(null, slug, course.id, courseSlug)}>
             <button className="rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700">
