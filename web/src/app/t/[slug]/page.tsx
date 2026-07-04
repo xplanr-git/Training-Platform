@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db, and, eq, desc, tenants, courses } from '@training-platform/db';
+import { db, and, eq, ilike, desc, tenants, courses } from '@training-platform/db';
 
 /**
  * Tenant storefront (catalog). Public — lists this academy's PUBLISHED courses.
@@ -8,10 +8,14 @@ import { db, and, eq, desc, tenants, courses } from '@training-platform/db';
  */
 export default async function TenantHome({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { slug } = await params;
+  const { q } = await searchParams;
+  const query = (q ?? '').trim();
 
   const [tenant] = await db
     .select({ id: tenants.id, name: tenants.name, branding: tenants.branding })
@@ -26,11 +30,16 @@ export default async function TenantHome({
   };
   const accent = branding.primaryColor || undefined;
 
+  const filters = tenant
+    ? [eq(courses.tenantId, tenant.id), eq(courses.status, 'published')]
+    : [];
+  if (tenant && query) filters.push(ilike(courses.title, `%${query}%`));
+
   const catalog = tenant
     ? await db
         .select()
         .from(courses)
-        .where(and(eq(courses.tenantId, tenant.id), eq(courses.status, 'published')))
+        .where(and(...filters))
         .orderBy(desc(courses.createdAt))
     : [];
 
@@ -47,10 +56,26 @@ export default async function TenantHome({
         <p className="mt-2 text-muted">
           {branding.tagline || 'Browse our courses and start learning.'}
         </p>
+        <form method="get" className="mt-5 flex max-w-md gap-2">
+          <input
+            type="search"
+            name="q"
+            defaultValue={query}
+            placeholder="Search courses…"
+            className="flex-1 rounded-md border border-border px-3 py-2 text-sm"
+          />
+          <button className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted">
+            Search
+          </button>
+        </form>
       </header>
 
       {catalog.length === 0 ? (
-        <p className="text-muted">No courses are published yet. Check back soon.</p>
+        <p className="text-muted">
+          {query
+            ? `No courses match “${query}”.`
+            : 'No courses are published yet. Check back soon.'}
+        </p>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {catalog.map((c) => (

@@ -5,5 +5,5 @@ export * from './audit';
 // Re-export the query operators so consumers use this package's single
 // drizzle-orm instance (avoids dual-instance type conflicts).
 export {
-  eq, and, or, not, sql, desc, asc, inArray, isNull, gte, lte, count, countDistinct,
+  eq, and, or, not, sql, desc, asc, inArray, isNull, gte, lte, count, countDistinct, ilike,
 } from 'drizzle-orm';

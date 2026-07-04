@@ -1,21 +1,28 @@
 import Link from 'next/link';
-import { db, eq, desc, courses } from '@training-platform/db';
+import { db, and, eq, ilike, desc, courses } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
 import { setCourseStatus } from './actions';
 
 export default async function CoursesList({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { slug } = await params;
+  const { q } = await searchParams;
+  const query = (q ?? '').trim();
   const ctx = await withTenant();
+
+  const filters = ctx.tenantId ? [eq(courses.tenantId, ctx.tenantId)] : [];
+  if (ctx.tenantId && query) filters.push(ilike(courses.title, `%${query}%`));
 
   const rows = ctx.tenantId
     ? await db
         .select()
         .from(courses)
-        .where(eq(courses.tenantId, ctx.tenantId))
+        .where(and(...filters))
         .orderBy(desc(courses.createdAt))
     : [];
 
@@ -31,9 +38,22 @@ export default async function CoursesList({
         </Link>
       </div>
 
+      <form method="get" className="mt-4 flex max-w-sm gap-2">
+        <input
+          type="search"
+          name="q"
+          defaultValue={query}
+          placeholder="Search courses…"
+          className="flex-1 rounded-md border border-border px-3 py-1.5 text-sm"
+        />
+        <button className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted">
+          Search
+        </button>
+      </form>
+
       {rows.length === 0 ? (
         <p className="mt-8 text-muted">
-          No courses yet. Create your first course to get started.
+          {query ? `No courses match “${query}”.` : 'No courses yet. Create your first course to get started.'}
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-[--radius-card] border border-border">

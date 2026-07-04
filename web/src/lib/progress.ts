@@ -1,11 +1,16 @@
 import { db, eq, and, lessons, progressEvents } from '@training-platform/db';
+import { deriveProgress, type CourseProgress } from '@/lib/progress-derive';
+
+export { deriveProgress, type CourseProgress };
 
 /**
  * Derives completion state from the append-only progress_events log — state is
- * never stored, always computed (CLAUDE.md §5). Returns the set of completed
- * lesson ids for an enrollment plus a percentage against the course's lessons.
+ * never stored, always computed (CLAUDE.md §5).
  */
-export async function getCourseProgress(enrollmentId: string, courseId: string) {
+export async function getCourseProgress(
+  enrollmentId: string,
+  courseId: string,
+): Promise<CourseProgress> {
   const [completedRows, lessonRows] = await Promise.all([
     db
       .select({ lessonId: progressEvents.lessonId })
@@ -19,12 +24,11 @@ export async function getCourseProgress(enrollmentId: string, courseId: string) 
     db.select({ id: lessons.id }).from(lessons).where(eq(lessons.courseId, courseId)),
   ]);
 
-  const completed = new Set(
-    completedRows.map((r) => r.lessonId).filter((id): id is string => !!id),
+  const completedIds = completedRows
+    .map((r) => r.lessonId)
+    .filter((id): id is string => !!id);
+  return deriveProgress(
+    completedIds,
+    lessonRows.map((l) => l.id),
   );
-  const total = lessonRows.length;
-  const done = lessonRows.filter((l) => completed.has(l.id)).length;
-  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
-
-  return { completed, total, done, percent, isComplete: total > 0 && done >= total };
 }
