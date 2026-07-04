@@ -7,6 +7,7 @@ import {
   courses,
   users,
 } from '@training-platform/db';
+import Link from 'next/link';
 import { withTenant } from '@/lib/tenant';
 import { setCertificateRevoked } from './actions';
 
@@ -39,7 +40,15 @@ export default async function Certificates({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Certificates</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Certificates</h1>
+        <Link
+          href="/admin/certificates/template"
+          className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted"
+        >
+          Edit template
+        </Link>
+      </div>
       <p className="mt-1 text-muted">Issued completion certificates for your academy.</p>
 
       <div className="mt-6 overflow-x-auto rounded-[--radius-card] border border-border">
