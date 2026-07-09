@@ -54,7 +54,7 @@ export async function addSection(
   const existing = await db
     .select({ position: sections.position })
     .from(sections)
-    .where(eq(sections.courseId, courseId));
+    .where(and(eq(sections.courseId, courseId), eq(sections.tenantId, ctx.tenantId)));
   const nextPos = existing.reduce((m, s) => Math.max(m, s.position), -1) + 1;
 
   await db.insert(sections).values({
@@ -99,7 +99,7 @@ export async function addLesson(
   const existing = await db
     .select({ position: lessons.position })
     .from(lessons)
-    .where(eq(lessons.sectionId, sectionId));
+    .where(and(eq(lessons.sectionId, sectionId), eq(lessons.tenantId, ctx.tenantId)));
   const nextPos = existing.reduce((m, l) => Math.max(m, l.position), -1) + 1;
 
   await db.transaction(async (tx) => {
@@ -177,10 +177,12 @@ export async function moveSection(
   const ctx = await withTenant();
   if (!ctx.tenantId) throw new Error('No tenant context');
 
+  // Tenant-scoped: Drizzle bypasses RLS, so scope by tenantId to prevent a
+  // tenant admin reordering another tenant's content via a forged courseId.
   const ordered = await db
     .select({ id: sections.id, position: sections.position })
     .from(sections)
-    .where(eq(sections.courseId, courseId))
+    .where(and(eq(sections.courseId, courseId), eq(sections.tenantId, ctx.tenantId)))
     .orderBy(asc(sections.position));
 
   const idx = ordered.findIndex((s) => s.id === sectionId);
@@ -190,8 +192,14 @@ export async function moveSection(
   const a = ordered[idx];
   const b = ordered[swapIdx];
   await db.transaction(async (tx) => {
-    await tx.update(sections).set({ position: b.position }).where(eq(sections.id, a.id));
-    await tx.update(sections).set({ position: a.position }).where(eq(sections.id, b.id));
+    await tx
+      .update(sections)
+      .set({ position: b.position })
+      .where(and(eq(sections.id, a.id), eq(sections.tenantId, ctx.tenantId!)));
+    await tx
+      .update(sections)
+      .set({ position: a.position })
+      .where(and(eq(sections.id, b.id), eq(sections.tenantId, ctx.tenantId!)));
   });
   revalidateBuilder(slug, courseId);
 }
@@ -207,10 +215,11 @@ export async function moveLesson(
   const ctx = await withTenant();
   if (!ctx.tenantId) throw new Error('No tenant context');
 
+  // Tenant-scoped (Drizzle bypasses RLS).
   const ordered = await db
     .select({ id: lessons.id, position: lessons.position })
     .from(lessons)
-    .where(eq(lessons.sectionId, sectionId))
+    .where(and(eq(lessons.sectionId, sectionId), eq(lessons.tenantId, ctx.tenantId)))
     .orderBy(asc(lessons.position));
 
   const idx = ordered.findIndex((l) => l.id === lessonId);
@@ -220,8 +229,14 @@ export async function moveLesson(
   const a = ordered[idx];
   const b = ordered[swapIdx];
   await db.transaction(async (tx) => {
-    await tx.update(lessons).set({ position: b.position }).where(eq(lessons.id, a.id));
-    await tx.update(lessons).set({ position: a.position }).where(eq(lessons.id, b.id));
+    await tx
+      .update(lessons)
+      .set({ position: b.position })
+      .where(and(eq(lessons.id, a.id), eq(lessons.tenantId, ctx.tenantId!)));
+    await tx
+      .update(lessons)
+      .set({ position: a.position })
+      .where(and(eq(lessons.id, b.id), eq(lessons.tenantId, ctx.tenantId!)));
   });
   revalidateBuilder(slug, courseId);
 }

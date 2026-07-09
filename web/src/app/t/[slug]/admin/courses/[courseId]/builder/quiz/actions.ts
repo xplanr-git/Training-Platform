@@ -92,10 +92,20 @@ export async function addQuestion(
   if (options.length < 2) throw new Error('Provide at least two options');
   if (correct.length < 1) throw new Error('Mark at least one correct option');
 
+  // Verify the quiz belongs to this tenant before writing to it (Drizzle
+  // bypasses RLS — otherwise a forged quizId could inject into another
+  // tenant's quiz).
+  const [owned] = await db
+    .select({ id: quizzes.id })
+    .from(quizzes)
+    .where(and(eq(quizzes.id, quizId), eq(quizzes.tenantId, ctx.tenantId)))
+    .limit(1);
+  if (!owned) throw new Error('Quiz not found');
+
   const existing = await db
     .select({ position: quizQuestions.position })
     .from(quizQuestions)
-    .where(eq(quizQuestions.quizId, quizId));
+    .where(and(eq(quizQuestions.quizId, quizId), eq(quizQuestions.tenantId, ctx.tenantId)));
   const nextPos = existing.reduce((m, q) => Math.max(m, q.position), -1) + 1;
 
   await db.insert(quizQuestions).values({
