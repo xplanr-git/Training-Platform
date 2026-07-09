@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { db, audited, eq, and, courses } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 import { normalizeSlug } from '@/lib/slug';
 
 /** Ensures a course slug is unique within the tenant by appending -2, -3, … */
@@ -26,8 +26,7 @@ async function uniqueCourseSlug(
 }
 
 export async function createCourse(tenantSlug: string, formData: FormData) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const title = String(formData.get('title') ?? '').trim();
   if (!title) throw new Error('Title is required');
@@ -72,8 +71,7 @@ export async function updateCourse(
   courseId: string,
   formData: FormData,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const [before] = await db
     .select()
@@ -119,8 +117,7 @@ export async function setCourseStatus(
   courseId: string,
   status: 'draft' | 'published' | 'archived',
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   await db.transaction(async (tx) => {
     const [after] = await tx
@@ -148,11 +145,7 @@ export async function setCourseStatus(
  * cascade via FK onDelete. Audited. Redirects to the course list.
  */
 export async function deleteCourse(tenantSlug: string, courseId: string) {
-  const ctx = await withTenant();
-  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
-    throw new Error('Forbidden');
-  }
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   await db.transaction(async (tx) => {
     const [before] = await tx

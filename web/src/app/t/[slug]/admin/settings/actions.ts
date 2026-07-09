@@ -2,15 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { db, audited, eq, tenants } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 
 /** Saves the academy's name and storefront branding. Admins only. */
 export async function updateSchoolSettings(tenantSlug: string, formData: FormData) {
-  const ctx = await withTenant();
-  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
-    throw new Error('Forbidden');
-  }
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const name = String(formData.get('name') ?? '').trim();
   if (!name) throw new Error('Name is required');

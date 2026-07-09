@@ -12,7 +12,7 @@ import {
   lessons,
   quizzes,
 } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 
 async function assertCourse(tenantId: string, courseId: string) {
   const [course] = await db
@@ -46,8 +46,7 @@ export async function addSection(
   courseId: string,
   formData: FormData,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
   await assertCourse(ctx.tenantId, courseId);
 
   const title = String(formData.get('title') ?? '').trim() || 'Untitled section';
@@ -71,8 +70,7 @@ export async function deleteSection(
   courseId: string,
   sectionId: string,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
   await db
     .delete(sections)
     .where(and(eq(sections.id, sectionId), eq(sections.tenantId, ctx.tenantId)));
@@ -85,8 +83,7 @@ export async function addLesson(
   sectionId: string,
   formData: FormData,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
   await assertCourse(ctx.tenantId, courseId);
 
   const title = String(formData.get('title') ?? '').trim() || 'Untitled lesson';
@@ -141,8 +138,7 @@ export async function updateLesson(
   lessonId: string,
   formData: FormData,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const title = String(formData.get('title') ?? '').trim() || 'Untitled lesson';
   const type = String(formData.get('type') ?? 'text');
@@ -159,8 +155,7 @@ export async function deleteLesson(
   courseId: string,
   lessonId: string,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
   await db
     .delete(lessons)
     .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)));
@@ -174,8 +169,7 @@ export async function moveSection(
   sectionId: string,
   dir: 'up' | 'down',
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   // Tenant-scoped: Drizzle bypasses RLS, so scope by tenantId to prevent a
   // tenant admin reordering another tenant's content via a forged courseId.
@@ -212,8 +206,7 @@ export async function moveLesson(
   lessonId: string,
   dir: 'up' | 'down',
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   // Tenant-scoped (Drizzle bypasses RLS).
   const ordered = await db

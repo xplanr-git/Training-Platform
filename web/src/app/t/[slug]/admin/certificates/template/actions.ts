@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { db, audited, eq, and, certificateTemplates } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 
 export interface CertificateDesign {
   title?: string;
@@ -16,11 +16,7 @@ export interface CertificateDesign {
  * Admins only, audited.
  */
 export async function saveCertificateTemplate(tenantSlug: string, formData: FormData) {
-  const ctx = await withTenant();
-  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
-    throw new Error('Forbidden');
-  }
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const design: CertificateDesign = {
     title: String(formData.get('title') ?? '').trim(),

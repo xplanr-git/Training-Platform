@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { db, audited, eq, and, certificates } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 
 /** Revokes or reinstates an issued certificate. Admins only, audited. */
 export async function setCertificateRevoked(
@@ -10,11 +10,7 @@ export async function setCertificateRevoked(
   certificateId: string,
   revoked: boolean,
 ) {
-  const ctx = await withTenant();
-  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
-    throw new Error('Forbidden');
-  }
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   await db.transaction(async (tx) => {
     const [after] = await tx

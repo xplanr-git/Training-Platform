@@ -9,7 +9,7 @@ import {
   users,
   memberships,
 } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 type InviteRole = 'company_admin' | 'instructor' | 'learner';
@@ -30,8 +30,7 @@ export async function inviteMember(
   tenantSlug: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) return { ok: false, error: 'No tenant context' };
+  const ctx = await requireAdmin();
 
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const role = String(formData.get('role') ?? 'learner') as InviteRole;
@@ -96,8 +95,7 @@ export async function setMemberRole(
   membershipId: string,
   role: InviteRole,
 ): Promise<void> {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   await db.transaction(async (tx) => {
     const [after] = await tx
@@ -126,8 +124,7 @@ export async function setMemberStatus(
   membershipId: string,
   status: 'active' | 'deactivated',
 ): Promise<void> {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   // Guard against locking yourself out.
   const [target] = await db

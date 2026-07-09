@@ -86,3 +86,23 @@ export async function withTenant(expectedTenantId?: string): Promise<TenantConte
   }
   return ctx;
 }
+
+export interface AdminContext extends TenantContext {
+  tenantId: string;
+}
+
+/**
+ * Guard for admin-only Server Actions. The admin layout guards the UI, but
+ * Server Actions can be POSTed directly — so every admin mutation must re-check
+ * the caller is a company_admin (or platform_admin) with a tenant. Throws
+ * otherwise. Returns a context with tenantId narrowed to string.
+ */
+export async function requireAdmin(): Promise<AdminContext> {
+  const ctx = await getTenantContext();
+  if (!ctx) throw new Error('UNAUTHENTICATED');
+  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
+    throw new Error('FORBIDDEN');
+  }
+  if (!ctx.tenantId) throw new Error('No tenant context');
+  return { ...ctx, tenantId: ctx.tenantId };
+}

@@ -8,7 +8,7 @@ import {
   quizzes,
   quizQuestions,
 } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 
 function revalidateQuiz(slug: string, courseId: string, lessonId: string) {
   revalidatePath(`/t/${slug}/admin/courses/${courseId}/builder/quiz/${lessonId}`);
@@ -20,8 +20,7 @@ export async function ensureQuiz(
   courseId: string,
   lessonId: string,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
   const [existing] = await db
     .select({ id: quizzes.id })
     .from(quizzes)
@@ -42,8 +41,7 @@ export async function setPassThreshold(
   quizId: string,
   formData: FormData,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
   const threshold = Math.min(100, Math.max(0, Number(formData.get('threshold') ?? 70)));
   await db
     .update(quizzes)
@@ -59,8 +57,7 @@ export async function addQuestion(
   quizId: string,
   formData: FormData,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const prompt = String(formData.get('prompt') ?? '').trim();
   if (!prompt) throw new Error('Prompt is required');
@@ -127,8 +124,7 @@ export async function deleteQuestion(
   lessonId: string,
   questionId: string,
 ) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
   await db
     .delete(quizQuestions)
     .where(and(eq(quizQuestions.id, questionId), eq(quizQuestions.tenantId, ctx.tenantId)));

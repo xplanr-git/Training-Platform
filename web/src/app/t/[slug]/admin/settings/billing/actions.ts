@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { db, eq, subscriptions } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdmin } from '@/lib/tenant';
 import { stripe, priceIdForPlan } from '@/lib/stripe';
 import { env } from '@/lib/env';
 
@@ -15,11 +15,7 @@ function tenantOrigin(slug: string): string {
 
 /** Starts a Stripe Checkout session for a SaaS subscription plan. */
 export async function startSubscriptionCheckout(tenantSlug: string, planId: string) {
-  const ctx = await withTenant();
-  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
-    throw new Error('Forbidden');
-  }
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const priceId = priceIdForPlan(planId);
   if (!priceId) throw new Error('Plan is not available');
@@ -43,8 +39,7 @@ export async function startSubscriptionCheckout(tenantSlug: string, planId: stri
 
 /** Opens the Stripe Customer Portal for the tenant's subscription. */
 export async function openBillingPortal(tenantSlug: string) {
-  const ctx = await withTenant();
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  const ctx = await requireAdmin();
 
   const [sub] = await db
     .select({ customerId: subscriptions.stripeCustomerId })
