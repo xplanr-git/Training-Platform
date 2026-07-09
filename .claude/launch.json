@@ -16,9 +16,9 @@
     {
       "name": "web-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["run", "dev", "--", "-p", "3010"],
       "cwd": "web",
-      "port": 3000
+      "port": 3010
     }
   ]
 }
