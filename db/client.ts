@@ -19,7 +19,18 @@ import * as schema from './schema';
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL is not set');
 
-const client = postgres(url, { prepare: false });
+// Reuse a single postgres-js pool across HMR reloads / module re-evaluation
+// (otherwise dev leaks a pool per reload and exhausts the pooler's client
+// limit). Point DATABASE_URL at Supabase's TRANSACTION pooler (port 6543) for
+// app runtime; `prepare: false` is required for transaction-mode pooling. Keep
+// per-instance connections small (DB_POOL_MAX, default 5).
+const globalForDb = globalThis as unknown as {
+  __pgClient?: ReturnType<typeof postgres>;
+};
+const client =
+  globalForDb.__pgClient ??
+  postgres(url, { prepare: false, max: Number(process.env.DB_POOL_MAX ?? 5) });
+if (process.env.NODE_ENV !== 'production') globalForDb.__pgClient = client;
 
 export const db = drizzle(client, { schema });
 export type Db = typeof db;

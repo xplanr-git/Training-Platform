@@ -39,3 +39,6 @@ supabase/.temp/
 
 # db package
 db/node_modules
+
+# local secrets (never commit)
+.secrets/
