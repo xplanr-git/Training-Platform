@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { db, and, eq, ilike, desc, tenants, courses } from '@training-platform/db';
+import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-platform/db';
+import { parsePage, pageMeta } from '@/lib/pagination';
+import { Pagination } from '@/components/pagination';
 
 /** Per-tenant SEO metadata for the public storefront. */
 export async function generateMetadata({
@@ -34,10 +36,10 @@ export default async function TenantHome({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const { slug } = await params;
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
   const query = (q ?? '').trim();
 
   const [tenant] = await db
@@ -58,12 +60,19 @@ export default async function TenantHome({
     : [];
   if (tenant && query) filters.push(ilike(courses.title, `%${query}%`));
 
+  const [{ total } = { total: 0 }] = tenant
+    ? await db.select({ total: count() }).from(courses).where(and(...filters))
+    : [];
+  const meta = pageMeta(parsePage(pageParam), total);
+
   const catalog = tenant
     ? await db
         .select()
         .from(courses)
         .where(and(...filters))
         .orderBy(desc(courses.createdAt))
+        .limit(meta.limit)
+        .offset(meta.offset)
     : [];
 
   return (
@@ -122,6 +131,8 @@ export default async function TenantHome({
           ))}
         </div>
       )}
+
+      <Pagination meta={meta} basePath="/" params={{ q: query || undefined }} />
     </main>
   );
 }
