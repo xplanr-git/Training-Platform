@@ -21,6 +21,16 @@ export const env = {
     const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000';
     return root.startsWith('localhost') ? `http://${root}` : `https://${root}`;
   },
+  // Cookie domain so the auth session is shared across tenant subdomains
+  // (e.g. `.outdure.app`). Returns undefined on localhost/IP where a leading-dot
+  // domain isn't valid — sessions there stay host-only (local dev limitation).
+  cookieDomain: () => {
+    const host = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000').split(':')[0];
+    if (host === 'localhost' || host === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+      return undefined;
+    }
+    return `.${host}`;
+  },
   resendApiKey: () => process.env.RESEND_API_KEY ?? null,
   emailFrom: () =>
     process.env.EMAIL_FROM ??
