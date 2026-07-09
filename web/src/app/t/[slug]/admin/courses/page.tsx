@@ -1,6 +1,8 @@
 import Link from 'next/link';
-import { db, and, eq, ilike, desc, courses } from '@training-platform/db';
+import { db, and, eq, ilike, desc, count, courses } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
+import { parsePage, pageMeta } from '@/lib/pagination';
+import { Pagination } from '@/components/pagination';
 import { setCourseStatus } from './actions';
 
 export default async function CoursesList({
@@ -8,15 +10,20 @@ export default async function CoursesList({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const { slug } = await params;
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
   const query = (q ?? '').trim();
   const ctx = await withTenant();
 
   const filters = ctx.tenantId ? [eq(courses.tenantId, ctx.tenantId)] : [];
   if (ctx.tenantId && query) filters.push(ilike(courses.title, `%${query}%`));
+
+  const [{ total } = { total: 0 }] = ctx.tenantId
+    ? await db.select({ total: count() }).from(courses).where(and(...filters))
+    : [];
+  const meta = pageMeta(parsePage(pageParam), total);
 
   const rows = ctx.tenantId
     ? await db
@@ -24,6 +31,8 @@ export default async function CoursesList({
         .from(courses)
         .where(and(...filters))
         .orderBy(desc(courses.createdAt))
+        .limit(meta.limit)
+        .offset(meta.offset)
     : [];
 
   return (
@@ -98,6 +107,12 @@ export default async function CoursesList({
           </table>
         </div>
       )}
+
+      <Pagination
+        meta={meta}
+        basePath="/admin/courses"
+        params={{ q: query || undefined }}
+      />
     </div>
   );
 }

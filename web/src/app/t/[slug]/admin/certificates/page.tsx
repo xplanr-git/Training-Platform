@@ -2,6 +2,7 @@ import {
   db,
   eq,
   desc,
+  count,
   certificates,
   enrollments,
   courses,
@@ -9,15 +10,28 @@ import {
 } from '@training-platform/db';
 import Link from 'next/link';
 import { withTenant } from '@/lib/tenant';
+import { parsePage, pageMeta } from '@/lib/pagination';
+import { Pagination } from '@/components/pagination';
 import { setCertificateRevoked } from './actions';
 
 export default async function Certificates({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { slug } = await params;
+  const { page: pageParam } = await searchParams;
   const ctx = await withTenant();
+
+  const [{ total } = { total: 0 }] = ctx.tenantId
+    ? await db
+        .select({ total: count() })
+        .from(certificates)
+        .where(eq(certificates.tenantId, ctx.tenantId))
+    : [];
+  const meta = pageMeta(parsePage(pageParam), total);
 
   const rows = ctx.tenantId
     ? await db
@@ -36,6 +50,8 @@ export default async function Certificates({
         .innerJoin(users, eq(users.id, enrollments.userId))
         .where(eq(certificates.tenantId, ctx.tenantId))
         .orderBy(desc(certificates.issuedAt))
+        .limit(meta.limit)
+        .offset(meta.offset)
     : [];
 
   return (
@@ -113,6 +129,8 @@ export default async function Certificates({
           </tbody>
         </table>
       </div>
+
+      <Pagination meta={meta} basePath="/admin/certificates" />
     </div>
   );
 }

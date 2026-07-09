@@ -1,5 +1,7 @@
-import { db, and, or, eq, ilike, desc, memberships, users } from '@training-platform/db';
+import { db, and, or, eq, ilike, desc, count, memberships, users } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
+import { parsePage, pageMeta } from '@/lib/pagination';
+import { Pagination } from '@/components/pagination';
 import { InviteForm } from './invite-form';
 import { setMemberRole, setMemberStatus } from './actions';
 
@@ -15,10 +17,10 @@ export default async function People({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const { slug } = await params;
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
   const query = (q ?? '').trim();
   const ctx = await withTenant();
 
@@ -28,6 +30,15 @@ export default async function People({
       or(ilike(users.name, `%${query}%`), ilike(users.email, `%${query}%`))!,
     );
   }
+
+  const [{ total } = { total: 0 }] = ctx.tenantId
+    ? await db
+        .select({ total: count() })
+        .from(memberships)
+        .innerJoin(users, eq(users.id, memberships.userId))
+        .where(and(...filters))
+    : [];
+  const meta = pageMeta(parsePage(pageParam), total);
 
   const rows = ctx.tenantId
     ? await db
@@ -43,6 +54,8 @@ export default async function People({
         .innerJoin(users, eq(users.id, memberships.userId))
         .where(and(...filters))
         .orderBy(desc(memberships.createdAt))
+        .limit(meta.limit)
+        .offset(meta.offset)
     : [];
 
   return (
@@ -115,6 +128,12 @@ export default async function People({
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        meta={meta}
+        basePath="/admin/people"
+        params={{ q: query || undefined }}
+      />
     </div>
   );
 }
