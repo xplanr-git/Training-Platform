@@ -176,7 +176,28 @@ is cut over. Before/while they do:
 
 ## 9. Post-deploy golden-path smoke
 
-Run this once against production to confirm the whole loop:
+### Automated (recommended)
+
+An end-to-end Playwright suite drives the full golden path (signup, authoring,
+enroll, complete lesson, pass quiz, certificate, verify) against a live
+environment. Point it at that environment's **demo tenant** subdomain and a
+seeded company-admin for that tenant:
+
+```sh
+cd web
+LIVE_BASE_URL="https://demo.<your-domain>" \
+DEMO_ADMIN_EMAIL="demo-admin@<your-domain>" \
+DEMO_ADMIN_PASSWORD="…" \
+npm run test:live
+```
+
+All specs should pass (`tests/live/*.spec.ts`: golden-path, quiz-path,
+signup-provision, overview-stats). They create real data under the demo tenant
+— clean it up afterwards (§ below). Requires `npx playwright install chromium`.
+
+### Manual checklist
+
+Or verify by hand against production:
 
 1. `/signup` → create an academy → lands on `<slug>.<domain>/admin`.
 2. Admin → Courses → New → add sections + lessons (text/video/PDF) and a quiz

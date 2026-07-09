@@ -13,7 +13,8 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   use: {
-    baseURL: 'http://demo.localhost:3010',
+    // Point at any environment's DEMO tenant subdomain (dev/staging/prod).
+    baseURL: process.env.LIVE_BASE_URL ?? 'http://demo.localhost:3010',
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
