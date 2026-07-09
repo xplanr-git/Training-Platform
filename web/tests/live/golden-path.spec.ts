@@ -53,11 +53,7 @@ test('authored course → enroll → complete → certificate → verify', async
   await page.getByRole('button', { name: /enroll for free/i }).click();
   await page.waitForURL(`**/learn/${SLUG}`, { timeout: 20_000 });
 
-  // 6. The learn page must render (not 404) right after the enroll redirect.
-  // KNOWN BUG: currently fails here — the enroll Server Action redirect soft-
-  // navigates to /learn/[slug], but the middleware subdomain rewrite doesn't
-  // apply to client navigations, so the client router 404s (the page never
-  // renders). Fix = host-header tenant resolution instead of path rewrite.
+  // 6. The learn page renders right after the enroll (client-nav via NavForm).
   await expect(page.getByRole('heading', { name: TITLE })).toBeVisible({ timeout: 20_000 });
   await page.getByRole('link', { name: /start course|continue/i }).click();
   await page.waitForURL(`**/learn/${SLUG}/**`, { timeout: 20_000 });

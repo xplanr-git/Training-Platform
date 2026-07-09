@@ -15,6 +15,7 @@ import {
 import { getTenantContext } from '@/lib/tenant';
 import { getCourseProgress } from '@/lib/progress';
 import { markLessonComplete, submitQuizAttempt } from '../actions';
+import { NavForm } from '@/components/nav-form';
 
 function youtubeEmbed(url: string): string | null {
   const m = url.match(
@@ -167,7 +168,7 @@ export default async function LessonPlayer({
             ) : questions.length === 0 ? (
               <p className="text-muted">This quiz has no questions yet.</p>
             ) : (
-              <form
+              <NavForm
                 action={submitQuizAttempt.bind(
                   null,
                   slug,
@@ -205,7 +206,7 @@ export default async function LessonPlayer({
                 <button className="rounded-md bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700">
                   Submit quiz
                 </button>
-              </form>
+              </NavForm>
             )}
           </div>
         )}
@@ -225,7 +226,7 @@ export default async function LessonPlayer({
         ) : isQuiz ? (
           <span className="text-sm text-muted">Pass the quiz to complete</span>
         ) : (
-          <form
+          <NavForm
             action={markLessonComplete.bind(
               null,
               slug,
@@ -239,7 +240,7 @@ export default async function LessonPlayer({
             <button className="rounded-md bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700">
               {next ? 'Complete & continue' : 'Complete course'}
             </button>
-          </form>
+          </NavForm>
         )}
 
         {next && done ? (

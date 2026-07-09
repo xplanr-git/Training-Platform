@@ -75,7 +75,7 @@ export async function enrollFree(
     }
   }
 
-  redirect(`/learn/${courseSlug}`);
+  return { redirectTo: `/learn/${courseSlug}` };
 }
 
 /**

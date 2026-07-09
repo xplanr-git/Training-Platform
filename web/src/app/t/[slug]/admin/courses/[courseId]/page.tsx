@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { db, eq, and, courses } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
 import { updateCourse, deleteCourse } from '../actions';
+import { NavForm } from '@/components/nav-form';
 
 export default async function EditCourse({
   params,
@@ -107,11 +108,15 @@ export default async function EditCourse({
           Permanently delete this course and all its sections, lessons, quizzes,
           and enrollments. This cannot be undone.
         </p>
-        <form action={deleteCourse.bind(null, slug, courseId)} className="mt-3">
+        <NavForm
+          action={deleteCourse.bind(null, slug, courseId)}
+          className="mt-3"
+          confirm="Delete this course and all its content? This cannot be undone."
+        >
           <button className="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
             Delete course
           </button>
-        </form>
+        </NavForm>
       </div>
     </div>
   );

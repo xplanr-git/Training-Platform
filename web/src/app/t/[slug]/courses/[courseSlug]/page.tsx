@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { db, and, eq, tenants, courses, enrollments } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { enrollFree, startCoursePurchase } from './actions';
+import { NavForm } from '@/components/nav-form';
 
 /**
  * Public course landing page. Shows a published course and an enroll CTA.
@@ -81,11 +82,11 @@ export default async function CourseLanding({
             </button>
           </form>
         ) : (
-          <form action={enrollFree.bind(null, slug, course.id, courseSlug)}>
+          <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
             <button className="rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700">
               Enroll for free
             </button>
-          </form>
+          </NavForm>
         )}
       </div>
     </main>

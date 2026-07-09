@@ -154,7 +154,7 @@ export async function markLessonComplete(
 
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}`);
   revalidatePath(`/t/${tenantSlug}/dashboard`);
-  redirect(nextHref ?? `/learn/${courseSlug}`);
+  return { redirectTo: nextHref ?? `/learn/${courseSlug}` };
 }
 
 /**
@@ -235,5 +235,7 @@ export async function submitQuizAttempt(
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}/${lessonId}`);
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}`);
   revalidatePath(`/t/${tenantSlug}/dashboard`);
-  redirect(`/learn/${courseSlug}/${lessonId}?score=${score}&passed=${passed ? 1 : 0}`);
+  return {
+    redirectTo: `/learn/${courseSlug}/${lessonId}?score=${score}&passed=${passed ? 1 : 0}`,
+  };
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createCourse } from '../actions';
+import { NavForm } from '@/components/nav-form';
 
 export default async function NewCourse({
   params,
@@ -16,7 +17,7 @@ export default async function NewCourse({
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">New course</h1>
 
-      <form action={action} className="mt-6 flex flex-col gap-4">
+      <NavForm action={action} className="mt-6 flex flex-col gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Title</span>
           <input
@@ -60,7 +61,7 @@ export default async function NewCourse({
         >
           Create course
         </button>
-      </form>
+      </NavForm>
     </div>
   );
 }

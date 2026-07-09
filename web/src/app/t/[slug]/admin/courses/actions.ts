@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { db, audited, eq, and, courses } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
 import { normalizeSlug } from '@/lib/slug';
@@ -65,7 +64,7 @@ export async function createCourse(tenantSlug: string, formData: FormData) {
   });
 
   revalidatePath(`/t/${tenantSlug}/admin/courses`);
-  redirect(`/admin/courses/${created.id}`);
+  return { redirectTo: `/admin/courses/${created.id}` };
 }
 
 export async function updateCourse(
@@ -178,5 +177,5 @@ export async function deleteCourse(tenantSlug: string, courseId: string) {
   });
 
   revalidatePath(`/t/${tenantSlug}/admin/courses`);
-  redirect(`/admin/courses`);
+  return { redirectTo: `/admin/courses` };
 }
