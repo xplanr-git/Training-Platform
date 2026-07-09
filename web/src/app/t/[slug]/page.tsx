@@ -1,5 +1,28 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db, and, eq, ilike, desc, tenants, courses } from '@training-platform/db';
+
+/** Per-tenant SEO metadata for the public storefront. */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const [t] = await db
+    .select({ name: tenants.name, branding: tenants.branding })
+    .from(tenants)
+    .where(eq(tenants.slug, slug))
+    .limit(1);
+  if (!t) return { title: 'Academy' };
+  const tagline = (t.branding as { tagline?: string } | null)?.tagline;
+  const description = (tagline || `Browse courses from ${t.name}.`).slice(0, 160);
+  return {
+    title: `${t.name} — Courses`,
+    description,
+    openGraph: { title: t.name, description, type: 'website' },
+  };
+}
 
 /**
  * Tenant storefront (catalog). Public — lists this academy's PUBLISHED courses.

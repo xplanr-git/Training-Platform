@@ -1,9 +1,38 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db, and, eq, tenants, courses, enrollments } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { enrollFree, startCoursePurchase } from './actions';
 import { NavForm } from '@/components/nav-form';
+
+/** Per-course SEO metadata for the public landing page. */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; courseSlug: string }>;
+}): Promise<Metadata> {
+  const { slug, courseSlug } = await params;
+  const [row] = await db
+    .select({ title: courses.title, description: courses.description, tenant: tenants.name })
+    .from(courses)
+    .innerJoin(tenants, eq(tenants.id, courses.tenantId))
+    .where(
+      and(
+        eq(tenants.slug, slug),
+        eq(courses.slug, courseSlug),
+        eq(courses.status, 'published'),
+      ),
+    )
+    .limit(1);
+  if (!row) return { title: 'Course not found' };
+  const description = (row.description || `Learn ${row.title} with ${row.tenant}.`).slice(0, 160);
+  return {
+    title: `${row.title} · ${row.tenant}`,
+    description,
+    openGraph: { title: row.title, description, type: 'website' },
+  };
+}
 
 /**
  * Public course landing page. Shows a published course and an enroll CTA.
