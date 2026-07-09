@@ -13,6 +13,7 @@ import {
   courses,
   tenants,
   users,
+  lessons,
   quizzes,
   quizQuestions,
   quizAttempts,
@@ -27,7 +28,11 @@ import { sendCertificateEmail } from '@/lib/email';
 
 async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
   const [enr] = await db
-    .select({ id: enrollments.id, status: enrollments.status })
+    .select({
+      id: enrollments.id,
+      status: enrollments.status,
+      courseId: enrollments.courseId,
+    })
     .from(enrollments)
     .where(
       and(
@@ -39,6 +44,30 @@ async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
     .limit(1);
   if (!enr) throw new Error('Enrollment not found');
   return enr;
+}
+
+/**
+ * Confirms a lesson belongs to the given course. Guards against a learner
+ * passing a lessonId/courseId from a course they aren't enrolled in — Drizzle
+ * bypasses RLS, so ownership must be checked in app code.
+ */
+async function assertLessonInCourse(
+  ctx: TenantContext,
+  lessonId: string,
+  courseId: string,
+) {
+  const [row] = await db
+    .select({ id: lessons.id })
+    .from(lessons)
+    .where(
+      and(
+        eq(lessons.id, lessonId),
+        eq(lessons.courseId, courseId),
+        eq(lessons.tenantId, ctx.tenantId!),
+      ),
+    )
+    .limit(1);
+  if (!row) throw new Error('Lesson not found in this course');
 }
 
 /**
@@ -141,7 +170,7 @@ async function recordLessonCompleted(
 export async function markLessonComplete(
   tenantSlug: string,
   courseSlug: string,
-  courseId: string,
+  _courseId: string,
   enrollmentId: string,
   lessonId: string,
   nextHref: string | null,
@@ -149,8 +178,10 @@ export async function markLessonComplete(
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect('/login');
   const enr = await verifyEnrollment(ctx, enrollmentId);
+  // Course is derived from the enrollment, never trusted from the client.
+  await assertLessonInCourse(ctx, lessonId, enr.courseId);
 
-  await recordLessonCompleted(ctx, courseId, enrollmentId, enr.status, lessonId);
+  await recordLessonCompleted(ctx, enr.courseId, enrollmentId, enr.status, lessonId);
 
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}`);
   revalidatePath(`/t/${tenantSlug}/dashboard`);
@@ -166,7 +197,7 @@ export async function markLessonComplete(
 export async function submitQuizAttempt(
   tenantSlug: string,
   courseSlug: string,
-  courseId: string,
+  _courseId: string,
   enrollmentId: string,
   lessonId: string,
   quizId: string,
@@ -175,13 +206,17 @@ export async function submitQuizAttempt(
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect('/login');
   const enr = await verifyEnrollment(ctx, enrollmentId);
+  // Course is derived from the enrollment, never trusted from the client.
+  await assertLessonInCourse(ctx, lessonId, enr.courseId);
 
   const [quiz] = await db
-    .select({ settings: quizzes.settings })
+    .select({ settings: quizzes.settings, lessonId: quizzes.lessonId })
     .from(quizzes)
     .where(and(eq(quizzes.id, quizId), eq(quizzes.tenantId, ctx.tenantId)))
     .limit(1);
-  const threshold = (quiz?.settings as { passThreshold?: number })?.passThreshold ?? 70;
+  // The quiz must be the one attached to this lesson.
+  if (!quiz || quiz.lessonId !== lessonId) throw new Error('Quiz not found for this lesson');
+  const threshold = (quiz.settings as { passThreshold?: number })?.passThreshold ?? 70;
 
   const questions = await db
     .select()
@@ -229,7 +264,7 @@ export async function submitQuizAttempt(
   });
 
   if (passed) {
-    await recordLessonCompleted(ctx, courseId, enrollmentId, enr.status, lessonId);
+    await recordLessonCompleted(ctx, enr.courseId, enrollmentId, enr.status, lessonId);
   }
 
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}/${lessonId}`);
