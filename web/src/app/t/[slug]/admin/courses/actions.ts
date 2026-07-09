@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { db, audited, eq, and, courses } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { normalizeSlug } from '@/lib/slug';
+import { parsePrice, isCourseStatus } from '@/lib/validation';
 
 /** Ensures a course slug is unique within the tenant by appending -2, -3, … */
 async function uniqueCourseSlug(
@@ -33,8 +34,7 @@ export async function createCourse(tenantSlug: string, formData: FormData) {
 
   const description = String(formData.get('description') ?? '').trim();
   const level = String(formData.get('level') ?? 'Beginner');
-  const priceRaw = String(formData.get('price') ?? '').trim();
-  const price = priceRaw ? priceRaw : null;
+  const price = parsePrice(formData.get('price') as string | null);
   const slug = await uniqueCourseSlug(ctx.tenantId, title);
 
   const created = await db.transaction(async (tx) => {
@@ -81,14 +81,13 @@ export async function updateCourse(
   if (!before) throw new Error('Course not found');
 
   const title = String(formData.get('title') ?? before.title).trim();
+  if (!title) throw new Error('Title is required');
   const description = String(formData.get('description') ?? '').trim();
   const level = String(formData.get('level') ?? before.level);
-  const status = String(formData.get('status') ?? before.status) as
-    | 'draft'
-    | 'published'
-    | 'archived';
-  const priceRaw = String(formData.get('price') ?? '').trim();
-  const price = priceRaw ? priceRaw : null;
+  const statusRaw = String(formData.get('status') ?? before.status);
+  if (!isCourseStatus(statusRaw)) throw new Error('Invalid course status.');
+  const status = statusRaw;
+  const price = parsePrice(formData.get('price') as string | null);
 
   await db.transaction(async (tx) => {
     const [after] = await tx

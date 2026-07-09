@@ -9,6 +9,7 @@ import {
   quizQuestions,
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
+import { clampInt } from '@/lib/validation';
 
 function revalidateQuiz(slug: string, courseId: string, lessonId: string) {
   revalidatePath(`/t/${slug}/admin/courses/${courseId}/builder/quiz/${lessonId}`);
@@ -42,7 +43,7 @@ export async function setPassThreshold(
   formData: FormData,
 ) {
   const ctx = await requireAdmin();
-  const threshold = Math.min(100, Math.max(0, Number(formData.get('threshold') ?? 70)));
+  const threshold = clampInt(formData.get('threshold'), 0, 100, 70);
   await db
     .update(quizzes)
     .set({ settings: { passThreshold: threshold } })
@@ -65,7 +66,7 @@ export async function addQuestion(
     | 'mcq'
     | 'true_false'
     | 'multi_select';
-  const points = Math.max(1, Number(formData.get('points') ?? 1));
+  const points = clampInt(formData.get('points'), 1, 100, 1);
 
   let options: string[];
   let correct: number[];
