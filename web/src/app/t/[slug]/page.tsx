@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-platform/db';
 import { parsePage, pageMeta } from '@/lib/pagination';
+import { safeHttpUrl } from '@/lib/validation';
 import { Pagination } from '@/components/pagination';
 
 /** Per-tenant SEO metadata for the public storefront. */
@@ -54,6 +55,7 @@ export default async function TenantHome({
     primaryColor?: string;
   };
   const accent = branding.primaryColor || undefined;
+  const logoUrl = safeHttpUrl(branding.logoUrl);
 
   const filters = tenant
     ? [eq(courses.tenantId, tenant.id), eq(courses.status, 'published')]
@@ -78,9 +80,9 @@ export default async function TenantHome({
   return (
     <main className="mx-auto max-w-5xl px-6 py-14">
       <header className="mb-10">
-        {branding.logoUrl && (
+        {logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={branding.logoUrl} alt={tenant?.name ?? slug} className="mb-4 h-12 w-auto" />
+          <img src={logoUrl} alt={tenant?.name ?? slug} className="mb-4 h-12 w-auto" />
         )}
         <h1 className="text-3xl font-semibold" style={accent ? { color: accent } : undefined}>
           {tenant?.name ?? slug}

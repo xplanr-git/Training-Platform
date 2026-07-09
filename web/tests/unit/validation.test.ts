@@ -1,5 +1,30 @@
 import { describe, it, expect } from 'vitest';
-import { parsePrice, isCourseStatus, clampInt } from '@/lib/validation';
+import { parsePrice, isCourseStatus, clampInt, safeHttpUrl } from '@/lib/validation';
+
+describe('safeHttpUrl', () => {
+  it('accepts absolute http(s) URLs', () => {
+    expect(safeHttpUrl('https://cdn.example.com/a.pdf')).toBe(
+      'https://cdn.example.com/a.pdf',
+    );
+    expect(safeHttpUrl('http://example.com')).toBe('http://example.com/');
+  });
+
+  it('rejects javascript: and data: URLs (XSS vectors)', () => {
+    expect(safeHttpUrl('javascript:alert(1)')).toBeNull();
+    expect(safeHttpUrl('JavaScript:alert(1)')).toBeNull();
+    expect(safeHttpUrl('data:text/html,<script>alert(1)</script>')).toBeNull();
+    expect(safeHttpUrl('vbscript:msgbox(1)')).toBeNull();
+  });
+
+  it('rejects blank, relative, and malformed values', () => {
+    expect(safeHttpUrl('')).toBeNull();
+    expect(safeHttpUrl('   ')).toBeNull();
+    expect(safeHttpUrl(null)).toBeNull();
+    expect(safeHttpUrl(undefined)).toBeNull();
+    expect(safeHttpUrl('/relative/path.pdf')).toBeNull();
+    expect(safeHttpUrl('not a url')).toBeNull();
+  });
+});
 
 describe('clampInt', () => {
   it('returns the fallback for non-numeric / empty input (never NaN)', () => {

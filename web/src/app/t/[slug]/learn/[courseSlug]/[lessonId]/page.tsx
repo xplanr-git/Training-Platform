@@ -13,6 +13,7 @@ import {
   quizQuestions,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
 import { markLessonComplete, submitQuizAttempt } from '../actions';
 import { NavForm } from '@/components/nav-form';
@@ -86,6 +87,9 @@ export default async function LessonPlayer({
   const progress = await getCourseProgress(enrollment.id, course.id);
   const done = progress.completed.has(lesson.id);
   const content = (lesson.content ?? {}) as Record<string, string>;
+  // Only ever render an absolute http(s) URL as an iframe/link — blocks
+  // javascript:/data: URLs stored in a PDF lesson's free-text URL field.
+  const pdfUrl = safeHttpUrl(content.url);
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
 
   // Quiz lessons load their questions; completion happens via a passing attempt.
@@ -133,13 +137,13 @@ export default async function LessonPlayer({
             <p className="text-muted">Video unavailable.</p>
           ))}
         {lesson.type === 'pdf' &&
-          (content.url ? (
+          (pdfUrl ? (
             <div>
               <div className="h-[70vh] w-full overflow-hidden rounded-[--radius-card] border border-border">
-                <iframe src={content.url} className="h-full w-full" title={lesson.title} />
+                <iframe src={pdfUrl} className="h-full w-full" title={lesson.title} />
               </div>
               <a
-                href={content.url}
+                href={pdfUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-2 inline-block text-sm text-brand-700 hover:underline"

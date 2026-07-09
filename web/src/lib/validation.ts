@@ -22,6 +22,23 @@ export function clampInt(
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+/**
+ * Returns the URL only if it is an absolute http(s) URL, else null. Guards
+ * against `javascript:` / `data:` URLs reaching an `href` or `<iframe src>`
+ * (stored XSS), and against relative/garbage values. Used wherever a
+ * user-supplied URL (PDF link, logo) is rendered.
+ */
+export function safeHttpUrl(raw: string | null | undefined): string | null {
+  const s = (raw ?? '').trim();
+  if (!s) return null;
+  try {
+    const u = new URL(s);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export const COURSE_STATUSES = ['draft', 'published', 'archived'] as const;
 export type CourseStatus = (typeof COURSE_STATUSES)[number];
 
