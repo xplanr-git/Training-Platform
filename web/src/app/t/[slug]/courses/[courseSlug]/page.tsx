@@ -1,12 +1,31 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { db, and, eq, tenants, courses, enrollments } from '@training-platform/db';
+import { ArrowLeft, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
+import {
+  db,
+  and,
+  eq,
+  asc,
+  tenants,
+  courses,
+  sections,
+  lessons,
+  enrollments,
+} from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
-import { enrollFree, startCoursePurchase } from './actions';
+import { enrollFree } from './actions';
 import { NavForm } from '@/components/nav-form';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
-/** Per-course SEO metadata for the public landing page. */
+/** Per-course SEO metadata for the landing page. */
 export async function generateMetadata({
   params,
 }: {
@@ -34,9 +53,16 @@ export async function generateMetadata({
   };
 }
 
+const LESSON_ICON: Record<string, typeof Video> = {
+  video: Video,
+  pdf: FileText,
+  quiz: HelpCircle,
+  text: BookOpen,
+};
+
 /**
- * Public course landing page. Shows a published course and an enroll CTA.
- * Enrollment (free) and Stripe checkout are wired in Phases D1 / E2.
+ * Course landing page. Shows a published course, its curriculum, and an enrol
+ * CTA. Internal scope: enrolment is free (no price/Stripe branch).
  */
 export default async function CourseLanding({
   params,
@@ -76,45 +102,106 @@ export default async function CourseLanding({
     enrolled = !!row;
   }
 
+  const sectionRows = await db
+    .select()
+    .from(sections)
+    .where(eq(sections.courseId, course.id))
+    .orderBy(asc(sections.position));
+  const lessonRows = await db
+    .select({
+      id: lessons.id,
+      sectionId: lessons.sectionId,
+      type: lessons.type,
+      title: lessons.title,
+    })
+    .from(lessons)
+    .where(eq(lessons.courseId, course.id))
+    .orderBy(asc(lessons.position));
+
+  const lessonsBySection = new Map<string, typeof lessonRows>();
+  for (const l of lessonRows) {
+    const arr = lessonsBySection.get(l.sectionId) ?? [];
+    arr.push(l);
+    lessonsBySection.set(l.sectionId, arr);
+  }
+  const totalLessons = lessonRows.length;
+
   return (
-    <main className="mx-auto max-w-3xl px-6 py-14">
-      <Link href="/" className="text-sm text-muted hover:underline">
-        ← All courses
+    <main className="mx-auto max-w-3xl px-6 py-12">
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" /> All courses
       </Link>
-      <h1 className="mt-3 text-3xl font-semibold">{course.title}</h1>
-      <p className="mt-1 text-sm text-muted">
-        {course.level} · {course.price ? `${course.currency} ${course.price}` : 'Free'}
-      </p>
-      <p className="mt-6 whitespace-pre-line text-neutral-700">
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {course.level && <Badge variant="secondary">{course.level}</Badge>}
+        <span className="text-sm text-muted">
+          {totalLessons} lesson{totalLessons === 1 ? '' : 's'}
+        </span>
+      </div>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight">{course.title}</h1>
+      <p className="mt-4 whitespace-pre-line text-neutral-700">
         {course.description || 'No description yet.'}
       </p>
 
-      <div className="mt-8">
+      {sectionRows.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-3 text-lg font-semibold">What&apos;s inside</h2>
+          <Accordion
+            type="multiple"
+            className="rounded-[--radius-card] border border-border bg-surface px-4"
+          >
+            {sectionRows.map((s) => {
+              const items = lessonsBySection.get(s.id) ?? [];
+              return (
+                <AccordionItem key={s.id} value={s.id}>
+                  <AccordionTrigger className="text-sm font-medium">
+                    {s.title || 'Section'}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 pb-2">
+                      {items.length === 0 && (
+                        <li className="text-sm text-muted">No lessons yet.</li>
+                      )}
+                      {items.map((l) => {
+                        const Icon = LESSON_ICON[l.type] ?? BookOpen;
+                        return (
+                          <li
+                            key={l.id}
+                            className="flex items-center gap-2.5 text-sm text-neutral-700"
+                          >
+                            <Icon className="h-4 w-4 shrink-0 text-muted" />
+                            <span>{l.title || 'Untitled lesson'}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        </section>
+      )}
+
+      <div className="mt-10">
         {enrolled ? (
-          <Link
-            href={`/learn/${courseSlug}`}
-            className="inline-block rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            Continue learning
-          </Link>
+          <Button asChild size="lg">
+            <Link href={`/learn/${courseSlug}`}>Continue learning</Link>
+          </Button>
         ) : !ctx ? (
-          <Link
-            href={`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`}
-            className="inline-block rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            Sign in to enroll
-          </Link>
-        ) : course.price ? (
-          <form action={startCoursePurchase.bind(null, slug, course.id, courseSlug)}>
-            <button className="rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700">
-              Buy — {course.currency} {course.price}
-            </button>
-          </form>
+          <Button asChild size="lg">
+            <Link href={`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`}>
+              Sign in to enrol
+            </Link>
+          </Button>
         ) : (
           <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
-            <button className="rounded-md bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700">
-              Enroll for free
-            </button>
+            <Button type="submit" size="lg">
+              Enrol — it&apos;s free
+            </Button>
           </NavForm>
         )}
       </div>
