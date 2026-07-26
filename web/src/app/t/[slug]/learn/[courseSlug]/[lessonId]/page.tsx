@@ -1,6 +1,15 @@
 import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import {
+  Video,
+  FileText,
+  HelpCircle,
+  BookOpen,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+} from 'lucide-react';
+import {
   db,
   eq,
   and,
@@ -17,6 +26,16 @@ import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
 import { markLessonComplete, submitQuizAttempt } from '../actions';
 import { NavForm } from '@/components/nav-form';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/components/ui/utils';
+
+const LESSON_ICON: Record<string, typeof Video> = {
+  video: Video,
+  pdf: FileText,
+  quiz: HelpCircle,
+  text: BookOpen,
+};
 
 function youtubeEmbed(url: string): string | null {
   const m = url.match(
@@ -59,9 +78,9 @@ export default async function LessonPlayer({
     .limit(1);
   if (!enrollment) redirect(`/courses/${courseSlug}`);
 
-  // Ordered lesson list (section position, then lesson position) for nav.
+  // Ordered lesson list (section position, then lesson position) for nav + outline.
   const sectionRows = await db
-    .select({ id: sections.id, position: sections.position })
+    .select({ id: sections.id, position: sections.position, title: sections.title })
     .from(sections)
     .where(eq(sections.courseId, course.id))
     .orderBy(asc(sections.position));
@@ -87,10 +106,21 @@ export default async function LessonPlayer({
   const progress = await getCourseProgress(enrollment.id, course.id);
   const done = progress.completed.has(lesson.id);
   const content = (lesson.content ?? {}) as Record<string, string>;
-  // Only ever render an absolute http(s) URL as an iframe/link — blocks
-  // javascript:/data: URLs stored in a PDF lesson's free-text URL field.
   const pdfUrl = safeHttpUrl(content.url);
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
+
+  // Outline grouped by section (in order) for the sidebar.
+  const bySection = new Map<string, typeof ordered>();
+  for (const l of ordered) {
+    const arr = bySection.get(l.sectionId) ?? [];
+    arr.push(l);
+    bySection.set(l.sectionId, arr);
+  }
+  const outline = sectionRows.map((s) => ({
+    id: s.id,
+    title: s.title,
+    items: bySection.get(s.id) ?? [],
+  }));
 
   // Quiz lessons load their questions; completion happens via a passing attempt.
   let quiz: { id: string } | null = null;
@@ -105,156 +135,235 @@ export default async function LessonPlayer({
     if (quiz) questions = await loadQuestions(quiz.id);
   }
   const isQuiz = lesson.type === 'quiz';
+  const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <div className="flex items-center justify-between text-sm">
-        <Link href={`/learn/${courseSlug}`} className="text-muted hover:underline">
-          ← {course.title}
+    <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
+      {/* Course outline (desktop) */}
+      <aside className="hidden w-72 shrink-0 lg:block">
+        <Link
+          href={`/learn/${courseSlug}`}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" /> {course.title}
         </Link>
-        <span className="text-muted">{progress.percent}% complete</span>
-      </div>
-
-      <h1 className="mt-3 text-2xl font-semibold">{lesson.title}</h1>
-
-      <div className="mt-6">
-        {lesson.type === 'text' && (
-          <div className="whitespace-pre-line text-neutral-700">
-            {content.body || 'No content.'}
-          </div>
-        )}
-        {lesson.type === 'video' &&
-          (youtubeEmbed(content.youtubeUrl ?? '') ? (
-            <div className="aspect-video w-full overflow-hidden rounded-[--radius-card]">
-              <iframe
-                src={youtubeEmbed(content.youtubeUrl ?? '')!}
-                className="h-full w-full"
-                allowFullScreen
-                title={lesson.title}
-              />
-            </div>
-          ) : (
-            <p className="text-muted">Video unavailable.</p>
-          ))}
-        {lesson.type === 'pdf' &&
-          (pdfUrl ? (
-            <div>
-              <div className="h-[70vh] w-full overflow-hidden rounded-[--radius-card] border border-border">
-                <iframe src={pdfUrl} className="h-full w-full" title={lesson.title} />
-              </div>
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-block text-sm text-brand-700 hover:underline"
-              >
-                Open PDF in new tab
-              </a>
-            </div>
-          ) : (
-            <p className="text-muted">No PDF attached.</p>
-          ))}
-        {isQuiz && (
-          <div>
-            {score !== undefined && (
-              <p
-                className={`mb-4 rounded-md px-3 py-2 text-sm ${
-                  passed === '1' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                }`}
-              >
-                You scored {score}%. {passed === '1' ? 'Passed!' : 'Not passed — try again.'}
+        <div className="mb-5">
+          <div className="mb-1.5 text-xs text-muted">{progress.percent}% complete</div>
+          <Progress value={progress.percent} className="h-2" />
+        </div>
+        <nav className="space-y-4">
+          {outline.map((g) => (
+            <div key={g.id}>
+              <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                {g.title || 'Section'}
               </p>
-            )}
-            {done ? (
-              <p className="text-sm font-medium text-green-600">
-                ✓ You have passed this quiz.
-              </p>
-            ) : questions.length === 0 ? (
-              <p className="text-muted">This quiz has no questions yet.</p>
-            ) : (
-              <NavForm
-                action={submitQuizAttempt.bind(
-                  null,
-                  slug,
-                  courseSlug,
-                  course.id,
-                  enrollment.id,
-                  lesson.id,
-                  quiz!.id,
-                )}
-                className="space-y-5"
-              >
-                {questions.map((q, qi) => {
-                  const opts = q.options as string[];
-                  const multi = q.type === 'multi_select';
+              <ul className="space-y-0.5">
+                {g.items.map((l) => {
+                  const Icon = LESSON_ICON[l.type] ?? BookOpen;
+                  const isCurrent = l.id === lesson.id;
+                  const lDone = progress.completed.has(l.id);
                   return (
-                    <fieldset key={q.id} className="rounded-[--radius-card] border border-border p-4">
-                      <legend className="px-1 text-sm font-medium">
-                        {qi + 1}. {q.prompt}
-                      </legend>
-                      <div className="mt-2 space-y-1">
-                        {opts.map((o, oi) => (
-                          <label key={oi} className="flex items-center gap-2 text-sm">
-                            <input
-                              type={multi ? 'checkbox' : 'radio'}
-                              name={`q_${q.id}`}
-                              value={oi}
-                            />
-                            {o}
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
+                    <li key={l.id}>
+                      <Link
+                        href={`/learn/${courseSlug}/${l.id}`}
+                        aria-current={isCurrent ? 'page' : undefined}
+                        className={cn(
+                          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                          isCurrent
+                            ? 'bg-brand-50 font-medium text-brand-700'
+                            : 'text-foreground hover:bg-surface-muted',
+                        )}
+                      >
+                        {lDone ? (
+                          <Check className="h-4 w-4 shrink-0 text-brand-600" />
+                        ) : (
+                          <Icon className="h-4 w-4 shrink-0 text-muted" />
+                        )}
+                        <span className="truncate">{l.title || 'Untitled'}</span>
+                      </Link>
+                    </li>
                   );
                 })}
-                <button className="rounded-md bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700">
-                  Submit quiz
-                </button>
-              </NavForm>
-            )}
-          </div>
-        )}
-      </div>
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </aside>
 
-      <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
-        {prev ? (
-          <Link href={`/learn/${courseSlug}/${prev.id}`} className="text-sm text-muted hover:underline">
-            ← Previous
-          </Link>
-        ) : (
-          <span />
-        )}
-
-        {done ? (
-          <span className="text-sm font-medium text-green-600">✓ Completed</span>
-        ) : isQuiz ? (
-          <span className="text-sm text-muted">Pass the quiz to complete</span>
-        ) : (
-          <NavForm
-            action={markLessonComplete.bind(
-              null,
-              slug,
-              courseSlug,
-              course.id,
-              enrollment.id,
-              lesson.id,
-              nextHref,
-            )}
+      {/* Player */}
+      <main className="min-w-0 flex-1">
+        {/* Mobile back + progress */}
+        <div className="mb-5 lg:hidden">
+          <Link
+            href={`/learn/${courseSlug}`}
+            className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
           >
-            <button className="rounded-md bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700">
-              {next ? 'Complete & continue' : 'Complete course'}
-            </button>
-          </NavForm>
-        )}
-
-        {next && done ? (
-          <Link href={`/learn/${courseSlug}/${next.id}`} className="text-sm text-brand-700 hover:underline">
-            Next →
+            <ArrowLeft className="h-4 w-4" /> {course.title}
           </Link>
-        ) : (
-          <span />
-        )}
-      </div>
-    </main>
+          <div className="mt-2 flex items-center gap-3">
+            <Progress value={progress.percent} className="h-2 flex-1" />
+            <span className="shrink-0 text-xs text-muted">{progress.percent}%</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-muted text-muted">
+            <HeaderIcon className="h-4 w-4" />
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight">{lesson.title}</h1>
+        </div>
+
+        <div className="mt-6">
+          {lesson.type === 'text' && (
+            <div className="whitespace-pre-line leading-relaxed text-neutral-700">
+              {content.body || 'No content.'}
+            </div>
+          )}
+          {lesson.type === 'video' &&
+            (youtubeEmbed(content.youtubeUrl ?? '') ? (
+              <div className="aspect-video w-full overflow-hidden rounded-[--radius-card] bg-black">
+                <iframe
+                  src={youtubeEmbed(content.youtubeUrl ?? '')!}
+                  className="h-full w-full"
+                  allowFullScreen
+                  title={lesson.title}
+                />
+              </div>
+            ) : (
+              <p className="text-muted">Video unavailable.</p>
+            ))}
+          {lesson.type === 'pdf' &&
+            (pdfUrl ? (
+              <div>
+                <div className="h-[70vh] w-full overflow-hidden rounded-[--radius-card] border border-border">
+                  <iframe src={pdfUrl} className="h-full w-full" title={lesson.title} />
+                </div>
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block text-sm text-brand-700 hover:underline"
+                >
+                  Open PDF in new tab
+                </a>
+              </div>
+            ) : (
+              <p className="text-muted">No PDF attached.</p>
+            ))}
+          {isQuiz && (
+            <div>
+              {score !== undefined && (
+                <p
+                  className={cn(
+                    'mb-5 rounded-[--radius-card] border px-4 py-3 text-sm',
+                    passed === '1'
+                      ? 'border-green-200 bg-green-50 text-green-800'
+                      : 'border-amber-200 bg-amber-50 text-amber-800',
+                  )}
+                >
+                  You scored {score}%. {passed === '1' ? 'Passed!' : 'Not passed — try again.'}
+                </p>
+              )}
+              {done ? (
+                <p className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600">
+                  <Check className="h-4 w-4" /> You have passed this quiz.
+                </p>
+              ) : questions.length === 0 ? (
+                <p className="text-muted">This quiz has no questions yet.</p>
+              ) : (
+                <NavForm
+                  action={submitQuizAttempt.bind(
+                    null,
+                    slug,
+                    courseSlug,
+                    course.id,
+                    enrollment.id,
+                    lesson.id,
+                    quiz!.id,
+                  )}
+                  className="space-y-5"
+                >
+                  {questions.map((q, qi) => {
+                    const opts = q.options as string[];
+                    const multi = q.type === 'multi_select';
+                    return (
+                      <fieldset
+                        key={q.id}
+                        className="rounded-[--radius-card] border border-border bg-surface p-4"
+                      >
+                        <legend className="px-1 text-sm font-medium">
+                          {qi + 1}. {q.prompt}
+                        </legend>
+                        <div className="mt-3 space-y-2">
+                          {opts.map((o, oi) => (
+                            <label
+                              key={oi}
+                              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-surface-muted has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
+                            >
+                              <input
+                                type={multi ? 'checkbox' : 'radio'}
+                                name={`q_${q.id}`}
+                                value={oi}
+                                className="accent-brand-600"
+                              />
+                              {o}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    );
+                  })}
+                  <Button type="submit">Submit quiz</Button>
+                </NavForm>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6">
+          {prev ? (
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/learn/${courseSlug}/${prev.id}`}>
+                <ArrowLeft className="h-4 w-4" /> Previous
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+
+          {done ? (
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600">
+              <Check className="h-4 w-4" /> Completed
+            </span>
+          ) : isQuiz ? (
+            <span className="text-sm text-muted">Pass the quiz to complete</span>
+          ) : (
+            <NavForm
+              action={markLessonComplete.bind(
+                null,
+                slug,
+                courseSlug,
+                course.id,
+                enrollment.id,
+                lesson.id,
+                nextHref,
+              )}
+            >
+              <Button type="submit">{next ? 'Complete & continue' : 'Complete course'}</Button>
+            </NavForm>
+          )}
+
+          {next && done ? (
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/learn/${courseSlug}/${next.id}`}>
+                Next <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+        </div>
+      </main>
+    </div>
   );
 }

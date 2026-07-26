@@ -57,7 +57,7 @@
 - [x] P2.1 Home + login re-skin (strip marketing/pricing).
 - [x] P2.2 Course catalogue re-skin (our courses grid + search).
 - [x] P2.3 Course detail re-skin (drop price/buy).
-- [ ] P2.4 Lesson player re-skin (video/pdf/text).
+- [x] P2.4 Lesson player re-skin (video/pdf/text).
 - [ ] P2.5 Quiz-taking skin (confirm low-friction) + per-question timing capture (G1).
 - [ ] P2.6 Learner dashboard re-skin (stat tiles + % + Continue).
 - [ ] P2.7 Resume + "time remaining" prominence on dashboard + outline.

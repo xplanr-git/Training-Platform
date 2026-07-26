@@ -194,13 +194,13 @@ export default async function CourseLanding({
         ) : !ctx ? (
           <Button asChild size="lg">
             <Link href={`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`}>
-              Sign in to enrol
+              Sign in to enroll
             </Link>
           </Button>
         ) : (
           <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
             <Button type="submit" size="lg">
-              Enrol — it&apos;s free
+              Enroll for free
             </Button>
           </NavForm>
         )}
