@@ -61,8 +61,8 @@
 - [x] P2.5 Quiz-taking skin (confirm low-friction) + per-question timing capture (G1).
 - [x] P2.6 Learner dashboard re-skin (stat tiles + % + Continue).
 - [x] P2.7 Resume + "time remaining" prominence on dashboard + outline.
-- [ ] P2.8 Learner certificate view + download (G2).
-- [ ] P2.9 Communications (review) light view.
+- [x] P2.8 Learner certificate view + download (G2) — satisfied by the existing printable `/verify/[code]` cert (tenant-branded, revocation-aware, print/download), linked from the dashboard. Tier naming (Registered→Trained→Verified→Strategic Partner) deferred to P4 with real content/roles.
+- [~] P2.9 Communications (review) — DEFERRED to post-MVP. Admin→learner messaging needs its own table + compose UI + learner inbox; kept gated as Coming Soon (retain-but-hide pattern). Not blocking the internal launch (Craig: nice-to-have).
 - [x] P2.10 Mobile-first QA across learner flow.
 
 ### Phase 3 — Admin & authoring (3–5d)
