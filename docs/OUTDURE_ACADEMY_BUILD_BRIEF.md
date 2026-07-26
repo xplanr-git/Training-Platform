@@ -40,15 +40,15 @@
 ## Phases & tasks
 
 ### Phase 0 — Working home (1–2d)
-- [ ] P0.1 Seed `Structurebuild/Outdure-Academy` from `phase-b-foundation`; branch protection + CI; park old repo as archive.
-- [ ] P0.2 Re-verify build + 52 unit + 4 live E2E in the new home.
+- [x] P0.1 Seed `Structurebuild/Outdure-Academy` from `phase-b-foundation`; branch protection + CI; park old repo as archive.
+- [x] P0.2 Re-verify build + 52 unit + 4 live E2E in the new home.
 - [ ] P0.3 Confirm Supabase v2 connection; secrets in env; rotate old anon key.
 - [ ] P0.4 Clear test-litter courses/tenants from live DB (keep platform admin).
 - [ ] P0.5 Single-tenant/internal: one `outdure` tenant; disable public signup; storefront internal-only.
 
 ### Phase 1 — Foundation & branding (2–3d)
-- [ ] P1.1 Lift `ui/` component library + `cn()` into `web/src/components/ui/` (add "use client" where needed).
-- [ ] P1.2 Port theme tokens into `web/` globals; Outdure palette light + dark.
+- [x] P1.1 Lift `ui/` component library + `cn()` into `web/src/components/ui/` (add "use client" where needed).
+- [x] P1.2 Port theme tokens into `web/` globals; Outdure palette light + dark.
 - [ ] P1.3 Outdure branding (name/logo/colours/favicon/metadata); remove "Teachly".
 - [ ] P1.4 Re-skin app shell (admin sidebar + learner chrome); mobile nav drawer.
 - [ ] P1.5 Feature flags via `lib/nav.ts`: live = Courses, Users, Communications, Insights, Settings, Certificates; hide the rest (see Retain-but-hide).

@@ -20,6 +20,34 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --radius-card: 0.75rem;
+
+  /* --- shadcn/Radix semantic tokens (lifted UI library) ---
+     Kept compatible with the existing brand/surface tokens above.
+     --color-muted stays grey (existing text-muted usage); components use
+     --color-muted-foreground for text. Refined to full Outdure brand in P1.3. */
+  --color-background: #ffffff;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0a0a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0a0a0a;
+  --color-primary: #171717;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f4f5f7;
+  --color-secondary-foreground: #171717;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #171717;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-input: #e5e7eb;
+  --color-input-background: #f9fafb;
+  --color-switch-background: #d1d5db;
+  --color-ring: #171717;
+
+  --radius-sm: calc(0.625rem - 4px);
+  --radius-md: calc(0.625rem - 2px);
+  --radius-lg: 0.625rem;
+  --radius-xl: calc(0.625rem + 4px);
 }
 
 :root {
