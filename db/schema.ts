@@ -389,6 +389,9 @@ export const quizAnswers = pgTable('quiz_answers', {
   response: jsonb('response').notNull().default({}),
   isCorrect: boolean('is_correct'),
   pointsAwarded: integer('points_awarded').notNull().default(0),
+  // Per-question time spent, ms (friction insight). Nullable — legacy answers
+  // and clients that don't report timing leave it null.
+  durationMs: integer('duration_ms'),
 });
 
 /* ── Certificates ──────────────────────────────────────────────────────── */
