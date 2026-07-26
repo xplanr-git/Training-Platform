@@ -26,6 +26,7 @@ import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
 import { markLessonComplete, submitQuizAttempt } from '../actions';
 import { NavForm } from '@/components/nav-form';
+import { QuizForm } from '@/components/quiz-form';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/components/ui/utils';
@@ -271,7 +272,7 @@ export default async function LessonPlayer({
               ) : questions.length === 0 ? (
                 <p className="text-muted">This quiz has no questions yet.</p>
               ) : (
-                <NavForm
+                <QuizForm
                   action={submitQuizAttempt.bind(
                     null,
                     slug,
@@ -281,40 +282,13 @@ export default async function LessonPlayer({
                     lesson.id,
                     quiz!.id,
                   )}
-                  className="space-y-5"
-                >
-                  {questions.map((q, qi) => {
-                    const opts = q.options as string[];
-                    const multi = q.type === 'multi_select';
-                    return (
-                      <fieldset
-                        key={q.id}
-                        className="rounded-[--radius-card] border border-border bg-surface p-4"
-                      >
-                        <legend className="px-1 text-sm font-medium">
-                          {qi + 1}. {q.prompt}
-                        </legend>
-                        <div className="mt-3 space-y-2">
-                          {opts.map((o, oi) => (
-                            <label
-                              key={oi}
-                              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-surface-muted has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
-                            >
-                              <input
-                                type={multi ? 'checkbox' : 'radio'}
-                                name={`q_${q.id}`}
-                                value={oi}
-                                className="accent-brand-600"
-                              />
-                              {o}
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                    );
-                  })}
-                  <Button type="submit">Submit quiz</Button>
-                </NavForm>
+                  questions={questions.map((q) => ({
+                    id: q.id,
+                    prompt: q.prompt,
+                    type: q.type,
+                    options: q.options as string[],
+                  }))}
+                />
               )}
             </div>
           )}

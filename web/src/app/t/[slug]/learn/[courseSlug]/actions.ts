@@ -224,11 +224,15 @@ export async function submitQuizAttempt(
     .where(eq(quizQuestions.quizId, quizId));
 
   const responses: Record<string, number[]> = {};
+  const durations: Record<string, number> = {};
   for (const q of questions) {
     responses[q.id] = formData
       .getAll(`q_${q.id}`)
       .map((v) => Number(v))
       .filter((n) => Number.isInteger(n));
+    // Per-question time proxy from the client timer (friction insight).
+    const t = Number(formData.get(`t_${q.id}`));
+    if (Number.isFinite(t) && t > 0) durations[q.id] = Math.min(Math.round(t), 86_400_000);
   }
   const result = gradeQuiz(
     questions.map((q) => ({ id: q.id, correct: q.correct as number[], points: q.points })),
@@ -258,6 +262,7 @@ export async function submitQuizAttempt(
           response: { selected: g.selected },
           isCorrect: g.isCorrect,
           pointsAwarded: g.pointsAwarded,
+          durationMs: durations[g.questionId] ?? null,
         })),
       );
     }
