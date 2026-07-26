@@ -13,6 +13,16 @@ import { withTenant } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { setCertificateRevoked } from './actions';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export default async function Certificates({
   params,
@@ -56,78 +66,74 @@ export default async function Certificates({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Certificates</h1>
-        <Link
-          href="/admin/certificates/template"
-          className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted"
-        >
-          Edit template
-        </Link>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Certificates</h1>
+        <Button asChild variant="outline">
+          <Link href="/admin/certificates/template">Edit template</Link>
+        </Button>
       </div>
       <p className="mt-1 text-muted">Issued completion certificates for your academy.</p>
 
       <div className="mt-6 overflow-x-auto rounded-[--radius-card] border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-muted text-left text-muted">
-            <tr>
-              <th className="px-4 py-2 font-medium">Learner</th>
-              <th className="px-4 py-2 font-medium">Course</th>
-              <th className="px-4 py-2 font-medium">Issued</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Learner</TableHead>
+              <TableHead>Course</TableHead>
+              <TableHead>Issued</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((c) => (
-              <tr key={c.id} className="border-t border-border">
-                <td className="px-4 py-3">
-                  {c.learnerName || '—'}
+              <TableRow key={c.id}>
+                <TableCell>
+                  <span className="font-medium">{c.learnerName || '—'}</span>
                   <span className="ml-2 text-xs text-muted">{c.learnerEmail}</span>
-                </td>
-                <td className="px-4 py-3">{c.courseTitle}</td>
-                <td className="px-4 py-3">{new Date(c.issuedAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      c.revokedAt ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
-                    }`}
-                  >
+                </TableCell>
+                <TableCell>{c.courseTitle}</TableCell>
+                <TableCell className="tabular-nums text-muted">
+                  {new Date(c.issuedAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={c.revokedAt ? 'outline' : 'default'}>
                     {c.revokedAt ? 'Revoked' : 'Valid'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <a
-                      href={`/verify/${c.code}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-brand-700 hover:underline"
-                    >
-                      Verify
-                    </a>
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button asChild variant="ghost" size="sm">
+                      <a href={`/verify/${c.code}`} target="_blank" rel="noreferrer">
+                        Verify
+                      </a>
+                    </Button>
                     {c.revokedAt ? (
-                      <form action={setCertificateRevoked.bind(null, slug, c.id, false)}>
-                        <button className="text-brand-600 hover:underline">Reinstate</button>
+                      <form action={setCertificateRevoked.bind(null, slug, c.id, false)} className="inline">
+                        <Button type="submit" variant="ghost" size="sm">
+                          Reinstate
+                        </Button>
                       </form>
                     ) : (
-                      <form action={setCertificateRevoked.bind(null, slug, c.id, true)}>
-                        <button className="text-red-600 hover:underline">Revoke</button>
+                      <form action={setCertificateRevoked.bind(null, slug, c.id, true)} className="inline">
+                        <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                          Revoke
+                        </Button>
                       </form>
                     )}
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {rows.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted">
+              <TableRow>
+                <TableCell colSpan={5} className="py-6 text-center text-muted">
                   No certificates issued yet.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <Pagination meta={meta} basePath="/admin/certificates" />

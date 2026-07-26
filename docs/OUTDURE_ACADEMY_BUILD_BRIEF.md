@@ -71,7 +71,7 @@
 - [x] P3.3 Quiz builder re-skin.
 - [x] P3.4 People & enrolment re-skin (+ bulk import/enrol/CSV).
 - [x] P3.5 Insights (light) + friction metrics (time/attempts per question).
-- [ ] P3.6 Settings + certificates admin re-skin.
+- [x] P3.6 Settings + certificates admin re-skin.
 
 ### Phase 4 — Content & go-live (2–3d) [needs external inputs]
 - [ ] P4.1 User types aligned to Outdure Connect. **WALL: role list from Stevie.**
