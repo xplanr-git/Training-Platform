@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { connectRoleLabel } from '@/lib/connect-roles';
 
 const ROLE_LABELS: Record<string, string> = {
   company_admin: 'Admin',
@@ -57,6 +58,7 @@ export default async function People({
           id: memberships.id,
           userId: memberships.userId,
           role: memberships.role,
+          connectRoleCode: memberships.connectRoleCode,
           status: memberships.status,
           name: users.name,
           email: users.email,
@@ -99,6 +101,7 @@ export default async function People({
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Tier</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -114,6 +117,13 @@ export default async function People({
                       {ROLE_LABELS[m.role] ?? m.role}
                     </Button>
                   </form>
+                </TableCell>
+                <TableCell>
+                  {connectRoleLabel(m.connectRoleCode) ? (
+                    <Badge variant="secondary">{connectRoleLabel(m.connectRoleCode)}</Badge>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Badge variant={m.status === 'active' ? 'default' : 'outline'} className="capitalize">
@@ -139,7 +149,7 @@ export default async function People({
             ))}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-6 text-center text-muted">
+                <TableCell colSpan={6} className="py-6 text-center text-muted">
                   No members yet.
                 </TableCell>
               </TableRow>

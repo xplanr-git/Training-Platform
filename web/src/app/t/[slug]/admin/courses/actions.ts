@@ -5,6 +5,13 @@ import { db, audited, eq, and, courses } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { normalizeSlug } from '@/lib/slug';
 import { parsePrice, isCourseStatus } from '@/lib/validation';
+import { CONFERRABLE_TIERS } from '@/lib/connect-roles';
+
+/** Validates a course's conferred-tier code against the Connect tier list. */
+function parseConfersRoleCode(raw: FormDataEntryValue | null): string | null {
+  const code = String(raw ?? '').trim();
+  return CONFERRABLE_TIERS.some((t) => t.code === code) ? code : null;
+}
 
 /** Ensures a course slug is unique within the tenant by appending -2, -3, … */
 async function uniqueCourseSlug(
@@ -88,11 +95,12 @@ export async function updateCourse(
   if (!isCourseStatus(statusRaw)) throw new Error('Invalid course status.');
   const status = statusRaw;
   const price = parsePrice(formData.get('price') as string | null);
+  const confersRoleCode = parseConfersRoleCode(formData.get('confersRoleCode'));
 
   await db.transaction(async (tx) => {
     const [after] = await tx
       .update(courses)
-      .set({ title, description, level, status, price, updatedAt: new Date() })
+      .set({ title, description, level, status, price, confersRoleCode, updatedAt: new Date() })
       .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId!)))
       .returning();
 

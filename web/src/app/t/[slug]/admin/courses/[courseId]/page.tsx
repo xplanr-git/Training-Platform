@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { CONFERRABLE_TIERS } from '@/lib/connect-roles';
 
 const SELECT_CLS =
   'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -85,6 +86,25 @@ export default async function EditCourse({
                   <option value="archived">Archived</option>
                 </select>
               </div>
+            </div>
+            <div className="flex max-w-sm flex-col gap-1.5">
+              <Label htmlFor="confersRoleCode">Confers tier on completion</Label>
+              <select
+                id="confersRoleCode"
+                name="confersRoleCode"
+                defaultValue={course.confersRoleCode ?? ''}
+                className={SELECT_CLS}
+              >
+                <option value="">— None —</option>
+                {CONFERRABLE_TIERS.map((t) => (
+                  <option key={t.code} value={t.code}>
+                    {t.group}: {t.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted">
+                Completing this course advances the learner to this Connect tier.
+              </p>
             </div>
             <Button type="submit" className="self-start">
               Save changes

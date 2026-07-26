@@ -74,7 +74,7 @@
 - [x] P3.6 Settings + certificates admin re-skin.
 
 ### Phase 4 — Content & go-live (2–3d) [needs external inputs]
-- [ ] P4.1 User types aligned to Outdure Connect. **WALL: role list from Stevie.**
+- [x] P4.1 User types aligned to Outdure Connect — lib/connect-roles mirrors Connect's permissions_user_types (Structurebuild/Contractor/Dealer). Lightweight tag: memberships.connect_role_code + courses.confers_role_code (migration 0006); completing a conferring course auto-advances the learner's Contractor/Dealer tier (upward, same-group). People admin shows the tier; course-edit picks the conferred tier.
 - [ ] P4.2 Load real courses + videos. **WALL: content; YouTube now, Bunny later.**
 - [ ] P4.3 Enrol pilot dealers.
 - [ ] P4.4 Deploy per DEPLOY.md. **WALL: prod infra/DNS.**

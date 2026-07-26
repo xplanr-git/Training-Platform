@@ -43,6 +43,13 @@
       "when": 1785026554561,
       "tag": "0005_nice_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785109840260,
+      "tag": "0006_goofy_justice",
+      "breakpoints": true
     }
   ]
 }

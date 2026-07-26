@@ -13,6 +13,7 @@ import {
   courses,
   tenants,
   users,
+  memberships,
   lessons,
   quizzes,
   quizQuestions,
@@ -20,6 +21,7 @@ import {
   quizAnswers,
 } from '@training-platform/db';
 import { getTenantContext, type TenantContext } from '@/lib/tenant';
+import { advanceTier } from '@/lib/connect-roles';
 import { getCourseProgress } from '@/lib/progress';
 import { env } from '@/lib/env';
 import { buildCredential } from '@/lib/certificate';
@@ -99,12 +101,23 @@ async function recordLessonCompleted(
       tenantName: tenants.name,
       learnerName: users.name,
       learnerEmail: users.email,
+      confersRoleCode: courses.confersRoleCode,
     })
     .from(courses)
     .innerJoin(tenants, eq(tenants.id, courses.tenantId))
     .innerJoin(users, eq(users.id, ctx.userId))
     .where(eq(courses.id, courseId))
     .limit(1);
+
+  // Connect tier alignment: completing a course that confers a tier advances
+  // the learner's membership tier (same group, upward only).
+  const [mem] = await db
+    .select({ id: memberships.id, code: memberships.connectRoleCode })
+    .from(memberships)
+    .where(and(eq(memberships.userId, ctx.userId), eq(memberships.tenantId, ctx.tenantId!)))
+    .limit(1);
+  const nextCode = advanceTier(mem?.code, meta?.confersRoleCode);
+  const advancedTier = mem && nextCode && nextCode !== mem.code ? nextCode : null;
 
   const code = crypto.randomUUID();
   const issuedAt = new Date();
@@ -115,6 +128,21 @@ async function recordLessonCompleted(
       .update(enrollments)
       .set({ status: 'completed', completedAt: issuedAt })
       .where(eq(enrollments.id, enrollmentId));
+
+    if (advancedTier && mem) {
+      await tx
+        .update(memberships)
+        .set({ connectRoleCode: advancedTier })
+        .where(eq(memberships.id, mem.id));
+      await audited(tx, {
+        tenantId: ctx.tenantId,
+        actorUserId: ctx.userId,
+        action: 'membership.tier_advanced',
+        resourceType: 'membership',
+        resourceId: mem.id,
+        after: { connectRoleCode: advancedTier, courseId },
+      });
+    }
 
     const [existingCert] = await tx
       .select({ id: certificates.id })

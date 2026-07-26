@@ -145,6 +145,8 @@ export const memberships = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     role: membershipRole('role').notNull().default('learner'),
+    // Connect user-type/tier alignment (e.g. CON_REGISTERED). See web lib/connect-roles.
+    connectRoleCode: text('connect_role_code'),
     status: membershipStatus('status').notNull().default('invited'),
     invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -194,6 +196,8 @@ export const courses = pgTable(
     instructor: text('instructor').notNull().default(''),
     level: text('level').notNull().default('Beginner'),
     category: text('category'),
+    // Connect tier this course confers on completion (e.g. CON_TRAINED).
+    confersRoleCode: text('confers_role_code'),
     certificateEnabled: boolean('certificate_enabled').notNull().default(false),
     certificateTemplateId: uuid('certificate_template_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
