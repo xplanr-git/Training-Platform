@@ -60,7 +60,7 @@
 - [x] P2.4 Lesson player re-skin (video/pdf/text).
 - [x] P2.5 Quiz-taking skin (confirm low-friction) + per-question timing capture (G1).
 - [x] P2.6 Learner dashboard re-skin (stat tiles + % + Continue).
-- [ ] P2.7 Resume + "time remaining" prominence on dashboard + outline.
+- [x] P2.7 Resume + "time remaining" prominence on dashboard + outline.
 - [ ] P2.8 Learner certificate view + download (G2).
 - [ ] P2.9 Communications (review) light view.
 - [x] P2.10 Mobile-first QA across learner flow.

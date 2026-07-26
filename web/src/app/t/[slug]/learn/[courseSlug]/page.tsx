@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
+import { Check, Video, FileText, HelpCircle, BookOpen, ArrowLeft } from 'lucide-react';
 import {
   db,
   eq,
@@ -12,18 +13,18 @@ import {
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { getCourseProgress } from '@/lib/progress';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
-const TYPE_LABEL: Record<string, string> = {
-  text: 'Text',
-  video: 'Video',
-  pdf: 'PDF',
-  quiz: 'Quiz',
+const LESSON_ICON: Record<string, typeof Video> = {
+  video: Video,
+  pdf: FileText,
+  quiz: HelpCircle,
+  text: BookOpen,
 };
 
-/**
- * Learn shell — enrollment-gated course outline. The lesson player and
- * progress_events writes land in D3.
- */
+/** Enrollment-gated course outline with resume + per-lesson progress. */
 export default async function Learn({
   params,
 }: {
@@ -68,8 +69,7 @@ export default async function Learn({
 
   const progress = await getCourseProgress(enrollment.id, course.id);
 
-  // Ordered flat lesson list (section, then lesson position) → first incomplete
-  // lesson to resume at (falls back to the first lesson, or review if done).
+  // Ordered flat lesson list → first incomplete lesson to resume at.
   const sectionOrder = new Map(sectionRows.map((s, i) => [s.id, i]));
   const orderedLessons = [...lessonRows].sort((a, b) => {
     const sa = sectionOrder.get(a.sectionId) ?? 0;
@@ -79,59 +79,73 @@ export default async function Learn({
   const resumeLesson =
     orderedLessons.find((l) => !progress.completed.has(l.id)) ?? orderedLessons[0];
 
+  const lessonsLeft = progress.total - progress.done;
+  const resumeLabel =
+    progress.done === 0
+      ? 'Start course'
+      : progress.isComplete
+        ? 'Review course'
+        : 'Continue where you left off';
+
   return (
-    <main className="mx-auto max-w-3xl px-6 py-14">
-      <Link href="/dashboard" className="text-sm text-muted hover:underline">
-        ← Your learning
+    <main className="mx-auto max-w-3xl px-6 py-12">
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" /> Your learning
       </Link>
-      <div className="mt-2 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{course.title}</h1>
-        <span className="text-sm text-muted">{progress.percent}% complete</span>
-      </div>
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
-        <div className="h-full bg-brand-600" style={{ width: `${progress.percent}%` }} />
-      </div>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
 
-      {resumeLesson && (
-        <Link
-          href={`/learn/${courseSlug}/${resumeLesson.id}`}
-          className="mt-4 inline-block rounded-md bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
-          {progress.done === 0
-            ? 'Start course'
-            : progress.isComplete
-              ? 'Review course'
-              : 'Continue where you left off'}
-        </Link>
-      )}
+      <Card className="mt-4">
+        <CardContent className="py-5">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">{progress.percent}% complete</span>
+            <span className="text-muted tabular-nums">
+              {progress.done} of {progress.total} lessons
+              {!progress.isComplete && lessonsLeft > 0 ? ` · ${lessonsLeft} left` : ''}
+            </span>
+          </div>
+          <Progress value={progress.percent} className="mt-2 h-2" />
+          {resumeLesson && (
+            <Button asChild size="lg" className="mt-4">
+              <Link href={`/learn/${courseSlug}/${resumeLesson.id}`}>{resumeLabel}</Link>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
-      <div className="mt-6 space-y-5">
+      <div className="mt-8 space-y-5">
         {sectionRows.map((s) => (
           <section key={s.id}>
-            <h2 className="font-medium">{s.title}</h2>
-            <ul className="mt-2 divide-y divide-border rounded-[--radius-card] border border-border">
-              {(bySection.get(s.id) ?? []).map((l) => (
-                <li key={l.id}>
-                  <Link
-                    href={`/learn/${courseSlug}/${l.id}`}
-                    className="flex items-center justify-between px-4 py-2 text-sm hover:bg-surface-muted"
-                  >
-                    <span>
-                      <span className="mr-2 rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-muted">
-                        {TYPE_LABEL[l.type] ?? l.type}
-                      </span>
-                      {l.title}
-                    </span>
-                    {progress.completed.has(l.id) && (
-                      <span className="text-green-600" aria-label="completed">✓</span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-              {(bySection.get(s.id) ?? []).length === 0 && (
-                <li className="px-4 py-2 text-sm text-muted">No lessons yet.</li>
-              )}
-            </ul>
+            <h2 className="mb-2 text-sm font-semibold">{s.title || 'Section'}</h2>
+            <Card className="overflow-hidden p-0">
+              <ul className="divide-y divide-border">
+                {(bySection.get(s.id) ?? []).map((l) => {
+                  const Icon = LESSON_ICON[l.type] ?? BookOpen;
+                  const lDone = progress.completed.has(l.id);
+                  return (
+                    <li key={l.id}>
+                      <Link
+                        href={`/learn/${courseSlug}/${l.id}`}
+                        className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-surface-muted"
+                      >
+                        {lDone ? (
+                          <Check className="h-4 w-4 shrink-0 text-brand-600" />
+                        ) : (
+                          <Icon className="h-4 w-4 shrink-0 text-muted" />
+                        )}
+                        <span className="flex-1 truncate">{l.title || 'Untitled lesson'}</span>
+                        {lDone && <span className="text-xs text-brand-600">Done</span>}
+                      </Link>
+                    </li>
+                  );
+                })}
+                {(bySection.get(s.id) ?? []).length === 0 && (
+                  <li className="px-4 py-3 text-sm text-muted">No lessons yet.</li>
+                )}
+              </ul>
+            </Card>
           </section>
         ))}
         {sectionRows.length === 0 && (
