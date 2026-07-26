@@ -59,7 +59,7 @@
 - [x] P2.3 Course detail re-skin (drop price/buy).
 - [x] P2.4 Lesson player re-skin (video/pdf/text).
 - [x] P2.5 Quiz-taking skin (confirm low-friction) + per-question timing capture (G1).
-- [ ] P2.6 Learner dashboard re-skin (stat tiles + % + Continue).
+- [x] P2.6 Learner dashboard re-skin (stat tiles + % + Continue).
 - [ ] P2.7 Resume + "time remaining" prominence on dashboard + outline.
 - [ ] P2.8 Learner certificate view + download (G2).
 - [ ] P2.9 Communications (review) light view.
