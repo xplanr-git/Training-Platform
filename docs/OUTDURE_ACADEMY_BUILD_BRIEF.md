@@ -66,7 +66,7 @@
 - [x] P2.10 Mobile-first QA across learner flow.
 
 ### Phase 3 — Admin & authoring (3–5d)
-- [ ] P3.1 Course list & create re-skin.
+- [x] P3.1 Course list & create re-skin.
 - [ ] P3.2 Course builder re-skin.
 - [ ] P3.3 Quiz builder re-skin.
 - [ ] P3.4 People & enrolment re-skin (+ bulk import/enrol/CSV).
