@@ -109,7 +109,7 @@ export const ADMIN_NAV: NavGroup[] = [
     id: 'reports',
     label: 'Reports',
     items: [
-      live('analytics', 'Reports Center', '/analytics'),
+      live('analytics', 'Insights', '/analytics'),
       gated('training-matrix', 'Training Matrix'),
       gated('scheduled-reports', 'Scheduled Reports'),
       gated('activity-log', 'Activity Log'),
