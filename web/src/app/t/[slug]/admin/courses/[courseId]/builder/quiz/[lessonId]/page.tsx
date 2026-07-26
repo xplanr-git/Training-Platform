@@ -1,21 +1,17 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import {
-  db,
-  eq,
-  and,
-  asc,
-  lessons,
-  quizzes,
-  quizQuestions,
-} from '@training-platform/db';
+import { ArrowLeft, Check, Trash2 } from 'lucide-react';
+import { db, eq, and, asc, lessons, quizzes, quizQuestions } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
-import {
-  ensureQuiz,
-  addQuestion,
-  deleteQuestion,
-  setPassThreshold,
-} from '../actions';
+import { ensureQuiz, addQuestion, deleteQuestion, setPassThreshold } from '../actions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+
+const SELECT_CLS =
+  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default async function QuizEditor({
   params,
@@ -42,14 +38,15 @@ export default async function QuizEditor({
   if (!quiz) {
     return (
       <div className="max-w-2xl">
-        <Link href={`/admin/courses/${courseId}/builder`} className="text-sm text-muted hover:underline">
-          ← Content
+        <Link
+          href={`/admin/courses/${courseId}/builder`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" /> Content
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">{lesson.title}</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight">{lesson.title}</h1>
         <form action={ensureQuiz.bind(null, slug, courseId, lessonId)} className="mt-4">
-          <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-            Initialize quiz
-          </button>
+          <Button type="submit">Initialize quiz</Button>
         </form>
       </div>
     );
@@ -65,29 +62,33 @@ export default async function QuizEditor({
 
   return (
     <div className="max-w-2xl">
-      <Link href={`/admin/courses/${courseId}/builder`} className="text-sm text-muted hover:underline">
-        ← Content
+      <Link
+        href={`/admin/courses/${courseId}/builder`}
+        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" /> Content
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">Quiz · {lesson.title}</h1>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight">Quiz · {lesson.title}</h1>
 
       <form
         action={setPassThreshold.bind(null, slug, courseId, lessonId, quiz.id)}
         className="mt-4 flex items-end gap-2"
       >
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Pass threshold (%)</span>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="threshold">Pass threshold (%)</Label>
+          <Input
+            id="threshold"
             name="threshold"
             type="number"
             min="0"
             max="100"
             defaultValue={threshold}
-            className="w-28 rounded-md border border-border px-2 py-1"
+            className="w-28"
           />
-        </label>
-        <button className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted">
+        </div>
+        <Button type="submit" variant="outline">
           Save
-        </button>
+        </Button>
       </form>
 
       <ol className="mt-6 space-y-3">
@@ -95,82 +96,89 @@ export default async function QuizEditor({
           const opts = q.options as string[];
           const correct = q.correct as number[];
           return (
-            <li key={q.id} className="rounded-[--radius-card] border border-border bg-surface p-4">
-              <div className="flex items-start justify-between">
-                <p className="font-medium">
-                  {i + 1}. {q.prompt}{' '}
-                  <span className="text-xs text-muted">({q.points} pt)</span>
-                </p>
-                <form action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)}>
-                  <button className="text-xs text-red-600 hover:underline">Delete</button>
-                </form>
-              </div>
-              <ul className="mt-2 space-y-1 text-sm">
-                {opts.map((o, oi) => (
-                  <li key={oi} className={correct.includes(oi) ? 'text-green-700' : 'text-muted'}>
-                    {correct.includes(oi) ? '✓' : '○'} {o}
-                  </li>
-                ))}
-              </ul>
+            <li key={q.id}>
+              <Card>
+                <CardContent className="py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium">
+                      {i + 1}. {q.prompt}{' '}
+                      <span className="text-xs font-normal text-muted">({q.points} pt)</span>
+                    </p>
+                    <form action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)}>
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Delete question"
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </form>
+                  </div>
+                  <ul className="mt-3 space-y-1.5 text-sm">
+                    {opts.map((o, oi) => (
+                      <li
+                        key={oi}
+                        className={`flex items-center gap-2 ${
+                          correct.includes(oi) ? 'text-brand-700' : 'text-muted'
+                        }`}
+                      >
+                        {correct.includes(oi) ? (
+                          <Check className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-current" />
+                        )}
+                        {o}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             </li>
           );
         })}
         {questions.length === 0 && <li className="text-sm text-muted">No questions yet.</li>}
       </ol>
 
-      <form
-        action={addQuestion.bind(null, slug, courseId, lessonId, quiz.id)}
-        className="mt-6 space-y-3 rounded-[--radius-card] border border-border bg-surface-muted p-4"
-      >
-        <h2 className="font-medium">Add question</h2>
-        <input
-          name="prompt"
-          required
-          placeholder="Question prompt"
-          className="w-full rounded-md border border-border px-3 py-2 text-sm"
-        />
-        <div className="flex gap-2">
-          <select name="type" className="rounded-md border border-border px-2 py-1 text-sm">
-            <option value="mcq">Multiple choice (one answer)</option>
-            <option value="multi_select">Multiple choice (many answers)</option>
-            <option value="true_false">True / False</option>
-          </select>
-          <input
-            name="points"
-            type="number"
-            min="1"
-            defaultValue={1}
-            className="w-20 rounded-md border border-border px-2 py-1 text-sm"
-            title="Points"
-          />
-        </div>
-        <textarea
-          name="options"
-          rows={3}
-          placeholder="Options, one per line (ignored for True/False)"
-          className="w-full rounded-md border border-border px-3 py-2 text-sm"
-        />
-        <div className="flex flex-wrap gap-3 text-sm">
-          <label className="flex items-center gap-1">
-            <span className="text-muted">Correct option #(s), comma-separated:</span>
-            <input
-              name="correct"
-              placeholder="e.g. 2 or 1,3"
-              className="w-28 rounded-md border border-border px-2 py-1"
+      <Card className="mt-6">
+        <CardContent className="py-5">
+          <form
+            action={addQuestion.bind(null, slug, courseId, lessonId, quiz.id)}
+            className="space-y-3"
+          >
+            <h2 className="font-medium">Add question</h2>
+            <Input name="prompt" required placeholder="Question prompt" />
+            <div className="flex gap-2">
+              <select name="type" className={SELECT_CLS}>
+                <option value="mcq">Multiple choice (one answer)</option>
+                <option value="multi_select">Multiple choice (many answers)</option>
+                <option value="true_false">True / False</option>
+              </select>
+              <Input name="points" type="number" min="1" defaultValue={1} className="w-20" title="Points" />
+            </div>
+            <Textarea
+              name="options"
+              rows={3}
+              placeholder="Options, one per line (ignored for True/False)"
             />
-          </label>
-          <label className="flex items-center gap-1">
-            <span className="text-muted">For True/False:</span>
-            <select name="correct_tf" className="rounded-md border border-border px-2 py-1">
-              <option value="0">True</option>
-              <option value="1">False</option>
-            </select>
-          </label>
-        </div>
-        <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-          Add question
-        </button>
-      </form>
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <label className="flex items-center gap-2">
+                <span className="text-muted">Correct option #(s):</span>
+                <Input name="correct" placeholder="e.g. 2 or 1,3" className="w-28" />
+              </label>
+              <label className="flex items-center gap-2">
+                <span className="text-muted">True/False:</span>
+                <select name="correct_tf" className={SELECT_CLS}>
+                  <option value="0">True</option>
+                  <option value="1">False</option>
+                </select>
+              </label>
+            </div>
+            <Button type="submit">Add question</Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
