@@ -2,7 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,36 +38,58 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-6">
-      <h1 className="text-2xl font-semibold">Welcome back</h1>
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <input
-          type="email"
-          required
-          aria-label="Email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-        <input
-          type="password"
-          required
-          aria-label="Password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
-        >
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
+    <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 px-6 py-10">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-600 text-white">
+          <GraduationCap className="h-5 w-5" />
+        </span>
+        <span className="text-lg font-semibold">Outdure Academy</span>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sign in</CardTitle>
+          <CardDescription>
+            Access your Outdure product training and certifications.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }

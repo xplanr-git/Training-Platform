@@ -4,8 +4,17 @@ import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-pla
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { safeHttpUrl } from '@/lib/validation';
 import { Pagination } from '@/components/pagination';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
-/** Per-tenant SEO metadata for the public storefront. */
+/** Per-tenant SEO metadata for the storefront. */
 export async function generateMetadata({
   params,
 }: {
@@ -28,7 +37,7 @@ export async function generateMetadata({
 }
 
 /**
- * Tenant storefront (catalog). Public — lists this academy's PUBLISHED courses.
+ * Tenant storefront (catalog). Lists this academy's PUBLISHED courses.
  * Read is explicitly scoped to the resolved tenant + status=published (Drizzle
  * bypasses RLS). Reached via subdomain rewrite: acme.domain/ -> /t/acme.
  */
@@ -78,57 +87,64 @@ export default async function TenantHome({
     : [];
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-14">
+    <main className="mx-auto max-w-5xl px-6 py-12 sm:py-14">
       <header className="mb-10">
         {logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt={tenant?.name ?? slug} className="mb-4 h-12 w-auto" />
         )}
-        <h1 className="text-3xl font-semibold" style={accent ? { color: accent } : undefined}>
+        <h1
+          className="text-3xl font-semibold tracking-tight"
+          style={accent ? { color: accent } : undefined}
+        >
           {tenant?.name ?? slug}
         </h1>
         <p className="mt-2 text-muted">
-          {branding.tagline || 'Browse our courses and start learning.'}
+          {branding.tagline || 'Browse the courses and start your training.'}
         </p>
-        <form method="get" className="mt-5 flex max-w-md gap-2">
-          <input
+        <form method="get" className="mt-6 flex max-w-md gap-2">
+          <Input
             type="search"
             name="q"
             aria-label="Search courses"
             defaultValue={query}
             placeholder="Search courses…"
-            className="flex-1 rounded-md border border-border px-3 py-2 text-sm"
+            className="flex-1"
           />
-          <button className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted">
+          <Button type="submit" variant="outline">
             Search
-          </button>
+          </Button>
         </form>
       </header>
 
       {catalog.length === 0 ? (
-        <p className="text-muted">
-          {query
-            ? `No courses match “${query}”.`
-            : 'No courses are published yet. Check back soon.'}
-        </p>
+        <div className="rounded-[--radius-card] border border-dashed border-border bg-surface p-10 text-center">
+          <p className="text-muted">
+            {query
+              ? `No courses match “${query}”.`
+              : 'No courses published yet. Check back soon.'}
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {catalog.map((c) => (
-            <Link
-              key={c.id}
-              href={`/courses/${c.slug}`}
-              className="flex flex-col rounded-[--radius-card] border border-border bg-surface p-5 transition hover:shadow-md"
-            >
-              <h2 className="font-semibold">{c.title}</h2>
-              <p className="mt-1 line-clamp-3 flex-1 text-sm text-muted">
-                {c.description || 'No description yet.'}
-              </p>
-              <span
-                className="mt-3 text-sm font-medium text-brand-700"
-                style={accent ? { color: accent } : undefined}
-              >
-                {c.price ? `${c.currency} ${c.price}` : 'Free'}
-              </span>
+            <Link key={c.id} href={`/courses/${c.slug}`} className="group block">
+              <Card className="flex h-full flex-col transition group-hover:border-brand-500 group-hover:shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-base">{c.title}</CardTitle>
+                  <CardDescription className="line-clamp-3">
+                    {c.description || 'No description yet.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="mt-auto">
+                  <span
+                    className="text-sm font-medium text-brand-700 group-hover:underline"
+                    style={accent ? { color: accent } : undefined}
+                  >
+                    View course →
+                  </span>
+                </CardContent>
+              </Card>
             </Link>
           ))}
         </div>

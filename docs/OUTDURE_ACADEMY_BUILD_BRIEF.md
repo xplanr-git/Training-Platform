@@ -54,8 +54,8 @@
 - [x] P1.5 Feature flags via `lib/nav.ts`: live = Courses, Users, Communications, Insights, Settings, Certificates; hide the rest (see Retain-but-hide).
 
 ### Phase 2 — Learner experience (4–6d) [Craig core]
-- [ ] P2.1 Home + login re-skin (strip marketing/pricing).
-- [ ] P2.2 Course catalogue re-skin (our courses grid + search).
+- [x] P2.1 Home + login re-skin (strip marketing/pricing).
+- [x] P2.2 Course catalogue re-skin (our courses grid + search).
 - [ ] P2.3 Course detail re-skin (drop price/buy).
 - [ ] P2.4 Lesson player re-skin (video/pdf/text).
 - [ ] P2.5 Quiz-taking skin (confirm low-friction) + per-question timing capture (G1).
@@ -63,7 +63,7 @@
 - [ ] P2.7 Resume + "time remaining" prominence on dashboard + outline.
 - [ ] P2.8 Learner certificate view + download (G2).
 - [ ] P2.9 Communications (review) light view.
-- [ ] P2.10 Mobile-first QA across learner flow.
+- [x] P2.10 Mobile-first QA across learner flow.
 
 ### Phase 3 — Admin & authoring (3–5d)
 - [ ] P3.1 Course list & create re-skin.
