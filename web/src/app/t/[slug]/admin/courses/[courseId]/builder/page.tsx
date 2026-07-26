@@ -1,5 +1,15 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import {
+  ArrowLeft,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Video,
+  FileText,
+  HelpCircle,
+  BookOpen,
+} from 'lucide-react';
 import { db, eq, and, asc, courses, sections, lessons } from '@training-platform/db';
 import { withTenant } from '@/lib/tenant';
 import {
@@ -11,13 +21,19 @@ import {
   moveLesson,
   updateLesson,
 } from './actions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 
-const TYPE_LABEL: Record<string, string> = {
-  text: 'Text',
-  video: 'Video',
-  pdf: 'PDF',
-  quiz: 'Quiz',
+const LESSON_ICON: Record<string, typeof Video> = {
+  text: BookOpen,
+  video: Video,
+  pdf: FileText,
+  quiz: HelpCircle,
 };
+
+const SELECT_CLS =
+  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default async function CourseBuilder({
   params,
@@ -56,25 +72,53 @@ export default async function CourseBuilder({
 
   return (
     <div className="max-w-3xl">
-      <Link href={`/admin/courses/${courseId}`} className="text-sm text-muted hover:underline">
-        ← Course
+      <Link
+        href={`/admin/courses/${courseId}`}
+        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" /> Course
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">{course.title} · Content</h1>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
+      <p className="text-muted">Course content</p>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-6 space-y-5">
         {sectionRows.map((s, i) => (
-          <section key={s.id} className="rounded-[--radius-card] border border-border bg-surface">
-            <header className="flex items-center justify-between border-b border-border px-4 py-3">
+          <Card key={s.id} className="overflow-hidden p-0">
+            <header className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2.5">
               <h2 className="font-medium">{s.title}</h2>
-              <div className="flex items-center gap-2 text-xs text-muted">
+              <div className="flex items-center gap-0.5">
                 <form action={moveSection.bind(null, slug, courseId, s.id, 'up')}>
-                  <button aria-label="Move section up" disabled={i === 0} className="disabled:opacity-30 hover:text-foreground">↑</button>
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Move section up"
+                    disabled={i === 0}
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
                 </form>
                 <form action={moveSection.bind(null, slug, courseId, s.id, 'down')}>
-                  <button aria-label="Move section down" disabled={i === sectionRows.length - 1} className="disabled:opacity-30 hover:text-foreground">↓</button>
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Move section down"
+                    disabled={i === sectionRows.length - 1}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
                 </form>
                 <form action={deleteSection.bind(null, slug, courseId, s.id)}>
-                  <button className="text-red-600 hover:underline">Delete</button>
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Delete section"
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </form>
               </div>
             </header>
@@ -82,57 +126,94 @@ export default async function CourseBuilder({
             <ul className="divide-y divide-border">
               {(lessonsBySection.get(s.id) ?? []).map((l, li, arr) => {
                 const c = (l.content ?? {}) as Record<string, string>;
+                const Icon = LESSON_ICON[l.type] ?? BookOpen;
                 return (
-                  <li key={l.id} className="px-4 py-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>
-                        <span className="mr-2 rounded bg-surface-muted px-1.5 py-0.5 text-[10px] text-muted">
-                          {TYPE_LABEL[l.type] ?? l.type}
-                        </span>
-                        {l.title}
+                  <li key={l.id} className="px-4 py-2.5 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0 text-muted" />
+                        <span className="truncate">{l.title}</span>
                       </span>
-                      <span className="flex items-center gap-2 text-xs text-muted">
+                      <span className="flex shrink-0 items-center gap-0.5">
                         <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')}>
-                          <button aria-label="Move lesson up" disabled={li === 0} className="disabled:opacity-30 hover:text-foreground">↑</button>
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Move lesson up"
+                            disabled={li === 0}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
                         </form>
                         <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'down')}>
-                          <button aria-label="Move lesson down" disabled={li === arr.length - 1} className="disabled:opacity-30 hover:text-foreground">↓</button>
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Move lesson down"
+                            disabled={li === arr.length - 1}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
                         </form>
                         {l.type === 'quiz' && (
-                          <Link
-                            href={`/admin/courses/${courseId}/builder/quiz/${l.id}`}
-                            className="text-brand-700 hover:underline"
-                          >
-                            Edit quiz
-                          </Link>
+                          <Button asChild variant="ghost" size="sm">
+                            <Link href={`/admin/courses/${courseId}/builder/quiz/${l.id}`}>
+                              Edit quiz
+                            </Link>
+                          </Button>
                         )}
                         <form action={deleteLesson.bind(null, slug, courseId, l.id)}>
-                          <button className="text-red-600 hover:underline">Remove</button>
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Remove lesson"
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </form>
                       </span>
                     </div>
 
                     {l.type !== 'quiz' && (
-                      <details className="mt-1">
-                        <summary className="cursor-pointer text-xs text-brand-700">Edit</summary>
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs text-brand-700">
+                          Edit lesson
+                        </summary>
                         <form
                           action={updateLesson.bind(null, slug, courseId, l.id)}
-                          className="mt-2 flex flex-wrap items-end gap-2"
+                          className="mt-2 flex flex-wrap items-center gap-2"
                         >
-                          <input
-                            name="title"
-                            defaultValue={l.title}
-                            className="rounded-md border border-border px-2 py-1 text-sm"
-                          />
-                          <select name="type" defaultValue={l.type} className="rounded-md border border-border px-2 py-1 text-sm">
+                          <Input name="title" defaultValue={l.title} className="h-8 w-40" />
+                          <select name="type" defaultValue={l.type} className={`${SELECT_CLS} h-8`}>
                             <option value="text">Text</option>
                             <option value="video">Video</option>
                             <option value="pdf">PDF</option>
                           </select>
-                          <input name="body" defaultValue={c.body ?? ''} placeholder="Text body" className="rounded-md border border-border px-2 py-1 text-sm" />
-                          <input name="youtubeUrl" defaultValue={c.youtubeUrl ?? ''} placeholder="YouTube URL" className="rounded-md border border-border px-2 py-1 text-sm" />
-                          <input name="url" defaultValue={c.url ?? ''} placeholder="PDF URL" className="rounded-md border border-border px-2 py-1 text-sm" />
-                          <button className="rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700">Save</button>
+                          <Input
+                            name="body"
+                            defaultValue={c.body ?? ''}
+                            placeholder="Text body"
+                            className="h-8 w-40"
+                          />
+                          <Input
+                            name="youtubeUrl"
+                            defaultValue={c.youtubeUrl ?? ''}
+                            placeholder="YouTube URL"
+                            className="h-8 w-40"
+                          />
+                          <Input
+                            name="url"
+                            defaultValue={c.url ?? ''}
+                            placeholder="PDF URL"
+                            className="h-8 w-40"
+                          />
+                          <Button type="submit" size="sm">
+                            Save
+                          </Button>
                         </form>
                       </details>
                     )}
@@ -140,57 +221,39 @@ export default async function CourseBuilder({
                 );
               })}
               {(lessonsBySection.get(s.id) ?? []).length === 0 && (
-                <li className="px-4 py-2 text-sm text-muted">No lessons yet.</li>
+                <li className="px-4 py-2.5 text-sm text-muted">No lessons yet.</li>
               )}
             </ul>
 
             <form
               action={addLesson.bind(null, slug, courseId, s.id)}
-              className="flex flex-wrap items-end gap-2 border-t border-border bg-surface-muted px-4 py-3"
+              className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-muted px-4 py-3"
             >
-              <input
-                name="title"
-                required
-                placeholder="Lesson title"
-                className="rounded-md border border-border px-2 py-1 text-sm"
-              />
-              <select name="type" className="rounded-md border border-border px-2 py-1 text-sm">
+              <Input name="title" required placeholder="Lesson title" className="w-44" />
+              <select name="type" className={SELECT_CLS}>
                 <option value="text">Text</option>
                 <option value="video">Video (YouTube)</option>
                 <option value="pdf">PDF</option>
                 <option value="quiz">Quiz</option>
               </select>
-              <input
-                name="youtubeUrl"
-                placeholder="YouTube URL (video)"
-                className="rounded-md border border-border px-2 py-1 text-sm"
-              />
-              <input
-                name="url"
-                placeholder="PDF URL (pdf)"
-                className="rounded-md border border-border px-2 py-1 text-sm"
-              />
-              <button className="rounded-md bg-brand-600 px-3 py-1 text-sm font-medium text-white hover:bg-brand-700">
+              <Input name="youtubeUrl" placeholder="YouTube URL (video)" className="w-44" />
+              <Input name="url" placeholder="PDF URL (pdf)" className="w-40" />
+              <Button type="submit" variant="secondary">
                 Add lesson
-              </button>
+              </Button>
             </form>
-          </section>
+          </Card>
         ))}
       </div>
 
       <form
         action={addSection.bind(null, slug, courseId)}
-        className="mt-6 flex items-end gap-2"
+        className="mt-6 flex items-center gap-2"
       >
-        <input
-          name="title"
-          required
-          placeholder="New section title"
-          className="rounded-md border border-border px-3 py-2 text-sm"
-        />
-        <button className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-surface-muted">
+        <Input name="title" required placeholder="New section title" className="max-w-xs" />
+        <Button type="submit" variant="outline">
           Add section
-        </button>
+        </Button>
       </form>
     </div>
   );

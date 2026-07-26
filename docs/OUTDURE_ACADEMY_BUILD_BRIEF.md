@@ -67,7 +67,7 @@
 
 ### Phase 3 — Admin & authoring (3–5d)
 - [x] P3.1 Course list & create re-skin.
-- [ ] P3.2 Course builder re-skin.
+- [x] P3.2 Course builder re-skin.
 - [ ] P3.3 Quiz builder re-skin.
 - [ ] P3.4 People & enrolment re-skin (+ bulk import/enrol/CSV).
 - [ ] P3.5 Insights (light) + friction metrics (time/attempts per question).
