@@ -21,7 +21,7 @@ function layout(body: string): string {
   return `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0a0a0a">
     ${body}
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
-    <p style="font-size:12px;color:#6b7280">Sent by your Training Platform academy.</p>
+    <p style="font-size:12px;color:#6b7280">Sent by Outdure Academy.</p>
   </div>`;
 }
 

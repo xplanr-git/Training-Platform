@@ -3,8 +3,8 @@ import './globals.css';
 import { PostHogProvider } from '@/components/posthog-provider';
 
 export const metadata: Metadata = {
-  title: 'Training Platform',
-  description: 'Multi-tenant learning management for training providers.',
+  title: 'Outdure Academy',
+  description: 'Product training and certification for Outdure contractors and dealers.',
 };
 
 export default function RootLayout({

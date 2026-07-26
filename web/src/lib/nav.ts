@@ -89,7 +89,7 @@ export const ADMIN_NAV: NavGroup[] = [
     id: 'commerce',
     label: 'E-commerce',
     items: [
-      live('billing', 'Plans & Billing', '/settings/billing'),
+      gated('billing', 'Plans & Billing'),
       gated('offers', 'Offers'),
       gated('gifts', 'Gifts'),
       gated('licenses', 'Licenses'),
@@ -130,7 +130,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       live('school', 'School Settings', '/settings'),
       live('team', 'Team Management', '/people'),
-      live('billing-settings', 'Billing', '/settings/billing'),
+      gated('billing-settings', 'Billing'),
       gated('security', 'Security'),
       gated('privacy', 'Privacy / GDPR'),
       gated('preferences', 'Preferences'),

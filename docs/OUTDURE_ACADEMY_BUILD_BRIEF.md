@@ -49,9 +49,9 @@
 ### Phase 1 — Foundation & branding (2–3d)
 - [x] P1.1 Lift `ui/` component library + `cn()` into `web/src/components/ui/` (add "use client" where needed).
 - [x] P1.2 Port theme tokens into `web/` globals; Outdure palette light + dark.
-- [ ] P1.3 Outdure branding (name/logo/colours/favicon/metadata); remove "Teachly".
+- [x] P1.3 Outdure branding (name/logo/colours/favicon/metadata); remove "Teachly".
 - [ ] P1.4 Re-skin app shell (admin sidebar + learner chrome); mobile nav drawer.
-- [ ] P1.5 Feature flags via `lib/nav.ts`: live = Courses, Users, Communications, Insights, Settings, Certificates; hide the rest (see Retain-but-hide).
+- [x] P1.5 Feature flags via `lib/nav.ts`: live = Courses, Users, Communications, Insights, Settings, Certificates; hide the rest (see Retain-but-hide).
 
 ### Phase 2 — Learner experience (4–6d) [Craig core]
 - [ ] P2.1 Home + login re-skin (strip marketing/pricing).
@@ -89,6 +89,7 @@ Hide via flags: website builder, multiple seats, leads, tags, user fields, user 
 - Real course content + videos (P4.2)
 - Production infra / DNS (P4.4)
 - Bunny.net account (video upgrade — fast-follow)
+- Outdure brand assets (real logo, exact hex, favicon) for final P1.3 polish — provisional identity in place meanwhile.
 
 ## Gaps (genuinely new backend work)
 - G1 — per-question timing capture in the quiz player (attempts already recorded).
