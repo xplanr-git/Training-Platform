@@ -2,6 +2,13 @@
 
 import { useState, useTransition } from 'react';
 import { inviteMember } from './actions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+
+const SELECT_CLS =
+  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
   const [pending, startTransition] = useTransition();
@@ -26,40 +33,32 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-[--radius-card] border border-border bg-surface p-4"
-    >
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted">Name</span>
-        <input name="name" className="rounded-md border border-border px-3 py-1.5" />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted">Email</span>
-        <input
-          name="email"
-          type="email"
-          required
-          className="rounded-md border border-border px-3 py-1.5"
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted">Role</span>
-        <select name="role" className="rounded-md border border-border px-3 py-1.5">
-          <option value="learner">Learner</option>
-          <option value="instructor">Instructor</option>
-          <option value="company_admin">Admin</option>
-        </select>
-      </label>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-      >
-        {pending ? 'Inviting…' : 'Invite'}
-      </button>
-      {error && <p className="w-full text-sm text-red-600">{error}</p>}
-      {ok && <p className="w-full text-sm text-green-600">Invitation sent.</p>}
-    </form>
+    <Card>
+      <CardContent className="py-4">
+        <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="inv-name">Name</Label>
+            <Input id="inv-name" name="name" className="w-40" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="inv-email">Email</Label>
+            <Input id="inv-email" name="email" type="email" required className="w-56" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="inv-role">Role</Label>
+            <select id="inv-role" name="role" className={SELECT_CLS}>
+              <option value="learner">Learner</option>
+              <option value="instructor">Instructor</option>
+              <option value="company_admin">Admin</option>
+            </select>
+          </div>
+          <Button type="submit" disabled={pending}>
+            {pending ? 'Inviting…' : 'Invite'}
+          </Button>
+          {error && <p className="w-full text-sm text-destructive">{error}</p>}
+          {ok && <p className="w-full text-sm text-brand-600">Invitation sent.</p>}
+        </form>
+      </CardContent>
+    </Card>
   );
 }
