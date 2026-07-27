@@ -195,6 +195,43 @@ async function recordLessonCompleted(
   }
 }
 
+/**
+ * Records a video watch heartbeat as an append-only progress event.
+ *
+ * Called from the player every ~15s while playing and on pause/end. Authorized
+ * exactly like completion: the course is derived from the enrollment (never
+ * trusted from the client) and the lesson must belong to that course.
+ *
+ * `positionSec` is the furthest point reached (drives resume); `watchedSec` is
+ * time actually played since the last beat (summed for real watch time, so
+ * seeking ahead can't inflate it).
+ */
+export async function recordVideoProgress(
+  enrollmentId: string,
+  lessonId: string,
+  positionSec: number,
+  watchedSec: number,
+) {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) return;
+  const enr = await verifyEnrollment(ctx, enrollmentId);
+  await assertLessonInCourse(ctx, lessonId, enr.courseId);
+
+  const position = Math.max(0, Math.round(Number(positionSec) || 0));
+  // Clamp a single beat to 10 minutes so a stalled tab can't log absurd time.
+  const watched = Math.min(600, Math.max(0, Math.round(Number(watchedSec) || 0)));
+  if (watched <= 0 && position <= 0) return;
+
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId,
+    eventType: 'video_progress',
+    payload: { positionSec: position },
+    durationMs: watched * 1000,
+  });
+}
+
 export async function markLessonComplete(
   tenantSlug: string,
   courseSlug: string,

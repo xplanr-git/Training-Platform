@@ -20,7 +20,11 @@ import {
   deleteLesson,
   moveLesson,
   updateLesson,
+  prepareVideoUpload,
+  attachVideo,
 } from './actions';
+import { VideoUpload } from '@/components/video-upload';
+import { hostedVideoFromContent, apiVideoConfigured } from '@/lib/video';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -63,6 +67,7 @@ export default async function CourseBuilder({
     .where(eq(lessons.courseId, courseId))
     .orderBy(asc(lessons.position));
 
+  const videoHostingOn = apiVideoConfigured();
   const lessonsBySection = new Map<string, typeof lessonRows>();
   for (const l of lessonRows) {
     const arr = lessonsBySection.get(l.sectionId) ?? [];
@@ -241,6 +246,21 @@ export default async function CourseBuilder({
                           Save
                         </Button>
                       </form>
+
+                      {l.type === 'video' && videoHostingOn && (
+                        <div className="mt-3 border-t border-border pt-3">
+                          <VideoUpload
+                            lessonTitle={l.title}
+                            currentVideoId={hostedVideoFromContent(l.content as Record<string, unknown>)?.videoId ?? null}
+                            prepare={prepareVideoUpload.bind(null, slug, courseId)}
+                            attach={attachVideo.bind(null, slug, courseId, l.id)}
+                          />
+                          <p className="mt-1.5 text-xs text-muted">
+                            Uploading replaces the YouTube link for this lesson and enables
+                            watch-time tracking.
+                          </p>
+                        </div>
+                      )}
                     </details>
                   </li>
                 );

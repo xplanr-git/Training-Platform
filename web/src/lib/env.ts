@@ -32,6 +32,11 @@ export const env = {
     return `.${host}`;
   },
   resendApiKey: () => process.env.RESEND_API_KEY ?? null,
+  // api.video. The base URL is required rather than defaulted so a key can
+  // never silently hit the billed production environment: sandbox is
+  // https://sandbox.api.video, production https://ws.api.video.
+  apiVideoKey: () => process.env.APIVIDEO_API_KEY ?? null,
+  apiVideoBaseUrl: () => process.env.APIVIDEO_BASE_URL ?? 'https://sandbox.api.video',
   emailFrom: () =>
     process.env.EMAIL_FROM ??
     `noreply@${(process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost').split(':')[0]}`,

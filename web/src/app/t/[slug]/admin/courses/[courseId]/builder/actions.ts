@@ -14,6 +14,91 @@ import {
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { parseOptionalMinutes } from '@/lib/validation';
+import { env } from '@/lib/env';
+import { createApiVideoUpload, getApiVideo, apiVideoConfigured } from '@/lib/video';
+
+/**
+ * Creates a video container at the provider and hands the browser a one-shot
+ * upload token, so the file uploads directly there rather than through us.
+ */
+export async function prepareVideoUpload(
+  slug: string,
+  courseId: string,
+  title: string,
+): Promise<{ videoId: string; uploadToken: string; uploadUrl: string } | { error: string }> {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+  if (!apiVideoConfigured()) return { error: 'Video hosting is not configured yet.' };
+  try {
+    const { videoId, uploadToken } = await createApiVideoUpload(title);
+    return { videoId, uploadToken, uploadUrl: `${env.apiVideoBaseUrl()}/upload` };
+  } catch (e) {
+    console.error('prepareVideoUpload failed:', e);
+    return { error: 'Could not reach the video provider. Please try again.' };
+  }
+}
+
+/**
+ * Attaches a provider video id to a lesson after upload (or when pasting the id
+ * of something already uploaded). The id is confirmed to exist first so a typo
+ * can't leave a lesson pointing at nothing.
+ */
+export async function attachVideo(
+  slug: string,
+  courseId: string,
+  lessonId: string,
+  videoId: string,
+): Promise<{ error?: string }> {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+  const id = videoId.trim();
+  if (!id) return { error: 'No video id supplied.' };
+  if (!apiVideoConfigured()) return { error: 'Video hosting is not configured yet.' };
+
+  let details: Awaited<ReturnType<typeof getApiVideo>> = null;
+  try {
+    details = await getApiVideo(id);
+  } catch (e) {
+    console.error('attachVideo lookup failed:', e);
+    return { error: 'Could not reach the video provider.' };
+  }
+  if (!details) return { error: `No video found with id “${id}”.` };
+
+  const [before] = await db
+    .select()
+    .from(lessons)
+    .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
+    .limit(1);
+  if (!before) return { error: 'Lesson not found.' };
+
+  await db.transaction(async (tx) => {
+    const [after] = await tx
+      .update(lessons)
+      .set({
+        type: 'video',
+        content: { provider: 'apivideo', videoId: id },
+        // Seed the time estimate from the video's real length if unset.
+        estimatedMinutes:
+          before.estimatedMinutes ??
+          (details!.durationSec ? Math.max(1, Math.round(details!.durationSec / 60)) : null),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId!)))
+      .returning();
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'lesson.video_attached',
+      resourceType: 'lesson',
+      resourceId: lessonId,
+      before,
+      after,
+    });
+  });
+
+  revalidatePath(`/t/${slug}/admin/courses/${courseId}/builder`);
+  return {};
+}
 
 async function assertCourse(tenantId: string, courseId: string) {
   const [course] = await db

@@ -14,10 +14,12 @@ import {
   eq,
   and,
   asc,
+  sql,
   courses,
   sections,
   lessons,
   enrollments,
+  progressEvents,
   quizzes,
   quizQuestions,
 } from '@training-platform/db';
@@ -27,6 +29,8 @@ import { getCourseProgress } from '@/lib/progress';
 import { markLessonComplete, submitQuizAttempt } from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
+import { ApiVideoPlayer } from '@/components/api-video-player';
+import { hostedVideoFromContent } from '@/lib/video';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/components/ui/utils';
@@ -138,6 +142,27 @@ export default async function LessonPlayer({
   const isQuiz = lesson.type === 'quiz';
   const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
 
+  // Hosted video: resume at the furthest position this learner reached, read
+  // back from the append-only watch events (so it follows them across devices).
+  const hosted = hostedVideoFromContent(content);
+  let resumeAtSec = 0;
+  if (hosted) {
+    const [row] = await db
+      .select({
+        maxPos: sql<string | null>`max((${progressEvents.payload} ->> 'positionSec')::numeric)`,
+      })
+      .from(progressEvents)
+      .where(
+        and(
+          eq(progressEvents.enrollmentId, enrollment.id),
+          eq(progressEvents.lessonId, lesson.id),
+          eq(progressEvents.eventType, 'video_progress'),
+        ),
+      );
+    const pos = row?.maxPos == null ? 0 : Number(row.maxPos);
+    if (Number.isFinite(pos) && pos > 0) resumeAtSec = Math.floor(pos);
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
       {/* Course outline (desktop) */}
@@ -221,7 +246,14 @@ export default async function LessonPlayer({
             </div>
           )}
           {lesson.type === 'video' &&
-            (youtubeEmbed(content.youtubeUrl ?? '') ? (
+            (hosted ? (
+              <ApiVideoPlayer
+                videoId={hosted.videoId}
+                enrollmentId={enrollment.id}
+                lessonId={lesson.id}
+                resumeAtSec={resumeAtSec}
+              />
+            ) : youtubeEmbed(content.youtubeUrl ?? '') ? (
               <div className="aspect-video w-full overflow-hidden rounded-[--radius-card] bg-black">
                 <iframe
                   src={youtubeEmbed(content.youtubeUrl ?? '')!}
