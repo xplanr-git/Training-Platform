@@ -32,11 +32,6 @@ export const env = {
     return `.${host}`;
   },
   resendApiKey: () => process.env.RESEND_API_KEY ?? null,
-  // api.video. The base URL is required rather than defaulted so a key can
-  // never silently hit the billed production environment: sandbox is
-  // https://sandbox.api.video, production https://ws.api.video.
-  apiVideoKey: () => process.env.APIVIDEO_API_KEY ?? null,
-  apiVideoBaseUrl: () => process.env.APIVIDEO_BASE_URL ?? 'https://sandbox.api.video',
   // Bunny Stream. Library id + per-library access key; the CDN hostname is only
   // needed for direct HLS (the iframe embed is keyed on the library id).
   bunnyApiKey: () => process.env.BUNNY_API_KEY ?? null,

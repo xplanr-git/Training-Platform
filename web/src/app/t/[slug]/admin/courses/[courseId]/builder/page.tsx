@@ -20,7 +20,6 @@ import {
   deleteLesson,
   moveLesson,
   updateLesson,
-  prepareVideoUpload,
   attachVideo,
   attachBunnyFromUrl,
 } from './actions';
@@ -254,15 +253,12 @@ export default async function CourseBuilder({
                           <VideoUpload
                             lessonTitle={l.title}
                             currentVideoId={hostedVideoFromContent(l.content as Record<string, unknown>)?.videoId ?? null}
-                            currentProvider={hostedVideoFromContent(l.content as Record<string, unknown>)?.provider ?? null}
-                            providers={providers}
-                            prepare={prepareVideoUpload.bind(null, slug, courseId)}
                             attach={attachVideo.bind(null, slug, courseId, l.id)}
                             attachFromUrl={attachBunnyFromUrl.bind(null, slug, courseId, l.id)}
                           />
                           <p className="mt-1.5 text-xs text-muted">
-                            Uploading replaces the YouTube link for this lesson and enables
-                            watch-time tracking.
+                            Attaching a Bunny video replaces the YouTube link for this lesson and
+                            enables watch-time tracking.
                           </p>
                         </div>
                       )}

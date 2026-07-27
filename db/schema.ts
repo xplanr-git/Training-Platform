@@ -315,7 +315,12 @@ export const progressEvents = pgTable(
     enrollmentId: uuid('enrollment_id')
       .notNull()
       .references(() => enrollments.id, { onDelete: 'cascade' }),
-    lessonId: uuid('lesson_id').references(() => lessons.id, { onDelete: 'set null' }),
+    // Intentionally NOT a foreign key: progress_events is append-only, so the
+    // ON DELETE SET NULL cascade tripped the forbid_mutation trigger and made
+    // any touched lesson undeletable (migration 0009). The id stays as a
+    // historical reference — an event must remain truthful about which lesson
+    // it recorded, even after that lesson is removed.
+    lessonId: uuid('lesson_id'),
     eventType: text('event_type').notNull(),
     payload: jsonb('payload').notNull().default({}),
     durationMs: bigint('duration_ms', { mode: 'number' }),

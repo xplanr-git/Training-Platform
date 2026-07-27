@@ -14,11 +14,7 @@ import {
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { parseOptionalMinutes } from '@/lib/validation';
-import { env } from '@/lib/env';
 import {
-  createApiVideoUpload,
-  getApiVideo,
-  apiVideoConfigured,
   getBunnyVideo,
   bunnyConfigured,
   createBunnyVideo,
@@ -64,27 +60,6 @@ export async function attachBunnyFromUrl(
 }
 
 /**
- * Creates a video container at the provider and hands the browser a one-shot
- * upload token, so the file uploads directly there rather than through us.
- */
-export async function prepareVideoUpload(
-  slug: string,
-  courseId: string,
-  title: string,
-): Promise<{ videoId: string; uploadToken: string; uploadUrl: string } | { error: string }> {
-  const ctx = await requireAdmin();
-  await assertCourse(ctx.tenantId, courseId);
-  if (!apiVideoConfigured()) return { error: 'Video hosting is not configured yet.' };
-  try {
-    const { videoId, uploadToken } = await createApiVideoUpload(title);
-    return { videoId, uploadToken, uploadUrl: `${env.apiVideoBaseUrl()}/upload` };
-  } catch (e) {
-    console.error('prepareVideoUpload failed:', e);
-    return { error: 'Could not reach the video provider. Please try again.' };
-  }
-}
-
-/**
  * Attaches a provider video id to a lesson after upload (or when pasting the id
  * of something already uploaded). The id is confirmed to exist first so a typo
  * can't leave a lesson pointing at nothing.
@@ -94,19 +69,17 @@ export async function attachVideo(
   courseId: string,
   lessonId: string,
   videoId: string,
-  provider: HostedProvider = 'apivideo',
+  provider: HostedProvider = 'bunny',
 ): Promise<{ error?: string }> {
   const ctx = await requireAdmin();
   await assertCourse(ctx.tenantId, courseId);
   const id = videoId.trim();
   if (!id) return { error: 'No video id supplied.' };
-  const configured = provider === 'bunny' ? bunnyConfigured() : apiVideoConfigured();
-  if (!configured) return { error: 'That video provider is not configured yet.' };
+  if (!bunnyConfigured()) return { error: 'Video hosting is not configured yet.' };
 
   let details: { durationSec: number | null } | null = null;
   try {
-    details =
-      provider === 'bunny' ? await getBunnyVideo(id) : await getApiVideo(id);
+    details = await getBunnyVideo(id);
   } catch (e) {
     console.error('attachVideo lookup failed:', e);
     return { error: 'Could not reach the video provider.' };
