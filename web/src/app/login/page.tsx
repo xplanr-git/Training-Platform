@@ -15,6 +15,18 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
+/** Reads the `role` claim (injected by the access-token hook) from a JWT. */
+function decodeRole(token: string | undefined): string | null {
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return (JSON.parse(json) as { role?: string }).role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -27,13 +39,20 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
       setError(error.message);
       return;
     }
-    router.push('/dashboard');
+    // Honour ?next=, else send admins to /admin and learners to /dashboard.
+    const next = new URLSearchParams(window.location.search).get('next');
+    let dest = next && next.startsWith('/') ? next : '/dashboard';
+    if (!next) {
+      const role = decodeRole(data.session?.access_token);
+      if (role === 'company_admin' || role === 'platform_admin') dest = '/admin';
+    }
+    router.push(dest);
     router.refresh();
   }
 

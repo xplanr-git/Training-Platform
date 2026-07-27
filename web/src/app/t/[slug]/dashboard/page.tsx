@@ -13,6 +13,7 @@ export default async function LearnerDashboard() {
   const ctx = await getTenantContext();
   if (!ctx) redirect('/login');
   if (!ctx.tenantId) redirect('/');
+  const isAdmin = ctx.role === 'company_admin' || ctx.role === 'platform_admin';
 
   const rows = await db
     .select({
@@ -53,8 +54,17 @@ export default async function LearnerDashboard() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">Your learning</h1>
-      <p className="mt-1 text-muted">Pick up where you left off.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Your learning</h1>
+          <p className="mt-1 text-muted">Pick up where you left off.</p>
+        </div>
+        {isAdmin && (
+          <Button asChild variant="outline">
+            <Link href="/admin">Admin</Link>
+          </Button>
+        )}
+      </div>
 
       {enrolled > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

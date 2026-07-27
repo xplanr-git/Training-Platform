@@ -9,7 +9,8 @@ test('admin overview renders live stat counts', async ({ page }) => {
   await page.locator('input[type=email]').fill(EMAIL);
   await page.locator('input[type=password]').fill(PASSWORD);
   await page.locator('button[type=submit]').click();
-  await page.waitForURL('**/dashboard', { timeout: 20_000 });
+  // Admins land on /admin after login.
+  await page.waitForURL('**/admin', { timeout: 20_000 });
 
   await page.goto('/admin');
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 20_000 });

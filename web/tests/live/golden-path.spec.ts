@@ -21,7 +21,8 @@ test('authored course → enroll → complete → certificate → verify', async
   await page.locator('input[type=email]').fill(EMAIL);
   await page.locator('input[type=password]').fill(PASSWORD);
   await page.locator('button[type=submit]').click();
-  await page.waitForURL('**/dashboard', { timeout: 20_000 });
+  // Admins land on /admin after login (learners on /dashboard).
+  await page.waitForURL('**/admin', { timeout: 20_000 });
 
   // 2. Create a course.
   await page.goto('/admin/courses/new');
