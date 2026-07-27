@@ -1,20 +1,18 @@
 import { test, expect } from '@playwright/test';
 
-// Public golden-path entry points. The authenticated path (enroll → complete →
-// certificate) requires a seeded Supabase v2 project and is exercised in a
-// separate integration suite once that environment exists.
+// Public entry points (unauthenticated). The authenticated golden path is
+// covered by the live suite (tests/live/*) against a seeded Supabase project.
 
-test('platform home renders with auth entry points', async ({ page }) => {
+test('platform home renders with a sign-in entry point', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Training Platform' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Outdure Academy' })).toBeVisible();
   await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /start free trial/i })).toBeVisible();
 });
 
 test('login page renders the sign-in form', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
-  await expect(page.getByPlaceholder('Email')).toBeVisible();
+  await expect(page.locator('input[type=email]')).toBeVisible();
+  await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
 });
 
 test('signup page renders the academy-creation form', async ({ page }) => {
