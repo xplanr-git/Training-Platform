@@ -57,6 +57,13 @@
       "when": 1785116000000,
       "tag": "0007_hook_invited_memberships",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785118021245,
+      "tag": "0008_mute_oracle",
+      "breakpoints": true
     }
   ]
 }

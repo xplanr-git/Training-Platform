@@ -14,6 +14,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { formatMinutes } from '@/lib/progress-derive';
 import { enrollFree } from './actions';
 import { NavForm } from '@/components/nav-form';
 import { Button } from '@/components/ui/button';
@@ -113,6 +114,7 @@ export default async function CourseLanding({
       sectionId: lessons.sectionId,
       type: lessons.type,
       title: lessons.title,
+      estimatedMinutes: lessons.estimatedMinutes,
     })
     .from(lessons)
     .where(eq(lessons.courseId, course.id))
@@ -125,6 +127,7 @@ export default async function CourseLanding({
     lessonsBySection.set(l.sectionId, arr);
   }
   const totalLessons = lessonRows.length;
+  const totalMinutes = lessonRows.reduce((sum, l) => sum + (l.estimatedMinutes ?? 0), 0);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -139,6 +142,7 @@ export default async function CourseLanding({
         {course.level && <Badge variant="secondary">{course.level}</Badge>}
         <span className="text-sm text-muted">
           {totalLessons} lesson{totalLessons === 1 ? '' : 's'}
+          {totalMinutes > 0 ? ` · about ${formatMinutes(totalMinutes)}` : ''}
         </span>
       </div>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">{course.title}</h1>

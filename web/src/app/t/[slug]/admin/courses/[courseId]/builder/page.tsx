@@ -133,6 +133,11 @@ export default async function CourseBuilder({
                       <span className="flex min-w-0 items-center gap-2">
                         <Icon className="h-4 w-4 shrink-0 text-muted" />
                         <span className="truncate">{l.title}</span>
+                        {l.estimatedMinutes != null && (
+                          <span className="shrink-0 text-xs text-muted tabular-nums">
+                            {l.estimatedMinutes} min
+                          </span>
+                        )}
                       </span>
                       <span className="flex shrink-0 items-center gap-0.5">
                         <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')}>
@@ -178,45 +183,65 @@ export default async function CourseBuilder({
                       </span>
                     </div>
 
-                    {l.type !== 'quiz' && (
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-xs text-brand-700">
-                          Edit lesson
-                        </summary>
-                        <form
-                          action={updateLesson.bind(null, slug, courseId, l.id)}
-                          className="mt-2 flex flex-wrap items-center gap-2"
-                        >
-                          <Input name="title" defaultValue={l.title} className="h-8 w-40" />
-                          <select name="type" defaultValue={l.type} className={`${SELECT_CLS} h-8`}>
-                            <option value="text">Text</option>
-                            <option value="video">Video</option>
-                            <option value="pdf">PDF</option>
-                          </select>
-                          <Input
-                            name="body"
-                            defaultValue={c.body ?? ''}
-                            placeholder="Text body"
-                            className="h-8 w-40"
-                          />
-                          <Input
-                            name="youtubeUrl"
-                            defaultValue={c.youtubeUrl ?? ''}
-                            placeholder="YouTube URL"
-                            className="h-8 w-40"
-                          />
-                          <Input
-                            name="url"
-                            defaultValue={c.url ?? ''}
-                            placeholder="PDF URL"
-                            className="h-8 w-40"
-                          />
-                          <Button type="submit" size="sm">
-                            Save
-                          </Button>
-                        </form>
-                      </details>
-                    )}
+                    {/* Quiz lessons keep a reduced form (title + estimate) — their
+                        questions live in the quiz editor, but they still need a
+                        time estimate so "about N min left" includes them. */}
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-brand-700">
+                        Edit lesson
+                      </summary>
+                      <form
+                        action={updateLesson.bind(null, slug, courseId, l.id)}
+                        className="mt-2 flex flex-wrap items-center gap-2"
+                      >
+                        <Input name="title" defaultValue={l.title} className="h-8 w-40" />
+                        {l.type === 'quiz' ? (
+                          <input type="hidden" name="type" value="quiz" />
+                        ) : (
+                          <>
+                            <select
+                              name="type"
+                              defaultValue={l.type}
+                              className={`${SELECT_CLS} h-8`}
+                            >
+                              <option value="text">Text</option>
+                              <option value="video">Video</option>
+                              <option value="pdf">PDF</option>
+                            </select>
+                            <Input
+                              name="body"
+                              defaultValue={c.body ?? ''}
+                              placeholder="Text body"
+                              className="h-8 w-40"
+                            />
+                            <Input
+                              name="youtubeUrl"
+                              defaultValue={c.youtubeUrl ?? ''}
+                              placeholder="YouTube URL"
+                              className="h-8 w-40"
+                            />
+                            <Input
+                              name="url"
+                              defaultValue={c.url ?? ''}
+                              placeholder="PDF URL"
+                              className="h-8 w-40"
+                            />
+                          </>
+                        )}
+                        <Input
+                          name="estimatedMinutes"
+                          type="number"
+                          min="1"
+                          defaultValue={l.estimatedMinutes ?? ''}
+                          placeholder="Mins"
+                          title="Estimated minutes (optional)"
+                          className="h-8 w-20"
+                        />
+                        <Button type="submit" size="sm">
+                          Save
+                        </Button>
+                      </form>
+                    </details>
                   </li>
                 );
               })}
@@ -238,6 +263,14 @@ export default async function CourseBuilder({
               </select>
               <Input name="youtubeUrl" placeholder="YouTube URL (video)" className="w-44" />
               <Input name="url" placeholder="PDF URL (pdf)" className="w-40" />
+              <Input
+                name="estimatedMinutes"
+                type="number"
+                min="1"
+                placeholder="Mins"
+                title="Estimated minutes (optional) — powers “about N min left” for learners"
+                className="w-20"
+              />
               <Button type="submit" variant="secondary">
                 Add lesson
               </Button>

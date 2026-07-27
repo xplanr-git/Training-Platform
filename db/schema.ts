@@ -243,6 +243,9 @@ export const lessons = pgTable(
     type: lessonType('type').notNull().default('text'),
     position: integer('position').notNull().default(0),
     title: text('title').notNull().default(''),
+    // Optional author-set estimate, minutes. Powers "about N min left" on the
+    // learner dashboard/outline. Null = unknown (falls back to lessons-left).
+    estimatedMinutes: integer('estimated_minutes'),
     // Normalises the old 12-URL-column shape: type-specific data lives here.
     content: jsonb('content').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

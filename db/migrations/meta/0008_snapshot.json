@@ -1,6 +1,6 @@
 {
-  "id": "7f3b1c2e-9a4d-4f6b-8c1e-2d5a7b9c0e11",
-  "prevId": "5e4447a2-3138-4ab0-91d0-91c4ed6d8834",
+  "id": "72950f01-2194-4e8f-bab6-dfa8beacbf72",
+  "prevId": "7f3b1c2e-9a4d-4f6b-8c1e-2d5a7b9c0e11",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -810,6 +810,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "''"
+        },
+        "estimated_minutes": {
+          "name": "estimated_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "content": {
           "name": "content",

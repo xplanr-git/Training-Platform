@@ -12,7 +12,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
-import { getCourseProgress } from '@/lib/progress';
+import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -104,6 +104,9 @@ export default async function Learn({
             <span className="text-muted tabular-nums">
               {progress.done} of {progress.total} lessons
               {!progress.isComplete && lessonsLeft > 0 ? ` · ${lessonsLeft} left` : ''}
+              {!progress.isComplete && progress.minutesLeft != null
+                ? ` · about ${formatMinutes(progress.minutesLeft)} left`
+                : ''}
             </span>
           </div>
           <Progress value={progress.percent} className="mt-2 h-2" />
@@ -136,6 +139,11 @@ export default async function Learn({
                           <Icon className="h-4 w-4 shrink-0 text-muted" />
                         )}
                         <span className="flex-1 truncate">{l.title || 'Untitled lesson'}</span>
+                        {l.estimatedMinutes != null && (
+                          <span className="shrink-0 text-xs text-muted tabular-nums">
+                            {l.estimatedMinutes} min
+                          </span>
+                        )}
                         {lDone && <span className="text-xs text-brand-600">Done</span>}
                       </Link>
                     </li>

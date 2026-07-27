@@ -1,7 +1,11 @@
 import { db, eq, and, lessons, progressEvents } from '@training-platform/db';
-import { deriveProgress, type CourseProgress } from '@/lib/progress-derive';
+import {
+  deriveProgress,
+  formatMinutes,
+  type CourseProgress,
+} from '@/lib/progress-derive';
 
-export { deriveProgress, type CourseProgress };
+export { deriveProgress, formatMinutes, type CourseProgress };
 
 /**
  * Derives completion state from the append-only progress_events log — state is
@@ -21,14 +25,14 @@ export async function getCourseProgress(
           eq(progressEvents.eventType, 'completed'),
         ),
       ),
-    db.select({ id: lessons.id }).from(lessons).where(eq(lessons.courseId, courseId)),
+    db
+      .select({ id: lessons.id, estimatedMinutes: lessons.estimatedMinutes })
+      .from(lessons)
+      .where(eq(lessons.courseId, courseId)),
   ]);
 
   const completedIds = completedRows
     .map((r) => r.lessonId)
     .filter((id): id is string => !!id);
-  return deriveProgress(
-    completedIds,
-    lessonRows.map((l) => l.id),
-  );
+  return deriveProgress(completedIds, lessonRows);
 }

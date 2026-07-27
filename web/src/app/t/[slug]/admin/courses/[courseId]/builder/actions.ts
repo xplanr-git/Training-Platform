@@ -13,6 +13,7 @@ import {
   quizzes,
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
+import { parseOptionalMinutes } from '@/lib/validation';
 
 async function assertCourse(tenantId: string, courseId: string) {
   const [course] = await db
@@ -109,6 +110,7 @@ export async function addLesson(
         title,
         type,
         position: nextPos,
+        estimatedMinutes: parseOptionalMinutes(formData.get('estimatedMinutes')),
         content: contentFor(type, formData),
       })
       .returning();
@@ -145,7 +147,13 @@ export async function updateLesson(
 
   await db
     .update(lessons)
-    .set({ title, type: type as 'text' | 'video' | 'pdf' | 'quiz', content: contentFor(type, formData), updatedAt: new Date() })
+    .set({
+      title,
+      type: type as 'text' | 'video' | 'pdf' | 'quiz',
+      estimatedMinutes: parseOptionalMinutes(formData.get('estimatedMinutes')),
+      content: contentFor(type, formData),
+      updatedAt: new Date(),
+    })
     .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)));
   revalidateBuilder(slug, courseId);
 }

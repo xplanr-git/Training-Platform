@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { Award } from 'lucide-react';
 import { db, eq, and, desc, enrollments, courses, certificates } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
-import { getCourseProgress } from '@/lib/progress';
+import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,15 +35,23 @@ export default async function LearnerDashboard() {
   const withProgress = await Promise.all(
     rows.map(async (r) => {
       const p = await getCourseProgress(r.enrollmentId, r.courseId);
-      return { ...r, percent: p.percent, done: p.done, total: p.total, isComplete: p.isComplete };
+      return {
+        ...r,
+        percent: p.percent,
+        done: p.done,
+        total: p.total,
+        isComplete: p.isComplete,
+        minutesLeft: p.minutesLeft,
+      };
     }),
   );
 
+  // "Done" is derived from the append-only log, not enrollment.completedAt: if
+  // an author adds a lesson to a course a learner already finished, there is
+  // genuinely new work to do. The certificate they already earned still stands.
   const enrolled = withProgress.length;
-  const completed = withProgress.filter((r) => r.completedAt || r.isComplete).length;
-  const inProgress = withProgress.filter(
-    (r) => !(r.completedAt || r.isComplete) && r.done > 0,
-  ).length;
+  const completed = withProgress.filter((r) => r.isComplete).length;
+  const inProgress = withProgress.filter((r) => !r.isComplete && r.done > 0).length;
   const certs = withProgress.filter((r) => r.certCode).length;
 
   const stats = [
@@ -96,7 +104,7 @@ export default async function LearnerDashboard() {
       ) : (
         <div className="mt-6 space-y-3">
           {withProgress.map((r) => {
-            const isDone = !!(r.completedAt || r.isComplete);
+            const isDone = r.isComplete;
             const cta = isDone ? 'Review' : r.done > 0 ? 'Continue' : 'Start course';
             return (
               <Card key={r.courseId}>
@@ -111,6 +119,9 @@ export default async function LearnerDashboard() {
                       <Progress value={r.percent} className="h-2 max-w-xs flex-1" />
                       <span className="shrink-0 text-xs text-muted tabular-nums">
                         {r.done}/{r.total} lessons
+                        {!isDone && r.minutesLeft != null
+                          ? ` · about ${formatMinutes(r.minutesLeft)} left`
+                          : ''}
                       </span>
                     </div>
                     {r.certCode && (

@@ -7,6 +7,21 @@
  * column) and pass thresholds (a NaN threshold makes `score >= NaN` always
  * false, silently breaking a quiz).
  */
+/**
+ * Optional per-lesson time estimate, in minutes. Blank/invalid means "the
+ * author didn't estimate this one" → null (the UI then falls back to showing
+ * lessons remaining instead of a time). Clamped to a sane 1..1440.
+ */
+export function parseOptionalMinutes(
+  raw: FormDataEntryValue | string | null | undefined,
+): number | null {
+  const s = typeof raw === 'string' ? raw.trim() : raw;
+  if (s === '' || s === null || s === undefined) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.min(1440, Math.max(1, Math.round(n)));
+}
+
 export function clampInt(
   raw: FormDataEntryValue | string | null | undefined,
   min: number,
