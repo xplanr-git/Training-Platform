@@ -37,6 +37,11 @@ export const env = {
   // https://sandbox.api.video, production https://ws.api.video.
   apiVideoKey: () => process.env.APIVIDEO_API_KEY ?? null,
   apiVideoBaseUrl: () => process.env.APIVIDEO_BASE_URL ?? 'https://sandbox.api.video',
+  // Bunny Stream. Library id + per-library access key; the CDN hostname is only
+  // needed for direct HLS (the iframe embed is keyed on the library id).
+  bunnyApiKey: () => process.env.BUNNY_API_KEY ?? null,
+  bunnyLibraryId: () => process.env.BUNNY_LIBRARY_ID ?? null,
+  bunnyCdnHostname: () => process.env.BUNNY_CDN_HOSTNAME ?? null,
   emailFrom: () =>
     process.env.EMAIL_FROM ??
     `noreply@${(process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost').split(':')[0]}`,

@@ -22,9 +22,10 @@ import {
   updateLesson,
   prepareVideoUpload,
   attachVideo,
+  attachBunnyFromUrl,
 } from './actions';
 import { VideoUpload } from '@/components/video-upload';
-import { hostedVideoFromContent, apiVideoConfigured } from '@/lib/video';
+import { hostedVideoFromContent, availableProviders } from '@/lib/video';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -67,7 +68,8 @@ export default async function CourseBuilder({
     .where(eq(lessons.courseId, courseId))
     .orderBy(asc(lessons.position));
 
-  const videoHostingOn = apiVideoConfigured();
+  const providers = availableProviders();
+  const videoHostingOn = providers.length > 0;
   const lessonsBySection = new Map<string, typeof lessonRows>();
   for (const l of lessonRows) {
     const arr = lessonsBySection.get(l.sectionId) ?? [];
@@ -252,8 +254,11 @@ export default async function CourseBuilder({
                           <VideoUpload
                             lessonTitle={l.title}
                             currentVideoId={hostedVideoFromContent(l.content as Record<string, unknown>)?.videoId ?? null}
+                            currentProvider={hostedVideoFromContent(l.content as Record<string, unknown>)?.provider ?? null}
+                            providers={providers}
                             prepare={prepareVideoUpload.bind(null, slug, courseId)}
                             attach={attachVideo.bind(null, slug, courseId, l.id)}
+                            attachFromUrl={attachBunnyFromUrl.bind(null, slug, courseId, l.id)}
                           />
                           <p className="mt-1.5 text-xs text-muted">
                             Uploading replaces the YouTube link for this lesson and enables

@@ -30,7 +30,9 @@ import { markLessonComplete, submitQuizAttempt } from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { ApiVideoPlayer } from '@/components/api-video-player';
+import { BunnyVideoPlayer } from '@/components/bunny-video-player';
 import { hostedVideoFromContent } from '@/lib/video';
+import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/components/ui/utils';
@@ -246,8 +248,16 @@ export default async function LessonPlayer({
             </div>
           )}
           {lesson.type === 'video' &&
-            (hosted ? (
+            (hosted?.provider === 'apivideo' ? (
               <ApiVideoPlayer
+                videoId={hosted.videoId}
+                enrollmentId={enrollment.id}
+                lessonId={lesson.id}
+                resumeAtSec={resumeAtSec}
+              />
+            ) : hosted?.provider === 'bunny' && env.bunnyLibraryId() ? (
+              <BunnyVideoPlayer
+                libraryId={env.bunnyLibraryId()!}
                 videoId={hosted.videoId}
                 enrollmentId={enrollment.id}
                 lessonId={lesson.id}

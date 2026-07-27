@@ -15,7 +15,53 @@ import {
 import { requireAdmin } from '@/lib/tenant';
 import { parseOptionalMinutes } from '@/lib/validation';
 import { env } from '@/lib/env';
-import { createApiVideoUpload, getApiVideo, apiVideoConfigured } from '@/lib/video';
+import {
+  createApiVideoUpload,
+  getApiVideo,
+  apiVideoConfigured,
+  getBunnyVideo,
+  bunnyConfigured,
+  createBunnyVideo,
+  fetchBunnyFromUrl,
+  type HostedProvider,
+} from '@/lib/video';
+
+/**
+ * Ingests a video into Bunny from a public URL. Bunny has no delegated
+ * browser-upload token equivalent to api.video's (direct upload needs the
+ * library key, or TUS with a computed signature), so URL ingest is the
+ * server-side path for now.
+ */
+export async function attachBunnyFromUrl(
+  slug: string,
+  courseId: string,
+  lessonId: string,
+  title: string,
+  url: string,
+): Promise<{ error?: string; videoId?: string }> {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+  if (!bunnyConfigured()) return { error: 'Bunny Stream is not configured.' };
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { error: 'Enter a valid http(s) URL.' };
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { error: 'Only http(s) URLs are supported.' };
+  }
+  try {
+    const { videoId } = await createBunnyVideo(title);
+    await fetchBunnyFromUrl(videoId, parsed.toString());
+    const res = await attachVideo(slug, courseId, lessonId, videoId, 'bunny');
+    if (res.error) return res;
+    return { videoId };
+  } catch (e) {
+    console.error('attachBunnyFromUrl failed:', e);
+    return { error: 'Could not ingest the video at Bunny.' };
+  }
+}
 
 /**
  * Creates a video container at the provider and hands the browser a one-shot
@@ -48,16 +94,19 @@ export async function attachVideo(
   courseId: string,
   lessonId: string,
   videoId: string,
+  provider: HostedProvider = 'apivideo',
 ): Promise<{ error?: string }> {
   const ctx = await requireAdmin();
   await assertCourse(ctx.tenantId, courseId);
   const id = videoId.trim();
   if (!id) return { error: 'No video id supplied.' };
-  if (!apiVideoConfigured()) return { error: 'Video hosting is not configured yet.' };
+  const configured = provider === 'bunny' ? bunnyConfigured() : apiVideoConfigured();
+  if (!configured) return { error: 'That video provider is not configured yet.' };
 
-  let details: Awaited<ReturnType<typeof getApiVideo>> = null;
+  let details: { durationSec: number | null } | null = null;
   try {
-    details = await getApiVideo(id);
+    details =
+      provider === 'bunny' ? await getBunnyVideo(id) : await getApiVideo(id);
   } catch (e) {
     console.error('attachVideo lookup failed:', e);
     return { error: 'Could not reach the video provider.' };
@@ -76,7 +125,7 @@ export async function attachVideo(
       .update(lessons)
       .set({
         type: 'video',
-        content: { provider: 'apivideo', videoId: id },
+        content: { provider, videoId: id },
         // Seed the time estimate from the video's real length if unset.
         estimatedMinutes:
           before.estimatedMinutes ??

@@ -13,7 +13,10 @@ import { env } from '@/lib/env';
  * YouTube stays supported unchanged so nothing breaks mid-migration.
  */
 
-export type VideoProvider = 'youtube' | 'apivideo';
+export type VideoProvider = 'youtube' | 'apivideo' | 'bunny';
+
+/** Providers a video can be attached from (YouTube is legacy paste-a-URL only). */
+export type HostedProvider = 'apivideo' | 'bunny';
 
 export interface HostedVideo {
   provider: VideoProvider;
@@ -27,12 +30,26 @@ export function hostedVideoFromContent(
   const c = content ?? {};
   const videoId = typeof c.videoId === 'string' ? c.videoId.trim() : '';
   const provider = typeof c.provider === 'string' ? c.provider : '';
-  if (videoId && provider === 'apivideo') return { provider: 'apivideo', videoId };
+  if (!videoId) return null;
+  if (provider === 'apivideo') return { provider: 'apivideo', videoId };
+  if (provider === 'bunny') return { provider: 'bunny', videoId };
   return null;
 }
 
 export function apiVideoConfigured(): boolean {
   return !!env.apiVideoKey();
+}
+
+export function bunnyConfigured(): boolean {
+  return !!env.bunnyApiKey() && !!env.bunnyLibraryId();
+}
+
+/** Providers an admin can currently attach a video from. */
+export function availableProviders(): HostedProvider[] {
+  const list: HostedProvider[] = [];
+  if (apiVideoConfigured()) list.push('apivideo');
+  if (bunnyConfigured()) list.push('bunny');
+  return list;
 }
 
 interface CachedToken {
@@ -116,6 +133,74 @@ export async function getApiVideo(videoId: string): Promise<ApiVideoDetails | nu
     playable: !!v.assets?.hls,
     thumbnail: v.assets?.thumbnail ?? null,
   };
+}
+
+/* ─────────────────────────── Bunny Stream ─────────────────────────── */
+
+const BUNNY_API = 'https://video.bunnycdn.com';
+
+async function bunnyFetch(path: string, init?: RequestInit): Promise<Response> {
+  const key = env.bunnyApiKey();
+  const lib = env.bunnyLibraryId();
+  if (!key || !lib) throw new Error('Bunny Stream is not configured');
+  return fetch(`${BUNNY_API}/library/${lib}${path}`, {
+    ...init,
+    headers: {
+      ...(init?.headers ?? {}),
+      AccessKey: key,
+      accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+}
+
+export interface BunnyVideoDetails {
+  videoId: string;
+  title: string;
+  durationSec: number | null;
+  /** Bunny status 4 = finished encoding and playable. */
+  playable: boolean;
+}
+
+export async function getBunnyVideo(videoId: string): Promise<BunnyVideoDetails | null> {
+  const res = await bunnyFetch(`/videos/${encodeURIComponent(videoId)}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Bunny lookup failed (${res.status})`);
+  const v = (await res.json()) as {
+    guid?: string;
+    title?: string;
+    length?: number;
+    status?: number;
+  };
+  if (!v.guid) return null;
+  return {
+    videoId: v.guid,
+    title: v.title ?? '',
+    durationSec: typeof v.length === 'number' && v.length > 0 ? Math.round(v.length) : null,
+    playable: v.status === 4,
+  };
+}
+
+/** Creates an empty video object; the file is uploaded (or fetched) separately. */
+export async function createBunnyVideo(title: string): Promise<{ videoId: string }> {
+  const res = await bunnyFetch('/videos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: title.slice(0, 200) || 'Untitled lesson' }),
+  });
+  if (!res.ok) throw new Error(`Bunny create failed (${res.status})`);
+  const created = (await res.json()) as { guid: string };
+  return { videoId: created.guid };
+}
+
+/** Tells Bunny to pull the media from a public URL (server-side ingest). */
+export async function fetchBunnyFromUrl(videoId: string, url: string): Promise<void> {
+  const res = await bunnyFetch(`/videos/${encodeURIComponent(videoId)}/fetch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  if (!res.ok) throw new Error(`Bunny fetch failed (${res.status})`);
 }
 
 /**
