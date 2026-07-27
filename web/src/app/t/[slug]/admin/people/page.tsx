@@ -138,11 +138,20 @@ export default async function People({
                       </Button>
                     </form>
                   ) : (
-                    <form action={setMemberStatus.bind(null, slug, m.id, 'deactivated')} className="inline">
-                      <Button type="submit" variant="ghost" size="sm" className="text-muted">
-                        Deactivate
-                      </Button>
-                    </form>
+                    <>
+                      {m.status === 'invited' && (
+                        <form action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline">
+                          <Button type="submit" variant="ghost" size="sm">
+                            Activate
+                          </Button>
+                        </form>
+                      )}
+                      <form action={setMemberStatus.bind(null, slug, m.id, 'deactivated')} className="inline">
+                        <Button type="submit" variant="ghost" size="sm" className="text-muted">
+                          Deactivate
+                        </Button>
+                      </form>
+                    </>
                   )}
                 </TableCell>
               </TableRow>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { activateMembershipOnSignIn } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,6 +45,12 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
       return;
+    }
+    // An invited member has now proven control of their email — mark active.
+    try {
+      await activateMembershipOnSignIn();
+    } catch {
+      // Non-fatal: never block sign-in on bookkeeping.
     }
     // Honour ?next=, else send admins to /admin and learners to /dashboard.
     const next = new URLSearchParams(window.location.search).get('next');

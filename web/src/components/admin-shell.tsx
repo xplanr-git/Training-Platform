@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Menu, GraduationCap } from 'lucide-react';
 import { ADMIN_NAV } from '@/lib/nav';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { SignOutButton } from '@/components/sign-out-button';
 import { cn } from '@/components/ui/utils';
 
 const ADMIN_BASE = '/admin';
@@ -111,11 +112,10 @@ export function AdminShell({
       >
         <Brand tenantName={tenantName} />
         <NavLinks activePath={activePath} />
-        {userEmail && (
-          <div className="border-t border-border px-4 py-3 text-xs text-muted">
-            <p className="truncate">{userEmail}</p>
-          </div>
-        )}
+        <div className="border-t border-border px-4 py-3">
+          {userEmail && <p className="truncate text-xs text-muted">{userEmail}</p>}
+          <SignOutButton className="mt-1.5" />
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

@@ -7,6 +7,7 @@ import { getCourseProgress } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { SignOutButton } from '@/components/sign-out-button';
 
 /** Learner dashboard: the courses this user is enrolled in for this tenant. */
 export default async function LearnerDashboard() {
@@ -59,11 +60,14 @@ export default async function LearnerDashboard() {
           <h1 className="text-2xl font-semibold tracking-tight">Your learning</h1>
           <p className="mt-1 text-muted">Pick up where you left off.</p>
         </div>
-        {isAdmin && (
-          <Button asChild variant="outline">
-            <Link href="/admin">Admin</Link>
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center gap-4">
+          {isAdmin && (
+            <Button asChild variant="outline">
+              <Link href="/admin">Admin</Link>
+            </Button>
+          )}
+          <SignOutButton />
+        </div>
       </div>
 
       {enrolled > 0 && (
