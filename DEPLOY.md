@@ -29,8 +29,13 @@ until cutover (§8).
 
 1. Create a new Supabase project. Note the project ref, the anon key, the
    service-role key (Settings → API), and the Postgres connection string
-   (Settings → Database → Connection string → URI). Use the **session pooler**
-   or direct connection string for migrations.
+   (Settings → Database → Connection string → URI).
+
+   > **Two different connection strings.** Use the **session pooler (`:5432`)**
+   > or a direct connection for *migrations* (below). The **running app must use
+   > the transaction pooler (`:6543`)** — it is serverless, and the session
+   > pooler exhausted connections (`MaxClientsInSessionMode`) before that was
+   > fixed. Set the `:6543` URI as `DATABASE_URL` in Vercel.
 2. Apply the v2 migrations from `db/`:
    ```sh
    cd db
@@ -105,7 +110,17 @@ These map to the env vars in §5 (`STRIPE_*`).
 
 ## 5. Deploy `web/` to Vercel
 
-1. Import the repo; set **Root Directory = `web`**.
+1. Import the repo, then set **all three** of these — the defaults are wrong:
+
+   | Setting | Value | Why |
+   |---|---|---|
+   | **Framework Preset** | **Next.js** | Vercel auto-detects **Vite** from the legacy prototype's `vite.config.ts` at the repo root. Deploying that builds the dead Figma prototype, not the app. |
+   | **Root Directory** | **`web`** | The application lives here, not at the repo root. |
+   | **Install Command** | `(cd ../db && npm ci) && npm ci` | `web` depends on `file:../db`; npm links it but does **not** install its dependencies, so the build fails with `Cannot find module 'drizzle-orm/pg-core'`. (Same trap the CI workflow hit.) |
+
+   Also enable **Settings → Build → "Include source files outside of the Root
+   Directory"**, or `../db` won't exist during the build.
+
 2. Set environment variables (see `web/.env.example` for the full list):
 
    | Var | Value |
@@ -113,12 +128,12 @@ These map to the env vars in §5 (`STRIPE_*`).
    | `NEXT_PUBLIC_SUPABASE_URL` | v2 project URL |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | v2 anon key |
    | `SUPABASE_SERVICE_ROLE_KEY` | v2 service-role key (server-only) |
-   | `DATABASE_URL` | v2 Postgres URI (server-only) |
+   | `DATABASE_URL` | v2 Postgres URI, **transaction pooler `:6543`** (server-only) |
    | `NEXT_PUBLIC_ROOT_DOMAIN` | e.g. `outdure.app` |
-   | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | from §4 |
-   | `STRIPE_PRICE_STARTER` / `_PRO` / `_BUSINESS` | from §4 |
-   | `RESEND_API_KEY` / `EMAIL_FROM` | optional |
+   | `BUNNY_API_KEY` / `BUNNY_LIBRARY_ID` / `BUNNY_CDN_HOSTNAME` | Bunny Stream video library |
+   | `RESEND_API_KEY` / `EMAIL_FROM` | required for invites — without it nobody can be onboarded |
    | `NEXT_PUBLIC_SENTRY_DSN` / `NEXT_PUBLIC_POSTHOG_KEY` / `_HOST` | optional |
+   | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_*` | **omit for internal use** — the Stripe client is lazily constructed, so the app boots fine without them and only throws if a payment path is hit (all gated off) |
 
 3. Add domains: the apex (`outdure.app`) **and** a wildcard
    (`*.outdure.app`) so tenant subdomains resolve. Point DNS per Vercel’s
