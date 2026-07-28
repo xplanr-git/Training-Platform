@@ -121,6 +121,15 @@ These map to the env vars in §5 (`STRIPE_*`).
    Also enable **Settings → Build → "Include source files outside of the Root
    Directory"**, or `../db` won't exist during the build.
 
+   > **Why the build can still fail at "Collecting build traces".** `web` depends
+   > on `file:../db`, which npm installs as a *symlink* out of the root
+   > directory. Next infers the file-tracing root from the nearest lockfile
+   > (`web/`), so trace collection walks that symlink outside the traced root and
+   > the build dies after "✓ Compiled successfully" — before the route table
+   > prints. `next.config.mjs` pins `outputFileTracingRoot` to the repo root to
+   > prevent this; that setting depends on the "Include source files outside…"
+   > toggle above.
+
 2. Set environment variables (see `web/.env.example` for the full list):
 
    | Var | Value |
