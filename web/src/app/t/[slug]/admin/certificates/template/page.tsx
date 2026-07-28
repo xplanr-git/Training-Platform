@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { db, eq, certificateTemplates } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { saveCertificateTemplate } from './actions';
 
 export default async function CertificateTemplate({
@@ -9,7 +9,7 @@ export default async function CertificateTemplate({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
 
   const [tpl] = ctx.tenantId
     ? await db

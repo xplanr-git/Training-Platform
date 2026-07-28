@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { db, eq, and, courses } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { updateCourse, deleteCourse } from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ export default async function EditCourse({
   params: Promise<{ slug: string; courseId: string }>;
 }) {
   const { slug, courseId } = await params;
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
   if (!ctx.tenantId) notFound();
 
   const [course] = await db

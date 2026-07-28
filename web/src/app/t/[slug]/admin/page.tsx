@@ -8,11 +8,20 @@ import {
   courses,
   enrollments,
 } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 
-/** Tenant admin dashboard overview. Auth + role are enforced by the layout. */
-export default async function TenantAdminOverview() {
-  const ctx = await withTenant();
+/**
+ * Tenant admin dashboard overview. The layout guards the UI; this re-checks the
+ * caller against the academy in the URL so the page can't render another
+ * academy's address with this caller's data.
+ */
+export default async function TenantAdminOverview({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const ctx = await requireAdminForSlug(slug);
   const tid = ctx.tenantId;
 
   const [[pub], [learners], [completions]] = tid

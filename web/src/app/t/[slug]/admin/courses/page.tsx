@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { db, and, eq, ilike, desc, count, courses } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { setCourseStatus } from './actions';
@@ -26,7 +26,7 @@ export default async function CoursesList({
   const { slug } = await params;
   const { q, page: pageParam } = await searchParams;
   const query = (q ?? '').trim();
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
 
   const filters = ctx.tenantId ? [eq(courses.tenantId, ctx.tenantId)] : [];
   if (ctx.tenantId && query) filters.push(ilike(courses.title, `%${query}%`));

@@ -1,5 +1,5 @@
 import { db, and, or, eq, ilike, desc, count, memberships, users } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { InviteForm } from './invite-form';
@@ -34,7 +34,7 @@ export default async function People({
   const { slug } = await params;
   const { q, page: pageParam } = await searchParams;
   const query = (q ?? '').trim();
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
 
   const filters = ctx.tenantId ? [eq(memberships.tenantId, ctx.tenantId)] : [];
   if (ctx.tenantId && query) {

@@ -9,7 +9,7 @@ import {
   users,
 } from '@training-platform/db';
 import Link from 'next/link';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { setCertificateRevoked } from './actions';
@@ -33,7 +33,7 @@ export default async function Certificates({
 }) {
   const { slug } = await params;
   const { page: pageParam } = await searchParams;
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
 
   const [{ total } = { total: 0 }] = ctx.tenantId
     ? await db

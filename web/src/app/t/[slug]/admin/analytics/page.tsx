@@ -13,7 +13,7 @@ import {
   quizQuestions,
   lessons,
 } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -38,13 +38,14 @@ function formatSeconds(total: number): string {
 }
 
 /** Live insights — tenant-scoped aggregates + per-question friction metrics. */
-export default async function Analytics() {
-  const ctx = await withTenant();
+export default async function Analytics({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const ctx = await requireAdminForSlug(slug);
   const tid = ctx.tenantId;
-
-  if (!tid) {
-    return <p className="text-muted">No tenant context.</p>;
-  }
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 

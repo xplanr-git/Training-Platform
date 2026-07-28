@@ -62,6 +62,51 @@ export function isCourseStatus(value: string): value is CourseStatus {
 }
 
 /**
+ * The roles a tenant admin may assign. `platform_admin` is deliberately absent:
+ * it grants sight of every academy and the power to suspend them, so it is
+ * seeded out of band (DEPLOY.md §3) and must never be reachable from a
+ * tenant-scoped write.
+ *
+ * This has to be checked at runtime. The role arrives from the caller on a
+ * Server Action, and a TypeScript annotation — `formData.get('role') as
+ * InviteRole` — is erased at compile time, so it constrains nothing. The
+ * membership_role enum in Postgres *does* include platform_admin and would have
+ * accepted it.
+ */
+export const ASSIGNABLE_ROLES = ['company_admin', 'instructor', 'learner'] as const;
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+export function isAssignableRole(value: unknown): value is AssignableRole {
+  return (
+    typeof value === 'string' && (ASSIGNABLE_ROLES as readonly string[]).includes(value)
+  );
+}
+
+/** Narrows untrusted input to an assignable role, or throws. */
+export function parseAssignableRole(raw: unknown): AssignableRole {
+  if (!isAssignableRole(raw)) throw new Error('Invalid role.');
+  return raw;
+}
+
+/**
+ * Membership statuses an admin may set. `invited` is absent — it is only ever
+ * written when an invitation is created, and letting it be set again would push
+ * an active member back into a pending state.
+ */
+export const SETTABLE_MEMBER_STATUSES = ['active', 'deactivated'] as const;
+export type SettableMemberStatus = (typeof SETTABLE_MEMBER_STATUSES)[number];
+
+export function parseMemberStatus(raw: unknown): SettableMemberStatus {
+  if (
+    typeof raw !== 'string' ||
+    !(SETTABLE_MEMBER_STATUSES as readonly string[]).includes(raw)
+  ) {
+    throw new Error('Invalid status.');
+  }
+  return raw as SettableMemberStatus;
+}
+
+/**
  * Parses a course price from raw form input into a normalized decimal string
  * (or null for a free course). Rejects negatives, non-numbers, and absurd
  * values so bad data never reaches the `numeric` column or Stripe's

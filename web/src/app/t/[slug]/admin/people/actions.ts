@@ -11,8 +11,12 @@ import {
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { createAdminClient } from '@/lib/supabase/admin';
-
-type InviteRole = 'company_admin' | 'instructor' | 'learner';
+import {
+  parseAssignableRole,
+  parseMemberStatus,
+  type AssignableRole,
+  type SettableMemberStatus,
+} from '@/lib/validation';
 
 export interface ActionResult {
   ok: boolean;
@@ -33,9 +37,17 @@ export async function inviteMember(
   const ctx = await requireAdmin();
 
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
-  const role = String(formData.get('role') ?? 'learner') as InviteRole;
   const name = String(formData.get('name') ?? '').trim();
   if (!email) return { ok: false, error: 'Email is required' };
+
+  // Checked at runtime, not cast: a tenant admin must not be able to mint a
+  // platform_admin by posting the role directly. See ASSIGNABLE_ROLES.
+  let role: AssignableRole;
+  try {
+    role = parseAssignableRole(formData.get('role') ?? 'learner');
+  } catch {
+    return { ok: false, error: 'That role cannot be assigned.' };
+  }
 
   // Reuse the auth user if we already know them.
   const [existingUser] = await db
@@ -93,14 +105,17 @@ export async function inviteMember(
 export async function setMemberRole(
   tenantSlug: string,
   membershipId: string,
-  role: InviteRole,
+  role: AssignableRole,
 ): Promise<void> {
   const ctx = await requireAdmin();
+  // The parameter type is erased at runtime and this is callable directly, so
+  // the allowlist has to be enforced here — otherwise 'platform_admin' passes.
+  const nextRole = parseAssignableRole(role);
 
   await db.transaction(async (tx) => {
     const [after] = await tx
       .update(memberships)
-      .set({ role })
+      .set({ role: nextRole })
       .where(
         and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId!)),
       )
@@ -112,7 +127,7 @@ export async function setMemberRole(
       action: 'membership.role_change',
       resourceType: 'membership',
       resourceId: after.userId,
-      after: { role },
+      after: { role: nextRole },
     });
   });
 
@@ -122,9 +137,10 @@ export async function setMemberRole(
 export async function setMemberStatus(
   tenantSlug: string,
   membershipId: string,
-  status: 'active' | 'deactivated',
+  status: SettableMemberStatus,
 ): Promise<void> {
   const ctx = await requireAdmin();
+  const nextStatus = parseMemberStatus(status);
 
   // Guard against locking yourself out.
   const [target] = await db
@@ -132,14 +148,14 @@ export async function setMemberStatus(
     .from(memberships)
     .where(and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId)))
     .limit(1);
-  if (target?.userId === ctx.userId && status === 'deactivated') {
+  if (target?.userId === ctx.userId && nextStatus === 'deactivated') {
     throw new Error('You cannot deactivate your own membership.');
   }
 
   await db.transaction(async (tx) => {
     const [after] = await tx
       .update(memberships)
-      .set({ status })
+      .set({ status: nextStatus })
       .where(
         and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId!)),
       )
@@ -148,10 +164,10 @@ export async function setMemberStatus(
     await audited(tx, {
       tenantId: ctx.tenantId,
       actorUserId: ctx.userId,
-      action: `membership.${status}`,
+      action: `membership.${nextStatus}`,
       resourceType: 'membership',
       resourceId: after.userId,
-      after: { status },
+      after: { status: nextStatus },
     });
   });
 

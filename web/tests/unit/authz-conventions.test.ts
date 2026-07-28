@@ -37,6 +37,17 @@ function findActionFiles(dir: string): string[] {
   return out;
 }
 
+/** Recursively collects every `page.tsx` under a directory. */
+function findPageFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...findPageFiles(full));
+    else if (entry.name === 'page.tsx') out.push(full);
+  }
+  return out;
+}
+
 describe('admin Server Actions authorization', () => {
   const files = findActionFiles(ADMIN_DIR);
 
@@ -56,6 +67,89 @@ describe('admin Server Actions authorization', () => {
       expect(src).not.toMatch(/getTenantContext\(/);
     },
   );
+});
+
+describe('admin pages verify the academy in the URL', () => {
+  const pages = findPageFiles(ADMIN_DIR).filter(
+    // The gated "coming soon" panel and the new-course form render no tenant
+    // data, so they have nothing to scope.
+    (f) => !/coming-soon|courses[\\/]new/.test(f),
+  );
+
+  it('finds the admin pages', () => {
+    expect(pages.length).toBeGreaterThanOrEqual(11);
+  });
+
+  it.each(pages.map((f) => [f.replace(process.cwd(), '').replace(/\\/g, '/'), f]))(
+    'admin page %s scopes to the URL slug via requireAdminForSlug()',
+    (_label, file) => {
+      const src = readFileSync(file, 'utf8');
+      // Must pass the slug — the previous bare withTenant() call meant the URL's
+      // academy was never checked against the caller's claims.
+      expect(src).toMatch(/requireAdminForSlug\(\s*slug\s*\)/);
+      // withTenant is gone; a reintroduced bare call is the exact regression.
+      expect(src).not.toMatch(/withTenant\(/);
+    },
+  );
+});
+
+describe('tenant guards', () => {
+  const src = readFileSync(join(process.cwd(), 'src/lib/tenant.ts'), 'utf8');
+
+  it('refuses suspended and cancelled tenants', () => {
+    // Server Actions do not render through the tenant shell, and Drizzle
+    // bypasses RLS — so the status check has to live in the guard itself.
+    expect(src).toMatch(/'suspended'/);
+    expect(src).toMatch(/'cancelled'/);
+    expect(src).toMatch(/assertTenantActive\(/);
+  });
+
+  it('applies the status check to both admin guards', () => {
+    for (const fn of ['requireAdmin', 'requireAdminForSlug']) {
+      const body = src.slice(src.indexOf(`export async function ${fn}(`));
+      const end = body.indexOf('\n}\n');
+      expect(body.slice(0, end)).toMatch(/suspended|assertTenantActive/);
+    }
+  });
+
+  it('no longer exports the opt-in withTenant guard', () => {
+    // Its verification was a parameter nobody passed. requireAdminForSlug takes
+    // the slug as a required argument so the check cannot be skipped.
+    expect(src).not.toMatch(/export async function withTenant\(/);
+  });
+
+  it('lets a platform admin cross tenants but pins everyone else', () => {
+    expect(src).toMatch(/ctx\.role !== 'platform_admin' && ctx\.tenantId !== tenant\.id/);
+    expect(src).toMatch(/TENANT_MISMATCH/);
+  });
+});
+
+describe('assignable roles cannot be escalated', () => {
+  const PEOPLE_ACTIONS = join(process.cwd(), 'src/app/t/[slug]/admin/people/actions.ts');
+  const src = readFileSync(PEOPLE_ACTIONS, 'utf8');
+
+  it('validates the role at runtime rather than casting it', () => {
+    // `formData.get('role') as InviteRole` compiled fine and constrained
+    // nothing: the role arrives from the caller and the Postgres enum accepts
+    // platform_admin. Both write paths must go through the allowlist.
+    expect(src.match(/parseAssignableRole\(/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(src).not.toMatch(/as InviteRole/);
+  });
+
+  it('never writes a role straight from the caller', () => {
+    expect(src).not.toMatch(/\.set\(\{\s*role\s*\}\)/);
+    expect(src).not.toMatch(/role: String\(/);
+  });
+
+  it('excludes platform_admin from the assignable list', () => {
+    const validation = readFileSync(join(process.cwd(), 'src/lib/validation.ts'), 'utf8');
+    const list = validation.slice(
+      validation.indexOf('ASSIGNABLE_ROLES'),
+      validation.indexOf('] as const', validation.indexOf('ASSIGNABLE_ROLES')),
+    );
+    expect(list).not.toMatch(/platform_admin/);
+    expect(list).toMatch(/company_admin/);
+  });
 });
 
 describe('learner completion actions integrity', () => {

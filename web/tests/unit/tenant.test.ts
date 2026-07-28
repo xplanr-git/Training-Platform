@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { tenantSlugFromHost } from '@/lib/tenant';
+import { tenantSlugFromHost } from '@/lib/host';
 
 beforeAll(() => {
   process.env.NEXT_PUBLIC_ROOT_DOMAIN = 'outdure.app';

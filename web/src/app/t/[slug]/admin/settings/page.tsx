@@ -1,5 +1,5 @@
 import { db, eq, tenants } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { updateSchoolSettings } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ export default async function Settings({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
 
   const [tenant] = ctx.tenantId
     ? await db

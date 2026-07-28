@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { parsePrice, isCourseStatus, clampInt, safeHttpUrl } from '@/lib/validation';
+import {
+  parsePrice,
+  isCourseStatus,
+  clampInt,
+  safeHttpUrl,
+  parseAssignableRole,
+  parseMemberStatus,
+  isAssignableRole,
+} from '@/lib/validation';
 
 describe('safeHttpUrl', () => {
   it('accepts absolute http(s) URLs', () => {
@@ -99,5 +107,43 @@ describe('isCourseStatus', () => {
     expect(isCourseStatus('deleted')).toBe(false);
     expect(isCourseStatus('')).toBe(false);
     expect(isCourseStatus('DRAFT')).toBe(false);
+  });
+});
+
+describe('parseAssignableRole', () => {
+  it('accepts the three tenant-scoped roles', () => {
+    expect(parseAssignableRole('company_admin')).toBe('company_admin');
+    expect(parseAssignableRole('instructor')).toBe('instructor');
+    expect(parseAssignableRole('learner')).toBe('learner');
+  });
+
+  it('rejects platform_admin — the privilege-escalation path', () => {
+    // A tenant admin posting this directly used to be written straight to the
+    // membership_role enum, which accepts it, granting cross-tenant access.
+    expect(() => parseAssignableRole('platform_admin')).toThrow(/Invalid role/);
+    expect(isAssignableRole('platform_admin')).toBe(false);
+  });
+
+  it('rejects junk, wrong types and casing', () => {
+    for (const bad of ['', 'admin', 'COMPANY_ADMIN', null, undefined, 7, {}, ['learner']]) {
+      expect(() => parseAssignableRole(bad)).toThrow();
+    }
+  });
+});
+
+describe('parseMemberStatus', () => {
+  it('accepts the two statuses an admin may set', () => {
+    expect(parseMemberStatus('active')).toBe('active');
+    expect(parseMemberStatus('deactivated')).toBe('deactivated');
+  });
+
+  it('rejects invited, so an active member cannot be pushed back to pending', () => {
+    expect(() => parseMemberStatus('invited')).toThrow(/Invalid status/);
+  });
+
+  it('rejects junk and wrong types', () => {
+    for (const bad of ['', 'ACTIVE', 'suspended', null, undefined, 1, {}]) {
+      expect(() => parseMemberStatus(bad)).toThrow();
+    }
   });
 });

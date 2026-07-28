@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
-import { tenantSlugFromHost } from '@/lib/tenant';
+import { tenantSlugFromHost } from '@/lib/host';
 
 // Shared routes that render the same on every host (apex and subdomains) and
 // must NOT be rewritten into the tenant tree.

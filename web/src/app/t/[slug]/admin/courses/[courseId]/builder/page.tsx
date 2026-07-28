@@ -11,7 +11,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { db, eq, and, asc, courses, sections, lessons } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import {
   addSection,
   deleteSection,
@@ -45,7 +45,7 @@ export default async function CourseBuilder({
   params: Promise<{ slug: string; courseId: string }>;
 }) {
   const { slug, courseId } = await params;
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
   if (!ctx.tenantId) notFound();
 
   const [course] = await db

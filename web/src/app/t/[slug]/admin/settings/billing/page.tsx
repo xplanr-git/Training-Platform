@@ -1,5 +1,5 @@
 import { db, eq, subscriptions } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { PLANS } from '@/lib/stripe';
 import { startSubscriptionCheckout, openBillingPortal } from './actions';
 
@@ -9,7 +9,7 @@ export default async function Billing({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
 
   const [sub] = ctx.tenantId
     ? await db

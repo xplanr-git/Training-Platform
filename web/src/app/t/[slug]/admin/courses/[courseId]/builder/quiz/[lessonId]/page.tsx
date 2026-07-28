@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Check, Trash2 } from 'lucide-react';
 import { db, eq, and, asc, lessons, quizzes, quizQuestions } from '@training-platform/db';
-import { withTenant } from '@/lib/tenant';
+import { requireAdminForSlug } from '@/lib/tenant';
 import { ensureQuiz, addQuestion, deleteQuestion, setPassThreshold } from '../actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ export default async function QuizEditor({
   params: Promise<{ slug: string; courseId: string; lessonId: string }>;
 }) {
   const { slug, courseId, lessonId } = await params;
-  const ctx = await withTenant();
+  const ctx = await requireAdminForSlug(slug);
   if (!ctx.tenantId) notFound();
 
   const [lesson] = await db

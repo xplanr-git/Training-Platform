@@ -1,5 +1,5 @@
+import { db, tenants, eq } from '@training-platform/db';
 import { createClient } from '@/lib/supabase/server';
-import { env } from '@/lib/env';
 
 export type AppRole = 'platform_admin' | 'company_admin' | 'instructor' | 'learner';
 
@@ -8,28 +8,6 @@ export interface TenantContext {
   tenantId: string | null;
   role: AppRole;
   email: string | null;
-}
-
-/**
- * Extracts the tenant slug from a request host.
- *   acme.outdure.app        -> "acme"
- *   acme.localhost:3000      -> "acme"
- *   outdure.app / localhost  -> null (apex / platform)
- */
-export function tenantSlugFromHost(host: string | null): string | null {
-  if (!host) return null;
-  const root = env.rootDomain();
-  const hostname = host.split(':')[0];
-  const rootHostname = root.split(':')[0];
-
-  if (hostname === rootHostname || hostname === `www.${rootHostname}`) return null;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') return null;
-
-  if (hostname.endsWith(`.${rootHostname}`)) {
-    const sub = hostname.slice(0, -(rootHostname.length + 1));
-    return sub || null;
-  }
-  return null;
 }
 
 /** Decodes (does not verify) the claims of an already-server-verified JWT. */
@@ -68,41 +46,82 @@ export async function getTenantContext(): Promise<TenantContext | null> {
   };
 }
 
-/**
- * Guard for tenant-scoped server code. Ensures there is a session and, when a
- * tenant slug is supplied (from the subdomain), that the caller's JWT tenant
- * matches it — platform admins bypass the match. Throws on violation.
- */
-export async function withTenant(expectedTenantId?: string): Promise<TenantContext> {
-  const ctx = await getTenantContext();
-  if (!ctx) throw new Error('UNAUTHENTICATED');
-
-  if (
-    expectedTenantId &&
-    ctx.role !== 'platform_admin' &&
-    ctx.tenantId !== expectedTenantId
-  ) {
-    throw new Error('TENANT_MISMATCH');
-  }
-  return ctx;
-}
-
 export interface AdminContext extends TenantContext {
   tenantId: string;
+}
+
+function isAdminRole(role: AppRole): boolean {
+  return role === 'company_admin' || role === 'platform_admin';
+}
+
+/**
+ * Refuses access when the tenant is no longer entitled to trade.
+ *
+ * The tenant shell blocks suspended *pages*, but Server Actions do not render
+ * through a layout, and the Drizzle connection bypasses RLS — so without this
+ * check a suspended academy's admin could still POST mutations directly. The
+ * status values mirror the shell's.
+ */
+async function assertTenantActive(tenantId: string): Promise<void> {
+  const [tenant] = await db
+    .select({ status: tenants.status })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId))
+    .limit(1);
+  if (!tenant) throw new Error('TENANT_NOT_FOUND');
+  if (tenant.status === 'suspended' || tenant.status === 'cancelled') {
+    throw new Error('TENANT_INACTIVE');
+  }
 }
 
 /**
  * Guard for admin-only Server Actions. The admin layout guards the UI, but
  * Server Actions can be POSTed directly — so every admin mutation must re-check
- * the caller is a company_admin (or platform_admin) with a tenant. Throws
- * otherwise. Returns a context with tenantId narrowed to string.
+ * the caller is a company_admin (or platform_admin) with a tenant, and that the
+ * tenant is still active. Throws otherwise. Returns a context with tenantId
+ * narrowed to string.
  */
 export async function requireAdmin(): Promise<AdminContext> {
   const ctx = await getTenantContext();
   if (!ctx) throw new Error('UNAUTHENTICATED');
-  if (ctx.role !== 'company_admin' && ctx.role !== 'platform_admin') {
-    throw new Error('FORBIDDEN');
-  }
+  if (!isAdminRole(ctx.role)) throw new Error('FORBIDDEN');
   if (!ctx.tenantId) throw new Error('No tenant context');
+  await assertTenantActive(ctx.tenantId);
   return { ...ctx, tenantId: ctx.tenantId };
+}
+
+/**
+ * Guard for admin *pages*, which know which academy they are for from the URL.
+ * Resolves that slug, confirms the caller is entitled to administer it, and
+ * returns a context scoped to the URL's tenant.
+ *
+ * Replaces the previous `withTenant(expectedTenantId?)`, whose verification was
+ * opt-in: every admin page called it bare, so the slug was never checked and
+ * another academy's admin URL rendered the caller's *own* data under that
+ * academy's address. Taking the slug as a required argument makes the check
+ * impossible to skip, and gives platform admins the cross-tenant view the
+ * bypass below was written to allow.
+ */
+export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
+  const ctx = await getTenantContext();
+  if (!ctx) throw new Error('UNAUTHENTICATED');
+  if (!isAdminRole(ctx.role)) throw new Error('FORBIDDEN');
+
+  const [tenant] = await db
+    .select({ id: tenants.id, status: tenants.status })
+    .from(tenants)
+    .where(eq(tenants.slug, slug))
+    .limit(1);
+  if (!tenant) throw new Error('TENANT_NOT_FOUND');
+
+  // A company_admin may only administer their own academy. A platform_admin may
+  // administer any — and sees that academy's data, not their own.
+  if (ctx.role !== 'platform_admin' && ctx.tenantId !== tenant.id) {
+    throw new Error('TENANT_MISMATCH');
+  }
+  if (tenant.status === 'suspended' || tenant.status === 'cancelled') {
+    throw new Error('TENANT_INACTIVE');
+  }
+
+  return { ...ctx, tenantId: tenant.id };
 }
