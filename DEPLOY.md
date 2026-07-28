@@ -114,7 +114,7 @@ These map to the env vars in §5 (`STRIPE_*`).
 
    | Setting | Value | Why |
    |---|---|---|
-   | **Framework Preset** | **Next.js** | Vercel auto-detects **Vite** from the legacy prototype's `vite.config.ts` at the repo root. Deploying that builds the dead Figma prototype, not the app. |
+   | **Framework Preset** | **Next.js** | Vercel mis-detects the framework because of the legacy prototype's `vite.config.ts` at the repo root. If the preset lands on "Other", the build compiles fine and then fails with `No Output Directory named "public" found` — Vercel serves a static dir instead of `.next`. `web/vercel.json` now pins `"framework": "nextjs"`, which overrides the dashboard; keep them in agreement anyway. |
    | **Root Directory** | **`web`** | The application lives here, not at the repo root. |
    | **Install Command** | `(cd ../db && npm ci) && npm ci` | `web` depends on `file:../db`; npm links it but does **not** install its dependencies, so the build fails with `Cannot find module 'drizzle-orm/pg-core'`. (Same trap the CI workflow hit.) |
 
