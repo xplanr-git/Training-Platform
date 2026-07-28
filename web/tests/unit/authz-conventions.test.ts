@@ -94,23 +94,37 @@ describe('admin pages verify the academy in the URL', () => {
 });
 
 describe('tenant guards', () => {
-  const src = readFileSync(join(process.cwd(), 'src/lib/tenant.ts'), 'utf8');
+  // Normalized: on a CRLF checkout, '\n}\n' never matches and the body slice
+  // below silently widens to the rest of the file — which would let this suite
+  // pass with the guard removed.
+  const src = readFileSync(join(process.cwd(), 'src/lib/tenant.ts'), 'utf8').replace(
+    /\r\n/g,
+    '\n',
+  );
+
+  /** Extracts one top-level exported function body, failing if it can't. */
+  function bodyOf(name: string): string {
+    const start = src.indexOf(`export async function ${name}(`);
+    expect(start, `${name} not found`).toBeGreaterThan(-1);
+    const end = src.indexOf('\n}\n', start);
+    expect(end, `could not delimit ${name}`).toBeGreaterThan(start);
+    return src.slice(start, end);
+  }
 
   it('refuses suspended and cancelled tenants', () => {
     // Server Actions do not render through the tenant shell, and Drizzle
     // bypasses RLS — so the status check has to live in the guard itself.
     expect(src).toMatch(/'suspended'/);
     expect(src).toMatch(/'cancelled'/);
-    expect(src).toMatch(/assertTenantActive\(/);
+    expect(src).toMatch(/async function assertTenantActive\(/);
   });
 
-  it('applies the status check to both admin guards', () => {
-    for (const fn of ['requireAdmin', 'requireAdminForSlug']) {
-      const body = src.slice(src.indexOf(`export async function ${fn}(`));
-      const end = body.indexOf('\n}\n');
-      expect(body.slice(0, end)).toMatch(/suspended|assertTenantActive/);
-    }
-  });
+  it.each(['requireAdmin', 'requireAdminForSlug'])(
+    '%s asserts the tenant is still active',
+    (fn) => {
+      expect(bodyOf(fn)).toMatch(/assertTenantActive\(|'suspended'/);
+    },
+  );
 
   it('no longer exports the opt-in withTenant guard', () => {
     // Its verification was a parameter nobody passed. requireAdminForSlug takes
