@@ -32,10 +32,16 @@ export function tenantSlugFromHost(host: string | null): string | null {
 
 /**
  * Routes that render the same on every host and must never be rewritten into a
- * tenant: auth, public certificate verification, API handlers, and the internal
- * `/t/...` tree itself.
+ * tenant: sign-in/sign-up, public certificate verification, the email-link
+ * landing routes under `/auth`, API handlers, and the internal `/t/...` tree.
+ *
+ * `/auth` is load-bearing. Supabase's invite and recovery links point at
+ * `/auth/confirm?token_hash=...`, and that token is single-use. Without this
+ * entry, single-tenant mode rewrites it to `/t/<slug>/auth/confirm` — a route
+ * that does not exist — so the recipient gets a 404 *and* the token is spent,
+ * making the failure unrecoverable rather than retryable.
  */
-const SHARED_PREFIXES = ['/login', '/signup', '/verify', '/api', '/t/'];
+const SHARED_PREFIXES = ['/login', '/signup', '/verify', '/auth', '/api', '/t/'];
 
 /**
  * Routes that stay on the apex even in single-tenant mode. `/platform` is

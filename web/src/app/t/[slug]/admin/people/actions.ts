@@ -8,9 +8,12 @@ import {
   and,
   users,
   memberships,
+  tenants,
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendInviteEmail } from '@/lib/email';
+import { env } from '@/lib/env';
 import {
   parseAssignableRole,
   parseMemberStatus,
@@ -24,11 +27,14 @@ export interface ActionResult {
 }
 
 /**
- * Invites a member to the current tenant. Reuses an existing auth user if the
- * email is already known; otherwise creates one via Supabase's invite flow
- * (the invitee sets their password from the emailed link). Adds a membership
- * with status 'invited'. Actual email delivery is Resend (Phase E3); Supabase's
- * built-in invite covers MVP.
+ * Invites a member to the current tenant.
+ *
+ * Reuses the auth user when the email is already known; otherwise mints one via
+ * generateLink and emails a one-time link where they choose a password. The
+ * membership is created with status 'invited' and flips to 'active' on their
+ * first successful sign-in (see login/actions.ts). Email is sent after the
+ * transaction commits and is best-effort — a mail failure must not roll back a
+ * membership that was created.
  */
 export async function inviteMember(
   tenantSlug: string,
@@ -57,14 +63,35 @@ export async function inviteMember(
     .limit(1);
 
   let userId = existingUser?.id ?? null;
+  // Set for a brand-new account: the one-time link where they choose a password.
+  let inviteUrl: string | null = null;
 
   if (!userId) {
     const admin = createAdminClient();
-    const { data, error } = await admin.auth.admin.inviteUserByEmail(email);
+    // generateLink, not inviteUserByEmail: inviteUserByEmail delegates delivery
+    // to Supabase's own sender, which errors when SMTP isn't configured — and
+    // this function then returned early, so no membership was created and the
+    // person was silently un-invitable. generateLink creates the user and hands
+    // back the token without sending anything, so delivery is ours (Resend, our
+    // template, our verified domain) and no Supabase SMTP setup is required.
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: 'invite',
+      email,
+      options: { redirectTo: `${env.appOrigin()}/auth/confirm` },
+    });
     if (error || !data.user) {
       return { ok: false, error: error?.message ?? 'Could not invite user' };
     }
     userId = data.user.id;
+
+    const hashedToken = data.properties?.hashed_token;
+    if (hashedToken) {
+      inviteUrl =
+        `${env.appOrigin()}/auth/confirm` +
+        `?token_hash=${encodeURIComponent(hashedToken)}` +
+        `&type=invite&next=${encodeURIComponent('/auth/set-password')}`;
+    }
+
     await db
       .insert(users)
       .values({ id: userId, email, name })
@@ -97,6 +124,24 @@ export async function inviteMember(
       after: { email, role, status: 'invited' },
     });
   });
+
+  // Notify AFTER the transaction commits, and never let a mail failure undo a
+  // membership that was created successfully. An existing account already has a
+  // password, so it gets a plain sign-in link rather than a set-password token.
+  try {
+    const [tenant] = await db
+      .select({ name: tenants.name })
+      .from(tenants)
+      .where(eq(tenants.id, ctx.tenantId))
+      .limit(1);
+    await sendInviteEmail(
+      email,
+      tenant?.name ?? 'your academy',
+      inviteUrl ?? `${env.appOrigin()}/login`,
+    );
+  } catch (err) {
+    console.error('[invite] email failed', err);
+  }
 
   revalidatePath(`/t/${tenantSlug}/admin/people`);
   return { ok: true };

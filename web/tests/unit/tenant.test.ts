@@ -46,6 +46,10 @@ describe('tenantRewritePath — multi-tenant (no default slug)', () => {
       expect(at(host, '/login')).toBeNull();
       expect(at(host, '/signup')).toBeNull();
       expect(at(host, '/verify/abc123')).toBeNull();
+      // Email-link landings. Single-use tokens: a rewrite here 404s AND spends
+      // the token, so the failure cannot be retried.
+      expect(at(host, '/auth/confirm')).toBeNull();
+      expect(at(host, '/auth/set-password')).toBeNull();
       expect(at(host, '/api/webhooks/stripe')).toBeNull();
       // Already internal — rewriting again would double the prefix.
       expect(at(host, '/t/acme/admin')).toBeNull();
@@ -61,6 +65,17 @@ describe('tenantRewritePath — single-tenant mode', () => {
     expect(at(APEX, '/admin')).toBe('/t/outdure/admin');
     expect(at(APEX, '/admin/certificates')).toBe('/t/outdure/admin/certificates');
     expect(at(APEX, '/learn/fire-safety')).toBe('/t/outdure/learn/fire-safety');
+  });
+
+  it('never swallows the /auth email-link landings', () => {
+    // The regression this locks in: with DEFAULT_TENANT_SLUG set (production),
+    // '/auth/confirm' is neither '/' nor apex-only, so without the SHARED_PREFIXES
+    // entry it rewrites to '/t/outdure/auth/confirm' and 404s for every invitee.
+    expect(at(APEX, '/auth/confirm')).toBeNull();
+    expect(at(APEX, '/auth/confirm?token_hash=x&type=invite')).toBeNull();
+    expect(at(APEX, '/auth/set-password')).toBeNull();
+    expect(at(APEX, '/auth/auth-code-error')).toBeNull();
+    expect(at(SUB, '/auth/confirm')).toBeNull();
   });
 
   it('keeps the marketing page, platform admin and /dashboard on the apex', () => {

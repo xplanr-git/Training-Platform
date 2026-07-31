@@ -45,6 +45,18 @@ export async function sendInviteEmail(to: string, tenantName: string, inviteUrl:
   );
 }
 
+export async function sendPasswordResetEmail(to: string, resetUrl: string) {
+  await send(
+    to,
+    'Reset your password',
+    layout(`<h2>Reset your password</h2>
+      <p>Choose a new password using the link below. It works once and expires shortly.</p>
+      <p><a href="${resetUrl}">Choose a new password →</a></p>
+      <p style="font-size:12px;color:#6b7280">If you didn't request this, you can ignore
+      this email — nothing has changed.</p>`),
+  );
+}
+
 export async function sendEnrollmentEmail(to: string, courseTitle: string, learnUrl: string) {
   await send(
     to,
