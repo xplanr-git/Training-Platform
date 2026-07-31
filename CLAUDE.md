@@ -292,14 +292,20 @@ Use Node 20 LTS if anything Supabase- or PDF-related throws at runtime. Currentl
 
 ### Demo accounts
 
-Defined in [supabase/migrations/006_fix_demo_users.sql](supabase/migrations/006_fix_demo_users.sql). Both passwords are `outdure`.
+> **These are for the LEGACY Vite prototype only — they do not work on the live
+> platform.** The v2 app (`web/` + `db/`) runs on a different Supabase project
+> and has never had these users. Trying them against production fails with
+> "Invalid login credentials", which reads as a broken login. For live accounts
+> see [DEPLOY.md](DEPLOY.md) §3.
+
+Legacy prototype, defined in [supabase/migrations/006_fix_demo_users.sql](supabase/migrations/006_fix_demo_users.sql). Both passwords are `outdure`.
 
 | Email | Role |
 |---|---|
 | `curtis@outdure.com` | platform_admin |
 | `admin@democompany.com` | company_admin |
 
-If sign-in fails, the hosted Supabase project doesn't have them yet. Either visit `/?seed=1` (runs [SeedAccountsPage](src/app/components/SeedAccountsPage.tsx) — requires "Confirm email" off in Supabase Auth settings) or paste `006_fix_demo_users.sql` into the Supabase SQL Editor.
+If sign-in fails against the *legacy* app, the hosted Supabase project doesn't have them yet. Either visit `/?seed=1` (runs [SeedAccountsPage](src/app/components/SeedAccountsPage.tsx) — requires "Confirm email" off in Supabase Auth settings) or paste `006_fix_demo_users.sql` into the Supabase SQL Editor.
 
 ### Environment
 
