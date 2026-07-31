@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { activateMembershipOnSignIn, postSignInDestination } from './actions';
+import { safeRedirect } from '@/lib/safe-redirect';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,8 +44,10 @@ export default function LoginPage() {
     }
     // Honour ?next=, else ask the server where to go: the destination needs the
     // tenant slug, which the JWT doesn't carry.
-    const next = new URLSearchParams(window.location.search).get('next');
-    let dest = next && next.startsWith('/') ? next : '/dashboard';
+    // startsWith('/') alone let '//evil.com' through — resolve and compare origins.
+    const rawNext = new URLSearchParams(window.location.search).get('next');
+    const next = rawNext ? safeRedirect(rawNext, window.location.origin) : null;
+    let dest = next ?? '/dashboard';
     if (!next) {
       try {
         dest = await postSignInDestination();

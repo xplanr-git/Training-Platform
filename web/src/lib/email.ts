@@ -4,9 +4,40 @@ import { env } from '@/lib/env';
 
 /**
  * Transactional email via Resend. No-ops (logs) when RESEND_API_KEY is unset so
- * the app runs without email credentials in dev. Sends never throw into the
- * calling flow — callers wrap in try/catch and treat email as best-effort.
+ * the app runs without email credentials in dev.
+ *
+ * Sends DO throw on failure. Callers wrap in try/catch and treat email as
+ * best-effort, but the throw is what makes the failure observable: the Resend
+ * SDK returns `{ data, error }` and does NOT throw on an API error, so the
+ * previous `await resend.emails.send(...)` swallowed every rejection. A wrong
+ * from-address (403 "domain is not verified") produced a silent no-op while the
+ * UI reported the invitation as sent — and the invite link is only ever
+ * delivered by email, so that was unrecoverable.
  */
+
+/**
+ * Escapes text interpolated into an HTML email.
+ *
+ * Required, not cosmetic: the academy name is set by a tenant admin
+ * (updateSchoolSettings) and anyone can self-provision a tenant at /signup. Raw
+ * interpolation turned invites into a relay for attacker-authored HTML sent from
+ * the platform's DKIM-signed domain — good enough to phish, and enough to get
+ * the Resend account suspended, which would take down every other email.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Strips anything markup-like from a subject line and collapses whitespace. */
+function plainSubject(value: string): string {
+  return value.replace(/[<>\r\n]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 async function send(to: string, subject: string, html: string): Promise<void> {
   const key = env.resendApiKey();
   if (!key) {
@@ -14,7 +45,19 @@ async function send(to: string, subject: string, html: string): Promise<void> {
     return;
   }
   const resend = new Resend(key);
-  await resend.emails.send({ from: env.emailFrom(), to, subject, html });
+  const { error } = await resend.emails.send({
+    from: env.emailFrom(),
+    to,
+    subject: plainSubject(subject),
+    html,
+  });
+  if (error) {
+    // Include the from-address: a mismatch with the verified Resend domain is
+    // by far the most common cause and is invisible otherwise.
+    throw new Error(
+      `Resend rejected the message (from=${env.emailFrom()}, to=${to}): ${error.message}`,
+    );
+  }
 }
 
 function layout(body: string): string {
@@ -25,23 +68,30 @@ function layout(body: string): string {
   </div>`;
 }
 
-export async function sendWelcomeEmail(to: string, name: string, tenantName: string, adminUrl: string) {
+export async function sendWelcomeEmail(
+  to: string,
+  name: string,
+  tenantName: string,
+  adminUrl: string,
+) {
+  const tenant = escapeHtml(tenantName);
   await send(
     to,
     `Welcome to ${tenantName}`,
-    layout(`<h2>Welcome, ${name}!</h2>
-      <p>Your academy <strong>${tenantName}</strong> is ready.</p>
-      <p><a href="${adminUrl}">Open your admin dashboard →</a></p>`),
+    layout(`<h2>Welcome, ${escapeHtml(name)}!</h2>
+      <p>Your academy <strong>${tenant}</strong> is ready.</p>
+      <p><a href="${escapeHtml(adminUrl)}">Open your admin dashboard →</a></p>`),
   );
 }
 
 export async function sendInviteEmail(to: string, tenantName: string, inviteUrl: string) {
+  const tenant = escapeHtml(tenantName);
   await send(
     to,
     `You've been invited to ${tenantName}`,
     layout(`<h2>You're invited</h2>
-      <p>You've been invited to join <strong>${tenantName}</strong>.</p>
-      <p><a href="${inviteUrl}">Accept your invitation →</a></p>`),
+      <p>You've been invited to join <strong>${tenant}</strong>.</p>
+      <p><a href="${escapeHtml(inviteUrl)}">Accept your invitation →</a></p>`),
   );
 }
 
@@ -51,19 +101,20 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
     'Reset your password',
     layout(`<h2>Reset your password</h2>
       <p>Choose a new password using the link below. It works once and expires shortly.</p>
-      <p><a href="${resetUrl}">Choose a new password →</a></p>
+      <p><a href="${escapeHtml(resetUrl)}">Choose a new password →</a></p>
       <p style="font-size:12px;color:#6b7280">If you didn't request this, you can ignore
       this email — nothing has changed.</p>`),
   );
 }
 
 export async function sendEnrollmentEmail(to: string, courseTitle: string, learnUrl: string) {
+  const course = escapeHtml(courseTitle);
   await send(
     to,
     `You're enrolled: ${courseTitle}`,
     layout(`<h2>You're enrolled</h2>
-      <p>You now have access to <strong>${courseTitle}</strong>.</p>
-      <p><a href="${learnUrl}">Start learning →</a></p>`),
+      <p>You now have access to <strong>${course}</strong>.</p>
+      <p><a href="${escapeHtml(learnUrl)}">Start learning →</a></p>`),
   );
 }
 
@@ -72,12 +123,13 @@ export async function sendCertificateEmail(
   courseTitle: string,
   verifyUrl: string,
 ) {
+  const course = escapeHtml(courseTitle);
   await send(
     to,
     `Your certificate for ${courseTitle}`,
     layout(`<h2>Congratulations!</h2>
-      <p>You've completed <strong>${courseTitle}</strong> and earned a certificate.</p>
-      <p><a href="${verifyUrl}">View &amp; verify your certificate →</a></p>`),
+      <p>You've completed <strong>${course}</strong> and earned a certificate.</p>
+      <p><a href="${escapeHtml(verifyUrl)}">View &amp; verify your certificate →</a></p>`),
   );
 }
 
@@ -91,7 +143,7 @@ export async function sendReceiptEmail(
     to,
     `Receipt: ${courseTitle}`,
     layout(`<h2>Payment received</h2>
-      <p>Thank you for your purchase of <strong>${courseTitle}</strong>.</p>
-      <p>Amount: ${currency} ${amount}</p>`),
+      <p>Thank you for your purchase of <strong>${escapeHtml(courseTitle)}</strong>.</p>
+      <p>Amount: ${escapeHtml(currency)} ${escapeHtml(amount)}</p>`),
   );
 }

@@ -14,6 +14,7 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,6 +24,7 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
     const el = e.currentTarget;
     startTransition(async () => {
       const result = await inviteMember(tenantSlug, form);
+      setWarning(result.warning ?? null);
       if (result.ok) {
         setOk(true);
         el.reset();
@@ -56,7 +58,10 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
             {pending ? 'Inviting…' : 'Invite'}
           </Button>
           {error && <p className="w-full text-sm text-destructive">{error}</p>}
-          {ok && <p className="w-full text-sm text-brand-600">Invitation sent.</p>}
+          {ok && !warning && (
+            <p className="w-full text-sm text-brand-600">Invitation sent.</p>
+          )}
+          {warning && <p className="w-full text-sm text-amber-600">{warning}</p>}
         </form>
       </CardContent>
     </Card>

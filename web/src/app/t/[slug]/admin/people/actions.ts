@@ -24,6 +24,8 @@ import {
 export interface ActionResult {
   ok: boolean;
   error?: string;
+  /** Set when the member was created but the email did not go out. */
+  warning?: string;
 }
 
 /**
@@ -128,6 +130,7 @@ export async function inviteMember(
   // Notify AFTER the transaction commits, and never let a mail failure undo a
   // membership that was created successfully. An existing account already has a
   // password, so it gets a plain sign-in link rather than a set-password token.
+  let warning: string | undefined;
   try {
     const [tenant] = await db
       .select({ name: tenants.name })
@@ -140,11 +143,17 @@ export async function inviteMember(
       inviteUrl ?? `${env.appOrigin()}/login`,
     );
   } catch (err) {
+    // The membership stands, but the one-time link only ever reaches them by
+    // email — so a silent 'Invitation sent' would be a lie they cannot recover
+    // from. Tell the admin so they can fix the config and re-send.
     console.error('[invite] email failed', err);
+    warning =
+      'Member added, but the invitation email could not be sent. Check RESEND_API_KEY '
+      + 'and that EMAIL_FROM uses a domain verified in Resend, then re-send.';
   }
 
   revalidatePath(`/t/${tenantSlug}/admin/people`);
-  return { ok: true };
+  return { ok: true, warning };
 }
 
 export async function setMemberRole(

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
+import { safeRedirect } from '@/lib/safe-redirect';
 
 /**
  * Landing route for every emailed auth link: invitations and password
@@ -13,6 +14,10 @@ import { createClient } from '@/lib/supabase/server';
  *  - `code`, from the PKCE flow used by resetPasswordForEmail() called in the
  *    browser — exchanged with exchangeCodeForSession().
  *
+ * `next` is validated by resolving it and comparing origins (safeRedirect) —
+ * pattern-matching the string missed `/\host` and `/%09host`, both of which the
+ * URL parser resolves off-origin.
+ *
  * The token is SINGLE USE. Any failure here is terminal for that link, so
  * failures go to a page that explains it and offers a fresh one rather than to
  * /login — an invitee has no password yet, so a login form is a dead end.
@@ -21,23 +26,12 @@ import { createClient } from '@/lib/supabase/server';
  * lib/host.ts) or the token is spent on a 404.
  */
 
-/** Guards against `?next=//evil.com` turning this into an open redirect. */
-function safeNext(raw: string | null): string {
-  const fallback = '/auth/set-password';
-  if (!raw) return fallback;
-  // Must be a site-relative path. Reject protocol-relative ('//host') and any
-  // absolute URL, both of which resolve off-origin against a base.
-  if (!raw.startsWith('/') || raw.startsWith('//')) return fallback;
-  if (raw.includes('://') || /[\r\n]/.test(raw)) return fallback;
-  return raw;
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
   const code = searchParams.get('code');
-  const next = safeNext(searchParams.get('next'));
+  const next = safeRedirect(searchParams.get('next'), origin, '/auth/set-password');
 
   const supabase = await createClient();
 

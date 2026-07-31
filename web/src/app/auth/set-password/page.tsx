@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { postSignInDestination } from '@/app/login/actions';
+import { activateMembershipOnSignIn, postSignInDestination } from '@/app/login/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +62,16 @@ export default function SetPasswordPage() {
       setLoading(false);
       setError(updateError.message);
       return;
+    }
+
+    // Setting a password from an emailed link proves control of the address, so
+    // this is an acceptance — flip 'invited' to 'active' exactly as signing in
+    // does. Without it the one path that actually proves acceptance left the
+    // membership pending, and the People list kept showing them as invited.
+    try {
+      await activateMembershipOnSignIn();
+    } catch {
+      // Non-fatal: never block on bookkeeping.
     }
 
     // Same destination logic as signing in normally: resolved server-side
