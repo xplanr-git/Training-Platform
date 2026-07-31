@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { activateMembershipOnSignIn } from './actions';
+import { activateMembershipOnSignIn, postSignInDestination } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,18 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-
-/** Reads the `role` claim (injected by the access-token hook) from a JWT. */
-function decodeRole(token: string | undefined): string | null {
-  if (!token) return null;
-  try {
-    const payload = token.split('.')[1];
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return (JSON.parse(json) as { role?: string }).role ?? null;
-  } catch {
-    return null;
-  }
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,7 +28,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
       setError(error.message);
@@ -52,12 +40,16 @@ export default function LoginPage() {
     } catch {
       // Non-fatal: never block sign-in on bookkeeping.
     }
-    // Honour ?next=, else send admins to /admin and learners to /dashboard.
+    // Honour ?next=, else ask the server where to go: the destination needs the
+    // tenant slug, which the JWT doesn't carry.
     const next = new URLSearchParams(window.location.search).get('next');
     let dest = next && next.startsWith('/') ? next : '/dashboard';
     if (!next) {
-      const role = decodeRole(data.session?.access_token);
-      if (role === 'company_admin' || role === 'platform_admin') dest = '/admin';
+      try {
+        dest = await postSignInDestination();
+      } catch {
+        // Fall back to the apex dashboard, which routes by membership.
+      }
     }
     router.push(dest);
     router.refresh();

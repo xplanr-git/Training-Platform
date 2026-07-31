@@ -134,7 +134,16 @@ describe('tenant guards', () => {
 
   it('lets a platform admin cross tenants but pins everyone else', () => {
     expect(src).toMatch(/ctx\.role !== 'platform_admin' && ctx\.tenantId !== tenant\.id/);
-    expect(src).toMatch(/TENANT_MISMATCH/);
+    // The mismatch must actually stop the render. notFound() rather than a
+    // thrown error (which renders a 500) or a 403 (which would confirm another
+    // academy exists).
+    expect(bodyOf('requireAdminForSlug')).toMatch(/if \(tenantMismatch\) notFound\(\)/);
+  });
+
+  it('sends signed-out and non-admin callers somewhere useful', () => {
+    const body = bodyOf('requireAdminForSlug');
+    expect(body).toMatch(/redirect\('\/login'\)/);
+    expect(body).toMatch(/redirect\('\/dashboard'\)/);
   });
 });
 

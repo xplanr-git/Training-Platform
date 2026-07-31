@@ -1,3 +1,4 @@
+import { notFound, redirect } from 'next/navigation';
 import { db, tenants, eq } from '@training-platform/db';
 import { createClient } from '@/lib/supabase/server';
 
@@ -104,24 +105,28 @@ export async function requireAdmin(): Promise<AdminContext> {
  */
 export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
   const ctx = await getTenantContext();
-  if (!ctx) throw new Error('UNAUTHENTICATED');
-  if (!isAdminRole(ctx.role)) throw new Error('FORBIDDEN');
+  // Pages navigate rather than throw: a bare throw here renders a 500, which is
+  // both a poor experience and misleading — being signed out, or pointed at
+  // someone else's academy, is a routing outcome, not a server fault.
+  if (!ctx) redirect('/login');
+  if (!isAdminRole(ctx.role)) redirect('/dashboard');
 
   const [tenant] = await db
     .select({ id: tenants.id, status: tenants.status })
     .from(tenants)
     .where(eq(tenants.slug, slug))
     .limit(1);
-  if (!tenant) throw new Error('TENANT_NOT_FOUND');
+  if (!tenant) notFound();
 
   // A company_admin may only administer their own academy. A platform_admin may
-  // administer any — and sees that academy's data, not their own.
-  if (ctx.role !== 'platform_admin' && ctx.tenantId !== tenant.id) {
-    throw new Error('TENANT_MISMATCH');
-  }
-  if (tenant.status === 'suspended' || tenant.status === 'cancelled') {
-    throw new Error('TENANT_INACTIVE');
-  }
+  // administer any — and sees that academy's data, not their own. 404 rather
+  // than 403 so this doesn't confirm whether another academy exists.
+  const tenantMismatch = ctx.role !== 'platform_admin' && ctx.tenantId !== tenant.id;
+  if (tenantMismatch) notFound();
+
+  // Suspended tenants are shown an "unavailable" page by the tenant shell; this
+  // stops an admin page rendering underneath it.
+  if (tenant.status === 'suspended' || tenant.status === 'cancelled') notFound();
 
   return { ...ctx, tenantId: tenant.id };
 }

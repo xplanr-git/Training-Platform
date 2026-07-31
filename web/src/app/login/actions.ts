@@ -1,7 +1,34 @@
 'use server';
 
-import { db, audited, eq, and, memberships } from '@training-platform/db';
+import { db, audited, eq, and, memberships, tenants } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+
+/**
+ * Where to send someone straight after sign-in.
+ *
+ * Must be resolved on the server: the destination depends on the caller's tenant
+ * *slug*, and the JWT only carries `tenant_id`. Returning a bare '/admin' only
+ * worked on a tenant subdomain, where middleware rewrites it to
+ * '/t/<slug>/admin' — on the apex host it 404s, which is what signing in at the
+ * root domain used to do. The E2E suite missed it because it drives a subdomain.
+ *
+ * '/t/...' is in the middleware's shared-prefix list, so the path below resolves
+ * unchanged on the apex *and* on a subdomain.
+ */
+export async function postSignInDestination(): Promise<string> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) return '/dashboard';
+
+  const [tenant] = await db
+    .select({ slug: tenants.slug })
+    .from(tenants)
+    .where(eq(tenants.id, ctx.tenantId))
+    .limit(1);
+  if (!tenant) return '/dashboard';
+
+  const isAdmin = ctx.role === 'company_admin' || ctx.role === 'platform_admin';
+  return `/t/${tenant.slug}/${isAdmin ? 'admin' : 'dashboard'}`;
+}
 
 /**
  * Flips a still-'invited' membership to 'active' on first successful sign-in.
