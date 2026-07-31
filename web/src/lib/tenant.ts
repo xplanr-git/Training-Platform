@@ -100,8 +100,11 @@ export async function requireAdmin(): Promise<AdminContext> {
  * opt-in: every admin page called it bare, so the slug was never checked and
  * another academy's admin URL rendered the caller's *own* data under that
  * academy's address. Taking the slug as a required argument makes the check
- * impossible to skip, and gives platform admins the cross-tenant view the
- * bypass below was written to allow.
+ * impossible to skip.
+ *
+ * The URL's academy and the caller's must match — for every role. See the
+ * comment on the mismatch check for why a platform_admin bypass is actively
+ * harmful here.
  */
 export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
   const ctx = await getTenantContext();
@@ -118,10 +121,18 @@ export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
     .limit(1);
   if (!tenant) notFound();
 
-  // A company_admin may only administer their own academy. A platform_admin may
-  // administer any — and sees that academy's data, not their own. 404 rather
-  // than 403 so this doesn't confirm whether another academy exists.
-  const tenantMismatch = ctx.role !== 'platform_admin' && ctx.tenantId !== tenant.id;
+  // Nobody administers an academy other than their own — platform admins
+  // included. 404 rather than 403 so this doesn't confirm another academy exists.
+  //
+  // This deliberately has NO platform_admin bypass. Letting one through made the
+  // page render the URL's academy while every Server Action still scoped its
+  // writes to the caller's own tenant (they all use requireAdmin() -> JWT
+  // tenant_id, and the builder/quiz actions take no slug at all). Saving School
+  // Settings while viewing another academy therefore overwrote your OWN
+  // academy's name and branding, and resource ids from the viewed tenant simply
+  // failed their WHERE clauses. Cross-tenant oversight belongs on /platform,
+  // which is scoped for it; a half-working cross-tenant admin is worse than none.
+  const tenantMismatch = ctx.tenantId !== tenant.id;
   if (tenantMismatch) notFound();
 
   // Suspended tenants are shown an "unavailable" page by the tenant shell; this

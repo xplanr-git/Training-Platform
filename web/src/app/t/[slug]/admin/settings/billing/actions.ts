@@ -5,13 +5,7 @@ import { db, eq, subscriptions } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { stripe, priceIdForPlan } from '@/lib/stripe';
 import { env } from '@/lib/env';
-
-function tenantOrigin(slug: string): string {
-  const root = env.rootDomain();
-  return root.startsWith('localhost')
-    ? `http://${slug}.${root}`
-    : `https://${slug}.${root}`;
-}
+import { tenantOrigin } from '@/lib/host';
 
 /** Starts a Stripe Checkout session for a SaaS subscription plan. */
 export async function startSubscriptionCheckout(tenantSlug: string, planId: string) {

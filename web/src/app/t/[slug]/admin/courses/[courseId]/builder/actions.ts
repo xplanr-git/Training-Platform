@@ -135,13 +135,38 @@ function revalidateBuilder(slug: string, courseId: string) {
   revalidatePath(`/t/${slug}/admin/courses/${courseId}/builder`);
 }
 
-/** Builds a lesson's content_jsonb from the submitted type-specific fields. */
-function contentFor(type: string, formData: FormData): Record<string, unknown> {
+/**
+ * Builds a lesson's content_jsonb from the submitted type-specific fields.
+ *
+ * `previous` is the existing blob on an edit. It matters for video: a hosted
+ * (Bunny) video is stored as `{ provider, videoId }` and has NO youtubeUrl input
+ * in the edit form, so replacing the blob wholesale meant that editing a video
+ * lesson's title or its minutes estimate silently detached the video — the
+ * learner saw "Video unavailable", watch tracking and resume stopped, and the
+ * lesson vanished from Insights. Nothing warned the admin.
+ */
+function contentFor(
+  type: string,
+  formData: FormData,
+  previous?: unknown,
+): Record<string, unknown> {
+  const prev = (previous ?? {}) as Record<string, unknown>;
   switch (type) {
     case 'text':
       return { body: String(formData.get('body') ?? '') };
-    case 'video':
-      return { youtubeUrl: String(formData.get('youtubeUrl') ?? '') };
+    case 'video': {
+      const youtubeUrl = String(formData.get('youtubeUrl') ?? '').trim();
+      // An explicitly submitted URL wins — that is the author changing the video.
+      if (youtubeUrl) return { youtubeUrl };
+      // Otherwise keep whatever was attached rather than clearing it.
+      if (typeof prev.videoId === 'string' && prev.videoId) {
+        return { provider: prev.provider ?? 'bunny', videoId: prev.videoId };
+      }
+      if (typeof prev.youtubeUrl === 'string' && prev.youtubeUrl) {
+        return { youtubeUrl: prev.youtubeUrl };
+      }
+      return {};
+    }
     case 'pdf':
       return { url: String(formData.get('url') ?? '') };
     default:
@@ -252,13 +277,23 @@ export async function updateLesson(
   const title = String(formData.get('title') ?? '').trim() || 'Untitled lesson';
   const type = String(formData.get('type') ?? 'text');
 
+  // Read the current blob so an edit merges into it instead of overwriting it —
+  // see contentFor. Also gives a real error instead of a silent no-op when the
+  // lesson isn't in this tenant.
+  const [existing] = await db
+    .select({ content: lessons.content })
+    .from(lessons)
+    .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
+    .limit(1);
+  if (!existing) throw new Error('Lesson not found');
+
   await db
     .update(lessons)
     .set({
       title,
       type: type as 'text' | 'video' | 'pdf' | 'quiz',
       estimatedMinutes: parseOptionalMinutes(formData.get('estimatedMinutes')),
-      content: contentFor(type, formData),
+      content: contentFor(type, formData, existing.content),
       updatedAt: new Date(),
     })
     .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)));

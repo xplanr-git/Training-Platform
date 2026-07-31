@@ -31,6 +31,21 @@ export function tenantSlugFromHost(host: string | null): string | null {
 }
 
 /**
+ * Absolute origin for a tenant's own pages — for links that leave the app
+ * (emails, Stripe return URLs) and so cannot be relative.
+ *
+ * Must mirror tenantRewritePath below. In single-tenant mode the academy is
+ * served FROM the apex, so the multi-tenant `<slug>.<root>` shape names a host
+ * that exists in neither DNS nor the TLS certificate — the enrolment email's
+ * "Start learning" link failed at the browser, before ever reaching the app.
+ */
+export function tenantOrigin(slug: string): string {
+  if (env.defaultTenantSlug() === slug) return env.appOrigin();
+  const root = env.rootDomain();
+  return root.startsWith('localhost') ? `http://${slug}.${root}` : `https://${slug}.${root}`;
+}
+
+/**
  * Routes that render the same on every host and must never be rewritten into a
  * tenant: sign-in/sign-up, public certificate verification, the email-link
  * landing routes under `/auth`, API handlers, and the internal `/t/...` tree.

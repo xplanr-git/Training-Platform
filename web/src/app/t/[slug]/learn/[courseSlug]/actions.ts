@@ -121,7 +121,10 @@ async function recordLessonCompleted(
 
   const code = crypto.randomUUID();
   const issuedAt = new Date();
-  const verifyUrl = `https://${env.rootDomain()}/verify/${code}`;
+  // appOrigin() gets the scheme right (http on localhost). The old hardcoded
+  // https:// was persisted into the credential JSON as its `id`, so a dev-issued
+  // certificate carried a permanently unreachable identifier.
+  const verifyUrl = `${env.appOrigin()}/verify/${code}`;
 
   await db.transaction(async (tx) => {
     await tx

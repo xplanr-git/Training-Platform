@@ -6,12 +6,8 @@ import { db, audited, eq, and, courses, enrollments } from '@training-platform/d
 import { getTenantContext } from '@/lib/tenant';
 import { stripe } from '@/lib/stripe';
 import { env } from '@/lib/env';
+import { tenantOrigin } from '@/lib/host';
 import { sendEnrollmentEmail } from '@/lib/email';
-
-function tenantOrigin(slug: string): string {
-  const root = env.rootDomain();
-  return root.startsWith('localhost') ? `http://${slug}.${root}` : `https://${slug}.${root}`;
-}
 
 /**
  * Enrolls the current user in a published course (free path). Idempotent — a

@@ -1,7 +1,18 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db, audited, eq, and, courses } from '@training-platform/db';
+import {
+  db,
+  audited,
+  eq,
+  and,
+  courses,
+  lessons,
+  sections,
+  quizzes,
+  quizQuestions,
+  sql,
+} from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { normalizeSlug } from '@/lib/slug';
 import { parsePrice, isCourseStatus } from '@/lib/validation';
@@ -125,6 +136,43 @@ export async function setCourseStatus(
   status: 'draft' | 'published' | 'archived',
 ) {
   const ctx = await requireAdmin();
+
+  // A quiz lesson can only be completed by PASSING it, so a quiz with no
+  // questions is a dead end: the learner sees "This quiz has no questions yet"
+  // with no way forward, the course can never reach 100%, and the completion
+  // certificate is never issued. Refuse to publish rather than let a learner
+  // discover it halfway through.
+  if (status === 'published') {
+    const quizLessons = await db
+      .select({
+        title: lessons.title,
+        quizId: quizzes.id,
+        questions: sql<string>`(
+          select count(*) from ${quizQuestions}
+          where ${quizQuestions.quizId} = ${quizzes.id}
+        )`,
+      })
+      .from(lessons)
+      .innerJoin(sections, eq(sections.id, lessons.sectionId))
+      .leftJoin(quizzes, eq(quizzes.lessonId, lessons.id))
+      .where(
+        and(
+          eq(sections.courseId, courseId),
+          eq(lessons.tenantId, ctx.tenantId!),
+          eq(lessons.type, 'quiz'),
+        ),
+      );
+
+    // No quizzes row at all is just as unfinishable as one with no questions.
+    const empty = quizLessons.filter((q) => !q.quizId || Number(q.questions) === 0);
+    if (empty.length > 0) {
+      const names = empty.map((l) => `“${l.title}”`).join(', ');
+      throw new Error(
+        `Add at least one question to ${names} before publishing — a quiz with no ` +
+          `questions cannot be passed, so learners could never finish the course.`,
+      );
+    }
+  }
 
   await db.transaction(async (tx) => {
     const [after] = await tx

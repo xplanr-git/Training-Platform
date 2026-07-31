@@ -132,12 +132,17 @@ describe('tenant guards', () => {
     expect(src).not.toMatch(/export async function withTenant\(/);
   });
 
-  it('lets a platform admin cross tenants but pins everyone else', () => {
-    expect(src).toMatch(/ctx\.role !== 'platform_admin' && ctx\.tenantId !== tenant\.id/);
+  it('pins every role to its own academy, with no platform_admin bypass', () => {
+    const body = bodyOf('requireAdminForSlug');
     // The mismatch must actually stop the render. notFound() rather than a
     // thrown error (which renders a 500) or a 403 (which would confirm another
     // academy exists).
-    expect(bodyOf('requireAdminForSlug')).toMatch(/if \(tenantMismatch\) notFound\(\)/);
+    expect(body).toMatch(/const tenantMismatch = ctx\.tenantId !== tenant\.id/);
+    expect(body).toMatch(/if \(tenantMismatch\) notFound\(\)/);
+    // A bypass here is the regression: it made pages show the URL's academy
+    // while every Server Action still wrote to the caller's own tenant, so
+    // saving School Settings overwrote the wrong academy.
+    expect(body).not.toMatch(/role !== 'platform_admin' && ctx\.tenantId !== tenant\.id/);
   });
 
   it('sends signed-out and non-admin callers somewhere useful', () => {
