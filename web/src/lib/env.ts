@@ -14,6 +14,11 @@ export const env = {
     required('SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE_KEY),
   databaseUrl: () => required('DATABASE_URL', process.env.DATABASE_URL),
   rootDomain: () => process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000',
+  // Single-tenant mode: serve one academy straight from the apex, so `/admin`
+  // works without a subdomain. Unset = multi-tenant subdomain routing only.
+  // Server-only on purpose — no client code needs it (admin links are already
+  // written as bare `/admin/*` paths and resolved by the rewrite).
+  defaultTenantSlug: () => process.env.DEFAULT_TENANT_SLUG?.trim() || null,
   stripeSecretKey: () => required('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY),
   stripeWebhookSecret: () =>
     required('STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET),

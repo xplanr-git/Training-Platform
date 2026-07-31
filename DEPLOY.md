@@ -138,16 +138,60 @@ These map to the env vars in §5 (`STRIPE_*`).
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | v2 anon key |
    | `SUPABASE_SERVICE_ROLE_KEY` | v2 service-role key (server-only) |
    | `DATABASE_URL` | v2 Postgres URI, **transaction pooler `:6543`** (server-only) |
-   | `NEXT_PUBLIC_ROOT_DOMAIN` | e.g. `outdure.app` |
+   | `NEXT_PUBLIC_ROOT_DOMAIN` | the host the app is served from, e.g. `training.structurebuild.co` |
+   | `DEFAULT_TENANT_SLUG` | **single-tenant mode** — the one academy the apex serves, e.g. `outdure`. Omit for multi-tenant subdomain routing (see §5a) |
    | `BUNNY_API_KEY` / `BUNNY_LIBRARY_ID` / `BUNNY_CDN_HOSTNAME` | Bunny Stream video library |
    | `RESEND_API_KEY` / `EMAIL_FROM` | required for invites — without it nobody can be onboarded |
    | `NEXT_PUBLIC_SENTRY_DSN` / `NEXT_PUBLIC_POSTHOG_KEY` / `_HOST` | optional |
    | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_*` | **omit for internal use** — the Stripe client is lazily constructed, so the app boots fine without them and only throws if a payment path is hit (all gated off) |
 
-3. Add domains: the apex (`outdure.app`) **and** a wildcard
-   (`*.outdure.app`) so tenant subdomains resolve. Point DNS per Vercel’s
-   instructions (CNAME/A for apex, CNAME `*` for wildcard).
+3. Add the domain (see §5a — the choice depends on whether you run one academy
+   or many).
 4. Deploy.
+
+---
+
+## 5a. Domains: one academy, or many?
+
+The routing has two modes, and the DNS you need differs. Getting this wrong is
+the most likely reason a fresh deploy “works but every page 404s”.
+
+### One academy (single-tenant) — the internal setup
+
+Serve the academy straight from the host. `/admin`, `/learn/...` and the
+storefront all resolve at the top level; no subdomain anywhere.
+
+| Setting | Value |
+|---|---|
+| Vercel → Settings → Domains | `training.structurebuild.co` |
+| DNS (wherever `structurebuild.co` is hosted) | CNAME `training` → `cname.vercel-dns.com` |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | `training.structurebuild.co` |
+| `DEFAULT_TENANT_SLUG` | the tenant's slug, e.g. `outdure` |
+
+No wildcard record, no second certificate. `/platform` (cross-tenant admin),
+`/dashboard` and the marketing page `/` deliberately stay at the top level.
+
+> **Without `DEFAULT_TENANT_SLUG`, every `/admin/*` URL 404s on this host** —
+> the host is the apex, so nothing resolves to a tenant. That is by design in
+> multi-tenant mode and surprising in single-tenant mode, hence this section.
+
+> **Cloudflare:** set the CNAME to **DNS only** (grey cloud). Proxying puts
+> Cloudflare's certificate in front of Vercel's — redirect loops and SSL errors
+> that look like an outage.
+
+### Many academies (multi-tenant) — the SaaS setup
+
+Each tenant gets a subdomain of the root.
+
+| Setting | Value |
+|---|---|
+| Vercel → Domains | the apex (`outdure.app`) **and** a wildcard (`*.outdure.app`) |
+| DNS | CNAME/A for the apex, CNAME `*` for the wildcard |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | `outdure.app` |
+| `DEFAULT_TENANT_SLUG` | leave unset |
+
+**Env var changes need a redeploy** — they are not picked up by the existing
+build.
 
 **Check:** `https://<apex>` shows the marketing page; `https://<apex>/signup`
 provisions a tenant and redirects to `<slug>.<apex>/admin`.
