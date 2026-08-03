@@ -71,6 +71,13 @@
       "when": 1785130000000,
       "tag": "0009_progress_events_keep_lesson_id",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785470000000,
+      "tag": "0010_hook_oldest_membership_wins",
+      "breakpoints": true
     }
   ]
 }

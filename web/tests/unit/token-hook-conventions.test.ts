@@ -60,4 +60,14 @@ describe('access-token hook membership scoping', () => {
   it('prefers an active membership when a user holds several', () => {
     expect(sql).toMatch(/order\s+by\s*\(\s*status\s*=\s*'active'\s*\)\s*desc/i);
   });
+
+  it('lets the OLDEST membership win, so an injected one cannot take over', () => {
+    // With `created_at desc`, a company_admin could invite an existing user's
+    // address — creating a membership with no consent — and that newest row then
+    // supplied the victim's tenant_id and role on their next token refresh,
+    // re-pointing their whole session into the attacker's academy. Oldest-wins
+    // means an established membership can never be displaced.
+    expect(sql).toMatch(/created_at\s+asc/i);
+    expect(sql).not.toMatch(/created_at\s+desc/i);
+  });
 });
