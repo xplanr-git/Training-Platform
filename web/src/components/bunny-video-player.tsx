@@ -21,6 +21,14 @@ const MIN_RESUME_SEC = 1;
 const MAX_RESUME_ATTEMPTS = 4;
 
 /**
+ * Never resume this close to the end. Someone who watched to the finish has a
+ * stored position at the last second; seeking there drops them on a video that
+ * is already over, and pressing play restarts it anyway — which reads as "resume
+ * is broken" when it is really "there was nothing left to resume".
+ */
+const END_TOLERANCE_SEC = 3;
+
+/**
  * Bunny Stream player with watch tracking.
  *
  * Bunny exposes control via the Player.js postMessage protocol rather than a
@@ -90,7 +98,11 @@ export function BunnyVideoPlayer({
 
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== EMBED_ORIGIN || typeof e.data !== 'string') return;
-      let msg: { context?: string; event?: PlayerJsEvent; value?: { seconds?: number } };
+      let msg: {
+        context?: string;
+        event?: PlayerJsEvent;
+        value?: { seconds?: number; duration?: number };
+      };
       try {
         msg = JSON.parse(e.data);
       } catch {
@@ -113,6 +125,21 @@ export function BunnyVideoPlayer({
         case 'timeupdate': {
           const t = msg.value?.seconds;
           if (typeof t !== 'number') return;
+
+          // Duration only becomes known once the player reports it. If the stored
+          // position is at (or within a few seconds of) the end, there is nothing
+          // to resume — the learner finished it. Seeking there strands them on a
+          // completed video, and pressing play restarts from 0 anyway, which is
+          // indistinguishable from resume being broken.
+          const duration = msg.value?.duration;
+          if (
+            !resumeDoneRef.current &&
+            typeof duration === 'number' &&
+            duration > 0 &&
+            resumeAtSec >= duration - END_TOLERANCE_SEC
+          ) {
+            resumeDoneRef.current = true;
+          }
 
           // Re-issue the seek while the player is still reporting a position
           // before the resume point: `ready` fires before Bunny has metadata, so
