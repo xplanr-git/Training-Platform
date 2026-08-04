@@ -30,6 +30,7 @@ import { hostedVideoFromContent, availableProviders, getBunnyVideo } from '@/lib
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { NavForm } from '@/components/nav-form';
 
 const LESSON_ICON: Record<string, typeof Video> = {
   text: BookOpen,
@@ -124,7 +125,7 @@ export default async function CourseBuilder({
             <header className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2.5">
               <h2 className="font-medium">{s.title}</h2>
               <div className="flex items-center gap-0.5">
-                <form action={moveSection.bind(null, slug, courseId, s.id, 'up')}>
+                <NavForm action={moveSection.bind(null, slug, courseId, s.id, 'up')} quiet>
                   <Button
                     type="submit"
                     variant="ghost"
@@ -134,8 +135,8 @@ export default async function CourseBuilder({
                   >
                     <ChevronUp className="h-4 w-4" />
                   </Button>
-                </form>
-                <form action={moveSection.bind(null, slug, courseId, s.id, 'down')}>
+                </NavForm>
+                <NavForm action={moveSection.bind(null, slug, courseId, s.id, 'down')} quiet>
                   <Button
                     type="submit"
                     variant="ghost"
@@ -145,8 +146,8 @@ export default async function CourseBuilder({
                   >
                     <ChevronDown className="h-4 w-4" />
                   </Button>
-                </form>
-                <form action={deleteSection.bind(null, slug, courseId, s.id)}>
+                </NavForm>
+                <NavForm action={deleteSection.bind(null, slug, courseId, s.id)} quiet confirm="Delete this section and every lesson in it? This cannot be undone.">
                   <Button
                     type="submit"
                     variant="ghost"
@@ -156,7 +157,7 @@ export default async function CourseBuilder({
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </form>
+                </NavForm>
               </div>
             </header>
 
@@ -177,7 +178,7 @@ export default async function CourseBuilder({
                         )}
                       </span>
                       <span className="flex shrink-0 items-center gap-0.5">
-                        <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')}>
+                        <NavForm action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')} quiet>
                           <Button
                             type="submit"
                             variant="ghost"
@@ -187,8 +188,8 @@ export default async function CourseBuilder({
                           >
                             <ChevronUp className="h-4 w-4" />
                           </Button>
-                        </form>
-                        <form action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'down')}>
+                        </NavForm>
+                        <NavForm action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'down')} quiet>
                           <Button
                             type="submit"
                             variant="ghost"
@@ -198,7 +199,7 @@ export default async function CourseBuilder({
                           >
                             <ChevronDown className="h-4 w-4" />
                           </Button>
-                        </form>
+                        </NavForm>
                         {l.type === 'quiz' && (
                           <Button asChild variant="ghost" size="sm">
                             <Link href={`/admin/courses/${courseId}/builder/quiz/${l.id}`}>
@@ -206,7 +207,7 @@ export default async function CourseBuilder({
                             </Link>
                           </Button>
                         )}
-                        <form action={deleteLesson.bind(null, slug, courseId, l.id)}>
+                        <NavForm action={deleteLesson.bind(null, slug, courseId, l.id)} quiet confirm="Delete this lesson? This cannot be undone.">
                           <Button
                             type="submit"
                             variant="ghost"
@@ -216,7 +217,7 @@ export default async function CourseBuilder({
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </form>
+                        </NavForm>
                       </span>
                     </div>
 
@@ -227,7 +228,7 @@ export default async function CourseBuilder({
                       <summary className="cursor-pointer text-xs text-brand-700">
                         Edit lesson
                       </summary>
-                      <form
+                      <NavForm
                         action={updateLesson.bind(null, slug, courseId, l.id)}
                         className="mt-2 flex flex-wrap items-center gap-2"
                       >
@@ -271,7 +272,7 @@ export default async function CourseBuilder({
                         <Button type="submit" size="sm">
                           Save
                         </Button>
-                      </form>
+                      </NavForm>
 
                       {l.type === 'video' && videoHostingOn && (
                         <div className="mt-3 border-t border-border pt-3">
@@ -329,10 +330,11 @@ export default async function CourseBuilder({
               )}
             </ul>
 
-            <form
+            <NavForm
               action={addLesson.bind(null, slug, courseId, s.id)}
               className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-muted px-4 py-3"
-            >
+            quiet
+          >
               <Input name="title" required placeholder="Lesson title" className="w-44" />
               <select name="type" className={SELECT_CLS}>
                 <option value="text">Text</option>
@@ -352,20 +354,21 @@ export default async function CourseBuilder({
               <Button type="submit" variant="secondary">
                 Add lesson
               </Button>
-            </form>
+            </NavForm>
           </Card>
         ))}
       </div>
 
-      <form
+      <NavForm
         action={addSection.bind(null, slug, courseId)}
         className="mt-6 flex items-center gap-2"
-      >
+            quiet
+          >
         <Input name="title" required placeholder="New section title" className="max-w-xs" />
         <Button type="submit" variant="outline">
           Add section
         </Button>
-      </form>
+      </NavForm>
     </div>
   );
 }

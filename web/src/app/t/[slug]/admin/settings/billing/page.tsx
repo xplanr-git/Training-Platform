@@ -2,6 +2,7 @@ import { db, eq, subscriptions } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { PLANS } from '@/lib/stripe';
 import { startSubscriptionCheckout, openBillingPortal } from './actions';
+import { NavForm } from '@/components/nav-form';
 
 export default async function Billing({
   params,
@@ -29,11 +30,11 @@ export default async function Billing({
             <p className="font-medium capitalize">{sub.planId} plan</p>
             <p className="text-sm text-muted capitalize">Status: {sub.status}</p>
           </div>
-          <form action={openBillingPortal.bind(null, slug)}>
+          <NavForm action={openBillingPortal.bind(null, slug)}>
             <button className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted">
               Manage billing
             </button>
-          </form>
+          </NavForm>
         </div>
       ) : (
         <p className="mt-2 text-muted">
@@ -48,14 +49,14 @@ export default async function Billing({
             <p className="mt-1 text-sm text-muted">
               Up to {p.activeLearnerLimit.toLocaleString()} active learners
             </p>
-            <form action={startSubscriptionCheckout.bind(null, slug, p.id)} className="mt-4">
+            <NavForm action={startSubscriptionCheckout.bind(null, slug, p.id)} className="mt-4">
               <button
                 disabled={sub?.planId === p.id}
                 className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
               >
                 {sub?.planId === p.id ? 'Current plan' : 'Choose plan'}
               </button>
-            </form>
+            </NavForm>
           </div>
         ))}
       </div>

@@ -13,7 +13,6 @@ import {
 import { requireAdmin } from '@/lib/tenant';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendInviteEmail } from '@/lib/email';
-import { env } from '@/lib/env';
 import { absoluteUrl } from '@/lib/absolute-url';
 import {
   parseAssignableRole,

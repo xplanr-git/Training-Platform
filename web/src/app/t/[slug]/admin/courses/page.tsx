@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { NavForm } from '@/components/nav-form';
 
 export default async function CoursesList({
   params,
@@ -113,23 +114,25 @@ export default async function CoursesList({
                   </TableCell>
                   <TableCell className="text-right">
                     {c.status !== 'published' ? (
-                      <form
+                      <NavForm
                         action={setCourseStatus.bind(null, slug, c.id, 'published')}
                         className="inline"
-                      >
+            quiet
+          >
                         <Button type="submit" variant="ghost" size="sm">
                           Publish
                         </Button>
-                      </form>
+                      </NavForm>
                     ) : (
-                      <form
+                      <NavForm
                         action={setCourseStatus.bind(null, slug, c.id, 'archived')}
                         className="inline"
-                      >
+            quiet confirm="Archive this course? Learners will no longer see it."
+          >
                         <Button type="submit" variant="ghost" size="sm">
                           Archive
                         </Button>
-                      </form>
+                      </NavForm>
                     )}
                   </TableCell>
                 </TableRow>

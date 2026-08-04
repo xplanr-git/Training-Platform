@@ -58,11 +58,20 @@ export function NavForm({
   children,
   className,
   confirm,
+  quiet,
 }: {
   action: (formData: FormData) => Promise<ActionResult>;
   children: React.ReactNode;
   className?: string;
   confirm?: string;
+  /**
+   * Suppresses the "Saved." confirmation, keeping the in-flight disable and the
+   * error message. For actions whose effect is self-evident — reordering a
+   * lesson, deleting a row, revoking a certificate — the list visibly changes,
+   * so a success line is noise, and in a row of icon buttons it would also
+   * break the layout. Errors are never suppressed.
+   */
+  quiet?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -136,8 +145,8 @@ export function NavForm({
       </fieldset>
 
       <div aria-live="polite" className="contents">
-        {pending && <p className="mt-1 text-sm text-muted">Saving…</p>}
-        {saved && !pending && <p className="mt-1 text-sm text-brand-600">Saved.</p>}
+        {pending && !quiet && <p className="mt-1 text-sm text-muted">Saving…</p>}
+        {saved && !pending && !quiet && <p className="mt-1 text-sm text-brand-600">Saved.</p>}
         {error && (
           <p role="alert" className="mt-1 text-sm text-red-600">
             {error}

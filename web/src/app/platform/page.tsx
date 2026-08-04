@@ -1,5 +1,6 @@
 import { db, desc, count, tenants, memberships } from '@training-platform/db';
 import { setTenantStatus } from './actions';
+import { NavForm } from '@/components/nav-form';
 
 const STATUS_STYLES: Record<string, string> = {
   active: 'bg-green-50 text-green-700',
@@ -66,13 +67,13 @@ export default async function PlatformHome() {
                 </td>
                 <td className="px-4 py-3">
                   {t.status === 'suspended' ? (
-                    <form action={setTenantStatus.bind(null, t.id, 'active')}>
+                    <NavForm action={setTenantStatus.bind(null, t.id, 'active')} quiet>
                       <button className="text-brand-600 hover:underline">Reactivate</button>
-                    </form>
+                    </NavForm>
                   ) : (
-                    <form action={setTenantStatus.bind(null, t.id, 'suspended')}>
+                    <NavForm action={setTenantStatus.bind(null, t.id, 'suspended')} quiet confirm="Suspend this academy? Its learners and admins lose access immediately.">
                       <button className="text-red-600 hover:underline">Suspend</button>
-                    </form>
+                    </NavForm>
                   )}
                 </td>
               </tr>

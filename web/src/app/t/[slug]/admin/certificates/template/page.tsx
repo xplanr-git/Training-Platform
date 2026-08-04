@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { db, eq, certificateTemplates } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { saveCertificateTemplate } from './actions';
+import { NavForm } from '@/components/nav-form';
 
 export default async function CertificateTemplate({
   params,
@@ -35,7 +36,7 @@ export default async function CertificateTemplate({
         Applied to the public verification page for every certificate you issue.
       </p>
 
-      <form
+      <NavForm
         action={saveCertificateTemplate.bind(null, slug)}
         className="mt-6 flex flex-col gap-4"
       >
@@ -72,7 +73,7 @@ export default async function CertificateTemplate({
         >
           Save template
         </button>
-      </form>
+      </NavForm>
     </div>
   );
 }

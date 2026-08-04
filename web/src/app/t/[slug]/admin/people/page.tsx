@@ -16,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { connectRoleLabel } from '@/lib/connect-roles';
+import { NavForm } from '@/components/nav-form';
 
 const ROLE_LABELS: Record<string, string> = {
   company_admin: 'Admin',
@@ -112,11 +113,11 @@ export default async function People({
                 <TableCell className="font-medium">{m.name || '—'}</TableCell>
                 <TableCell className="text-muted">{m.email}</TableCell>
                 <TableCell>
-                  <form action={setMemberRole.bind(null, slug, m.id, nextRole(m.role))} className="inline">
+                  <NavForm action={setMemberRole.bind(null, slug, m.id, nextRole(m.role))} className="inline" quiet>
                     <Button type="submit" variant="ghost" size="sm" title="Click to cycle role">
                       {ROLE_LABELS[m.role] ?? m.role}
                     </Button>
-                  </form>
+                  </NavForm>
                 </TableCell>
                 <TableCell>
                   {connectRoleLabel(m.connectRoleCode) ? (
@@ -132,25 +133,25 @@ export default async function People({
                 </TableCell>
                 <TableCell className="text-right">
                   {m.status === 'deactivated' ? (
-                    <form action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline">
+                    <NavForm action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline" quiet>
                       <Button type="submit" variant="ghost" size="sm">
                         Reactivate
                       </Button>
-                    </form>
+                    </NavForm>
                   ) : (
                     <>
                       {m.status === 'invited' && (
-                        <form action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline">
+                        <NavForm action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline" quiet>
                           <Button type="submit" variant="ghost" size="sm">
                             Activate
                           </Button>
-                        </form>
+                        </NavForm>
                       )}
-                      <form action={setMemberStatus.bind(null, slug, m.id, 'deactivated')} className="inline">
+                      <NavForm action={setMemberStatus.bind(null, slug, m.id, 'deactivated')} className="inline" quiet confirm="Deactivate this member? They lose access immediately.">
                         <Button type="submit" variant="ghost" size="sm" className="text-muted">
                           Deactivate
                         </Button>
-                      </form>
+                      </NavForm>
                     </>
                   )}
                 </TableCell>

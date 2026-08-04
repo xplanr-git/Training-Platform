@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { NavForm } from '@/components/nav-form';
 
 export default async function Settings({
   params,
@@ -35,7 +36,7 @@ export default async function Settings({
 
       <Card className="mt-6">
         <CardContent className="py-6">
-          <form action={updateSchoolSettings.bind(null, slug)} className="flex flex-col gap-5">
+          <NavForm action={updateSchoolSettings.bind(null, slug)} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Academy name</Label>
               <Input id="name" name="name" required defaultValue={tenant?.name ?? ''} />
@@ -80,7 +81,7 @@ export default async function Settings({
             <Button type="submit" className="self-start">
               Save settings
             </Button>
-          </form>
+          </NavForm>
         </CardContent>
       </Card>
     </div>

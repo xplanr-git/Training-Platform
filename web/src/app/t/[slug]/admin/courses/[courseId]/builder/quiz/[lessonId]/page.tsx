@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { NavForm } from '@/components/nav-form';
 
 const SELECT_CLS =
   'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -45,9 +46,9 @@ export default async function QuizEditor({
           <ArrowLeft className="h-4 w-4" /> Content
         </Link>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">{lesson.title}</h1>
-        <form action={ensureQuiz.bind(null, slug, courseId, lessonId)} className="mt-4">
+        <NavForm action={ensureQuiz.bind(null, slug, courseId, lessonId)} className="mt-4">
           <Button type="submit">Initialize quiz</Button>
-        </form>
+        </NavForm>
       </div>
     );
   }
@@ -70,7 +71,7 @@ export default async function QuizEditor({
       </Link>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">Quiz · {lesson.title}</h1>
 
-      <form
+      <NavForm
         action={setPassThreshold.bind(null, slug, courseId, lessonId, quiz.id)}
         className="mt-4 flex items-end gap-2"
       >
@@ -89,7 +90,7 @@ export default async function QuizEditor({
         <Button type="submit" variant="outline">
           Save
         </Button>
-      </form>
+      </NavForm>
 
       <ol className="mt-6 space-y-3">
         {questions.map((q, i) => {
@@ -104,7 +105,7 @@ export default async function QuizEditor({
                       {i + 1}. {q.prompt}{' '}
                       <span className="text-xs font-normal text-muted">({q.points} pt)</span>
                     </p>
-                    <form action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)}>
+                    <NavForm action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)} quiet confirm="Delete this question?">
                       <Button
                         type="submit"
                         variant="ghost"
@@ -114,7 +115,7 @@ export default async function QuizEditor({
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </form>
+                    </NavForm>
                   </div>
                   <ul className="mt-3 space-y-1.5 text-sm">
                     {opts.map((o, oi) => (
@@ -143,9 +144,10 @@ export default async function QuizEditor({
 
       <Card className="mt-6">
         <CardContent className="py-5">
-          <form
+          <NavForm
             action={addQuestion.bind(null, slug, courseId, lessonId, quiz.id)}
             className="space-y-3"
+            quiet
           >
             <h2 className="font-medium">Add question</h2>
             <Input name="prompt" required placeholder="Question prompt" />
@@ -176,7 +178,7 @@ export default async function QuizEditor({
               </label>
             </div>
             <Button type="submit">Add question</Button>
-          </form>
+          </NavForm>
         </CardContent>
       </Card>
     </div>

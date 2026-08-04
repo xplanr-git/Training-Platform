@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { NavForm } from '@/components/nav-form';
 
 export default async function Certificates({
   params,
@@ -109,17 +110,17 @@ export default async function Certificates({
                       </a>
                     </Button>
                     {c.revokedAt ? (
-                      <form action={setCertificateRevoked.bind(null, slug, c.id, false)} className="inline">
+                      <NavForm action={setCertificateRevoked.bind(null, slug, c.id, false)} className="inline" quiet>
                         <Button type="submit" variant="ghost" size="sm">
                           Reinstate
                         </Button>
-                      </form>
+                      </NavForm>
                     ) : (
-                      <form action={setCertificateRevoked.bind(null, slug, c.id, true)} className="inline">
+                      <NavForm action={setCertificateRevoked.bind(null, slug, c.id, true)} className="inline" quiet confirm="Revoke this certificate? Its public verification page will show it as revoked.">
                         <Button type="submit" variant="ghost" size="sm" className="text-destructive">
                           Revoke
                         </Button>
-                      </form>
+                      </NavForm>
                     )}
                   </div>
                 </TableCell>

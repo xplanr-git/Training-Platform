@@ -57,7 +57,7 @@ export default async function EditCourse({
 
       <Card className="mt-6">
         <CardContent className="py-6">
-          <form action={action} className="flex flex-col gap-5">
+          <NavForm action={action} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="title">Title</Label>
               <Input id="title" name="title" required defaultValue={course.title} />
@@ -116,7 +116,7 @@ export default async function EditCourse({
             <Button type="submit" className="self-start">
               Save changes
             </Button>
-          </form>
+          </NavForm>
         </CardContent>
       </Card>
 

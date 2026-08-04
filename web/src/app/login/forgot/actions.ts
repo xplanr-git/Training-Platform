@@ -2,7 +2,6 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPasswordResetEmail } from '@/lib/email';
-import { env } from '@/lib/env';
 import { absoluteUrl } from '@/lib/absolute-url';
 
 /**
