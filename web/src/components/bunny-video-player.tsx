@@ -7,6 +7,20 @@ const BEAT_SECONDS = 15;
 const EMBED_ORIGIN = 'https://iframe.mediadelivery.net';
 
 /**
+ * Don't bother resuming a position this small — landing the learner at 0 is
+ * indistinguishable and avoids a pointless seek. Previously 5s, which meant a
+ * short first visit was never resumed at all.
+ */
+const MIN_RESUME_SEC = 1;
+
+/**
+ * How many times to re-issue the seek. Bunny frequently has no metadata yet when
+ * it emits `ready`, so a single setCurrentTime there is silently dropped and the
+ * video starts from the beginning. Re-issuing on early timeupdates fixes it.
+ */
+const MAX_RESUME_ATTEMPTS = 4;
+
+/**
  * Bunny Stream player with watch tracking.
  *
  * Bunny exposes control via the Player.js postMessage protocol rather than a
@@ -34,13 +48,29 @@ export function BunnyVideoPlayer({
   const frameRef = useRef<HTMLIFrameElement>(null);
   const lastTimeRef = useRef<number | null>(null);
   const watchedRef = useRef(0);
-  const furthestRef = useRef(resumeAtSec);
+  // Starts at 0, NOT at resumeAtSec. Seeding it with the resume value meant a
+  // failed seek still reported the resume position back, so the stored furthest
+  // point looked correct while the learner actually restarted from the
+  // beginning — the failure was invisible in the data. The server takes
+  // max(positionSec) across all events, so reporting only this session's real
+  // furthest can never move a learner backwards.
+  const furthestRef = useRef(0);
   const sentAtRef = useRef(0);
-  const sentPosRef = useRef(resumeAtSec);
+  const sentPosRef = useRef(0);
+  const resumeAttemptsRef = useRef(0);
+  const resumeDoneRef = useRef(false);
 
   useEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
+
+    // Refs outlive the effect, so reset the resume state whenever it re-runs
+    // (e.g. resumeAtSec changed after a refresh). Note `ready` will NOT fire
+    // again for an already-loaded iframe — the retry on timeupdate is what
+    // makes the seek land in that case.
+    resumeAttemptsRef.current = 0;
+    resumeDoneRef.current = resumeAtSec <= MIN_RESUME_SEC;
+    lastTimeRef.current = null;
 
     const send = (method: string, value?: unknown) => {
       frame.contentWindow?.postMessage(
@@ -73,11 +103,37 @@ export function BunnyVideoPlayer({
           (['timeupdate', 'pause', 'ended', 'seeked'] as const).forEach((ev) =>
             send('addEventListener', ev),
           );
-          if (resumeAtSec > 5) send('setCurrentTime', resumeAtSec);
+          if (resumeAtSec > MIN_RESUME_SEC) {
+            resumeAttemptsRef.current += 1;
+            send('setCurrentTime', resumeAtSec);
+          } else {
+            resumeDoneRef.current = true;
+          }
           break;
         case 'timeupdate': {
           const t = msg.value?.seconds;
           if (typeof t !== 'number') return;
+
+          // Re-issue the seek while the player is still reporting a position
+          // before the resume point: `ready` fires before Bunny has metadata, so
+          // the first setCurrentTime is often dropped. Retry until it lands or we
+          // run out of attempts, then accept where we are rather than fighting
+          // the player forever (or the learner scrubbing backwards on purpose).
+          if (!resumeDoneRef.current) {
+            if (t >= resumeAtSec - 1) {
+              resumeDoneRef.current = true;
+            } else if (resumeAttemptsRef.current < MAX_RESUME_ATTEMPTS) {
+              resumeAttemptsRef.current += 1;
+              send('setCurrentTime', resumeAtSec);
+              // Don't count this pre-resume playback as watched, and don't let it
+              // set the furthest point.
+              lastTimeRef.current = null;
+              return;
+            } else {
+              resumeDoneRef.current = true;
+            }
+          }
+
           const prev = lastTimeRef.current;
           lastTimeRef.current = t;
           if (prev !== null) {
