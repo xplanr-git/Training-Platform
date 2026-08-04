@@ -84,6 +84,18 @@ regress; committed and pushed to both remotes.
 
 ## 4. Correctness items already identified
 
+- [ ] **An E2E test that actually signs in.** `tests/e2e/smoke.spec.ts` only
+      visits public pages, so *every* authenticated route — the whole admin area,
+      the learner dashboard, the lesson player, the builder — has zero
+      end-to-end coverage. This is the structural reason regressions kept
+      reaching the team while I reported things working: without a session, the
+      only routes verifiable from outside are the six public ones, and the other
+      sixteen were being checked by reasoning rather than by loading them.
+      Needs a seeded test tenant with a known-password admin and learner on a
+      non-production Supabase project — NOT the live one. Highest-leverage item
+      in this file; it is what stops the next regression rather than fixing the
+      last one.
+
 - [ ] **Require a name on invitation.** Without one a certificate can read
       "This certifies that " and nothing in the product can repair it.
 - [ ] **Honest "about N min left".** When only some remaining lessons carry an
