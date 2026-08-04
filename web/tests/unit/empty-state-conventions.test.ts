@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { token, ratio, AA_NORMAL_TEXT } from './helpers/contrast';
 
 /**
  * Empty states were the most inconsistent thing in the app: five different
@@ -141,26 +142,6 @@ describe('the explanation text stays readable (WCAG 2.1 AA, 1.4.3)', () => {
   // written. Nudge either token and it silently drops below AA, with nothing on
   // screen to show that it did. So compute it from the tokens rather than trust
   // a one-off eyeball, which is what every previous check of this amounted to.
-  const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
-
-  function token(name: string): string {
-    const m = new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`).exec(css);
-    if (!m) throw new Error(`token ${name} not found in globals.css`);
-    return m[1];
-  }
-
-  /** WCAG relative luminance. */
-  function luminance(hex: string): number {
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-    const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-  }
-
-  function ratio(a: string, b: string): number {
-    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-    return (hi + 0.05) / (lo + 0.05);
-  }
-
   it('sanity-checks the maths against known pairs', () => {
     expect(ratio('#000000', '#ffffff')).toBeCloseTo(21, 1);
     expect(ratio('#ffffff', '#ffffff')).toBeCloseTo(1, 5);
@@ -169,7 +150,7 @@ describe('the explanation text stays readable (WCAG 2.1 AA, 1.4.3)', () => {
   it('muted description text on the empty-state background clears 4.5:1', () => {
     const r = ratio(token('--color-muted'), token('--color-surface-muted'));
     expect(r, `--color-muted on --color-surface-muted is ${r.toFixed(2)}:1, AA needs 4.5:1`).
-      toBeGreaterThanOrEqual(4.5);
+      toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
   });
 
   it('the title clears it comfortably too', () => {

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CourseComplete } from '@/components/course-complete';
 import { EmptyRow } from '@/components/empty-state';
 import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
@@ -11,6 +12,7 @@ import {
   courses,
   sections,
   lessons,
+  certificates,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
@@ -63,9 +65,29 @@ export default async function Learn({
     bySection.set(l.sectionId, arr);
   }
 
-  const progress = view.enrollmentId
-    ? await getCourseProgress(view.enrollmentId, course.id)
-    : previewProgress(lessonRows.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes })));
+  // Progress and the certificate both key off enrollmentId alone, so they go
+  // together. The certificate is fetched even when the course is not finished —
+  // completion is only known once progress resolves, and waiting to find out would
+  // cost a serial round trip on exactly the page where the panel matters.
+  const [progress, certificate] = view.enrollmentId
+    ? await Promise.all([
+        getCourseProgress(view.enrollmentId, course.id),
+        db
+          .select({
+            verificationCode: certificates.verificationCode,
+            issuedAt: certificates.issuedAt,
+          })
+          .from(certificates)
+          .where(eq(certificates.enrollmentId, view.enrollmentId))
+          .limit(1)
+          .then((r) => r[0] ?? null),
+      ])
+    : [
+        previewProgress(
+          lessonRows.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes })),
+        ),
+        null,
+      ];
 
   // Ordered flat lesson list → first incomplete lesson to resume at.
   const sectionOrder = new Map(sectionRows.map((s, i) => [s.id, i]));
@@ -101,26 +123,45 @@ export default async function Learn({
         </div>
       )}
 
-      <Card className="mt-4">
-        <CardContent className="py-5">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">{progress.percent}% complete</span>
-            <span className="text-muted tabular-nums">
-              {progress.done} of {progress.total} lessons
-              {!progress.isComplete && lessonsLeft > 0 ? ` · ${lessonsLeft} left` : ''}
-              {!progress.isComplete && progress.minutesLeft != null
-                ? ` · about ${formatMinutes(progress.minutesLeft)} left`
-                : ''}
-            </span>
-          </div>
-          <Progress value={progress.percent} className="mt-2 h-2" />
-          {resumeLesson && (
-            <Button asChild size="lg" className="mt-4">
-              <Link href={`/learn/${courseSlug}/${resumeLesson.id}`}>{resumeLabel}</Link>
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      {/*
+        Once finished, the progress card has nothing left to say — it read "100%
+        complete" and offered "Review course", which is exactly what made the one
+        moment worth marking look like any other visit. The panel replacing it
+        carries the review action, so nothing is lost.
+        Preview mode is excluded by enrollmentId: an admin previewing their own
+        course has no enrolment and must not be shown a certificate.
+      */}
+      {progress.isComplete && view.enrollmentId ? (
+        <div className="mt-4">
+          <CourseComplete
+            courseTitle={course.title}
+            verificationCode={certificate?.verificationCode ?? null}
+            issuedAt={certificate?.issuedAt ?? null}
+            reviewHref={resumeLesson ? `/learn/${courseSlug}/${resumeLesson.id}` : null}
+          />
+        </div>
+      ) : (
+        <Card className="mt-4">
+          <CardContent className="py-5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium">{progress.percent}% complete</span>
+              <span className="text-muted tabular-nums">
+                {progress.done} of {progress.total} lessons
+                {!progress.isComplete && lessonsLeft > 0 ? ` · ${lessonsLeft} left` : ''}
+                {!progress.isComplete && progress.minutesLeft != null
+                  ? ` · about ${formatMinutes(progress.minutesLeft)} left`
+                  : ''}
+              </span>
+            </div>
+            <Progress value={progress.percent} className="mt-2 h-2" />
+            {resumeLesson && (
+              <Button asChild size="lg" className="mt-4">
+                <Link href={`/learn/${courseSlug}/${resumeLesson.id}`}>{resumeLabel}</Link>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="mt-8 space-y-5">
         {sectionRows.length === 0 && (

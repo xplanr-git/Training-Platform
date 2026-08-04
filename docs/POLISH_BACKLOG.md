@@ -71,9 +71,15 @@ regress; committed and pushed to both remotes.
       moves both read pre-swap positions — two clicks, one move, and in different
       directions, two rows sharing a position. Read is now inside the transaction
       with `FOR UPDATE`.
-- [ ] **Certificate acknowledgement on course completion.** The certificate is
-      issued but the learner is shown nothing — no confirmation, no link, no
-      verification code. Highest-value learner-facing gap.
+- [x] **Certificate acknowledgement on course completion.** `CourseComplete`
+      panel replaces the progress card on the course outline once finished — the
+      page the learner is redirected to on the last click. Shows the issue date, a
+      link to the certificate, and the verification code, which is the part worth
+      having on screen: a contractor showing a client needs a code the client can
+      check without an account, and the only other copy was in an email. Gated on
+      `enrollmentId`, so a previewing admin is never told they earned one. Claims
+      NO designation — that is the blocked decision in §5, and the certificate page
+      derives its own heading from the tenant template.
 - [ ] **Explain an unconfigured video host.** A missing `BUNNY_LIBRARY_ID` shows
       learners a bare "Video unavailable" with nothing logged and no way to
       diagnose. Distinguish "not configured" from "no video attached".
@@ -109,6 +115,11 @@ regress; committed and pushed to both remotes.
       link, not by reading the code.
       NEEDS A DECISION: should the bare domain serve marketing or the catalogue
       at `/`? Do not guess — it changes what every visitor sees first.
+
+- [ ] **No prettier config in the repo.** `npx prettier --write` therefore uses
+      prettier's defaults, which are double quotes — it reformatted a whole file
+      away from the codebase's single-quote style before being reverted. Either add
+      a `.prettierrc` matching current style or stop reaching for prettier here.
 
 - [ ] **An E2E test that actually signs in.** `tests/e2e/smoke.spec.ts` only
       visits public pages, so *every* authenticated route — the whole admin area,
@@ -230,3 +241,20 @@ Newest first. One line per completed item: what changed, and the commit.
   which is not something to do unattended. `FOR UPDATE` reaching the wire was
   confirmed by rendering the query: `… order by "lessons"."position" asc for
   update`.
+- Completion acknowledgement. Finishing a course issued a certificate, advanced
+  the Connect tier and sent an email, then showed the learner a page saying "100%
+  complete" with a "Review course" button — the one moment worth marking looked
+  like any other visit. `CourseComplete` now replaces that card with the issue
+  date, a link, and the verification code. Deliberately asserts no designation:
+  §5 leaves the credential's name open, and the certificate page reads its heading
+  from the tenant template, so naming one here could contradict the document the
+  learner then opens. Caught a contrast trap in the process — `text-muted` on
+  `--color-brand-50` is 4.38:1 and FAILS AA, while passing at 4.63:1 on white,
+  which is exactly why reaching for it felt right; body copy uses neutral-700
+  (9.4:1). The WCAG helpers are now shared in `tests/unit/helpers/contrast.ts`
+  rather than duplicated. Ten guards proven red — one sabotage was itself wrong
+  (it hit the wrong `Promise.all` on the page) and had to be redone. VERIFIED: the
+  panel renders in both states, and the link it emits resolves to a real, valid
+  certificate with no sign-in — checked against a genuine code from the database.
+  NOT verified: the redirect immediately after the final click, which needs an
+  enrolled learner session.
