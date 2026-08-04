@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { env } from '@/lib/env';
 
 /**
@@ -51,18 +52,28 @@ export function availableProviders(): HostedProvider[] {
 
 const BUNNY_API = 'https://video.bunnycdn.com';
 
-async function bunnyFetch(path: string, init?: RequestInit): Promise<Response> {
+/**
+ * `revalidate` opts a GET into Next's data cache for that many seconds. Omit it
+ * and the request is uncached, which is what every mutation and every
+ * correctness-critical read wants. Deliberately not a plain RequestInit passthrough:
+ * `cache: 'no-store'` and `next.revalidate` are mutually exclusive in Next, and
+ * letting callers set both is a footgun.
+ */
+type BunnyFetchInit = Omit<RequestInit, 'cache'> & { revalidate?: number };
+
+async function bunnyFetch(path: string, init?: BunnyFetchInit): Promise<Response> {
   const key = env.bunnyApiKey();
   const lib = env.bunnyLibraryId();
   if (!key || !lib) throw new Error('Bunny Stream is not configured');
+  const { revalidate, ...rest } = init ?? {};
   return fetch(`${BUNNY_API}/library/${lib}${path}`, {
-    ...init,
+    ...rest,
     headers: {
-      ...(init?.headers ?? {}),
+      ...(rest.headers ?? {}),
       AccessKey: key,
       accept: 'application/json',
     },
-    cache: 'no-store',
+    ...(revalidate === undefined ? { cache: 'no-store' as const } : { next: { revalidate } }),
   });
 }
 
@@ -105,8 +116,45 @@ function bunnyStatusLabel(status: number | undefined, progress: number): string 
   }
 }
 
+/**
+ * Fresh read, uncached. Use where the ANSWER MATTERS RIGHT NOW — chiefly
+ * attachVideo, which calls this to confirm a video really exists before pointing
+ * a lesson at it. A cached miss there would reject a video that had just been
+ * uploaded seconds earlier.
+ */
 export async function getBunnyVideo(videoId: string): Promise<BunnyVideoDetails | null> {
-  const res = await bunnyFetch(`/videos/${encodeURIComponent(videoId)}`);
+  return readBunnyVideo(videoId);
+}
+
+/**
+ * Cached read for DISPLAY — the builder's attached-video cards.
+ *
+ * Two layers, doing different jobs:
+ *  - `cache()` deduplicates within a single request, so two lessons pointing at
+ *    the same video cost one call instead of two.
+ *  - `revalidate` shares the result across requests for a few seconds, which is
+ *    the bigger win: the builder issues one call per video lesson on every
+ *    render, so navigating in and out of a ten-video course was ten calls each
+ *    time.
+ *
+ * A short window is safe because the only field that moves is the encoding
+ * status, which changes over minutes; once a video is Ready it never changes
+ * again. Worst case the card is a few seconds stale, and it already tells the
+ * author to reload to check again.
+ */
+export const getBunnyVideoCached = cache(
+  (videoId: string): Promise<BunnyVideoDetails | null> =>
+    readBunnyVideo(videoId, BUNNY_DETAILS_REVALIDATE_SEC),
+);
+
+/** Seconds to share a video's details for. Encoding progresses over minutes. */
+const BUNNY_DETAILS_REVALIDATE_SEC = 20;
+
+async function readBunnyVideo(
+  videoId: string,
+  revalidate?: number,
+): Promise<BunnyVideoDetails | null> {
+  const res = await bunnyFetch(`/videos/${encodeURIComponent(videoId)}`, { revalidate });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Bunny lookup failed (${res.status})`);
   const v = (await res.json()) as {

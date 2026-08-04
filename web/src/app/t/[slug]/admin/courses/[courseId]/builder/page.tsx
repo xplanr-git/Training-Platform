@@ -26,7 +26,11 @@ import {
 } from './actions';
 import { VideoUpload } from '@/components/video-upload';
 import { AttachedVideo } from '@/components/attached-video';
-import { hostedVideoFromContent, availableProviders, getBunnyVideo } from '@/lib/video';
+import {
+  hostedVideoFromContent,
+  availableProviders,
+  getBunnyVideoCached,
+} from '@/lib/video';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -79,11 +83,12 @@ export default async function CourseBuilder({
     lessonsBySection.set(l.sectionId, arr);
   }
 
-  // Look up what is actually attached to each video lesson, so the builder can
-  // show a poster, title, length and encoding state rather than a bare uuid.
-  // Fetched in parallel; a Bunny outage degrades to "no details" instead of
-  // failing the whole page, because the rest of the builder still works.
-  const attachedVideos = new Map<string, Awaited<ReturnType<typeof getBunnyVideo>>>();
+  // Look up what is attached to each video lesson, so the builder shows a poster,
+  // title, length and encoding state rather than a bare uuid. Fetched in parallel
+  // and cached briefly (see getBunnyVideoCached), so revisiting the builder does
+  // not re-hit Bunny once per video every time. A Bunny outage degrades to "no
+  // details" rather than failing the page — the rest of the builder still works.
+  const attachedVideos = new Map<string, Awaited<ReturnType<typeof getBunnyVideoCached>>>();
   if (videoHostingOn) {
     const videoLessons: Array<{ lessonId: string; videoId: string }> = [];
     for (const l of lessonRows) {
@@ -94,7 +99,7 @@ export default async function CourseBuilder({
     const results = await Promise.all(
       videoLessons.map(async (v) => {
         try {
-          return [v.lessonId, await getBunnyVideo(v.videoId)] as const;
+          return [v.lessonId, await getBunnyVideoCached(v.videoId)] as const;
         } catch {
           return [v.lessonId, null] as const;
         }

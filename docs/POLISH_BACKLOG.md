@@ -40,9 +40,11 @@ regress; committed and pushed to both remotes.
       two-column layout with a reserved `aspect-video` block. All now use the
       `Skeleton` primitive — which already existed and was unused, while the
       first two loading states hand-rolled their own pulse.
-- [ ] **Cache the per-request Bunny lookups in the builder.** One API call per
-      video lesson on every render. Wrap in React `cache()` and consider a short
-      revalidate, since encoding state changes on the order of minutes.
+- [x] **Cache the per-request Bunny lookups in the builder.** Split into
+      `getBunnyVideo` (fresh) and `getBunnyVideoCached` (`cache()` + 20s
+      revalidate). `attachVideo` must keep the fresh one — it verifies a
+      just-uploaded video exists, and a cached 404 would reject a video that is
+      plainly there. Both halves pinned by a fitness test.
 
 ## 2. Feedback and state (partially done — verify, then extend)
 
@@ -144,3 +146,16 @@ Newest first. One line per completed item: what changed, and the commit.
 - `b646aa6` — all 28 Server Action forms routed through `NavForm`; destructive
   actions gained confirmations; fitness test added and verified by reverting a
   form and watching it fail.
+- Split the Bunny video read in two: cached for the builder's display cards
+  (React `cache()` to dedupe within a render, plus a 20s revalidate, which is
+  the bigger win — the builder was one API call per video lesson on *every*
+  render), fresh for `attachVideo`, which uses the same lookup to verify a
+  just-uploaded video exists. `bunnyFetch` had `cache: 'no-store'` hardcoded
+  *after* `...init`, so no caller could opt in; it now takes `revalidate` and
+  picks one policy or the other, never both. Four guards, all proven red:
+  attachVideo using the cached read, the builder using the fresh one, the
+  revalidate going missing, and no-store being pinned again. NOT verified: the
+  call collapsing at runtime — that needs a live Bunny key and an authenticated
+  builder session. Both halves are framework contracts already relied on
+  elsewhere (`cache()` in `tenant.ts`), and the failure mode is "no speedup",
+  not wrong data.
