@@ -105,6 +105,56 @@ export async function createBunnyVideo(title: string): Promise<{ videoId: string
   return { videoId: created.guid };
 }
 
+/** Everything the browser needs to upload one file, and nothing more. */
+export interface BunnyTusTicket {
+  libraryId: string;
+  videoId: string;
+  /** sha256(libraryId + apiKey + expirationTime + videoId) — proves the server authorised THIS video. */
+  signature: string;
+  /** Unix seconds. The signature is only valid until this moment. */
+  expirationTime: number;
+  endpoint: string;
+}
+
+/** Bunny's resumable-upload endpoint (TUS 1.0.0). */
+const BUNNY_TUS_ENDPOINT = 'https://video.bunnycdn.com/tusupload';
+
+/** How long a ticket stays valid. Long enough for a big file on a slow site. */
+const TUS_TICKET_TTL_SEC = 3 * 60 * 60;
+
+/**
+ * Creates a video object and returns a signed ticket the BROWSER can upload to
+ * directly, without the library key ever leaving the server.
+ *
+ * This is what makes in-app upload possible. Bunny has no OAuth-style delegated
+ * upload token: a direct PUT needs the library AccessKey, which must never reach
+ * a client. The resumable (TUS) endpoint instead accepts a SHA-256 signature
+ * over the library id, the api key, an expiry and the specific video id — so the
+ * browser is authorised to upload exactly one video, for a limited time, and
+ * learns nothing reusable.
+ *
+ * Resumability is the reason to prefer this over a same-origin proxy upload:
+ * course videos are large, site connections are not, and a dropped upload
+ * resumes rather than restarting. It also keeps the file off our own bandwidth.
+ */
+export async function createBunnyTusTicket(title: string): Promise<BunnyTusTicket> {
+  const key = env.bunnyApiKey();
+  const libraryId = env.bunnyLibraryId();
+  if (!key || !libraryId) throw new Error('Bunny Stream is not configured');
+
+  const { videoId } = await createBunnyVideo(title);
+  const expirationTime = Math.floor(Date.now() / 1000) + TUS_TICKET_TTL_SEC;
+
+  // Deliberately imported here rather than at module scope: this file is also
+  // pulled into contexts that only need the pure helpers.
+  const { createHash } = await import('node:crypto');
+  const signature = createHash('sha256')
+    .update(`${libraryId}${key}${expirationTime}${videoId}`)
+    .digest('hex');
+
+  return { libraryId, videoId, signature, expirationTime, endpoint: BUNNY_TUS_ENDPOINT };
+}
+
 /** Tells Bunny to pull the media from a public URL (server-side ingest). */
 export async function fetchBunnyFromUrl(videoId: string, url: string): Promise<void> {
   const res = await bunnyFetch(`/videos/${encodeURIComponent(videoId)}/fetch`, {

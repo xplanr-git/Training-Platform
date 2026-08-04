@@ -19,14 +19,53 @@ import {
   bunnyConfigured,
   createBunnyVideo,
   fetchBunnyFromUrl,
+  createBunnyTusTicket,
+  type BunnyTusTicket,
   type HostedProvider,
 } from '@/lib/video';
 
 /**
- * Ingests a video into Bunny from a public URL. Bunny has no delegated
- * browser-upload token equivalent to api.video's (direct upload needs the
- * library key, or TUS with a computed signature), so URL ingest is the
- * server-side path for now.
+ * Issues a signed ticket so the browser can upload a video file straight to
+ * Bunny, then attach it to this lesson.
+ *
+ * Only the ticket crosses to the client — never the library key. The signature
+ * authorises exactly one video id for a limited window, so a leaked ticket buys
+ * an attacker one upload into a video object we created and nothing else.
+ *
+ * The lesson is NOT modified here. The client calls attachVideo once the upload
+ * finishes, so an abandoned upload leaves the lesson untouched (it only leaves an
+ * empty video object in the Bunny library).
+ */
+export async function startVideoUpload(
+  slug: string,
+  courseId: string,
+  lessonId: string,
+  title: string,
+): Promise<{ error?: string; ticket?: BunnyTusTicket }> {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+  if (!bunnyConfigured()) return { error: 'Bunny Stream is not configured.' };
+
+  // Confirm the lesson is in this tenant before minting anything.
+  const [lesson] = await db
+    .select({ id: lessons.id })
+    .from(lessons)
+    .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
+    .limit(1);
+  if (!lesson) return { error: 'Lesson not found.' };
+
+  try {
+    const ticket = await createBunnyTusTicket(title);
+    return { ticket };
+  } catch (e) {
+    console.error('startVideoUpload failed:', e);
+    return { error: 'Could not prepare the upload at Bunny.' };
+  }
+}
+
+/**
+ * Ingests a video into Bunny from a public URL — an alternative to uploading a
+ * file, useful when the media is already hosted somewhere reachable.
  */
 export async function attachBunnyFromUrl(
   slug: string,

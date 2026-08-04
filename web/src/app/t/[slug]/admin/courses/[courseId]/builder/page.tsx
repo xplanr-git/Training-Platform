@@ -22,6 +22,7 @@ import {
   updateLesson,
   attachVideo,
   attachBunnyFromUrl,
+  startVideoUpload,
 } from './actions';
 import { VideoUpload } from '@/components/video-upload';
 import { hostedVideoFromContent, availableProviders } from '@/lib/video';
@@ -249,6 +250,7 @@ export default async function CourseBuilder({
                             currentVideoId={hostedVideoFromContent(l.content as Record<string, unknown>)?.videoId ?? null}
                             attach={attachVideo.bind(null, slug, courseId, l.id)}
                             attachFromUrl={attachBunnyFromUrl.bind(null, slug, courseId, l.id)}
+                            startUpload={startVideoUpload.bind(null, slug, courseId, l.id)}
                           />
                           <p className="mt-1.5 text-xs text-muted">
                             Attach a Bunny video to enable watch-time tracking and
