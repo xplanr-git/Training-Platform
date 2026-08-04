@@ -129,7 +129,9 @@ export function VideoUpload({
     <div className="flex flex-col gap-3">
       {/* 1. Upload a file — the normal path. */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium">Upload a video</span>
+        <span className="text-xs font-medium">
+          {done ? 'Replace this video' : 'Upload a video'}
+        </span>
         <div className="flex flex-wrap items-center gap-2">
           <input
             ref={fileRef}
@@ -156,7 +158,11 @@ export function VideoUpload({
             disabled={!file || uploading || pending}
             onClick={onUpload}
           >
-            {uploading ? `Uploading ${percent ?? 0}%` : 'Upload'}
+            {uploading
+              ? `Uploading ${percent ?? 0}%`
+              : done
+                ? 'Replace'
+                : 'Upload'}
           </Button>
         </div>
         {file && !uploading && (
@@ -245,8 +251,7 @@ export function VideoUpload({
       )}
       {done && !error && (
         <p className="text-xs text-muted">
-          Attached video <code className="font-mono">{done}</code> — Bunny encodes it in the
-          background, so it becomes playable shortly after upload.
+          Uploading again replaces the attached video for this lesson.
         </p>
       )}
     </div>

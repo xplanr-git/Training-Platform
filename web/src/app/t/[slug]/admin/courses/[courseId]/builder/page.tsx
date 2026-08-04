@@ -25,7 +25,8 @@ import {
   startVideoUpload,
 } from './actions';
 import { VideoUpload } from '@/components/video-upload';
-import { hostedVideoFromContent, availableProviders } from '@/lib/video';
+import { AttachedVideo } from '@/components/attached-video';
+import { hostedVideoFromContent, availableProviders, getBunnyVideo } from '@/lib/video';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -75,6 +76,30 @@ export default async function CourseBuilder({
     const arr = lessonsBySection.get(l.sectionId) ?? [];
     arr.push(l);
     lessonsBySection.set(l.sectionId, arr);
+  }
+
+  // Look up what is actually attached to each video lesson, so the builder can
+  // show a poster, title, length and encoding state rather than a bare uuid.
+  // Fetched in parallel; a Bunny outage degrades to "no details" instead of
+  // failing the whole page, because the rest of the builder still works.
+  const attachedVideos = new Map<string, Awaited<ReturnType<typeof getBunnyVideo>>>();
+  if (videoHostingOn) {
+    const videoLessons: Array<{ lessonId: string; videoId: string }> = [];
+    for (const l of lessonRows) {
+      const hosted = hostedVideoFromContent(l.content as Record<string, unknown>);
+      if (hosted) videoLessons.push({ lessonId: l.id, videoId: hosted.videoId });
+    }
+
+    const results = await Promise.all(
+      videoLessons.map(async (v) => {
+        try {
+          return [v.lessonId, await getBunnyVideo(v.videoId)] as const;
+        } catch {
+          return [v.lessonId, null] as const;
+        }
+      }),
+    );
+    for (const [lessonId, details] of results) attachedVideos.set(lessonId, details);
   }
 
   return (
@@ -250,13 +275,45 @@ export default async function CourseBuilder({
 
                       {l.type === 'video' && videoHostingOn && (
                         <div className="mt-3 border-t border-border pt-3">
-                          <VideoUpload
-                            lessonTitle={l.title}
-                            currentVideoId={hostedVideoFromContent(l.content as Record<string, unknown>)?.videoId ?? null}
-                            attach={attachVideo.bind(null, slug, courseId, l.id)}
-                            attachFromUrl={attachBunnyFromUrl.bind(null, slug, courseId, l.id)}
-                            startUpload={startVideoUpload.bind(null, slug, courseId, l.id)}
-                          />
+                          {(() => {
+                            const attachedId =
+                              hostedVideoFromContent(l.content as Record<string, unknown>)
+                                ?.videoId ?? null;
+                            const details = attachedVideos.get(l.id) ?? null;
+                            return (
+                              <>
+                                {attachedId && details && (
+                                  <AttachedVideo
+                                    videoId={details.videoId}
+                                    title={details.title}
+                                    durationSec={details.durationSec}
+                                    playable={details.playable}
+                                    thumbnailUrl={details.thumbnailUrl}
+                                    statusLabel={details.statusLabel}
+                                    encodeProgress={details.encodeProgress}
+                                  />
+                                )}
+                                {attachedId && !details && (
+                                  <p className="mb-3 text-xs text-amber-700">
+                                    A video is attached ({attachedId}) but its details
+                                    could not be read from Bunny just now.
+                                  </p>
+                                )}
+                                <VideoUpload
+                                  lessonTitle={l.title}
+                                  currentVideoId={attachedId}
+                                  attach={attachVideo.bind(null, slug, courseId, l.id)}
+                                  attachFromUrl={attachBunnyFromUrl.bind(
+                                    null,
+                                    slug,
+                                    courseId,
+                                    l.id,
+                                  )}
+                                  startUpload={startVideoUpload.bind(null, slug, courseId, l.id)}
+                                />
+                              </>
+                            );
+                          })()}
                           <p className="mt-1.5 text-xs text-muted">
                             Attach a Bunny video to enable watch-time tracking and
                             cross-device resume. Video lessons are Bunny-only.
