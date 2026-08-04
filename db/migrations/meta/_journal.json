@@ -78,6 +78,20 @@
       "when": 1785470000000,
       "tag": "0010_hook_oldest_membership_wins",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785475000000,
+      "tag": "0011_audit_log_survives_tenant_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785476000000,
+      "tag": "0012_audit_log_drop_tenant_fk",
+      "breakpoints": true
     }
   ]
 }

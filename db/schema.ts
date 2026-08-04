@@ -503,7 +503,12 @@ export const auditLog = pgTable(
   'audit_log',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+    // NO foreign key, deliberately. audit_log is append-only, and its trigger
+    // rejects both UPDATE and DELETE — so ANY referential action (cascade or
+    // set null) aborts a tenant delete. The id is retained as a historical
+    // reference that must outlive the tenant. See migrations 0011/0012, and
+    // 0009 for the identical fix on progress_events.lessonId.
+    tenantId: uuid('tenant_id'),
     actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
     action: text('action').notNull(),
     resourceType: text('resource_type').notNull(),
