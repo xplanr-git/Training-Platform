@@ -24,6 +24,7 @@ import {
   quizQuestions,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
 import { markLessonComplete, submitQuizAttempt } from '../actions';
@@ -84,12 +85,13 @@ export default async function LessonPlayer({
     .limit(1);
   if (!course) notFound();
 
-  const [enrollment] = await db
-    .select({ id: enrollments.id })
-    .from(enrollments)
-    .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.courseId, course.id)))
-    .limit(1);
-  if (!enrollment) redirect(`/courses/${courseSlug}`);
+  // Admins of this academy may PREVIEW an unenrolled course, including a draft.
+  // Read-only: no progress, no watch time, no completion, no certificate — so a
+  // preview never contaminates the academy's own evidence.
+  const view = await resolveCourseView(ctx.userId, ctx.tenantId, course.id);
+  if (view.mode === 'denied') redirect(`/courses/${courseSlug}`);
+  const isPreview = view.mode === 'preview';
+  const enrollmentId = view.enrollmentId;
 
   // Ordered lesson list (section position, then lesson position) for nav + outline.
   const sectionRows = await db
@@ -116,7 +118,9 @@ export default async function LessonPlayer({
   const prev = idx > 0 ? ordered[idx - 1] : null;
   const next = idx < ordered.length - 1 ? ordered[idx + 1] : null;
 
-  const progress = await getCourseProgress(enrollment.id, course.id);
+  const progress = enrollmentId
+    ? await getCourseProgress(enrollmentId, course.id)
+    : previewProgress(ordered.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes })));
   const done = progress.completed.has(lesson.id);
   const content = (lesson.content ?? {}) as Record<string, string>;
   const pdfUrl = safeHttpUrl(content.url);
@@ -154,7 +158,7 @@ export default async function LessonPlayer({
   // back from the append-only watch events (so it follows them across devices).
   const hosted = hostedVideoFromContent(content);
   let resumeAtSec = 0;
-  if (hosted) {
+  if (hosted && enrollmentId) {
     const [row] = await db
       .select({
         maxPos: sql<string | null>`max((${progressEvents.payload} ->> 'positionSec')::numeric)`,
@@ -162,7 +166,7 @@ export default async function LessonPlayer({
       .from(progressEvents)
       .where(
         and(
-          eq(progressEvents.enrollmentId, enrollment.id),
+          eq(progressEvents.enrollmentId, enrollmentId),
           eq(progressEvents.lessonId, lesson.id),
           eq(progressEvents.eventType, 'video_progress'),
         ),
@@ -245,6 +249,11 @@ export default async function LessonPlayer({
             <HeaderIcon className="h-4 w-4" />
           </span>
           <h1 className="text-2xl font-semibold tracking-tight">{lesson.title}</h1>
+          {isPreview && (
+            <p className="mt-2 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Preview — nothing on this page is recorded.
+            </p>
+          )}
         </div>
 
         <div className="mt-6">
@@ -255,13 +264,28 @@ export default async function LessonPlayer({
           )}
           {lesson.type === 'video' &&
             (hosted?.provider === 'bunny' && env.bunnyLibraryId() ? (
-              <BunnyVideoPlayer
-                libraryId={env.bunnyLibraryId()!}
-                videoId={hosted.videoId}
-                enrollmentId={enrollment.id}
-                lessonId={lesson.id}
-                resumeAtSec={resumeAtSec}
-              />
+              enrollmentId ? (
+                <BunnyVideoPlayer
+                  libraryId={env.bunnyLibraryId()!}
+                  videoId={hosted.videoId}
+                  enrollmentId={enrollmentId}
+                  lessonId={lesson.id}
+                  resumeAtSec={resumeAtSec}
+                />
+              ) : (
+                /* Preview: the bare embed, deliberately NOT the tracking player.
+                   recordVideoProgress needs an enrolment, and a preview must not
+                   write watch time into the academy's analytics. */
+                <div className="aspect-video w-full overflow-hidden rounded-[--radius-card] bg-black">
+                  <iframe
+                    src={`https://iframe.mediadelivery.net/embed/${env.bunnyLibraryId()}/${hosted.videoId}`}
+                    className="h-full w-full"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    title={lesson.title}
+                  />
+                </div>
+              )
             ) : youtubeEmbed(content.youtubeUrl ?? '') ? (
               <div className="aspect-video w-full overflow-hidden rounded-[--radius-card] bg-black">
                 <iframe
@@ -312,6 +336,26 @@ export default async function LessonPlayer({
                 </p>
               ) : questions.length === 0 ? (
                 <p className="text-muted">This quiz has no questions yet.</p>
+              ) : !enrollmentId ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-muted">
+                    The questions below are shown as a dealer will see them. Answers
+                    can&apos;t be submitted in a preview — an attempt needs an enrolment to
+                    record against.
+                  </p>
+                  <ol className="list-decimal space-y-3 pl-5">
+                    {questions.map((q) => (
+                      <li key={q.id} className="text-sm">
+                        <span className="font-medium">{q.prompt}</span>
+                        <ul className="mt-1 space-y-0.5 text-muted">
+                          {(q.options as string[]).map((opt, i) => (
+                            <li key={i}>{opt}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               ) : (
                 <QuizForm
                   action={submitQuizAttempt.bind(
@@ -319,7 +363,7 @@ export default async function LessonPlayer({
                     slug,
                     courseSlug,
                     course.id,
-                    enrollment.id,
+                    enrollmentId,
                     lesson.id,
                     quiz!.id,
                   )}
@@ -346,7 +390,20 @@ export default async function LessonPlayer({
             <span />
           )}
 
-          {done ? (
+          {!enrollmentId ? (
+            // No completion in a preview: markLessonComplete would need an
+            // enrolment, and completing your own course would issue you a real
+            // certificate and advance your Connect tier.
+            next ? (
+              <Button asChild>
+                <Link href={`/learn/${courseSlug}/${next.id}`}>
+                  Next lesson <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <span className="text-sm text-muted">End of course</span>
+            )
+          ) : done ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600">
               <Check className="h-4 w-4" /> Completed
             </span>
@@ -359,7 +416,7 @@ export default async function LessonPlayer({
                 slug,
                 courseSlug,
                 course.id,
-                enrollment.id,
+                enrollmentId,
                 lesson.id,
                 nextHref,
               )}

@@ -218,6 +218,47 @@ describe('post-sign-in routing does not trust JWT claims', () => {
   });
 });
 
+describe('admin course preview is read-only and admin-only', () => {
+  const access = readFileSync(join(process.cwd(), 'src/lib/course-access.ts'), 'utf8');
+  const landing = readFileSync(
+    join(process.cwd(), 'src/app/t/[slug]/courses/[courseSlug]/page.tsx'),
+    'utf8',
+  );
+  const lesson = readFileSync(
+    join(process.cwd(), 'src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx'),
+    'utf8',
+  );
+
+  it('checks admin status against the database, not the role claim', () => {
+    // A claim-based check would intermittently deny a legitimate admin, because
+    // claims are decoded from whatever token the cookie holds.
+    expect(access).toMatch(/from\(memberships\)/);
+    expect(access).not.toMatch(/ctx\.role/);
+  });
+
+  it('a real enrolment always wins over preview mode', () => {
+    // Otherwise an enrolled admin would silently lose their genuine progress.
+    const body = access.slice(access.indexOf('export async function resolveCourseView'));
+    expect(body.indexOf('from(enrollments)')).toBeGreaterThan(-1);
+    expect(body.indexOf('from(enrollments)')).toBeLessThan(body.indexOf('isTenantAdmin'));
+  });
+
+  it('a draft course 404s for anyone who is not an admin of that academy', () => {
+    expect(landing).toMatch(/isPreview && !isAdmin\)?\s*notFound\(\)/);
+  });
+
+  it('a preview never writes: no tracking player and no completion without an enrolment', () => {
+    // recordVideoProgress, markLessonComplete and submitQuizAttempt all require an
+    // enrollment id. Rendering them in a preview would either fail or, worse,
+    // record the author's own activity as a learner's.
+    expect(lesson).toMatch(/enrollmentId \? \(/);
+    expect(lesson).toMatch(/!enrollmentId \? \(/);
+    // The enrollment row itself is no longer read directly — access goes through
+    // the resolver, so there is one place deciding what a viewer may do.
+    expect(lesson).toMatch(/resolveCourseView\(/);
+  });
+});
+
 describe('learner completion actions integrity', () => {
   it('exists', () => {
     expect(existsSync(LEARN_ACTIONS)).toBe(true);

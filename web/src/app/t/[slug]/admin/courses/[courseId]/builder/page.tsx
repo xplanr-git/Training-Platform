@@ -50,7 +50,7 @@ export default async function CourseBuilder({
   if (!ctx.tenantId) notFound();
 
   const [course] = await db
-    .select({ id: courses.id, title: courses.title })
+    .select({ id: courses.id, title: courses.title, slug: courses.slug })
     .from(courses)
     .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
     .limit(1);
@@ -85,7 +85,12 @@ export default async function CourseBuilder({
       >
         <ArrowLeft className="h-4 w-4" /> Course
       </Link>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">{course.title}</h1>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/courses/${course.slug}`}>Preview as a learner</Link>
+        </Button>
+      </div>
       <p className="text-muted">Course content</p>
 
       <div className="mt-6 space-y-5">

@@ -12,6 +12,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -42,12 +43,11 @@ export default async function Learn({
     .limit(1);
   if (!course) notFound();
 
-  const [enrollment] = await db
-    .select({ id: enrollments.id })
-    .from(enrollments)
-    .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.courseId, course.id)))
-    .limit(1);
-  if (!enrollment) redirect(`/courses/${courseSlug}`);
+  // An admin of this academy may PREVIEW without enrolling — read-only, so
+  // nothing is recorded and they never appear in their own statistics.
+  const view = await resolveCourseView(ctx.userId, ctx.tenantId, course.id);
+  if (view.mode === 'denied') redirect(`/courses/${courseSlug}`);
+  const isPreview = view.mode === 'preview';
 
   const sectionRows = await db
     .select()
@@ -67,7 +67,9 @@ export default async function Learn({
     bySection.set(l.sectionId, arr);
   }
 
-  const progress = await getCourseProgress(enrollment.id, course.id);
+  const progress = view.enrollmentId
+    ? await getCourseProgress(view.enrollmentId, course.id)
+    : previewProgress(lessonRows.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes })));
 
   // Ordered flat lesson list → first incomplete lesson to resume at.
   const sectionOrder = new Map(sectionRows.map((s, i) => [s.id, i]));
@@ -96,6 +98,12 @@ export default async function Learn({
         <ArrowLeft className="h-4 w-4" /> Your learning
       </Link>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
+      {isPreview && (
+        <div className="mt-3 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <b>Preview.</b> You are not enrolled, so nothing here is recorded — no
+          progress, no watch time, no certificate. This is how a dealer will see it.
+        </div>
+      )}
 
       <Card className="mt-4">
         <CardContent className="py-5">

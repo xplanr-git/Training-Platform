@@ -43,9 +43,16 @@ export default async function EditCourse({
       </Link>
       <div className="mt-3 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">{course.title}</h1>
-        <Button asChild variant="outline">
-          <Link href={`/admin/courses/${courseId}/builder`}>Manage content</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Opens the learner view. Works for a draft too — admins of this
+              academy may preview unpublished courses; learners get a 404. */}
+          <Button asChild variant="outline">
+            <Link href={`/courses/${course.slug}`}>Preview</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={`/admin/courses/${courseId}/builder`}>Manage content</Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="mt-6">

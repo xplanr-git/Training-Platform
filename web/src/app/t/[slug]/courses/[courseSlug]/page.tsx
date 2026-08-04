@@ -14,6 +14,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { isTenantAdmin } from '@/lib/course-access';
 import { formatMinutes } from '@/lib/progress-derive';
 import { enrollFree } from './actions';
 import { NavForm } from '@/components/nav-form';
@@ -79,20 +80,25 @@ export default async function CourseLanding({
     .limit(1);
   if (!tenant) notFound();
 
+  // Fetched WITHOUT the status filter so an admin of this academy can preview a
+  // draft. Everyone else gets a 404 for anything unpublished, checked below —
+  // fetching it and then deciding is what allows a preview at all, so the
+  // authorisation must not be skipped.
   const [course] = await db
     .select()
     .from(courses)
-    .where(
-      and(
-        eq(courses.tenantId, tenant.id),
-        eq(courses.slug, courseSlug),
-        eq(courses.status, 'published'),
-      ),
-    )
+    .where(and(eq(courses.tenantId, tenant.id), eq(courses.slug, courseSlug)))
     .limit(1);
   if (!course) notFound();
 
   const ctx = await getTenantContext();
+  const isAdmin = ctx ? await isTenantAdmin(ctx.userId, tenant.id) : false;
+
+  // A draft is visible to this academy's admins only. 404 rather than 403 so an
+  // unpublished course's existence isn't confirmed to anyone else.
+  const isPreview = course.status !== 'published';
+  if (isPreview && !isAdmin) notFound();
+
   let enrolled = false;
   if (ctx) {
     const [row] = await db
@@ -131,6 +137,12 @@ export default async function CourseLanding({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
+      {isPreview && (
+        <div className="mb-6 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <b>Draft preview.</b> This course is not published, so only administrators of
+          this academy can see this page. Learners get a 404.
+        </div>
+      )}
       <Link
         href="/"
         className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
@@ -190,7 +202,7 @@ export default async function CourseLanding({
         </section>
       )}
 
-      <div className="mt-10">
+      <div className="mt-10 flex flex-wrap items-center gap-3">
         {enrolled ? (
           <Button asChild size="lg">
             <Link href={`/learn/${courseSlug}`}>Continue learning</Link>
@@ -201,6 +213,23 @@ export default async function CourseLanding({
               Sign in to enroll
             </Link>
           </Button>
+        ) : isAdmin ? (
+          <>
+            {/* Admins preview rather than enrol: enrolling in your own course
+                would count you as a learner and put your own watch time in the
+                academy's statistics. A draft cannot be enrolled in at all —
+                enrollFree requires a published course. */}
+            <Button asChild size="lg">
+              <Link href={`/learn/${courseSlug}`}>Preview lessons</Link>
+            </Button>
+            {!isPreview && (
+              <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
+                <Button type="submit" size="lg" variant="outline">
+                  Enroll for real
+                </Button>
+              </NavForm>
+            )}
+          </>
         ) : (
           <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
             <Button type="submit" size="lg">
