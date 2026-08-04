@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { db, tenants, eq } from '@training-platform/db';
 import { createClient } from '@/lib/supabase/server';
@@ -26,8 +27,15 @@ function decodeClaims(accessToken: string): Record<string, unknown> {
  * Resolves the authenticated caller's tenant context from their session JWT
  * (claims injected by the Custom Access Token Hook). Returns null if there is
  * no valid session. The token is verified server-side by getUser() first.
+ *
+ * Wrapped in React's `cache()`, which deduplicates by argument for the lifetime
+ * of a single request. getUser() is a NETWORK round trip to Supabase Auth — it
+ * verifies the token rather than decoding it — and this is called independently
+ * by the admin layout, the page, and any guard the page invokes. That was three
+ * or more sequential auth calls per navigation, each adding latency before a
+ * single row of data was fetched. Now it is one.
  */
-export async function getTenantContext(): Promise<TenantContext | null> {
+export const getTenantContext = cache(async (): Promise<TenantContext | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -45,7 +53,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
     role: ((claims.role as AppRole) ?? 'learner') as AppRole,
     email: user.email ?? null,
   };
-}
+});
 
 export interface AdminContext extends TenantContext {
   tenantId: string;

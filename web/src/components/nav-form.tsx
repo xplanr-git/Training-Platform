@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 type ActionResult = { redirectTo?: string; error?: string } | void;
 
@@ -67,12 +67,14 @@ export function NavForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (confirm && !window.confirm(confirm)) return;
     const formData = new FormData(e.currentTarget);
     setError(null);
+    setSaved(false);
     startTransition(async () => {
       try {
         const result = await action(formData);
@@ -84,6 +86,11 @@ export function NavForm({
           router.push(result.redirectTo);
           router.refresh();
         } else {
+          // Nothing on screen necessarily changes after a save, so without an
+          // explicit acknowledgement the form looks inert and people click again.
+          // (Observed: a course saved five times in 70 seconds because each
+          // successful save was silent.)
+          setSaved(true);
           router.refresh();
         }
       } catch (err) {
@@ -104,10 +111,39 @@ export function NavForm({
     });
   }
 
+  // Auto-clear the confirmation so it reads as "that just happened" rather than
+  // becoming permanent furniture that stops being noticed.
+  useEffect(() => {
+    if (!saved) return;
+    const t = setTimeout(() => setSaved(false), 4000);
+    return () => clearTimeout(t);
+  }, [saved]);
+
   return (
     <form onSubmit={onSubmit} className={className} data-pending={pending || undefined}>
-      {children}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {/*
+        A disabled fieldset is the one reliable way to make every control inside
+        an arbitrary `children` tree go inert while the action is in flight —
+        including the submit button, whose markup this component never sees. The
+        reset classes stop the fieldset affecting layout.
+      */}
+      <fieldset
+        disabled={pending}
+        aria-busy={pending || undefined}
+        className="m-0 min-w-0 border-0 p-0 disabled:opacity-60"
+      >
+        {children}
+      </fieldset>
+
+      <div aria-live="polite" className="contents">
+        {pending && <p className="mt-1 text-sm text-muted">Saving…</p>}
+        {saved && !pending && <p className="mt-1 text-sm text-brand-600">Saved.</p>}
+        {error && (
+          <p role="alert" className="mt-1 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+      </div>
     </form>
   );
 }
