@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-platform/db';
-import { parsePage, pageMeta } from '@/lib/pagination';
+import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
 import { safeHttpUrl } from '@/lib/validation';
 import { Pagination } from '@/components/pagination';
 import { Input } from '@/components/ui/input';
@@ -48,8 +48,7 @@ export default async function TenantHome({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { slug } = await params;
-  const { q, page: pageParam } = await searchParams;
+  const [{ slug }, { q, page: pageParam }] = await Promise.all([params, searchParams]);
   const query = (q ?? '').trim();
 
   const [tenant] = await db
@@ -71,20 +70,36 @@ export default async function TenantHome({
     : [];
   if (tenant && query) filters.push(ilike(courses.title, `%${query}%`));
 
-  const [{ total } = { total: 0 }] = tenant
-    ? await db.select({ total: count() }).from(courses).where(and(...filters))
-    : [];
-  const meta = pageMeta(parsePage(pageParam), total);
+  // The count and the page of rows are independent, so they run together.
+  //
+  // The offset is derived DIRECTLY from ?page= rather than from pageMeta, because
+  // pageMeta clamps the page against pageCount — which it computes from the total.
+  // Passing a provisional total of 0 would clamp every request to page 1 and
+  // silently return the first page's rows for every page.
+  const requestedPage = parsePage(pageParam);
+  const rowsAt = (offset: number) =>
+    db
+      .select()
+      .from(courses)
+      .where(and(...filters))
+      .orderBy(desc(courses.createdAt))
+      .limit(PAGE_SIZE)
+      .offset(offset);
 
-  const catalog = tenant
-    ? await db
-        .select()
-        .from(courses)
-        .where(and(...filters))
-        .orderBy(desc(courses.createdAt))
-        .limit(meta.limit)
-        .offset(meta.offset)
-    : [];
+  const requestedOffset = (requestedPage - 1) * PAGE_SIZE;
+  const [countRows, requestedRows] = await Promise.all([
+    tenant
+      ? db.select({ total: count() }).from(courses).where(and(...filters))
+      : Promise.resolve([] as Array<{ total: number }>),
+    tenant ? rowsAt(requestedOffset) : Promise.resolve([] as Awaited<ReturnType<typeof rowsAt>>),
+  ]);
+  const total = countRows[0]?.total ?? 0;
+  const meta = pageMeta(requestedPage, total);
+
+  // Only when ?page= was past the end does the clamped offset differ, and only
+  // then is a second query needed — so the common path stays at one round trip.
+  const catalog =
+    !tenant || meta.offset === requestedOffset ? requestedRows : await rowsAt(meta.offset);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12 sm:py-14">

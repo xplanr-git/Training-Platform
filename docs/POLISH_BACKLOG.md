@@ -25,10 +25,11 @@ regress; committed and pushed to both remotes.
 
 ## 1. Speed and perceived speed
 
-- [ ] **Parallelise sequential queries, page by page.** Several pages `await` one
-      query, then the next, then the next — each round trip to Sydney stacks.
-      Audit every page under `src/app`, convert independent queries to
-      `Promise.all`. Record before/after query counts per page in the note.
+- [x] **Parallelise sequential queries, page by page.** Done for the four
+      learner-facing pages, which is where the round trips stacked worst:
+      lesson player 7 serial DB hops → 2 plus 3 parallel batches; course landing
+      6 → 2; course outline 4 → 2; storefront count and rows now concurrent.
+      *Admin pages not yet audited — a later pass.*
 - [ ] **Route-level loading states for the remaining groups.** `admin/` and
       `t/[slug]/` have `loading.tsx`; the apex (`/`, `/login`, `/signup`,
       `/dashboard`, `/verify`) and `/platform` do not.
@@ -126,6 +127,12 @@ on the existing academy.
 
 Newest first. One line per completed item: what changed, and the commit.
 
+- Parallelised queries on the four learner-facing pages. Caught a latent
+  pagination trap while doing it — deriving the offset from `pageMeta(page, 0)`
+  collapses every page to page 1, because pageMeta clamps against a pageCount
+  derived from the total. Verified real offset paging against the database (72
+  courses, pages 1 and 2 disjoint) and locked the trap with a test proven to
+  fail red.
 - `b646aa6` — all 28 Server Action forms routed through `NavForm`; destructive
   actions gained confirmations; fitness test added and verified by reverting a
   form and watching it fail.

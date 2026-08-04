@@ -92,39 +92,39 @@ export default async function CourseLanding({
   if (!course) notFound();
 
   const ctx = await getTenantContext();
-  const isAdmin = ctx ? await isTenantAdmin(ctx.userId, tenant.id) : false;
+
+  // Admin check, enrolment check and the curriculum are mutually independent, so
+  // they run together instead of four sequential round trips. The draft-visibility
+  // decision below still gates the render — batching changes the timing, not the
+  // authorisation.
+  const [isAdmin, enrolledRows, sectionRows, lessonRows] = await Promise.all([
+    ctx ? isTenantAdmin(ctx.userId, tenant.id) : Promise.resolve(false),
+    ctx
+      ? db
+          .select({ id: enrollments.id })
+          .from(enrollments)
+          .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.courseId, course.id)))
+          .limit(1)
+      : Promise.resolve([] as Array<{ id: string }>),
+    db.select().from(sections).where(eq(sections.courseId, course.id)).orderBy(asc(sections.position)),
+    db
+      .select({
+        id: lessons.id,
+        sectionId: lessons.sectionId,
+        type: lessons.type,
+        title: lessons.title,
+        estimatedMinutes: lessons.estimatedMinutes,
+      })
+      .from(lessons)
+      .where(eq(lessons.courseId, course.id))
+      .orderBy(asc(lessons.position)),
+  ]);
+  const enrolled = enrolledRows.length > 0;
 
   // A draft is visible to this academy's admins only. 404 rather than 403 so an
   // unpublished course's existence isn't confirmed to anyone else.
   const isPreview = course.status !== 'published';
   if (isPreview && !isAdmin) notFound();
-
-  let enrolled = false;
-  if (ctx) {
-    const [row] = await db
-      .select({ id: enrollments.id })
-      .from(enrollments)
-      .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.courseId, course.id)))
-      .limit(1);
-    enrolled = !!row;
-  }
-
-  const sectionRows = await db
-    .select()
-    .from(sections)
-    .where(eq(sections.courseId, course.id))
-    .orderBy(asc(sections.position));
-  const lessonRows = await db
-    .select({
-      id: lessons.id,
-      sectionId: lessons.sectionId,
-      type: lessons.type,
-      title: lessons.title,
-      estimatedMinutes: lessons.estimatedMinutes,
-    })
-    .from(lessons)
-    .where(eq(lessons.courseId, course.id))
-    .orderBy(asc(lessons.position));
 
   const lessonsBySection = new Map<string, typeof lessonRows>();
   for (const l of lessonRows) {

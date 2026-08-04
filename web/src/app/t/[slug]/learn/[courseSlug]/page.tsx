@@ -45,20 +45,15 @@ export default async function Learn({
 
   // An admin of this academy may PREVIEW without enrolling — read-only, so
   // nothing is recorded and they never appear in their own statistics.
-  const view = await resolveCourseView(ctx.userId, ctx.tenantId, course.id);
+  // All three key off course.id alone, so they go in one batch rather than three
+  // sequential round trips.
+  const [view, sectionRows, lessonRows] = await Promise.all([
+    resolveCourseView(ctx.userId, ctx.tenantId, course.id),
+    db.select().from(sections).where(eq(sections.courseId, course.id)).orderBy(asc(sections.position)),
+    db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)),
+  ]);
   if (view.mode === 'denied') redirect(`/courses/${courseSlug}`);
   const isPreview = view.mode === 'preview';
-
-  const sectionRows = await db
-    .select()
-    .from(sections)
-    .where(eq(sections.courseId, course.id))
-    .orderBy(asc(sections.position));
-  const lessonRows = await db
-    .select()
-    .from(lessons)
-    .where(eq(lessons.courseId, course.id))
-    .orderBy(asc(lessons.position));
 
   const bySection = new Map<string, typeof lessonRows>();
   for (const l of lessonRows) {

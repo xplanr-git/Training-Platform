@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
 
 describe('parsePage', () => {
@@ -55,5 +57,25 @@ describe('pageMeta', () => {
     const m = pageMeta(3, 60, 25);
     expect(m.page).toBe(3);
     expect(m.hasNext).toBe(false);
+  });
+});
+
+describe('pageMeta must not be used to derive an offset before the total is known', () => {
+  it('clamps to page 1 when told the total is 0 — which is the trap', () => {
+    // Parallelising the count and the rows tempts you to call pageMeta with a
+    // provisional total of 0 to get the offset. pageMeta clamps the page against
+    // pageCount, and pageCount comes from the total — so every page collapses to
+    // page 1 and the first page's rows are returned for every page. Silently.
+    expect(pageMeta(3, 0).offset).toBe(0);
+    expect(pageMeta(3, 0).page).toBe(1);
+    // With the real total it behaves correctly, which is why the bug hides.
+    expect(pageMeta(3, 100).offset).toBe(50);
+  });
+
+  it('the storefront derives its offset from the requested page, not from pageMeta', () => {
+    const src = readFileSync(join(process.cwd(), 'src/app/t/[slug]/page.tsx'), 'utf8');
+    expect(src).toMatch(/const requestedOffset = \(requestedPage - 1\) \* PAGE_SIZE/);
+    // A provisional pageMeta call is the regression.
+    expect(src).not.toMatch(/pageMeta\([^)]*,\s*0\s*\)/);
   });
 });

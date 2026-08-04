@@ -73,8 +73,12 @@ export default async function LessonPlayer({
   params: Promise<{ slug: string; courseSlug: string; lessonId: string }>;
   searchParams: Promise<{ score?: string; passed?: string }>;
 }) {
-  const { slug, courseSlug, lessonId } = await params;
-  const { score, passed } = await searchParams;
+  // Independent promises — awaiting them in sequence serialises two ticks for
+  // no reason. Same pattern applies to the query batches below.
+  const [{ slug, courseSlug, lessonId }, { score, passed }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect(`/login?next=${encodeURIComponent(`/learn/${courseSlug}`)}`);
 
@@ -88,23 +92,22 @@ export default async function LessonPlayer({
   // Admins of this academy may PREVIEW an unenrolled course, including a draft.
   // Read-only: no progress, no watch time, no completion, no certificate — so a
   // preview never contaminates the academy's own evidence.
-  const view = await resolveCourseView(ctx.userId, ctx.tenantId, course.id);
+  // These three depend only on course.id, so they go together. Each round trip is
+  // to Sydney; run serially they stack into the page's time-to-first-byte.
+  const [view, sectionRows, lessonRows] = await Promise.all([
+    resolveCourseView(ctx.userId, ctx.tenantId, course.id),
+    db
+      .select({ id: sections.id, position: sections.position, title: sections.title })
+      .from(sections)
+      .where(eq(sections.courseId, course.id))
+      .orderBy(asc(sections.position)),
+    db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)),
+  ]);
   if (view.mode === 'denied') redirect(`/courses/${courseSlug}`);
   const isPreview = view.mode === 'preview';
   const enrollmentId = view.enrollmentId;
 
   // Ordered lesson list (section position, then lesson position) for nav + outline.
-  const sectionRows = await db
-    .select({ id: sections.id, position: sections.position, title: sections.title })
-    .from(sections)
-    .where(eq(sections.courseId, course.id))
-    .orderBy(asc(sections.position));
-  const lessonRows = await db
-    .select()
-    .from(lessons)
-    .where(eq(lessons.courseId, course.id))
-    .orderBy(asc(lessons.position));
-
   const sectionOrder = new Map(sectionRows.map((s, i) => [s.id, i]));
   const ordered = [...lessonRows].sort((a, b) => {
     const sa = sectionOrder.get(a.sectionId) ?? 0;
@@ -118,13 +121,54 @@ export default async function LessonPlayer({
   const prev = idx > 0 ? ordered[idx - 1] : null;
   const next = idx < ordered.length - 1 ? ordered[idx + 1] : null;
 
-  const progress = enrollmentId
-    ? await getCourseProgress(enrollmentId, course.id)
-    : previewProgress(ordered.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes })));
-  const done = progress.completed.has(lesson.id);
   const content = (lesson.content ?? {}) as Record<string, string>;
   const pdfUrl = safeHttpUrl(content.url);
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
+  const isQuiz = lesson.type === 'quiz';
+  const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
+  const hosted = hostedVideoFromContent(content);
+
+  // Final batch: course progress, the quiz row, and the furthest watched position
+  // are mutually independent once the lesson is known. Each is conditional, so the
+  // unused ones resolve immediately rather than costing a round trip.
+  const [progress, quizRows, resumeRows] = await Promise.all([
+    enrollmentId
+      ? getCourseProgress(enrollmentId, course.id)
+      : Promise.resolve(
+          previewProgress(ordered.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes }))),
+        ),
+    isQuiz
+      ? db.select({ id: quizzes.id }).from(quizzes).where(eq(quizzes.lessonId, lesson.id)).limit(1)
+      : Promise.resolve([] as Array<{ id: string }>),
+    hosted && enrollmentId
+      ? db
+          .select({
+            maxPos: sql<string | null>`max((${progressEvents.payload} ->> 'positionSec')::numeric)`,
+          })
+          .from(progressEvents)
+          .where(
+            and(
+              eq(progressEvents.enrollmentId, enrollmentId),
+              eq(progressEvents.lessonId, lesson.id),
+              eq(progressEvents.eventType, 'video_progress'),
+            ),
+          )
+      : Promise.resolve([] as Array<{ maxPos: string | null }>),
+  ]);
+  const done = progress.completed.has(lesson.id);
+
+  // Questions need the quiz id, so they are the one genuinely serial follow-up.
+  const quiz = quizRows[0] ?? null;
+  const questions = quiz ? await loadQuestions(quiz.id) : [];
+
+  // Resume at the furthest point this learner reached, from the append-only watch
+  // events — so it follows them across devices.
+  let resumeAtSec = 0;
+  const maxPos = resumeRows[0]?.maxPos;
+  if (maxPos != null) {
+    const pos = Number(maxPos);
+    if (Number.isFinite(pos) && pos > 0) resumeAtSec = Math.floor(pos);
+  }
 
   // Outline grouped by section (in order) for the sidebar.
   const bySection = new Map<string, typeof ordered>();
@@ -139,41 +183,6 @@ export default async function LessonPlayer({
     items: bySection.get(s.id) ?? [],
   }));
 
-  // Quiz lessons load their questions; completion happens via a passing attempt.
-  let quiz: { id: string } | null = null;
-  let questions: Awaited<ReturnType<typeof loadQuestions>> = [];
-  if (lesson.type === 'quiz') {
-    const [q] = await db
-      .select({ id: quizzes.id })
-      .from(quizzes)
-      .where(eq(quizzes.lessonId, lesson.id))
-      .limit(1);
-    quiz = q ?? null;
-    if (quiz) questions = await loadQuestions(quiz.id);
-  }
-  const isQuiz = lesson.type === 'quiz';
-  const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
-
-  // Hosted video: resume at the furthest position this learner reached, read
-  // back from the append-only watch events (so it follows them across devices).
-  const hosted = hostedVideoFromContent(content);
-  let resumeAtSec = 0;
-  if (hosted && enrollmentId) {
-    const [row] = await db
-      .select({
-        maxPos: sql<string | null>`max((${progressEvents.payload} ->> 'positionSec')::numeric)`,
-      })
-      .from(progressEvents)
-      .where(
-        and(
-          eq(progressEvents.enrollmentId, enrollmentId),
-          eq(progressEvents.lessonId, lesson.id),
-          eq(progressEvents.eventType, 'video_progress'),
-        ),
-      );
-    const pos = row?.maxPos == null ? 0 : Number(row.maxPos);
-    if (Number.isFinite(pos) && pos > 0) resumeAtSec = Math.floor(pos);
-  }
 
   return (
     <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
