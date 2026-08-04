@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { env } from '@/lib/env';
+import { absoluteUrl } from '@/lib/absolute-url';
 
 /**
  * Sends a password-reset link.
@@ -40,7 +41,7 @@ export async function requestPasswordReset(email: string): Promise<{ ok: true }>
     }
 
     const url =
-      `${env.appOrigin()}/auth/confirm` +
+      absoluteUrl('/auth/confirm') +
       `?token_hash=${encodeURIComponent(hashedToken)}` +
       `&type=recovery&next=${encodeURIComponent('/auth/set-password')}`;
 

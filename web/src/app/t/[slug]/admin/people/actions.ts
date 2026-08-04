@@ -14,6 +14,7 @@ import { requireAdmin } from '@/lib/tenant';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendInviteEmail } from '@/lib/email';
 import { env } from '@/lib/env';
+import { absoluteUrl } from '@/lib/absolute-url';
 import {
   parseAssignableRole,
   parseMemberStatus,
@@ -79,7 +80,7 @@ export async function inviteMember(
     const { data, error } = await admin.auth.admin.generateLink({
       type: 'invite',
       email,
-      options: { redirectTo: `${env.appOrigin()}/auth/confirm` },
+      options: { redirectTo: absoluteUrl('/auth/confirm') },
     });
     if (error || !data.user) {
       return { ok: false, error: error?.message ?? 'Could not invite user' };
@@ -89,7 +90,7 @@ export async function inviteMember(
     const hashedToken = data.properties?.hashed_token;
     if (hashedToken) {
       inviteUrl =
-        `${env.appOrigin()}/auth/confirm` +
+        absoluteUrl('/auth/confirm') +
         `?token_hash=${encodeURIComponent(hashedToken)}` +
         `&type=invite&next=${encodeURIComponent('/auth/set-password')}`;
     }
@@ -140,7 +141,7 @@ export async function inviteMember(
     await sendInviteEmail(
       email,
       tenant?.name ?? 'your academy',
-      inviteUrl ?? `${env.appOrigin()}/login`,
+      inviteUrl ?? absoluteUrl('/login'),
     );
   } catch (err) {
     // The membership stands, but the one-time link only ever reaches them by

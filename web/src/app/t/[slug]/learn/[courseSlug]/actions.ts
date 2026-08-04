@@ -24,6 +24,7 @@ import { getTenantContext, type TenantContext } from '@/lib/tenant';
 import { advanceTier } from '@/lib/connect-roles';
 import { getCourseProgress } from '@/lib/progress';
 import { env } from '@/lib/env';
+import { absoluteUrl } from '@/lib/absolute-url';
 import { buildCredential } from '@/lib/certificate';
 import { gradeQuiz } from '@/lib/quiz';
 import { sendCertificateEmail } from '@/lib/email';
@@ -121,10 +122,10 @@ async function recordLessonCompleted(
 
   const code = crypto.randomUUID();
   const issuedAt = new Date();
-  // appOrigin() gets the scheme right (http on localhost). The old hardcoded
+  // absoluteUrl() REFUSES rather than emit a localhost link in production: this
   // https:// was persisted into the credential JSON as its `id`, so a dev-issued
   // certificate carried a permanently unreachable identifier.
-  const verifyUrl = `${env.appOrigin()}/verify/${code}`;
+  const verifyUrl = absoluteUrl(`/verify/${code}`);
 
   await db.transaction(async (tx) => {
     await tx

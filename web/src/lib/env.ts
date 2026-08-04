@@ -24,7 +24,11 @@ export const env = {
     required('STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET),
   appOrigin: () => {
     const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000';
-    return root.startsWith('localhost') ? `http://${root}` : `https://${root}`;
+    // Compare the HOST, not a string prefix: startsWith('localhost') also
+    // matched real domains like localhost.example.com and served them http://.
+    const host = root.split(':')[0];
+    const loopback = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+    return `${loopback ? 'http' : 'https'}://${root}`;
   },
   // Cookie domain so the auth session is shared across tenant subdomains
   // (e.g. `.outdure.app`). Returns undefined on localhost/IP where a leading-dot
