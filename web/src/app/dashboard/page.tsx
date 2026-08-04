@@ -1,28 +1,26 @@
 import { redirect } from 'next/navigation';
-import { db, eq, tenants } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { postSignInDestination } from '@/app/login/actions';
 
 /**
  * Apex fallback dashboard. Every user belongs to a tenant, so route them to
  * their academy — admins to /admin, learners to the learning dashboard. Only
  * reached on the bare apex host; tenant subdomains rewrite /dashboard into
  * /t/[slug]/dashboard before this runs.
+ *
+ * Delegates to postSignInDestination so there is ONE resolver deciding where a
+ * signed-in person belongs. This page previously duplicated that logic off the
+ * JWT's role claim, which meant an admin arriving here with a stale token was
+ * routed to the learner dashboard — and it had to be fixed twice.
  */
 export default async function Dashboard() {
   const ctx = await getTenantContext();
   if (!ctx) redirect('/login');
 
-  if (ctx.tenantId) {
-    const [t] = await db
-      .select({ slug: tenants.slug })
-      .from(tenants)
-      .where(eq(tenants.id, ctx.tenantId))
-      .limit(1);
-    if (t) {
-      const isAdmin = ctx.role === 'company_admin' || ctx.role === 'platform_admin';
-      redirect(`/t/${t.slug}${isAdmin ? '/admin' : '/dashboard'}`);
-    }
-  }
+  const dest = await postSignInDestination();
+  // Anything other than this page means we know where they belong. The guard
+  // matters: redirecting to '/dashboard' from '/dashboard' would loop.
+  if (dest !== '/dashboard') redirect(dest);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-3 px-6 text-center">

@@ -180,6 +180,44 @@ describe('assignable roles cannot be escalated', () => {
   });
 });
 
+describe('post-sign-in routing does not trust JWT claims', () => {
+  const src = readFileSync(join(process.cwd(), 'src/app/login/actions.ts'), 'utf8').replace(
+    /\r\n/g,
+    '\n',
+  );
+
+  it('resolves the role and tenant from the database', () => {
+    // ctx.role and ctx.tenantId are decoded from whatever access token the cookie
+    // currently holds. Straight after updateUser() on the set-password screen that
+    // token has just been replaced, and unreadable claims made role fall back to
+    // 'learner' — routing an admin to the learner dashboard. Signing out and in
+    // again worked, which is the signature of a staleness bug rather than a
+    // permissions one.
+    expect(src).toMatch(/async function primaryMembership\(/);
+    expect(src).not.toMatch(/ctx\.role ===/);
+    expect(src).not.toMatch(/ctx\?\.tenantId/);
+  });
+
+  it('mirrors the access-token hook ordering, so app and token agree', () => {
+    expect(src).toMatch(/'active'\s*\)\s*desc/);
+    expect(src).toMatch(/asc\(memberships\.createdAt\)/);
+  });
+
+  it('activation is scoped by user alone, so it cannot silently no-op', () => {
+    const body = src.slice(src.indexOf('export async function activateMembershipOnSignIn'));
+    // Requiring the tenant_id claim here meant a brand-new invitee setting their
+    // password — the case that matters most — stayed 'invited'.
+    expect(body).not.toMatch(/eq\(memberships\.tenantId, ctx\.tenantId\)/);
+    expect(body).toMatch(/eq\(memberships\.userId, ctx\.userId\)/);
+  });
+
+  it('the apex dashboard reuses that one resolver rather than duplicating it', () => {
+    const dash = readFileSync(join(process.cwd(), 'src/app/dashboard/page.tsx'), 'utf8');
+    expect(dash).toMatch(/postSignInDestination\(/);
+    expect(dash).not.toMatch(/ctx\.role ===/);
+  });
+});
+
 describe('learner completion actions integrity', () => {
   it('exists', () => {
     expect(existsSync(LEARN_ACTIONS)).toBe(true);
