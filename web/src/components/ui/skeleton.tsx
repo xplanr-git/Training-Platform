@@ -1,4 +1,5 @@
-"use client";
+// No "use client": this renders no interactivity, so keeping it a server
+// component lets loading.tsx use it without opening a client boundary.
 import { cn } from "@/components/ui/utils";
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {

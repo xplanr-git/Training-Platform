@@ -1,27 +1,16 @@
+import { HeaderSkeleton, StatGridSkeleton } from '@/components/skeletons';
+
 /**
- * Shown the instant an admin page is navigated to, while the server resolves the
- * guard and its queries.
- *
- * Without this, a navigation showed the OLD page until the new one was fully
- * ready — so a click produced no visible response and the app felt unresponsive
- * or broken. A route-level loading state is the only thing that reacts
- * immediately, because Next renders it before any server work begins.
+ * Fallback for admin pages without a closer loading.tsx, shaped like the admin
+ * dashboard (heading, description, three stat cards) since that is where most
+ * navigations land. Pages with a materially different shape — the tables and
+ * Insights — define their own so nothing jumps on swap-in.
  */
 export default function AdminLoading() {
   return (
-    <div className="animate-pulse" aria-busy="true" aria-label="Loading">
-      <div className="h-7 w-52 rounded bg-surface-muted" />
-      <div className="mt-2 h-4 w-80 rounded bg-surface-muted" />
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-24 rounded-[--radius-card] border border-border bg-surface" />
-        ))}
-      </div>
-      <div className="mt-6 space-y-2">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-11 rounded border border-border bg-surface" />
-        ))}
-      </div>
+    <div aria-busy="true">
+      <HeaderSkeleton />
+      <StatGridSkeleton count={3} cols={3} />
       <span className="sr-only">Loading…</span>
     </div>
   );

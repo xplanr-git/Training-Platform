@@ -30,12 +30,16 @@ regress; committed and pushed to both remotes.
       lesson player 7 serial DB hops → 2 plus 3 parallel batches; course landing
       6 → 2; course outline 4 → 2; storefront count and rows now concurrent.
       *Admin pages not yet audited — a later pass.*
-- [ ] **Route-level loading states for the remaining groups.** `admin/` and
-      `t/[slug]/` have `loading.tsx`; the apex (`/`, `/login`, `/signup`,
-      `/dashboard`, `/verify`) and `/platform` do not.
-- [ ] **Skeletons that match their content.** The two existing skeletons are
-      generic blocks. Make each mirror the real layout so the page doesn't jump
-      when it swaps in.
+- [x] **Route-level loading states.** Added for `/platform`, `/verify/[code]`
+      and `/dashboard`. Deliberately NOT added for `/`, `/login` or `/signup`:
+      `/` does no server work and the other two are client components, so a
+      loading file there would never meaningfully render.
+- [x] **Skeletons that match their content.** Shared shapes in
+      `components/skeletons.tsx`, and per-route files for the distinct layouts:
+      the admin tables, Insights' 8-tile grid, and the lesson player's
+      two-column layout with a reserved `aspect-video` block. All now use the
+      `Skeleton` primitive — which already existed and was unused, while the
+      first two loading states hand-rolled their own pulse.
 - [ ] **Cache the per-request Bunny lookups in the builder.** One API call per
       video lesson on every render. Wrap in React `cache()` and consider a short
       revalidate, since encoding state changes on the order of minutes.
@@ -127,6 +131,10 @@ on the existing academy.
 
 Newest first. One line per completed item: what changed, and the commit.
 
+- Loading states for every server-fetching page, shaped to match their real
+  layouts. Found the unused `Skeleton` primitive and adopted it, dropping its
+  needless `"use client"` so it renders server-side. Two fitness guards, both
+  proven red: a data page with no loading boundary, and a hand-rolled pulse.
 - Parallelised queries on the four learner-facing pages. Caught a latent
   pagination trap while doing it — deriving the offset from `pageMeta(page, 0)`
   collapses every page to page 1, because pageMeta clamps against a pageCount
