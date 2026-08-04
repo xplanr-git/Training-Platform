@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { GraduationCap } from 'lucide-react';
+import { EmptyState, NoMatches } from '@/components/empty-state';
 import Link from 'next/link';
 import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-platform/db';
 import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
@@ -133,13 +135,14 @@ export default async function TenantHome({
       </header>
 
       {catalog.length === 0 ? (
-        <div className="rounded-[--radius-card] border border-dashed border-border bg-surface p-10 text-center">
-          <p className="text-muted">
-            {query
-              ? `No courses match “${query}”.`
-              : 'No courses published yet. Check back soon.'}
-          </p>
-        </div>
+        query ? (
+          <NoMatches query={query} basePath="/" />
+        ) : (
+          <EmptyState icon={<GraduationCap />} title="No courses published yet">
+            Training courses will appear here as soon as they are published. If you were
+            expecting one, ask whoever invited you — they may still be putting it together.
+          </EmptyState>
+        )
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {catalog.map((c) => (

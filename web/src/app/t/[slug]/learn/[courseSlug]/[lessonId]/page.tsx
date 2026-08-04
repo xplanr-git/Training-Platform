@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
 import {
   Video,
@@ -344,7 +345,10 @@ export default async function LessonPlayer({
                   <Check className="h-4 w-4" /> You have passed this quiz.
                 </p>
               ) : questions.length === 0 ? (
-                <p className="text-muted">This quiz has no questions yet.</p>
+                <EmptyState title="This quiz has no questions yet">
+                  Nothing to answer here for now — it has not been written yet. Carry on to the
+                  next lesson; this one will not hold up your certificate.
+                </EmptyState>
               ) : !enrollmentId ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted">

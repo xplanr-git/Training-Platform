@@ -14,6 +14,7 @@ import {
   lessons,
 } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
+import { EmptyState } from '@/components/empty-state';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -195,11 +196,10 @@ export default async function Analytics({
           answered wrong — to spot friction points.
         </p>
         {friction.length === 0 ? (
-          <Card className="mt-4">
-            <CardContent className="py-8 text-center text-muted">
-              No quiz activity yet.
-            </CardContent>
-          </Card>
+          <EmptyState className="mt-4" title="No quiz answers yet">
+            Once learners start answering quiz questions, the ones they get wrong most often
+            — and spend longest on — will be listed here, hardest first.
+          </EmptyState>
         ) : (
           <div className="mt-4 overflow-x-auto rounded-[--radius-card] border border-border">
             <Table>

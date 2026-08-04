@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { EmptyRow } from '@/components/empty-state';
+import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
 import { Check, Video, FileText, HelpCircle, BookOpen, ArrowLeft } from 'lucide-react';
 import {
@@ -9,7 +11,6 @@ import {
   courses,
   sections,
   lessons,
-  enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
@@ -122,6 +123,12 @@ export default async function Learn({
       </Card>
 
       <div className="mt-8 space-y-5">
+        {sectionRows.length === 0 && (
+          <EmptyState title="No lessons here yet">
+            You are enrolled, but this course has no content published yet. Nothing is wrong
+            on your end — you will be able to start as soon as lessons are added.
+          </EmptyState>
+        )}
         {sectionRows.map((s) => (
           <section key={s.id}>
             <h2 className="mb-2 text-sm font-semibold">{s.title || 'Section'}</h2>
@@ -153,15 +160,14 @@ export default async function Learn({
                   );
                 })}
                 {(bySection.get(s.id) ?? []).length === 0 && (
-                  <li className="px-4 py-3 text-sm text-muted">No lessons yet.</li>
+                  <li>
+                    <EmptyRow className="py-5" title="No lessons in this section yet" />
+                  </li>
                 )}
               </ul>
             </Card>
           </section>
         ))}
-        {sectionRows.length === 0 && (
-          <p className="text-muted">This course has no content yet.</p>
-        )}
       </div>
     </main>
   );

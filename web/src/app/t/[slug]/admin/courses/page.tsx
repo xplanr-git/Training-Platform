@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { BookOpen } from 'lucide-react';
+import { EmptyState, NoMatches } from '@/components/empty-state';
 import { db, and, eq, ilike, desc, count, courses } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
@@ -71,11 +73,20 @@ export default async function CoursesList({
       </form>
 
       {rows.length === 0 ? (
-        <div className="mt-8 rounded-[--radius-card] border border-dashed border-border p-10 text-center text-muted">
-          {query
-            ? `No courses match “${query}”.`
-            : 'No courses yet. Create your first course to get started.'}
-        </div>
+        query ? (
+          <NoMatches className="mt-8" query={query} basePath="/admin/courses" />
+        ) : (
+          <EmptyState
+            className="mt-8"
+            icon={<BookOpen />}
+            title="No courses yet"
+            action={{ href: '/admin/courses/new', label: 'Create a course' }}
+          >
+            A course is a set of lessons — videos, PDFs and quizzes — grouped into
+            sections. Create one, add lessons in the builder, then publish it when you
+            are ready for learners to see it.
+          </EmptyState>
+        )
       ) : (
         <div className="mt-6 overflow-x-auto rounded-[--radius-card] border border-border">
           <Table>

@@ -1,4 +1,5 @@
 import { db, desc, count, tenants, memberships } from '@training-platform/db';
+import { EmptyRow } from '@/components/empty-state';
 import { setTenantStatus } from './actions';
 import { NavForm } from '@/components/nav-form';
 
@@ -80,8 +81,11 @@ export default async function PlatformHome() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted">
-                  No tenants yet.
+                <td colSpan={5} className="p-0">
+                  <EmptyRow title="No academies yet">
+                    Each academy is a separate tenant with its own courses, learners and
+                    branding. One is created the first time someone signs up on a subdomain.
+                  </EmptyRow>
                 </td>
               </tr>
             )}

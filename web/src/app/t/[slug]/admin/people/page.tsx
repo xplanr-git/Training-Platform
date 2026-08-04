@@ -1,4 +1,6 @@
 import { db, and, or, eq, ilike, desc, count, memberships, users } from '@training-platform/db';
+import Link from 'next/link';
+import { EmptyRow } from '@/components/empty-state';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
@@ -159,8 +161,21 @@ export default async function People({
             ))}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-6 text-center text-muted">
-                  No members yet.
+                <TableCell colSpan={6} className="p-0">
+                  {query ? (
+                    <EmptyRow title={`No one matches “${query}”`}>
+                      Search looks at names and email addresses. Try a shorter search, or{' '}
+                      <Link href="/admin/people" className="font-medium text-brand-700 underline">
+                        show everyone
+                      </Link>
+                      .
+                    </EmptyRow>
+                  ) : (
+                    <EmptyRow title="No one here yet">
+                      Invite a contractor or dealer using the form above. They get an email
+                      with a link to set a password, and appear here once they accept.
+                    </EmptyRow>
+                  )}
                 </TableCell>
               </TableRow>
             )}

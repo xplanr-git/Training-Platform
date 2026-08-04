@@ -52,10 +52,15 @@ regress; committed and pushed to both remotes.
       "Saved." confirmation, readable errors, confirmation on destructive
       actions. Fitness test at `tests/unit/form-feedback-conventions.test.ts`.
       *(b646aa6)*
-- [ ] **Empty states, everywhere.** Courses, People, Certificates, Insights,
-      learner dashboard, storefront, course outline. Each should say what the
-      thing is and what to do next, not just "None yet." Insights already does
-      this for quizzes — match that quality.
+- [x] **Empty states, everywhere.** One `EmptyState` / `EmptyRow` / `NoMatches`
+      in `components/empty-state.tsx`, applied to 12 surfaces — five more than
+      this item listed (platform tenants, quiz builder, the lesson player's empty
+      quiz, and two per-section lists were all missing too). Note: the item said
+      "Insights already does this — match that quality"; it did not. Insights was
+      a bare grey line like the rest, so the bar had to be set rather than
+      matched. Searchable pages now distinguish "no matches" (with Clear search)
+      from "nothing yet". Contrast of the muted description is asserted from the
+      tokens, not eyeballed.
 - [ ] **Optimistic or explicit feedback on reorder.** Moving a lesson currently
       round-trips before anything moves; the click feels lost.
 - [ ] **Certificate acknowledgement on course completion.** The certificate is
@@ -83,6 +88,19 @@ regress; committed and pushed to both remotes.
       skill.
 
 ## 4. Correctness items already identified
+
+- [ ] **In single-tenant mode, `/` is the marketing page, not the catalogue.**
+      `tenantRewritePath` deliberately excludes `pathname === '/'` from the
+      default-slug rewrite (`lib/host.ts:108`), so on the bare domain the
+      storefront is only at `/t/<slug>`. But five places link to `/` meaning
+      "the course list": the storefront's own pagination, the learner
+      dashboard's "Browse courses", the course landing page's "All courses"
+      back-link, `error.tsx` and `not-found.tsx`. A signed-in learner clicking
+      any of them lands on a marketing page whose only control is "Sign in".
+      Correct on a tenant subdomain, wrong on the apex. Found by clicking the
+      link, not by reading the code.
+      NEEDS A DECISION: should the bare domain serve marketing or the catalogue
+      at `/`? Do not guess — it changes what every visitor sees first.
 
 - [ ] **An E2E test that actually signs in.** `tests/e2e/smoke.spec.ts` only
       visits public pages, so *every* authenticated route — the whole admin area,
@@ -171,3 +189,17 @@ Newest first. One line per completed item: what changed, and the commit.
   builder session. Both halves are framework contracts already relied on
   elsewhere (`cache()` in `tenant.ts`), and the failure mode is "no speedup",
   not wrong data.
+- One empty-state component across 12 surfaces, replacing five different
+  treatments. The substantive fix was the title colour: every previous empty
+  state was muted grey top to bottom, which is what this app uses for disabled
+  text, so an empty table read as broken rather than new. Search-empty is now
+  distinct from nothing-yet, with "Clear search" as the way out — the classic bug
+  is telling someone with 40 courses to create their first one because they
+  mistyped. Seven guards, all proven red; the search guard initially did NOT bite
+  because it matched the word `NoMatches` in the *import* line, so deleting the
+  usage still passed — now scoped to the branch and matching `<NoMatches`. Added a
+  computed WCAG contrast test (muted on muted is 4.63:1, i.e. AA by 0.13) proven
+  red by a one-step lighter grey. Verified on screen: the no-matches state and
+  EmptyRow both render correctly. NOT seen on screen: the first-run copy variants
+  — no tenant has zero courses and `?page=99` clamps back to page 1, so that
+  branch is unreachable without mutating real data.

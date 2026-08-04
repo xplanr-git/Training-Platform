@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { EmptyRow } from '@/components/empty-state';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
@@ -179,7 +180,9 @@ export default async function CourseLanding({
                   <AccordionContent>
                     <ul className="space-y-2 pb-2">
                       {items.length === 0 && (
-                        <li className="text-sm text-muted">No lessons yet.</li>
+                        <li>
+                          <EmptyRow className="px-0 py-2" title="No lessons in this section yet" />
+                        </li>
                       )}
                       {items.map((l) => {
                         const Icon = LESSON_ICON[l.type] ?? BookOpen;

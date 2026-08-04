@@ -9,6 +9,7 @@ import {
   users,
 } from '@training-platform/db';
 import Link from 'next/link';
+import { EmptyRow } from '@/components/empty-state';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
@@ -128,8 +129,12 @@ export default async function Certificates({
             ))}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-6 text-center text-muted">
-                  No certificates issued yet.
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyRow title="No certificates issued yet">
+                    Certificates are issued automatically the moment a learner finishes every
+                    lesson in a course. Each one gets a verification code that anyone can check
+                    without signing in.
+                  </EmptyRow>
                 </TableCell>
               </TableRow>
             )}

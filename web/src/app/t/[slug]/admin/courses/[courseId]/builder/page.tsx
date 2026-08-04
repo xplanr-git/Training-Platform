@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { EmptyState, EmptyRow } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
 import {
   ArrowLeft,
@@ -125,6 +126,12 @@ export default async function CourseBuilder({
       <p className="text-muted">Course content</p>
 
       <div className="mt-6 space-y-5">
+        {sectionRows.length === 0 && (
+          <EmptyState title="Start with a section">
+            Sections group your lessons — for example “Before you begin” or “Installing the
+            pedestals”. Add one using the form below, then add lessons inside it.
+          </EmptyState>
+        )}
         {sectionRows.map((s, i) => (
           <Card key={s.id} className="overflow-hidden p-0">
             <header className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2.5">
@@ -331,7 +338,11 @@ export default async function CourseBuilder({
                 );
               })}
               {(lessonsBySection.get(s.id) ?? []).length === 0 && (
-                <li className="px-4 py-2.5 text-sm text-muted">No lessons yet.</li>
+                <li>
+                  <EmptyRow className="py-6" title="No lessons in this section">
+                    Add one below — a video, a PDF, a text page or a quiz.
+                  </EmptyRow>
+                </li>
               )}
             </ul>
 

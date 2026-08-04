@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { GraduationCap } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 import { redirect } from 'next/navigation';
 import { Award } from 'lucide-react';
 import { db, eq, and, desc, enrollments, courses, certificates } from '@training-platform/db';
@@ -92,15 +94,15 @@ export default async function LearnerDashboard() {
       )}
 
       {enrolled === 0 ? (
-        <Card className="mt-6">
-          <CardContent className="py-10 text-center text-muted">
-            You&apos;re not enrolled in any courses yet.{' '}
-            <Link href="/" className="font-medium text-brand-700 hover:underline">
-              Browse courses
-            </Link>
-            .
-          </CardContent>
-        </Card>
+        <EmptyState
+          className="mt-6"
+          icon={<GraduationCap />}
+          title="You have not started a course yet"
+          action={{ href: '/', label: 'Browse courses' }}
+        >
+          Pick a course to enrol. Your place is saved as you go, so you can stop after a
+          lesson and pick up where you left off — on a phone on site, or at a desk later.
+        </EmptyState>
       ) : (
         <div className="mt-6 space-y-3">
           {withProgress.map((r) => {

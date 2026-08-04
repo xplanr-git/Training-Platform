@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { EmptyRow } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Check, Trash2 } from 'lucide-react';
 import { db, eq, and, asc, lessons, quizzes, quizQuestions } from '@training-platform/db';
@@ -139,7 +140,14 @@ export default async function QuizEditor({
             </li>
           );
         })}
-        {questions.length === 0 && <li className="text-sm text-muted">No questions yet.</li>}
+        {questions.length === 0 && (
+          <li>
+            <EmptyRow className="px-0" title="No questions yet">
+              Add the first one below. Learners must answer every question to finish the
+              lesson, and you choose the pass mark in the quiz settings.
+            </EmptyRow>
+          </li>
+        )}
       </ol>
 
       <Card className="mt-6">
