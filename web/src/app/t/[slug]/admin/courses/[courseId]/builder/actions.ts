@@ -155,13 +155,14 @@ function contentFor(
     case 'text':
       return { body: String(formData.get('body') ?? '') };
     case 'video': {
-      const youtubeUrl = String(formData.get('youtubeUrl') ?? '').trim();
-      // An explicitly submitted URL wins — that is the author changing the video.
-      if (youtubeUrl) return { youtubeUrl };
-      // Otherwise keep whatever was attached rather than clearing it.
+      // Video is Bunny-only now: the builder has no URL field, and a video is
+      // attached through attachVideo / attachBunnyFromUrl rather than this form.
+      // So this only ever PRESERVES what is already there.
       if (typeof prev.videoId === 'string' && prev.videoId) {
         return { provider: prev.provider ?? 'bunny', videoId: prev.videoId };
       }
+      // Legacy YouTube lessons keep playing until they are migrated to Bunny —
+      // editing a title must not silently blank one.
       if (typeof prev.youtubeUrl === 'string' && prev.youtubeUrl) {
         return { youtubeUrl: prev.youtubeUrl };
       }

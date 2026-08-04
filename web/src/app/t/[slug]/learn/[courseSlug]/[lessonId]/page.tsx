@@ -43,6 +43,13 @@ const LESSON_ICON: Record<string, typeof Video> = {
   text: BookOpen,
 };
 
+/**
+ * LEGACY playback only. Video lessons are authored through Bunny; the builder
+ * has no YouTube field. This exists so already-published YouTube lessons keep
+ * playing until they are migrated. Such lessons emit NO progress events, so they
+ * have no resume position and never appear in Insights' watch-time table.
+ * Remove this once no lesson content holds a youtubeUrl.
+ */
 function youtubeEmbed(url: string): string | null {
   const m = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/,

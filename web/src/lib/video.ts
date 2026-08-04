@@ -11,12 +11,15 @@ import { env } from '@/lib/env';
  * api.video side by side; Bunny won on cost, no watermark, and edge coverage,
  * so api.video was removed (recoverable from git history if ever needed).
  *
- * YouTube stays supported for lessons that still point at a YouTube URL.
+ * Bunny is the only provider a video can be AUTHORED with — the builder has no
+ * URL field. YouTube playback survives only for legacy lessons whose content
+ * still holds a youtubeUrl; those record no watch time or resume position and
+ * should be migrated to Bunny.
  */
 
 export type VideoProvider = 'youtube' | 'bunny';
 
-/** Providers a video can be attached from (YouTube is legacy paste-a-URL only). */
+/** Providers a video can be attached from. Bunny only. */
 export type HostedProvider = 'bunny';
 
 export interface HostedVideo {

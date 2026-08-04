@@ -221,12 +221,6 @@ export default async function CourseBuilder({
                               className="h-8 w-40"
                             />
                             <Input
-                              name="youtubeUrl"
-                              defaultValue={c.youtubeUrl ?? ''}
-                              placeholder="YouTube URL"
-                              className="h-8 w-40"
-                            />
-                            <Input
                               name="url"
                               defaultValue={c.url ?? ''}
                               placeholder="PDF URL"
@@ -257,8 +251,8 @@ export default async function CourseBuilder({
                             attachFromUrl={attachBunnyFromUrl.bind(null, slug, courseId, l.id)}
                           />
                           <p className="mt-1.5 text-xs text-muted">
-                            Attaching a Bunny video replaces the YouTube link for this lesson and
-                            enables watch-time tracking.
+                            Attach a Bunny video to enable watch-time tracking and
+                            cross-device resume. Video lessons are Bunny-only.
                           </p>
                         </div>
                       )}
@@ -278,11 +272,10 @@ export default async function CourseBuilder({
               <Input name="title" required placeholder="Lesson title" className="w-44" />
               <select name="type" className={SELECT_CLS}>
                 <option value="text">Text</option>
-                <option value="video">Video (YouTube)</option>
+                <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="quiz">Quiz</option>
               </select>
-              <Input name="youtubeUrl" placeholder="YouTube URL (video)" className="w-44" />
               <Input name="url" placeholder="PDF URL (pdf)" className="w-40" />
               <Input
                 name="estimatedMinutes"
