@@ -1,10 +1,9 @@
 import Link from 'next/link';
+import { ReorderControls } from '@/components/reorder-controls';
 import { EmptyState, EmptyRow } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
 import {
   ArrowLeft,
-  ChevronUp,
-  ChevronDown,
   Trash2,
   Video,
   FileText,
@@ -137,28 +136,13 @@ export default async function CourseBuilder({
             <header className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2.5">
               <h2 className="font-medium">{s.title}</h2>
               <div className="flex items-center gap-0.5">
-                <NavForm action={moveSection.bind(null, slug, courseId, s.id, 'up')} quiet>
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Move section up"
-                    disabled={i === 0}
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                </NavForm>
-                <NavForm action={moveSection.bind(null, slug, courseId, s.id, 'down')} quiet>
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Move section down"
-                    disabled={i === sectionRows.length - 1}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </NavForm>
+                <ReorderControls
+                  label="section"
+                  up={moveSection.bind(null, slug, courseId, s.id, 'up')}
+                  down={moveSection.bind(null, slug, courseId, s.id, 'down')}
+                  canMoveUp={i > 0}
+                  canMoveDown={i < sectionRows.length - 1}
+                />
                 <NavForm action={deleteSection.bind(null, slug, courseId, s.id)} quiet confirm="Delete this section and every lesson in it? This cannot be undone.">
                   <Button
                     type="submit"
@@ -190,28 +174,13 @@ export default async function CourseBuilder({
                         )}
                       </span>
                       <span className="flex shrink-0 items-center gap-0.5">
-                        <NavForm action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')} quiet>
-                          <Button
-                            type="submit"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Move lesson up"
-                            disabled={li === 0}
-                          >
-                            <ChevronUp className="h-4 w-4" />
-                          </Button>
-                        </NavForm>
-                        <NavForm action={moveLesson.bind(null, slug, courseId, s.id, l.id, 'down')} quiet>
-                          <Button
-                            type="submit"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Move lesson down"
-                            disabled={li === arr.length - 1}
-                          >
-                            <ChevronDown className="h-4 w-4" />
-                          </Button>
-                        </NavForm>
+                        <ReorderControls
+                          label="lesson"
+                          up={moveLesson.bind(null, slug, courseId, s.id, l.id, 'up')}
+                          down={moveLesson.bind(null, slug, courseId, s.id, l.id, 'down')}
+                          canMoveUp={li > 0}
+                          canMoveDown={li < arr.length - 1}
+                        />
                         {l.type === 'quiz' && (
                           <Button asChild variant="ghost" size="sm">
                             <Link href={`/admin/courses/${courseId}/builder/quiz/${l.id}`}>

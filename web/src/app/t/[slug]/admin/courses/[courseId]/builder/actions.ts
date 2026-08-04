@@ -361,21 +361,31 @@ export async function moveSection(
 ) {
   const ctx = await requireAdmin();
 
+  // Read AND write inside one transaction, with the rows locked.
+  //
+  // The read used to sit outside it, which made a position swap a read-modify-write
+  // with a gap in the middle. Two overlapping calls both read the pre-swap
+  // positions, so the second re-applied the swap the first had already committed —
+  // two clicks, one move — and two moves in DIFFERENT directions could leave two
+  // rows sharing a position, after which the list order was whatever Postgres felt
+  // like. FOR UPDATE makes the second call wait and then re-read the truth.
+  //
   // Tenant-scoped: Drizzle bypasses RLS, so scope by tenantId to prevent a
   // tenant admin reordering another tenant's content via a forged courseId.
-  const ordered = await db
-    .select({ id: sections.id, position: sections.position })
-    .from(sections)
-    .where(and(eq(sections.courseId, courseId), eq(sections.tenantId, ctx.tenantId)))
-    .orderBy(asc(sections.position));
-
-  const idx = ordered.findIndex((s) => s.id === sectionId);
-  const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
-  if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
-
-  const a = ordered[idx];
-  const b = ordered[swapIdx];
   await db.transaction(async (tx) => {
+    const ordered = await tx
+      .select({ id: sections.id, position: sections.position })
+      .from(sections)
+      .where(and(eq(sections.courseId, courseId), eq(sections.tenantId, ctx.tenantId)))
+      .orderBy(asc(sections.position))
+      .for('update');
+
+    const idx = ordered.findIndex((s) => s.id === sectionId);
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+
+    const a = ordered[idx];
+    const b = ordered[swapIdx];
     await tx
       .update(sections)
       .set({ position: b.position })
@@ -398,20 +408,30 @@ export async function moveLesson(
 ) {
   const ctx = await requireAdmin();
 
+  // Read AND write inside one transaction, with the rows locked.
+  //
+  // The read used to sit outside it, which made a position swap a read-modify-write
+  // with a gap in the middle. Two overlapping calls both read the pre-swap
+  // positions, so the second re-applied the swap the first had already committed —
+  // two clicks, one move — and two moves in DIFFERENT directions could leave two
+  // rows sharing a position, after which the list order was whatever Postgres felt
+  // like. FOR UPDATE makes the second call wait and then re-read the truth.
+  //
   // Tenant-scoped (Drizzle bypasses RLS).
-  const ordered = await db
-    .select({ id: lessons.id, position: lessons.position })
-    .from(lessons)
-    .where(and(eq(lessons.sectionId, sectionId), eq(lessons.tenantId, ctx.tenantId)))
-    .orderBy(asc(lessons.position));
-
-  const idx = ordered.findIndex((l) => l.id === lessonId);
-  const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
-  if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
-
-  const a = ordered[idx];
-  const b = ordered[swapIdx];
   await db.transaction(async (tx) => {
+    const ordered = await tx
+      .select({ id: lessons.id, position: lessons.position })
+      .from(lessons)
+      .where(and(eq(lessons.sectionId, sectionId), eq(lessons.tenantId, ctx.tenantId)))
+      .orderBy(asc(lessons.position))
+      .for('update');
+
+    const idx = ordered.findIndex((l) => l.id === lessonId);
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
+
+    const a = ordered[idx];
+    const b = ordered[swapIdx];
     await tx
       .update(lessons)
       .set({ position: b.position })

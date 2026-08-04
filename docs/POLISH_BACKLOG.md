@@ -61,8 +61,16 @@ regress; committed and pushed to both remotes.
       matched. Searchable pages now distinguish "no matches" (with Clear search)
       from "nothing yet". Contrast of the muted description is asserted from the
       tokens, not eyeballed.
-- [ ] **Optimistic or explicit feedback on reorder.** Moving a lesson currently
-      round-trips before anything moves; the click feels lost.
+- [x] **Explicit feedback on reorder.** New `ReorderControls` client component:
+      spinner in place of the pressed chevron, BOTH directions disabled while in
+      flight, sr-only announcement, visible error on failure. Went with explicit
+      over optimistic — optimistic would mean lifting the whole builder list into
+      client state, and the complaint ("the click feels lost") is answered by
+      making the click visibly land. Also fixed a real race it was provoking: the
+      position read sat outside the transaction that wrote, so two overlapping
+      moves both read pre-swap positions — two clicks, one move, and in different
+      directions, two rows sharing a position. Read is now inside the transaction
+      with `FOR UPDATE`.
 - [ ] **Certificate acknowledgement on course completion.** The certificate is
       issued but the learner is shown nothing — no confirmation, no link, no
       verification code. Highest-value learner-facing gap.
@@ -203,3 +211,22 @@ Newest first. One line per completed item: what changed, and the commit.
   EmptyRow both render correctly. NOT seen on screen: the first-run copy variants
   — no tenant has zero courses and `?page=99` clamps back to page 1, so that
   branch is unreachable without mutating real data.
+- Reorder feedback, plus the bug it was hiding. The two chevrons were separate
+  NavForms, so a click dimmed one 16px ghost icon to 60% opacity and left the
+  opposite chevron live — which is precisely how you provoke two overlapping
+  moves. And overlapping moves were genuinely wrong, not just redundant: the
+  position read happened outside the transaction that wrote, so the second call
+  re-applied the swap the first had already committed (two clicks, one move), and
+  two moves in different directions could leave two rows sharing a position.
+  `ReorderControls` now owns one pending state for both directions; the read is
+  inside the transaction with `FOR UPDATE`. Verified live on a throwaway probe
+  page (the builder needs an admin session): mid-flight both buttons disabled,
+  exactly one spinner, live region reading "Moving lesson…"; on failure a
+  role=alert with readable text, spinner cleared, buttons re-enabled to retry.
+  Seven guards proven red, including the subtle one — `db.select()` inside a
+  `db.transaction()` block runs on a different connection, so it compiles, looks
+  transactional and locks nothing. NOT verified: the race itself under real
+  concurrency. Reproducing it needs concurrent writes against production data,
+  which is not something to do unattended. `FOR UPDATE` reaching the wire was
+  confirmed by rendering the query: `… order by "lessons"."position" asc for
+  update`.
