@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, requireLiveAdmin, signInAsAdmin } from './fixtures';
 
 // Live quiz sub-flow: author a quiz lesson + MCQ question, publish, enroll,
 // answer correctly, and confirm the pass gates course completion → certificate.
-const EMAIL = process.env.DEMO_ADMIN_EMAIL ?? 'demo-admin@example.com';
-const PASSWORD = process.env.DEMO_ADMIN_PASSWORD ?? '';
+
+requireLiveAdmin();
 
 const stamp = Date.now();
 const TITLE = `Quiz Path ${stamp}`;
@@ -11,12 +11,7 @@ const SLUG = TITLE.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g,
 
 test('quiz authoring → attempt → pass → completion → certificate', async ({ page }) => {
   // Login (subdomain-scoped session).
-  await page.goto('/login');
-  await page.locator('input[type=email]').fill(EMAIL);
-  await page.locator('input[type=password]').fill(PASSWORD);
-  await page.locator('button[type=submit]').click();
-  // Admins land on /admin after login (learners on /dashboard).
-  await page.waitForURL('**/admin', { timeout: 20_000 });
+  await signInAsAdmin(page);
 
   // Create course.
   await page.goto('/admin/courses/new');

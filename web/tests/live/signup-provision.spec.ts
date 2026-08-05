@@ -1,10 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, requireLiveOptIn } from './fixtures';
 
 // Validates tenant provisioning via /signup against v2: submitting the signup
 // form creates a tenant + owner, verified by loading the new tenant's public
 // storefront on its subdomain. (Note: on localhost the post-signup redirect to
 // the subdomain admin can't carry the host-only session — that works in prod
 // via the root-domain cookie; here we assert provisioning, not that redirect.)
+requireLiveOptIn();
+
 const stamp = Date.now();
 const SLUG = `signup${stamp}`;
 const COMPANY = `Signup Co ${stamp}`;

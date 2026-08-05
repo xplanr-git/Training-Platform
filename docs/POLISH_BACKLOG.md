@@ -261,17 +261,26 @@ regress; committed and pushed to both remotes.
       `db/` now runs exactly what CI runs; ci-parity.test.ts fails if CI gains a step it
       does not. Turned out the `db` job was missing from my gate too, not just e2e.
 
-- [ ] **An E2E test that actually signs in.** `tests/e2e/smoke.spec.ts` only
-      visits public pages, so *every* authenticated route — the whole admin area,
-      the learner dashboard, the lesson player, the builder — has zero
-      end-to-end coverage. This is the structural reason regressions kept
-      reaching the team while I reported things working: without a session, the
-      only routes verifiable from outside are the six public ones, and the other
-      sixteen were being checked by reasoning rather than by loading them.
-      Needs a seeded test tenant with a known-password admin and learner on a
-      non-production Supabase project — NOT the live one. Highest-leverage item
-      in this file; it is what stops the next regression rather than fixing the
-      last one.
+- [x] **An E2E test that actually signs in — the premise was WRONG, and there was a
+      worse problem underneath.** Authenticated coverage already existed: four specs
+      in `tests/live/` covering the full authed golden path (author → publish →
+      enroll → complete → certificate → verify), the quiz path, admin overview stats
+      and signup provisioning. What was true is that nobody could run them and nobody
+      should have: `DEMO_ADMIN_PASSWORD` was read by three specs, defaulted to `''`,
+      and appeared in no env file and no doc, so the suite was dead. And
+      `npm run test:live` had NO safety gate — `signup-provision.spec.ts` creates a
+      tenant plus a real auth user in whatever project the target server uses, and
+      `.env.local` points at production. One command, and production gains a junk
+      tenant. Now: default-off behind `ALLOW_LIVE_WRITES=1`, shared sign-in fixture,
+      every var documented in `.env.example`, guards on all of it. Verified by running
+      the suite — 4 skipped, no navigation. The CI half is split out below.
+
+- [ ] **Run the live suite in CI.** NEEDS A DECISION: the specs exist, are runnable
+      and are now safe to run, but pointing them at anything means a seeded
+      non-production Supabase project with a known-password admin — not the live one.
+      That is an infra + cost call, not a code one. Until then authenticated routes
+      are covered by a suite someone runs by hand, which is better than the "zero
+      coverage" this item used to claim but still not a gate.
 
 - [ ] **Require a name on invitation.** Without one a certificate can read
       "This certifies that " and nothing in the product can repair it.
@@ -674,3 +683,32 @@ Newest first. One line per completed item: what changed, and the commit.
   `node-version: 20`, which CLAUDE.md pins deliberately; both actions are now @v5.
   Stated in CLAUDE.md rule 13, including the gap `verify` cannot close: it matches CI's
   commands but not its runtime, since this machine is Node 18.20.1 and CI is Node 20.
+
+- **The authenticated E2E item was wrong twice over, and the second error was a live
+  foot-gun.** It claimed authenticated routes had zero end-to-end coverage. They had
+  four specs — the full authored-course-to-verified-certificate path, the quiz path,
+  admin stats, signup provisioning — sitting in `tests/live/`, referenced from nothing
+  but a package script and one comment. The reason they looked absent is that they
+  could not be run: `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` and `LIVE_BASE_URL` were
+  read by the specs and documented in no env file at all, with the password defaulting
+  to `''`, so the only way to discover the preconditions was to read the specs. Fixing
+  the docs turned up the same class of bug elsewhere: `BUNNY_LIBRARY_ID`,
+  `BUNNY_API_KEY` and `BUNNY_CDN_HOSTNAME` were in `.env.local` and read by
+  `lib/env.ts` but missing from `.env.example`, so anyone setting up from the example
+  got no video host and every video lesson rendered the "host not configured" state I
+  built two passes ago. Both are now guarded by env-documented.test.ts, which fails on
+  any `process.env.X` the example does not document.
+  The worse finding: `npm run test:live` had no gate of any kind, and
+  `signup-provision.spec.ts` permanently creates a tenant and an auth user in whatever
+  project the server under test points at — which, via `.env.local`, is production. It
+  is now default-off behind `ALLOW_LIVE_WRITES=1`, with a second skip for missing
+  credentials, both stated as skips rather than failures so a precondition does not
+  read as a broken app. The four duplicated login blocks collapsed into one
+  `signInAsAdmin`, and the fabricated `'demo-admin@example.com'` default is gone —
+  it turned a missing credential into a login assertion failure 20 seconds later.
+  Proven by running it, not by reasoning: `npm run test:live` now reports 4 skipped
+  with no navigation, and with the opt-in set but credentials absent the three authed
+  specs still skip. Six sabotages proven red, including dropping the opt-in from the
+  tenant-creating spec and widening CI's `testDir` to swallow `tests/live`.
+  The comment-matching trap caught me a fifth time: `not.toMatch(/webServer/)` passed
+  against the live config's own comment saying "No webServer".

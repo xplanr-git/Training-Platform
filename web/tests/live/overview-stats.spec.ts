@@ -1,16 +1,10 @@
-import { test, expect } from '@playwright/test';
-
-const EMAIL = process.env.DEMO_ADMIN_EMAIL ?? 'demo-admin@example.com';
-const PASSWORD = process.env.DEMO_ADMIN_PASSWORD ?? '';
+import { test, expect, requireLiveAdmin, signInAsAdmin } from './fixtures';
 
 // Admin dashboard overview shows real tenant-scoped counts (not "—").
+requireLiveAdmin();
+
 test('admin overview renders live stat counts', async ({ page }) => {
-  await page.goto('/login');
-  await page.locator('input[type=email]').fill(EMAIL);
-  await page.locator('input[type=password]').fill(PASSWORD);
-  await page.locator('button[type=submit]').click();
-  // Admins land on /admin after login.
-  await page.waitForURL('**/admin', { timeout: 20_000 });
+  await signInAsAdmin(page);
 
   await page.goto('/admin');
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 20_000 });
