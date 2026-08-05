@@ -1,6 +1,6 @@
 import Link from 'next/link';
+import { BackLink } from '@/components/back-link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { db, eq, and, courses } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { updateCourse, deleteCourse } from '../actions';
@@ -35,12 +35,7 @@ export default async function EditCourse({
 
   return (
     <div className="max-w-2xl">
-      <Link
-        href="/admin/courses"
-        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" /> Courses
-      </Link>
+      <BackLink href="/admin/courses">Courses</BackLink>
       <div className="mt-3 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">{course.title}</h1>
         <div className="flex items-center gap-2">

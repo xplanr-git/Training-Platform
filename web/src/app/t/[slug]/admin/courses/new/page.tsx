@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackLink } from '@/components/back-link';
 import { createCourse } from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { Button } from '@/components/ui/button';
@@ -18,12 +18,7 @@ export default async function NewCourse({
 
   return (
     <div className="max-w-2xl">
-      <Link
-        href="/admin/courses"
-        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" /> Courses
-      </Link>
+      <BackLink href="/admin/courses">Courses</BackLink>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">New course</h1>
 
       <Card className="mt-6">

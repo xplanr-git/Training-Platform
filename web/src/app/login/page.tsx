@@ -90,11 +90,14 @@ export default function LoginPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-baseline justify-between">
+              <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
                 <Link
                   href="/login/forgot"
-                  className="text-xs text-muted underline hover:text-foreground"
+                  // 16px tall as bare text, and it is the recovery path on a
+                  // shared site machine. Padding with a negative inset keeps the
+                  // label where it was while giving it a real target.
+                  className="-my-3 -mr-1.5 inline-flex min-h-11 items-center rounded px-1.5 text-xs text-muted underline hover:text-foreground"
                 >
                   Forgot password?
                 </Link>

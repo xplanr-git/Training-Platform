@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { LessonNav } from '@/components/lesson-nav';
+import { BackLink } from '@/components/back-link';
 import { VideoUnavailable } from '@/components/video-unavailable';
 import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
@@ -218,69 +220,54 @@ export default async function LessonPlayer({
     <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
       {/* Course outline (desktop) */}
       <aside className="hidden w-72 shrink-0 lg:block">
-        <Link
-          href={`/learn/${courseSlug}`}
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" /> {course.title}
-        </Link>
+        <BackLink href={`/learn/${courseSlug}`} className="mb-4 max-w-full">
+          {course.title}
+        </BackLink>
         <div className="mb-5">
           <div className="mb-1.5 text-xs text-muted">{progress.percent}% complete</div>
           <Progress value={progress.percent} className="h-2" />
         </div>
-        <nav className="space-y-4">
-          {outline.map((g) => (
-            <div key={g.id}>
-              <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                {g.title || 'Section'}
-              </p>
-              <ul className="space-y-0.5">
-                {g.items.map((l) => {
-                  const Icon = LESSON_ICON[l.type] ?? BookOpen;
-                  const isCurrent = l.id === lesson.id;
-                  const lDone = progress.completed.has(l.id);
-                  return (
-                    <li key={l.id}>
-                      <Link
-                        href={`/learn/${courseSlug}/${l.id}`}
-                        aria-current={isCurrent ? 'page' : undefined}
-                        className={cn(
-                          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                          isCurrent
-                            ? 'bg-brand-50 font-medium text-brand-700'
-                            : 'text-foreground hover:bg-surface-muted',
-                        )}
-                      >
-                        {lDone ? (
-                          <Check className="h-4 w-4 shrink-0 text-brand-600" />
-                        ) : (
-                          <Icon className="h-4 w-4 shrink-0 text-muted" />
-                        )}
-                        <span className="truncate">{l.title || 'Untitled'}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
-        </nav>
+        <LessonNav
+          sections={outline}
+          courseSlug={courseSlug}
+          currentLessonId={lesson.id}
+          completed={progress.completed}
+        />
       </aside>
 
       {/* Player */}
       <main className="min-w-0 flex-1">
         {/* Mobile back + progress */}
         <div className="mb-5 lg:hidden">
-          <Link
-            href={`/learn/${courseSlug}`}
-            className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-          >
-            <ArrowLeft className="h-4 w-4" /> {course.title}
-          </Link>
+          <BackLink href={`/learn/${courseSlug}`} className="max-w-full">
+            {course.title}
+          </BackLink>
           <div className="mt-2 flex items-center gap-3">
             <Progress value={progress.percent} className="h-2 flex-1" />
             <span className="shrink-0 text-xs text-muted">{progress.percent}%</span>
           </div>
+          {/*
+            On a phone the sidebar is hidden, and until now nothing replaced it — no
+            lesson list, no sense of where you are in the course. Collapsed by
+            default because the video is what the learner came for; <details> needs
+            no JavaScript, which suits a server component and a poor site signal.
+          */}
+          <details className="mt-3 rounded-(--radius-card) border border-border bg-surface">
+            <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-3 text-sm font-medium">
+              All lessons
+              <span className="text-xs font-normal text-muted tabular-nums">
+                {progress.done} of {progress.total}
+              </span>
+            </summary>
+            <div className="border-t border-border px-2 pb-2 pt-2">
+              <LessonNav
+                sections={outline}
+                courseSlug={courseSlug}
+                currentLessonId={lesson.id}
+                completed={progress.completed}
+              />
+            </div>
+          </details>
         </div>
 
         <div className="flex items-center gap-3">
@@ -351,7 +338,7 @@ export default async function LessonPlayer({
                   href={pdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-2 inline-block text-sm text-brand-700 hover:underline"
+                  className="mt-3 inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm text-brand-700 transition-colors hover:bg-surface-muted"
                 >
                   Open PDF in new tab
                 </a>

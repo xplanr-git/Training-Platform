@@ -127,9 +127,31 @@ regress; committed and pushed to both remotes.
       free-text answer-index picker already has its own item in §4 — neither is churn
       to fold in here.
 
-- [ ] **Mobile.** Contractors use this on site. Verify every learner page at
-      375px: no horizontal scroll, tap targets ≥44px, the lesson sidebar
-      collapses sensibly.
+- [x] **Mobile.** Measured at 375px in a browser, page by page. NO horizontal
+      scroll anywhere — every learner page was already clean on that count. Tap
+      targets were not: `Input` (36px) and `Button` default (40px) are the two
+      commonest controls in the app and both missed the bar, now `h-11 sm:h-9` so a
+      phone gets 44px and desktop density is untouched (verified 44px at 375px,
+      36/40px at 1280px). Nine back-links shared one hand-written class string and
+      measured 20px — under even WCAG 2.2's 24px floor — now one `BackLink`
+      component at 44px, using `-my-1.5` so a bigger target does not push the
+      heading down. Also fixed: quiz answer rows 38px → 46px (the highest-frequency
+      deliberate tap in the product), "Open PDF in new tab" 20px → 44px,
+      dashboard "View certificate" 20px → 44px, "Forgot password?" 16px → 44px.
+      SIDEBAR: it was `hidden lg:block` with only a back link and a progress bar
+      below that, so on a phone the course structure was *absent* — no lesson list,
+      no sense of position, no way to jump. Extracted `LessonNav` and added a
+      `<details>` disclosure, collapsed by default; rows are `py-3 lg:py-1.5`, so
+      44px on a phone and the original 32px in the desktop sidebar.
+      Remaining under 44px and left deliberately: the storefront search input/button
+      pair (36/40px → now 44px via the primitives) is fine, but pagination
+      prev/next is ~33px and only renders above 25 courses. Noted, not chased.
+- [ ] **Certificate print output beyond the code.** Fixing the missing verification
+      code (see log) exposed that the printed certificate is otherwise untested: no
+      `@media print` block exists anywhere, so page margins, the status badge and
+      colour fidelity are whatever the browser decides. Worth one deliberate print
+      stylesheet now that the artifact matters.
+
 - [ ] **Accessibility sweep** (WCAG 2.1 AA). Contrast, focus visibility, form
       labels, heading order, `aria-live` for async regions. Use the
       `design:accessibility-review` skill.
@@ -408,3 +430,29 @@ Newest first. One line per completed item: what changed, and the commit.
   375px the drawer opens with email + Sign out visible, 86x32, no horizontal scroll.
   NOT verified: the admin pages as served to a real admin — still no authenticated
   session, so the probe renders the components, not the routes.
+- Mobile at 375px. Horizontal scroll turned out to be a non-issue — every learner
+  page was already clean, measured, not assumed. Tap targets were the real problem,
+  and the worst offenders were the shared primitives: `Input` at 36px and `Button`
+  at 40px, i.e. almost every control a contractor touches. Fixing those mobile-first
+  (`h-11 sm:h-9`) fixed whole pages at once and left desktop untouched, which I
+  verified at both widths. Nine duplicated back-links at 20px became one component.
+  The sidebar item was the most substantive: on a phone the lesson list was not
+  collapsed, it was gone, so a `<details>` disclosure now carries the same
+  `LessonNav` the desktop aside uses.
+  The audit also found something that has nothing to do with mobile and matters more
+  than any of it: the certificate's verification code carried `print:hidden`, sat
+  OUTSIDE the `<article>`, and there is no `@media print` block anywhere to put it
+  back — so printing, or Save-as-PDF on a phone, produced a certificate with no code
+  and no verify URL. Unverifiable, which is the one thing that page exists to
+  provide. The code now lives inside the certificate and prints, with the host to
+  check it against. I used `env.appOrigin()` rather than `absoluteUrl()` on purpose:
+  absoluteUrl throws on a loopback origin in production, which is right for an email
+  link and would 500 the certificate here.
+  Methodology note worth keeping: running the audit CONCURRENTLY with my own fixes
+  made several agent findings stale, and their refuters caught that — "the reporter
+  appears to have measured the pre-fix version". Better to audit, then fix. And the
+  comment-matching trap bit in BOTH directions this time: two guards passed because
+  the file's own doc comment contained the string, and one sabotage edited a comment
+  instead of code. All source assertions in that suite now read comment-stripped.
+  NOT verified: the outline, player and dashboard as served — still no authenticated
+  session, so those three were measured via probes rendering the real components.

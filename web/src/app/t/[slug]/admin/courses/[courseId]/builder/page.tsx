@@ -1,10 +1,10 @@
 import Link from 'next/link';
+import { BackLink } from '@/components/back-link';
 import { cn } from '@/components/ui/utils';
 import { ReorderControls } from '@/components/reorder-controls';
 import { EmptyState, EmptyRow } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
 import {
-  ArrowLeft,
   Trash2,
   Video,
   FileText,
@@ -111,12 +111,7 @@ export default async function CourseBuilder({
 
   return (
     <div className="max-w-3xl">
-      <Link
-        href={`/admin/courses/${courseId}`}
-        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" /> Course
-      </Link>
+      <BackLink href={`/admin/courses/${courseId}`}>Course</BackLink>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{course.title}</h1>
         <Button asChild variant="outline" size="sm">

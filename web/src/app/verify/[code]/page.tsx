@@ -9,6 +9,7 @@ import {
   users,
 } from '@training-platform/db';
 import { PrintButton } from '@/components/print-button';
+import { env } from '@/lib/env';
 
 /**
  * Public certificate verification. Shared route (not rewritten per host).
@@ -21,6 +22,10 @@ export default async function VerifyCertificate({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
+  // Host for the printed "check it here" line. Deliberately not absoluteUrl(),
+  // which throws in production on a loopback origin — correct for an email, but it
+  // would take the whole certificate down rather than degrade one line.
+  const verifyHost = env.appOrigin().replace(/^https?:\/\//, '');
 
   const [cert] = await db
     .select({
@@ -112,11 +117,22 @@ export default async function VerifyCertificate({
             {new Date(cert.revokedAt).toLocaleDateString()}.
           </p>
         )}
+        {/*
+          The verification code lives INSIDE the certificate, and prints.
+          It used to sit outside the <article> carrying `print:hidden`, and there is
+          no @media print block anywhere to put it back — so printing, or "Save as
+          PDF" on a phone, produced a certificate with no code and no verify URL on
+          it. An unverifiable certificate defeats the only purpose this page has, and
+          Save-as-PDF is exactly how a contractor keeps a copy to show a client.
+        */}
+        <div className="mt-8 border-t border-border pt-4 text-center">
+          <p className="text-xs text-muted">Verification code</p>
+          <p className="mt-0.5 select-all break-all font-mono text-xs">{code}</p>
+          <p className="mt-1.5 text-xs text-muted">
+            Verify at {verifyHost}/verify
+          </p>
+        </div>
       </article>
-
-      <p className="text-center text-xs text-muted print:hidden">
-        Verification code: {code}
-      </p>
     </main>
   );
 }

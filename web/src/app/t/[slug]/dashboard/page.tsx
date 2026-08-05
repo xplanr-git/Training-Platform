@@ -129,7 +129,7 @@ export default async function LearnerDashboard() {
                     {r.certCode && (
                       <a
                         href={`/verify/${r.certCode}`}
-                        className="mt-2 inline-flex items-center gap-1 text-sm text-brand-700 hover:underline"
+                        className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-brand-700 hover:underline"
                       >
                         <Award className="h-4 w-4" /> View certificate
                       </a>

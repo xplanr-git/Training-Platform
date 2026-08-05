@@ -1,9 +1,10 @@
 import Link from 'next/link';
+import { BackLink } from '@/components/back-link';
 import { CourseComplete } from '@/components/course-complete';
 import { EmptyRow } from '@/components/empty-state';
 import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
-import { Check, Video, FileText, HelpCircle, BookOpen, ArrowLeft } from 'lucide-react';
+import { Check, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
 import {
   db,
   eq,
@@ -109,12 +110,7 @@ export default async function Learn({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" /> Your learning
-      </Link>
+      <BackLink href="/dashboard">Your learning</BackLink>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
       {isPreview && (
         <div className="mt-3 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">

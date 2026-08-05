@@ -50,7 +50,7 @@ export function QuizForm({
               {q.options.map((o, oi) => (
                 <label
                   key={oi}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-surface-muted has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border px-3 py-3 text-sm transition-colors hover:bg-surface-muted has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
                 >
                   <input
                     type={multi ? 'checkbox' : 'radio'}

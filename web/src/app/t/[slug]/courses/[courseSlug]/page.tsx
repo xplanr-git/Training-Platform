@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { BackLink } from '@/components/back-link';
 import { EmptyRow } from '@/components/empty-state';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
+import { Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
 import {
   db,
   and,
@@ -144,12 +145,7 @@ export default async function CourseLanding({
           this academy can see this page. Learners get a 404.
         </div>
       )}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" /> All courses
-      </Link>
+      <BackLink href="/">All courses</BackLink>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {course.level && <Badge variant="secondary">{course.level}</Badge>}

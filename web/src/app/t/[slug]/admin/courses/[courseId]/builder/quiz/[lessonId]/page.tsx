@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { BackLink } from '@/components/back-link';
 import { EmptyState } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Check, Trash2 } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import { db, eq, and, asc, lessons, quizzes, quizQuestions } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { ensureQuiz, addQuestion, deleteQuestion, setPassThreshold } from '../actions';
@@ -47,12 +48,7 @@ export default async function QuizEditor({
   if (!quiz) {
     return (
       <div className="max-w-3xl">
-        <Link
-          href={`/admin/courses/${courseId}/builder`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" /> Content
-        </Link>
+        <BackLink href={`/admin/courses/${courseId}/builder`}>Content</BackLink>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">
           Quiz &middot; {lesson.title}
         </h1>
@@ -77,12 +73,7 @@ export default async function QuizEditor({
 
   return (
     <div className="max-w-3xl">
-      <Link
-        href={`/admin/courses/${courseId}/builder`}
-        className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" /> Content
-      </Link>
+      <BackLink href={`/admin/courses/${courseId}/builder`}>Content</BackLink>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">Quiz · {lesson.title}</h1>
 
       <NavForm
