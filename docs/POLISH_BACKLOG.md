@@ -98,8 +98,55 @@ regress; committed and pushed to both remotes.
       wide, reading columns 3xl); hover on the outline rows now fades like the
       player sidebar already did. Focus verified with a real keyboard Tab, which
       turned up the finding below.
-- [ ] **Design pass on the admin surfaces** — tables, forms, the builder. The
-      builder especially: it is a dense row of unlabelled inputs.
+- [x] **Design pass on the admin surfaces — HIGH-severity findings only.** Audited
+      with a 5-way fan-out plus an adversarial refuter: 67 findings reported, 47
+      confirmed, 20 refuted. All twelve HIGH ones are fixed. It also turned up two
+      APP-WIDE rendering defects that had nothing to do with admin (see the log),
+      which is the real value of having run it. The 35 medium/low findings are
+      listed in the follow-up item below rather than silently dropped.
+
+- [ ] **Admin design pass, part two — the 35 medium/low findings.** From the same
+      audit, each already refuted once by a skeptic. Grouped roughly: the platform
+      table should adopt the Table primitive and Badge; `certificates/template`
+      uses raw inputs and a hand-rolled submit button instead of the primitives;
+      the invite form's messages sit in no live region; the quiz builder has no way
+      to EDIT a saved question and marks correct options by colour+icon alone; the
+      mobile admin drawer omits the sign-out footer. Full list:
+      - `admin/courses/[courseId]/builder/page.tsx:339` — The add-lesson submit is variant="secondary" (bg-secondary #f4f5f7, no border) on the form's own bg-surface-muted band (
+      - `admin/courses/[courseId]/builder/page.tsx:320` — Inputs in both add-forms have no fill contrast against what they sit on: Input supplies bg-input-background (#f9fafb) an
+      - `admin/courses/[courseId]/builder/page.tsx:152` — Both destructive controls are variant="ghost" + className="text-destructive" (147-155, 192-200)
+      - `components/video-upload.tsx:195` — The two ingest inputs are labelled by a sibling <span className="text-xs text-muted"> (195, 222), not a <label> — no htm
+      - `app/platform/page.tsx:41` — platform/page
+      - `admin/people/page.tsx:144` — The two row actions in the Actions cell stack vertically instead of sitting side by side, so an `invited` member's row i
+      - `admin/courses/page.tsx:91` — The three tenant-admin table wrappers have no surface fill, so they render grey-on-grey; only the platform table sets `b
+      - `app/platform/page.tsx:48` — Row actions are left-aligned on platform and right-aligned on the other three, and they are bare underlined links rather
+      - `app/platform/page.tsx:59` — The Members count — the only true numeric column in the four tables — is left-aligned in a proportional font, with no `t
+      - `app/platform/page.tsx:61` — Status is a bespoke pill built from five off-token colour families instead of the `Badge` the other three tables use, an
+      - `admin/people/page.tsx:119` — The Role value is a `size="sm"` Button sitting in a left-aligned data column, so its text is indented 12px past its own 
+      - `admin/people/invite-form.tsx:51` — The hand-rolled select classes disagree with the Input primitive on fill, shadow, and text size: `bg-transparent shadow-
+      - `admin/certificates/template/page.tsx:45` — All three fields are raw `<input>` elements with `className="rounded-md border border-border px-3 py-2"` (lines 49, 58, 
+      - `admin/certificates/template/page.tsx:70` — The submit control is a hand-rolled `<button className="self-start rounded-md bg-brand-600 px-4 py-2 text-sm font-medium
+      - `admin/people/invite-form.tsx:60` — The error, success, and warning messages (lines 60, 62, 64) sit in no live region and the error carries no `role="alert"
+      - `admin/certificates/template/page.tsx:41` — Field rhythm diverges from the other four admin forms: the form uses `gap-4` between fields and `gap-1` between label an
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:104` — The saved-question card never shows the question type, and every option renders a round marker (line 132) or a check (li
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:161` — Four of the six add-question fields have no label: the prompt input (161) and options textarea (170) are placeholder-onl
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:178` — The correct answer is chosen by typing 1-based line numbers into a free-text box whose only guidance is "e
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:100` — A saved question has no edit affordance — the card carries only a delete button (line 110), so correcting a typo in a pr
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:129` — Correct vs incorrect options are conveyed only by icon shape and colour — a lucide `Check` (line 130) or a bordered empt
+      - `components/admin-shell.tsx:131` — The mobile drawer renders only `Brand` + `NavLinks`; the email/sign-out footer exists solely in the desktop aside (lines
+      - `lib/nav.ts:133` — `/admin/settings/billing` is built and live, but both nav entries for it are `gated` — 'Plans & Billing' (line 92) and '
+      - `components/ui/table.tsx:60` — `TableRow` uses `hover:bg-muted/50` — `--color-muted` is the grey *text* token #6b7280, so the hover fill is a ~50% mid-
+      - `components/feature-gate.tsx:12` — The coming-soon page's top-level heading is an `h2` at `text-xl`; the route renders no `h1` at all (coming-soon/page
+      - `admin/courses/[courseId]/builder/page.tsx:224` — className={`${SELECT_CLS} h-8`} is raw string concatenation on a plain <select>, so it never passes through cn/twMerge a
+      - `admin/courses/[courseId]/builder/page.tsx:209` — The <summary> that is the only route to every lesson's editing controls is text-xs text-brand-700 with no padding — 12px
+      - `admin/courses/[courseId]/builder/page.tsx:214` — The edit-lesson NavForm puts flex flex-wrap items-center gap-2 on the <form>, and NavForm's status region is <div aria-l
+      - `app/platform/page.tsx:37` — The platform table's heading is `h2 text-xl font-semibold` where the other three are `h1 text-2xl font-semibold tracking
+      - `components/nav-form.tsx:151` — The shared form error renders `text-red-600` while the admin surface's established error/destructive colour is `text-des
+      - `admin/courses/[courseId]/page.tsx:112` — The help text 'Completing this course advances the learner to this Connect tier
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:16` — The page-local SELECT_CLS diverges from the Input primitive on four properties, and the two are rendered side by side in
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:145` — The empty state uses `EmptyRow` with `className="px-0"`, but the `<ol>` on line 96 has no border or background — the que
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:49` — The pre-initialisation state of the same page is styled and worded differently: the h1 is `{lesson
+      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:66` — The working column is `max-w-2xl` here (and on line 42), while the builder page it is reached from is `max-w-3xl` (build
 - [ ] **Mobile.** Contractors use this on site. Verify every learner page at
       375px: no horizontal scroll, tap targets ≥44px, the lesson sidebar
       collapses sensibly.
@@ -111,6 +158,14 @@ regress; committed and pushed to both remotes.
       skill.
 
 ## 4. Correctness items already identified
+
+- [ ] **Admin shell never scrolls its sidebar.** `admin-shell.tsx:111` is
+      `flex min-h-screen`, so the aside grows with the nav instead of the aside's
+      own `flex-1 overflow-y-auto` engaging — with ~40 nav items the sidebar
+      lengthens the document rather than scrolling inside itself. `h-screen` is
+      probably the fix, but it converts the admin area to a fixed app shell and I
+      cannot see the admin area to check, so it was left alone deliberately rather
+      than changed blind.
 
 - [ ] **In single-tenant mode, `/` is the marketing page, not the catalogue.**
       `tenantRewritePath` deliberately excludes `pathname === '/'` from the
@@ -322,3 +377,35 @@ Newest first. One line per completed item: what changed, and the commit.
   screenshots to unreadability, so the evidence here is computed values; and the
   outline and player changes were not seen at all, since both need an
   authenticated learner.
+- Admin design pass (HIGH findings). Ran as a 5-way audit with an adversarial
+  refuter, which earned its keep twice over: it killed 20 of 67 findings — several
+  of them exactly the kind I have shipped before, e.g. "nav doesn't mark the current
+  section" when `aria-current` was right there — and it found two defects that were
+  not admin problems at all and had been visible on EVERY surface for months:
+  (1) `rounded-[--radius-card]` is not valid Tailwind v4; it emits
+  `border-radius: --radius-card`, which browsers drop. Thirty occurrences across
+  nineteen files computed to 0px. Every admin table, the accordion, the skeletons,
+  and four components written earlier in THIS backlog had square corners. Fixed to
+  `rounded-(--radius-card)`; verified in a browser against the served stylesheet
+  (0px → 12px, old rule gone).
+  (2) `Card` had `rounded-xl border` with no colour, so v4's preflight left it at
+  currentColor: every card in the app drew a 1px near-black #0a0a0a border instead
+  of #e5e7eb. Verified rgb(10,10,10) → rgb(229,231,235).
+  Also: `TableRow` hovered to `bg-muted/50`, but `--color-muted` is the grey TEXT
+  token, so rows washed to mid-grey and muted cell text measured 2.43:1 — confirmed
+  by computing it. Now `bg-surface-muted` at 4.63:1. Every control in the builder
+  and quiz builder gained an accessible name (they were placeholder-only, and a
+  placeholder is gone the moment a field has a value — i.e. always, on an edit
+  form). And the quiz empty-state copy written by an earlier pass of this backlog
+  was factually wrong on both counts: nothing forces answering every question
+  (gradeQuiz scores a skip as wrong) and there is no "quiz settings" screen. Both
+  claims re-verified against the code before rewriting.
+  Deliberately NOT changed: billing's `gated` nav entries, because Stripe is built
+  and switched off on purpose; and the admin shell's `min-h-screen`, because the fix
+  makes it a fixed app shell and I cannot see the admin area to check. Eleven guards
+  proven red, two of my own sabotages having been wrong first (a no-op edit, and one
+  that hit the wrong of two identical strings). The `-[--var]` guard is the one that
+  matters: that bug class typechecks, lints and builds clean while emitting invalid
+  CSS, which is why it survived this long.
+  NOT verified: any admin surface as rendered. The fixes were verified on public
+  pages and on a throwaway probe rendering the Table and Card primitives directly.

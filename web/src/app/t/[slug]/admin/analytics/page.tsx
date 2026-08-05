@@ -150,7 +150,7 @@ export default async function Analytics({
           <p className="mt-1 text-sm text-muted">
             Actual time played per video lesson — not just who clicked “complete”.
           </p>
-          <div className="mt-4 overflow-x-auto rounded-[--radius-card] border border-border">
+          <div className="mt-4 overflow-x-auto rounded-(--radius-card) border border-border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -201,7 +201,7 @@ export default async function Analytics({
             — and spend longest on — will be listed here, hardest first.
           </EmptyState>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-[--radius-card] border border-border">
+          <div className="mt-4 overflow-x-auto rounded-(--radius-card) border border-border">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { cn } from '@/components/ui/utils';
 import { ReorderControls } from '@/components/reorder-controls';
 import { EmptyState, EmptyRow } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
@@ -213,15 +214,28 @@ export default async function CourseBuilder({
                         action={updateLesson.bind(null, slug, courseId, l.id)}
                         className="mt-2 flex flex-wrap items-center gap-2"
                       >
-                        <Input name="title" defaultValue={l.title} className="h-8 w-40" />
+                        {/*
+                          Every control in this row carries an aria-label. They are
+                          placeholder-only or nameless otherwise, and a placeholder
+                          disappears the moment there is a value — which on an EDIT
+                          form is always. So the row had no accessible names at all
+                          for exactly the lessons an author is most likely editing.
+                        */}
+                        <Input
+                          name="title"
+                          aria-label="Lesson title"
+                          defaultValue={l.title}
+                          className="h-8 w-40"
+                        />
                         {l.type === 'quiz' ? (
                           <input type="hidden" name="type" value="quiz" />
                         ) : (
                           <>
                             <select
                               name="type"
+                              aria-label="Lesson type"
                               defaultValue={l.type}
-                              className={`${SELECT_CLS} h-8`}
+                              className={cn(SELECT_CLS, 'h-8')}
                             >
                               <option value="text">Text</option>
                               <option value="video">Video</option>
@@ -229,12 +243,14 @@ export default async function CourseBuilder({
                             </select>
                             <Input
                               name="body"
+                              aria-label="Text body"
                               defaultValue={c.body ?? ''}
                               placeholder="Text body"
                               className="h-8 w-40"
                             />
                             <Input
                               name="url"
+                              aria-label="PDF URL"
                               defaultValue={c.url ?? ''}
                               placeholder="PDF URL"
                               className="h-8 w-40"
@@ -245,9 +261,9 @@ export default async function CourseBuilder({
                           name="estimatedMinutes"
                           type="number"
                           min="1"
+                          aria-label="Estimated minutes (optional)"
                           defaultValue={l.estimatedMinutes ?? ''}
                           placeholder="Mins"
-                          title="Estimated minutes (optional)"
                           className="h-8 w-20"
                         />
                         <Button type="submit" size="sm">
@@ -320,20 +336,31 @@ export default async function CourseBuilder({
               className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-muted px-4 py-3"
             quiet
           >
-              <Input name="title" required placeholder="Lesson title" className="w-44" />
-              <select name="type" className={SELECT_CLS}>
+              <Input
+                name="title"
+                required
+                aria-label="Lesson title"
+                placeholder="Lesson title"
+                className="w-44"
+              />
+              <select name="type" aria-label="Lesson type" className={SELECT_CLS}>
                 <option value="text">Text</option>
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="quiz">Quiz</option>
               </select>
-              <Input name="url" placeholder="PDF URL (pdf)" className="w-40" />
+              <Input
+                name="url"
+                aria-label="PDF URL (used only by PDF lessons)"
+                placeholder="PDF URL (pdf)"
+                className="w-40"
+              />
               <Input
                 name="estimatedMinutes"
                 type="number"
                 min="1"
                 placeholder="Mins"
-                title="Estimated minutes (optional) — powers “about N min left” for learners"
+                aria-label="Estimated minutes (optional) — powers “about N min left” for learners"
                 className="w-20"
               />
               <Button type="submit" variant="secondary">
@@ -349,7 +376,7 @@ export default async function CourseBuilder({
         className="mt-6 flex items-center gap-2"
             quiet
           >
-        <Input name="title" required placeholder="New section title" className="max-w-xs" />
+        <Input name="title" required aria-label="New section title" placeholder="New section title" className="max-w-xs" />
         <Button type="submit" variant="outline">
           Add section
         </Button>

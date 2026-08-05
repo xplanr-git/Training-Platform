@@ -11,7 +11,7 @@ export default function VerifyLoading() {
       className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6 py-14"
       aria-busy="true"
     >
-      <div className="rounded-[--radius-card] border border-border bg-surface p-8">
+      <div className="rounded-(--radius-card) border border-border bg-surface p-8">
         <Skeleton className="mx-auto h-4 w-24" />
         <Skeleton className="mx-auto mt-6 h-7 w-64" />
         <Skeleton className="mx-auto mt-6 h-3 w-32" />

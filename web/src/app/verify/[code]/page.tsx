@@ -42,7 +42,7 @@ export default async function VerifyCertificate({
   if (!cert) {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-14">
-        <div className="rounded-[--radius-card] border border-border bg-surface p-8 text-center">
+        <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center">
           <h1 className="text-xl font-semibold">Certificate not found</h1>
           <p className="mt-2 text-muted">
             No certificate matches this code. It may be mistyped or revoked.
@@ -79,7 +79,7 @@ export default async function VerifyCertificate({
       </div>
 
       <article
-        className="rounded-[--radius-card] bg-surface p-10 text-center shadow-sm"
+        className="rounded-(--radius-card) bg-surface p-10 text-center shadow-sm"
         style={{ border: `3px solid ${accent}` }}
       >
         <p className="text-sm uppercase tracking-widest text-muted">{cert.tenantName}</p>

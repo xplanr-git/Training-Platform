@@ -25,7 +25,7 @@ export default async function Billing({
       <h1 className="text-2xl font-semibold">Plans &amp; Billing</h1>
 
       {sub ? (
-        <div className="mt-4 flex items-center justify-between rounded-[--radius-card] border border-border bg-surface p-5">
+        <div className="mt-4 flex items-center justify-between rounded-(--radius-card) border border-border bg-surface p-5">
           <div>
             <p className="font-medium capitalize">{sub.planId} plan</p>
             <p className="text-sm text-muted capitalize">Status: {sub.status}</p>
@@ -44,7 +44,7 @@ export default async function Billing({
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {PLANS.map((p) => (
-          <div key={p.id} className="rounded-[--radius-card] border border-border bg-surface p-5">
+          <div key={p.id} className="rounded-(--radius-card) border border-border bg-surface p-5">
             <h2 className="font-semibold">{p.name}</h2>
             <p className="mt-1 text-sm text-muted">
               Up to {p.activeLearnerLimit.toLocaleString()} active learners

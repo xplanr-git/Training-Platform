@@ -117,7 +117,7 @@ export default async function Learn({
       </Link>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
       {isPreview && (
-        <div className="mt-3 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="mt-3 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <b>Preview.</b> You are not enrolled, so nothing here is recorded — no
           progress, no watch time, no certificate. This is how a dealer will see it.
         </div>

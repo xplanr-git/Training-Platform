@@ -37,7 +37,7 @@ export function AttachedVideo({
         : `${Math.floor(durationSec / 60)}m ${String(durationSec % 60).padStart(2, '0')}s`;
 
   return (
-    <div className="mb-3 flex gap-3 rounded-[--radius-card] border border-border bg-surface p-3">
+    <div className="mb-3 flex gap-3 rounded-(--radius-card) border border-border bg-surface p-3">
       <div className="relative flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded bg-neutral-900">
         {thumbnailUrl ? (
           // A plain <img>, not next/image: the Bunny CDN host comes from an env var

@@ -289,7 +289,7 @@ export default async function LessonPlayer({
           </span>
           <h1 className="text-2xl font-semibold tracking-tight">{lesson.title}</h1>
           {isPreview && (
-            <p className="mt-2 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <p className="mt-2 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
               Preview — nothing on this page is recorded.
             </p>
           )}
@@ -315,7 +315,7 @@ export default async function LessonPlayer({
                 /* Preview: the bare embed, deliberately NOT the tracking player.
                    recordVideoProgress needs an enrolment, and a preview must not
                    write watch time into the academy's analytics. */
-                <div className="aspect-video w-full overflow-hidden rounded-[--radius-card] bg-black">
+                <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
                   <iframe
                     src={`https://iframe.mediadelivery.net/embed/${env.bunnyLibraryId()}/${hosted.videoId}`}
                     className="h-full w-full"
@@ -326,7 +326,7 @@ export default async function LessonPlayer({
                 </div>
               )
             ) : youtubeEmbed(content.youtubeUrl ?? '') ? (
-              <div className="aspect-video w-full overflow-hidden rounded-[--radius-card] bg-black">
+              <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
                 <iframe
                   src={youtubeEmbed(content.youtubeUrl ?? '')!}
                   className="h-full w-full"
@@ -344,7 +344,7 @@ export default async function LessonPlayer({
           {lesson.type === 'pdf' &&
             (pdfUrl ? (
               <div>
-                <div className="h-[70vh] w-full overflow-hidden rounded-[--radius-card] border border-border">
+                <div className="h-[70vh] w-full overflow-hidden rounded-(--radius-card) border border-border">
                   <iframe src={pdfUrl} className="h-full w-full" title={lesson.title} />
                 </div>
                 <a
@@ -364,7 +364,7 @@ export default async function LessonPlayer({
               {score !== undefined && (
                 <p
                   className={cn(
-                    'mb-5 rounded-[--radius-card] border px-4 py-3 text-sm',
+                    'mb-5 rounded-(--radius-card) border px-4 py-3 text-sm',
                     passed === '1'
                       ? 'border-green-200 bg-green-50 text-green-800'
                       : 'border-amber-200 bg-amber-50 text-amber-800',

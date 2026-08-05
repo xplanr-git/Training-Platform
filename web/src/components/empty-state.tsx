@@ -42,7 +42,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'rounded-[--radius-card] border border-dashed border-border bg-surface-muted px-6 py-10 text-center',
+        'rounded-(--radius-card) border border-dashed border-border bg-surface-muted px-6 py-10 text-center',
         className,
       )}
     >

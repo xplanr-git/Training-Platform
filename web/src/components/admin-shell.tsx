@@ -36,11 +36,17 @@ function NavLinks({
               const href = `${ADMIN_BASE}${item.href}`;
               const base = href.split('?')[0];
               const target = item.href.split('?')[0];
+              // Match on whole path SEGMENTS. A bare startsWith would light up
+              // '/admin/courses' for a hypothetical '/admin/courses-archive', and
+              // would light up two items at once as soon as one nav path is a
+              // prefix of another. No nav path collides today, which is exactly
+              // why this would have gone unnoticed until one did.
               const isActive =
                 item.status === 'live' &&
                 (target === ''
                   ? activePath === ADMIN_BASE
-                  : activePath.startsWith(base) && base !== ADMIN_BASE);
+                  : base !== ADMIN_BASE &&
+                    (activePath === base || activePath.startsWith(`${base}/`)));
               return (
                 <li key={item.id}>
                   <Link

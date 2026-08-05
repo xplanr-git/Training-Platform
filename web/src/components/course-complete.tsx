@@ -40,7 +40,7 @@ export function CourseComplete({
   return (
     <section
       aria-labelledby="course-complete-heading"
-      className="rounded-[--radius-card] border border-brand-100 bg-brand-50 px-5 py-5"
+      className="rounded-(--radius-card) border border-brand-100 bg-brand-50 px-5 py-5"
     >
       <div className="flex items-start gap-3.5">
         <span

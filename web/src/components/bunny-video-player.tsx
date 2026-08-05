@@ -199,7 +199,7 @@ export function BunnyVideoPlayer({
   }, [enrollmentId, lessonId, resumeAtSec]);
 
   return (
-    <div className="overflow-hidden rounded-[--radius-card] bg-black">
+    <div className="overflow-hidden rounded-(--radius-card) bg-black">
       <iframe
         ref={frameRef}
         src={`${EMBED_ORIGIN}/embed/${libraryId}/${videoId}?autoplay=false&preload=true`}

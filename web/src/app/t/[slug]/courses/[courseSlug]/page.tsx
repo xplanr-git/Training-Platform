@@ -139,7 +139,7 @@ export default async function CourseLanding({
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
       {isPreview && (
-        <div className="mb-6 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="mb-6 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <b>Draft preview.</b> This course is not published, so only administrators of
           this academy can see this page. Learners get a 404.
         </div>
@@ -168,7 +168,7 @@ export default async function CourseLanding({
           <h2 className="mb-3 text-lg font-semibold">What&apos;s inside</h2>
           <Accordion
             type="multiple"
-            className="rounded-[--radius-card] border border-border bg-surface px-4"
+            className="rounded-(--radius-card) border border-border bg-surface px-4"
           >
             {sectionRows.map((s) => {
               const items = lessonsBySection.get(s.id) ?? [];

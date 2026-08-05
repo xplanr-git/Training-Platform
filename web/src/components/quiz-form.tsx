@@ -41,7 +41,7 @@ export function QuizForm({
         return (
           <fieldset
             key={q.id}
-            className="rounded-[--radius-card] border border-border bg-surface p-4"
+            className="rounded-(--radius-card) border border-border bg-surface p-4"
           >
             <legend className="px-1 text-sm font-medium">
               {qi + 1}. {q.prompt}

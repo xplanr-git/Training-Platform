@@ -32,7 +32,7 @@ export function StatGridSkeleton({ count, cols }: { count: number; cols: 3 | 4 }
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className="rounded-[--radius-card] border border-border bg-surface px-4 py-4"
+          className="rounded-(--radius-card) border border-border bg-surface px-4 py-4"
         >
           <Skeleton className="h-3.5 w-20" />
           <Skeleton className="mt-2 h-7 w-12" />
@@ -48,7 +48,7 @@ export function StatGridSkeleton({ count, cols }: { count: number; cols: 3 | 4 }
  */
 export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
   return (
-    <div className="mt-6 overflow-hidden rounded-[--radius-card] border border-border bg-surface">
+    <div className="mt-6 overflow-hidden rounded-(--radius-card) border border-border bg-surface">
       <div className="flex gap-4 border-b border-border bg-surface-muted px-4 py-3">
         {Array.from({ length: cols }, (_, i) => (
           <Skeleton key={i} className="h-3 flex-1" />
@@ -80,7 +80,7 @@ export function CardListSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="mt-6 space-y-3">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="rounded-[--radius-card] border border-border bg-surface p-4">
+        <div key={i} className="rounded-(--radius-card) border border-border bg-surface p-4">
           <Skeleton className="h-4 w-1/2" />
           <Skeleton className="mt-2 h-3 w-1/3" />
         </div>

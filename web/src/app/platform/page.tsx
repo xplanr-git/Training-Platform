@@ -37,7 +37,7 @@ export default async function PlatformHome() {
         <h2 className="text-xl font-semibold">Tenants ({rows.length})</h2>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-[--radius-card] border border-border bg-surface">
+      <div className="mt-4 overflow-x-auto rounded-(--radius-card) border border-border bg-surface">
         <table className="w-full text-sm">
           <thead className="bg-surface-muted text-left text-muted">
             <tr>

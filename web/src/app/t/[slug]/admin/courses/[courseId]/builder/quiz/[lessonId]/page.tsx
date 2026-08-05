@@ -39,7 +39,7 @@ export default async function QuizEditor({
 
   if (!quiz) {
     return (
-      <div className="max-w-2xl">
+      <div className="max-w-3xl">
         <Link
           href={`/admin/courses/${courseId}/builder`}
           className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
@@ -63,7 +63,7 @@ export default async function QuizEditor({
   const threshold = (quiz.settings as { passThreshold?: number })?.passThreshold ?? 70;
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-3xl">
       <Link
         href={`/admin/courses/${courseId}/builder`}
         className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
@@ -143,8 +143,8 @@ export default async function QuizEditor({
         {questions.length === 0 && (
           <li>
             <EmptyRow className="px-0" title="No questions yet">
-              Add the first one below. Learners must answer every question to finish the
-              lesson, and you choose the pass mark in the quiz settings.
+              Add the first one below. A question a learner skips is marked wrong, and they
+              pass at the percentage set in Pass threshold above.
             </EmptyRow>
           </li>
         )}
@@ -158,28 +158,61 @@ export default async function QuizEditor({
             quiet
           >
             <h2 className="font-medium">Add question</h2>
-            <Input name="prompt" required placeholder="Question prompt" />
+            <Input
+              name="prompt"
+              required
+              aria-label="Question prompt"
+              placeholder="Question prompt"
+            />
             <div className="flex gap-2">
-              <select name="type" className={SELECT_CLS}>
+              <select name="type" aria-label="Question type" className={SELECT_CLS}>
                 <option value="mcq">Multiple choice (one answer)</option>
                 <option value="multi_select">Multiple choice (many answers)</option>
                 <option value="true_false">True / False</option>
               </select>
-              <Input name="points" type="number" min="1" defaultValue={1} className="w-20" title="Points" />
+              <Input
+                name="points"
+                type="number"
+                min="1"
+                aria-label="Points for this question"
+                defaultValue={1}
+                className="w-20"
+              />
             </div>
             <Textarea
               name="options"
               rows={3}
+              aria-label="Options, one per line — multiple choice only"
               placeholder="Options, one per line (ignored for True/False)"
             />
+            {/*
+              Only ONE of these is ever read — addQuestion branches on the type select
+              above, and true_false ignores `correct` entirely while every other type
+              ignores `correct_tf`. Both are rendered unconditionally, so the label
+              text has to say which applies to what; otherwise an author fills in the
+              wrong box and the question silently takes the other one's answer.
+            */}
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <label className="flex items-center gap-2">
-                <span className="text-muted">Correct option #(s):</span>
-                <Input name="correct" placeholder="e.g. 2 or 1,3" className="w-28" />
+                <span className="text-muted">
+                  Correct option #(s) <span className="text-xs">— multiple choice only</span>
+                </span>
+                <Input
+                  name="correct"
+                  aria-label="Correct option numbers, for multiple choice questions"
+                  placeholder="e.g. 2 or 1,3"
+                  className="w-28"
+                />
               </label>
               <label className="flex items-center gap-2">
-                <span className="text-muted">True/False:</span>
-                <select name="correct_tf" className={SELECT_CLS}>
+                <span className="text-muted">
+                  Correct answer <span className="text-xs">— True / False only</span>
+                </span>
+                <select
+                  name="correct_tf"
+                  aria-label="Correct answer, for True/False questions"
+                  className={SELECT_CLS}
+                >
                   <option value="0">True</option>
                   <option value="1">False</option>
                 </select>

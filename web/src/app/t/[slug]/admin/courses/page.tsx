@@ -88,7 +88,7 @@ export default async function CoursesList({
           </EmptyState>
         )
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-[--radius-card] border border-border">
+        <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border">
           <Table>
             <TableHeader>
               <TableRow>

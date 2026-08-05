@@ -37,14 +37,14 @@ export function VideoUnavailable({
 
   return (
     <div className="w-full">
-      <div className="flex aspect-video w-full flex-col items-center justify-center rounded-[--radius-card] border border-dashed border-border bg-surface-muted px-6 text-center">
+      <div className="flex aspect-video w-full flex-col items-center justify-center rounded-(--radius-card) border border-dashed border-border bg-surface-muted px-6 text-center">
         <VideoOff aria-hidden="true" className="h-6 w-6 text-muted" />
         <p className="mt-3 text-base font-semibold">{learner.title}</p>
         <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-muted">{learner.body}</p>
       </div>
 
       {isPreview && (
-        <div className="mt-3 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="mt-3 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="flex items-center gap-1.5 font-medium">
             <Wrench aria-hidden="true" className="h-4 w-4" />
             Admin view
