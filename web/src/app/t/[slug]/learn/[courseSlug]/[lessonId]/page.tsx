@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { VideoUnavailable } from '@/components/video-unavailable';
 import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
 import {
@@ -33,6 +34,7 @@ import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { BunnyVideoPlayer } from '@/components/bunny-video-player';
 import { hostedVideoFromContent } from '@/lib/video';
+import { videoUnavailableReason, isVideoFault } from '@/lib/video-availability';
 import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -128,6 +130,33 @@ export default async function LessonPlayer({
   const isQuiz = lesson.type === 'quiz';
   const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
   const hosted = hostedVideoFromContent(content);
+
+  // Why a video lesson has nothing to play. Computed for every video lesson so the
+  // fallback can say something specific, and logged when it is a deployment or data
+  // fault rather than the author simply not having attached a video yet — that
+  // distinction is the whole point, and previously nothing was logged at all, so a
+  // missing BUNNY_LIBRARY_ID was invisible in production.
+  //
+  // Computed for EVERY video lesson, not just unplayable ones, so the fallback
+  // branch below always has something to render. Gating it on a second copy of the
+  // playability conditions would mean the JSX and this could drift, and the failure
+  // mode of that drift is rendering nothing at all — worse than the bare line this
+  // replaces. Logging is what gets gated instead.
+  const unavailable =
+    lesson.type === 'video'
+      ? videoUnavailableReason(content, { hostConfigured: !!env.bunnyLibraryId() })
+      : null;
+  const playable =
+    (hosted?.provider === 'bunny' && env.bunnyLibraryId()) ||
+    youtubeEmbed(content.youtubeUrl ?? '');
+  if (unavailable && !playable && isVideoFault(unavailable)) {
+    console.error('[video unavailable]', {
+      reason: unavailable.reason,
+      lessonId: lesson.id,
+      courseId: course.id,
+      tenantId: ctx.tenantId,
+    });
+  }
 
   // Final batch: course progress, the quiz row, and the furthest watched position
   // are mutually independent once the lesson is known. Each is conditional, so the
@@ -305,9 +334,13 @@ export default async function LessonPlayer({
                   title={lesson.title}
                 />
               </div>
-            ) : (
-              <p className="text-muted">Video unavailable.</p>
-            ))}
+            ) : unavailable ? (
+              <VideoUnavailable
+                unavailable={unavailable}
+                isPreview={isPreview}
+                builderHref={`/admin/courses/${course.id}/builder`}
+              />
+            ) : null)}
           {lesson.type === 'pdf' &&
             (pdfUrl ? (
               <div>

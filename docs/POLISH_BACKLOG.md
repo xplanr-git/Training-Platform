@@ -80,9 +80,13 @@ regress; committed and pushed to both remotes.
       `enrollmentId`, so a previewing admin is never told they earned one. Claims
       NO designation — that is the blocked decision in §5, and the certificate page
       derives its own heading from the tenant template.
-- [ ] **Explain an unconfigured video host.** A missing `BUNNY_LIBRARY_ID` shows
-      learners a bare "Video unavailable" with nothing logged and no way to
-      diagnose. Distinguish "not configured" from "no video attached".
+- [x] **Explain an unconfigured video host.** `videoUnavailableReason` in
+      `lib/video-availability.ts` classifies five cases that all rendered as
+      "Video unavailable.": not-attached, host-not-configured, unknown-provider,
+      unplayable-link, unexpected. The four faults are logged with lesson, course
+      and tenant ids; not-attached is not, since it is ordinary mid-authoring
+      state and logging it would bury the rest. Learners are told it is not their
+      device; admins previewing get the env var name and a builder link.
 
 ## 3. Visual and interaction quality
 
@@ -115,6 +119,16 @@ regress; committed and pushed to both remotes.
       link, not by reading the code.
       NEEDS A DECISION: should the bare domain serve marketing or the catalogue
       at `/`? Do not guess — it changes what every visitor sees first.
+
+- [ ] **The lesson player decides playability twice.** The JSX ternary checks
+      `hosted?.provider === 'bunny' && env.bunnyLibraryId()` and then
+      `youtubeEmbed(...)`; a `playable` const beside it repeats the same
+      conditions for the logging gate. A single `resolveVideoSource(content, …)`
+      returning bunny | youtube | unavailable would remove the duplication and let
+      the player switch on one value. NOT done in the same pass because it means
+      restructuring the working playback branches, and there is no way to verify
+      playback without an authenticated session — the drift hazard it creates
+      (a blank space where the player belongs) is meanwhile closed by a test.
 
 - [ ] **No prettier config in the repo.** `npx prettier --write` therefore uses
       prettier's defaults, which are double quotes — it reformatted a whole file
@@ -258,3 +272,21 @@ Newest first. One line per completed item: what changed, and the commit.
   certificate with no sign-in — checked against a genuine code from the database.
   NOT verified: the redirect immediately after the final click, which needs an
   enrolled learner session.
+- Unconfigured video host. One bare line, "Video unavailable.", stood for five
+  different situations needing different responses — and four of them are nobody-
+  in-the-academy's fault. Worth noting `hostedVideoFromContent` returns null for
+  any unrecognised provider, so "content exists but is unplayable" was
+  indistinguishable from "nothing attached". The classifier went into its own
+  module for a concrete reason: `lib/video.ts` imports React's `cache`, which
+  exists only in the react-server build, so nothing living there can be
+  unit-tested at all — the first version of this test appeared to set
+  BUNNY_LIBRARY_ID per case and was pure theatre, since the function never read
+  env. It now takes `hostConfigured` as a parameter, so the central claim is
+  actually verifiable, and adding an `unexpected` case made TypeScript reject the
+  non-exhaustive switches. Thirteen guards proven red (one sabotage was a no-op —
+  an empty `if` body — and had to be redone). VERIFIED: all five states render
+  with the right copy, the learner variant omits the admin block and never names
+  the env var, and all four fault reasons reach the server log with full context
+  while not-attached produces no line. NOT verified: the player's own call site
+  firing on a real request, which needs an authenticated learner on a lesson whose
+  video cannot play; the log mechanism was proven in the same runtime instead.
