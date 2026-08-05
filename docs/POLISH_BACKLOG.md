@@ -216,15 +216,18 @@ regress; committed and pushed to both remotes.
       NEEDS A DECISION: should the bare domain serve marketing or the catalogue
       at `/`? Do not guess — it changes what every visitor sees first.
 
-- [ ] **The UI kit's focus rings render nothing.** Measured in a browser: on both
-      a Button and an Input, `focus-visible:ring-*` computes to a TRANSPARENT
-      box-shadow, and several components also set `outline-none`. The global
-      `:focus-visible` block in globals.css is therefore the ONLY thing giving
-      keyboard users a visible focus indicator anywhere in the app — it survives
-      `outline-none` purely on specificity (`input:focus-visible` 0,1,1 beats the
-      `.outline-none` utility 0,1,0). That works, and is now guarded, but it is
-      accidental: the `ring-ring` / `--ring` variable the kit expects is not wired
-      to `--color-ring`. Worth fixing properly so components and globals agree.
+- [x] **The UI kit's focus rings — the item's premise was WRONG, and the real defect
+      was the opposite.** They rendered fine. Re-measured with a real keyboard Tab: a
+      Button painted a white 2px offset plus a #171717 4px ring ON TOP OF the global
+      brand-blue outline — three visual bands in two colours on one control, on every
+      focusable element in the kit. The original "renders nothing" reading was taken
+      while the DOCUMENT did not have focus, so `:focus-visible` never matched and the
+      box-shadow was the unfocused baseline; that is the same artifact recorded in the
+      accessibility log. Resolved by making the global outline the single treatment —
+      it is the only one that reaches links, summaries and `[tabindex]` at all — and
+      removing 47 competing ring utilities across 18 files. `focus-visible:border-ring`
+      is deliberately kept: the field's own boundary darkening is a different signal,
+      not a duplicate.
 
 - [ ] **The lesson player decides playability twice.** The JSX ternary checks
       `hosted?.provider === 'bunny' && env.bunnyLibraryId()` and then
@@ -575,3 +578,23 @@ Newest first. One line per completed item: what changed, and the commit.
   it. Narrowed to the background alone and re-proven by turning the shell white.
   NOT verified: the admin routes as served — still no session, so this is the real
   component in a probe rather than /admin itself.
+- UI kit focus rings. The item was wrong and I wrote it. The rings worked all along;
+  what was actually broken was that every focusable control carried TWO indicators in
+  two colours — the kit's near-black ring inside the global brand outline. The original
+  measurement was taken without document focus, so `:focus-visible` never matched. That
+  artifact is now recorded in three places, because it produced a false finding that
+  sat in the backlog for two passes.
+  Fixed by choosing one treatment: the global outline, which is the only one that
+  covers links, summaries and `[tabindex]`. 47 ring utilities removed across 18 files;
+  every one of the ten focusable primitives verified to still have exactly one
+  indicator, including the Radix checkbox.
+  I also introduced a regression mid-pass and caught it by measuring rather than by
+  reasoning: my removal regex used a word boundary after `]`, which never matches, so
+  every `focus-visible:ring-[3px]` survived — stripped of its colour class it fell back
+  to currentColor and painted an OPAQUE near-black ring, worse than the translucent one
+  it replaced. There is now a guard for exactly that shape, since a ring width with no
+  colour is a silent downgrade.
+  VERIFIED with real keyboard focus on a probe: link, Button, Input and a Radix
+  checkbox each show a single 2px brand-500 outline and no ring bands; fields keep the
+  border-darkening signal. NOT verified: the admin routes as served, and no screen
+  reader was run.

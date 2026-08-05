@@ -22,16 +22,18 @@ const CSS = read('src/app/globals.css');
 
 describe('keyboard focus is visible, and only globals.css makes it so', () => {
   /*
-   * Measured in a browser, not assumed: on both a Button and an Input,
-   * `focus-visible:ring-*` computes to a TRANSPARENT box-shadow, so the UI kit's
-   * own focus rings render nothing. Several components also set `outline-none`.
-   * The single global block below is therefore the only thing giving keyboard
-   * users a visible focus indicator anywhere in this app — it survives
-   * `outline-none` purely because `input:focus-visible` (0,1,1) outranks the
-   * `.outline-none` utility (0,1,0).
+   * CORRECTION to what this comment used to say. It claimed the UI kit's
+   * `focus-visible:ring-*` computed to a transparent box-shadow and therefore rendered
+   * nothing. That was wrong: the reading behind it was taken while the DOCUMENT did not
+   * have focus, so `:focus-visible` never matched and the box-shadow was simply the
+   * unfocused baseline. Re-measured with a real keyboard Tab, a Button painted a white
+   * 2px offset plus a #171717 4px ring — on top of the global blue outline. Two
+   * indicators in two colours, not none.
    *
-   * Delete or narrow it and focus goes invisible app-wide with nothing else
-   * failing. Hence this guard.
+   * The kit's rings have since been removed (see focus-conventions.test.ts), so the
+   * global block below IS now the single focus treatment — by design rather than by
+   * accident. Delete or narrow it and focus goes invisible app-wide with nothing else
+   * failing, which is what this guard is for.
    */
   const block = CSS.slice(CSS.indexOf('a:focus-visible'), CSS.indexOf('.sr-only'));
 

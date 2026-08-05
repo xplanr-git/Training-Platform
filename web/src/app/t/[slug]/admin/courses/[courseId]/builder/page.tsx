@@ -45,7 +45,7 @@ const LESSON_ICON: Record<string, typeof Video> = {
 };
 
 const SELECT_CLS =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 export default async function CourseBuilder({
   params,

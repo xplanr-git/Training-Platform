@@ -47,7 +47,7 @@ export default async function NewCourse({
               <select
                 id="level"
                 name="level"
-                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
               >
                 <option>Beginner</option>
                 <option>Intermediate</option>

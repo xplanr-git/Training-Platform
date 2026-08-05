@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { NavForm } from '@/components/nav-form';
 
 const SELECT_CLS =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 /** Mirrors the options in the add-question type select. */
 const QUESTION_TYPE_LABEL: Record<string, string> = {
