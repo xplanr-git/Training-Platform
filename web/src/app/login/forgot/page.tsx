@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{sent ? 'Check your email' : 'Reset your password'}</CardTitle>
+          <CardTitle as="h1">{sent ? 'Check your email' : 'Reset your password'}</CardTitle>
           <CardDescription>
             {sent
               ? `If an account exists for ${email}, a link is on its way.`

@@ -4,6 +4,25 @@
  * Design tokens. Single source of truth for colour, spacing, and type.
  * Consumed via Tailwind v4 @theme so utilities like `bg-brand` resolve.
  */
+/* This app is light-only: globals.css defines no dark tokens and there is no theme
+   toggle. But the shadcn-derived UI kit ships `dark:` variants (dark:bg-input/30 and
+   friends), and in Tailwind v4 `dark:` defaults to @media (prefers-color-scheme: dark).
+   So on any machine set to dark — which is most phones by default — those variants fired
+   against an otherwise entirely light palette: measured `dark:bg-input/30` painting a
+   translucent mid-grey fill inside every text field on a white page. Half a dark theme
+   is worse than none, and it moves contrast ratios out from under the values measured
+   here.
+
+   Redefining the variant as class-based makes `dark:` inert until someone deliberately
+   adds a `.dark` ancestor, which is also exactly what a future theme toggle would want.
+   color-scheme: light stops the browser rendering native controls and scrollbars dark
+   against the same light palette. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+
 @theme {
   --color-brand-50: #eef4ff;
   --color-brand-100: #d9e5ff;
@@ -39,7 +58,13 @@
   --color-accent-foreground: #171717;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
-  --color-input: #e5e7eb;
+  /* 1.4.11 Non-text Contrast. This was #e5e7eb, which is 1.24:1 against the white
+     page and 1.18:1 against the field's own #f9fafb fill — the border is the only
+     thing marking a text field's extent, and it was effectively invisible. #858585
+     measures 3.69:1 on white and 3.53:1 on the fill, so it clears the 3:1 minimum
+     against both neighbours with margin. --color-border (dividers, card edges) is
+     deliberately left light: 1.4.11 governs component boundaries, not decoration. */
+  --color-input: #858585;
   --color-input-background: #f9fafb;
   --color-switch-background: #d1d5db;
   --color-ring: #171717;
@@ -114,6 +139,10 @@ summary:focus-visible,
   height: auto;
   margin: 0;
   clip: auto;
+  /* Tailwind v4 changed .sr-only from `clip: rect(...)` to `clip-path: inset(50%)`.
+     Releasing only `clip` left the focused skip link a properly sized, properly
+     positioned box that painted nothing at all — including its focus outline. */
+  clip-path: none;
   padding: 0.5rem 0.75rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);

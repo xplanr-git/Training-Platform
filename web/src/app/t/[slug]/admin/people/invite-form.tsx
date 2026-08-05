@@ -71,7 +71,7 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
               </p>
             )}
             {ok && !warning && <p className="text-sm text-brand-600">Invitation sent.</p>}
-            {warning && <p className="text-sm text-amber-600">{warning}</p>}
+            {warning && <p className="text-sm text-amber-700">{warning}</p>}
           </div>
         </form>
       </CardContent>

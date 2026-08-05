@@ -31,7 +31,7 @@ export default function AuthCodeErrorPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>That link has already been used</CardTitle>
+          <CardTitle as="h1">That link has already been used</CardTitle>
           <CardDescription>
             Invitation and password links work once, then expire.
           </CardDescription>

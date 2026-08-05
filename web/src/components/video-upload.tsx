@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
+import { useId, useRef, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -49,6 +49,7 @@ export function VideoUpload({
   currentVideoId: string | null;
 }) {
   const [pending, startTransition] = useTransition();
+  const uid = useId();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(currentVideoId);
   const [videoId, setVideoId] = useState('');
@@ -129,11 +130,18 @@ export function VideoUpload({
     <div className="flex flex-col gap-3">
       {/* 1. Upload a file — the normal path. */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium">
+        {/*
+          A <label>, not a <span>. type=file has no placeholder to fall back on, so
+          this control's accessible name was the empty string — a screen reader
+          announced its role and nothing else. One VideoUpload renders per video
+          lesson in the builder, so the id has to be unique per instance.
+        */}
+        <label htmlFor={`${uid}-file`} className="text-xs font-medium">
           {done ? 'Replace this video' : 'Upload a video'}
-        </span>
+        </label>
         <div className="flex flex-wrap items-center gap-2">
           <input
+            id={`${uid}-file`}
             ref={fileRef}
             type="file"
             accept="video/*"

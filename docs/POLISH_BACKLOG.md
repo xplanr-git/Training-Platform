@@ -160,9 +160,23 @@ regress; committed and pushed to both remotes.
       do not); the "Valid certificate" badge still does not, being a screen
       affordance rather than part of the document.
 
-- [ ] **Accessibility sweep** (WCAG 2.1 AA). Contrast, focus visibility, form
-      labels, heading order, `aria-live` for async regions. Use the
-      `design:accessibility-review` skill.
+- [x] **Accessibility sweep (WCAG 2.1 AA).** Audited by concern with an adversarial
+      refuter (5 concerns, 14 findings confirmed of ~40 reported) plus my own live
+      browser sweep. Fixed: the skip link painted NOTHING when focused (Tailwind v4
+      moved `.sr-only` from `clip` to `clip-path`; the focus rule released only the
+      old one) — 2.4.7; `--color-input` #e5e7eb was 1.24:1, the sole boundary of every
+      text field — now #858585, 3.69:1 on the page and 3.53:1 on the field's own fill
+      — 1.4.11; `CardTitle` hardcoded `<h4>`, so four auth pages had NO h1 and started
+      their outline at level 4 while the storefront skipped h1→h4 — the level is now a
+      REQUIRED prop, so the compiler asks — 1.3.1; the signup error was inserted with
+      no role and no live region, i.e. a failed signup was silent — 4.1.3; the video
+      file input had an empty accessible name (type=file has no placeholder fallback)
+      — 4.1.2; amber-600 body text was 3.20:1 — 1.4.3; two quiz `aria-label`s
+      overrode their visible wrapping labels — 2.5.3; signup fields gained
+      `autocomplete` — 1.3.5. Also found and fixed off-list: the app ships seven
+      `dark:` variants with no dark theme, and v4's `dark:` defaults to
+      prefers-color-scheme, so dark-preferring machines got half a dark theme — now
+      class-based, plus `color-scheme: light`.
 - [ ] **Copy pass.** Buttons that say what happens, errors that say how to fix
       it, no internal vocabulary leaking into the UI. Use the `design:ux-copy`
       skill.
@@ -483,3 +497,28 @@ Newest first. One line per completed item: what changed, and the commit.
   real data to test (61 certificates, 0 revoked), so I applied the exact class string
   the component emits for a revoked certificate to the live DOM and measured that,
   rather than revoking a real certificate.
+- WCAG 2.1 AA sweep. Two of my own measurement methods were wrong before any finding
+  was: my first contrast pass parsed digits out of `getComputedStyle().color`, which
+  silently mangles every `oklch()` colour Tailwind v4 emits — it reported the "Valid
+  certificate" badge at 1.03:1 when a canvas-based conversion puts it at 4.72:1,
+  passing. And `:focus` styles cannot be measured unless the DOCUMENT has focus, which
+  the preview pane only has right after a `computer` interaction; three readings said
+  "still broken" when the fix was fine. Both are recorded because the wrong number is
+  more dangerous than no number.
+  Best finds: the skip link — v4 changed `.sr-only` from `clip` to `clip-path`, and
+  `.skip-link:focus` released only `clip`, so on focus it became a correctly
+  positioned 133x42 box, white background, brand outline, painting nothing whatsoever.
+  And `--color-input` at 1.24:1: the border is the ONLY thing marking a field's extent
+  because the fill is 1.05:1 against the page. #949494 was rejected on measurement —
+  3.03:1 on white but 2.90:1 against the field's own fill, i.e. it fails on the side
+  nobody checks.
+  I declined the audit's fix twice. It wanted the Suspend button to surrender its red
+  on hover (4.41:1); darkening to red-700 keeps the destructive cue at 5.91:1. And my
+  own first instinct there was also wrong — `hover:bg-destructive/10` measures 4.13:1,
+  worse than what it replaced.
+  Sixteen guards proven red. The comment-matching trap struck a FOURTH time: a CSS
+  guard passed because the block comment above the declaration contained the string it
+  searched for. Every source assertion in this suite now strips comments first.
+  NOT verified: the admin and player surfaces as served, still. And no screen reader
+  was actually run — these are structural and computed checks, which is not the same
+  as hearing what NVDA says.

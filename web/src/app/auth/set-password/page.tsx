@@ -97,7 +97,7 @@ export default function SetPasswordPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Choose a password</CardTitle>
+          <CardTitle as="h1">Choose a password</CardTitle>
           <CardDescription>
             {hasSession
               ? 'Set a password so you can sign in from now on.'

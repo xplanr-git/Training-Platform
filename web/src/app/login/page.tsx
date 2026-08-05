@@ -70,7 +70,7 @@ export default function LoginPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
+          <CardTitle as="h1">Sign in</CardTitle>
           <CardDescription>
             Access your Outdure product training and certifications.
           </CardDescription>

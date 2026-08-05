@@ -27,12 +27,26 @@ describe('every control in the dense admin forms has a name that survives typing
       // Ids referenced by a <Label htmlFor> count as named.
       const labelled = new Set([...src.matchAll(/htmlFor="([^"]+)"/g)].map((m) => m[1]));
 
+      /**
+       * A control WRAPPED in a <label> is named by that label's text, and that is the
+       * better pattern where a visible label already exists — adding aria-label there
+       * OVERRIDES the visible text, so the accessible name no longer contains it and
+       * 2.5.3 Label in Name fails. Two controls in the quiz builder had exactly that,
+       * because the first version of this guard only recognised aria-label and
+       * htmlFor, and I satisfied it the wrong way.
+       */
+      const wrappedInLabel = (at: number) => {
+        const before = src.slice(0, at);
+        return before.lastIndexOf('<label') > before.lastIndexOf('</label>');
+      };
+
       for (const m of src.matchAll(/<(Input|select|textarea)\b([\s\S]{0,400}?)\/?>/g)) {
         const attrs = m[2];
         if (/type="hidden"/.test(attrs)) continue;
         const id = /\bid="([^"]+)"/.exec(attrs)?.[1];
         if (/aria-label=/.test(attrs)) continue;
         if (id && labelled.has(id)) continue;
+        if (wrappedInLabel(m.index ?? 0)) continue;
         nameless.push(`${path}:${src.slice(0, m.index ?? 0).split('\n').length} <${m[1]}>`);
       }
       expect(

@@ -222,22 +222,13 @@ export default async function QuizEditor({
                 <span className="text-muted">
                   Correct option #(s) <span className="text-xs">— multiple choice only</span>
                 </span>
-                <Input
-                  name="correct"
-                  aria-label="Correct option numbers, for multiple choice questions"
-                  placeholder="e.g. 2 or 1,3"
-                  className="w-28"
-                />
+                <Input name="correct" placeholder="e.g. 2 or 1,3" className="w-28" />
               </label>
               <label className="flex items-center gap-2">
                 <span className="text-muted">
                   Correct answer <span className="text-xs">— True / False only</span>
                 </span>
-                <select
-                  name="correct_tf"
-                  aria-label="Correct answer, for True/False questions"
-                  className={SELECT_CLS}
-                >
+                <select name="correct_tf" className={SELECT_CLS}>
                   <option value="0">True</option>
                   <option value="1">False</option>
                 </select>

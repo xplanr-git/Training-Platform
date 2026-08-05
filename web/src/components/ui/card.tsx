@@ -29,14 +29,24 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <h4
-      data-slot="card-title"
-      className={cn("leading-none", className)}
-      {...props}
-    />
-  );
+/**
+ * `as` is REQUIRED, deliberately.
+ *
+ * This rendered a hardcoded <h4>. On the four auth pages the card title IS the page
+ * title, so those pages had no <h1> at all and their heading outline started at level
+ * 4; on the storefront the card titles sat under the page <h1> and skipped straight to
+ * h4. Both fail WCAG 1.3.1, and neither is visible without reading the DOM.
+ *
+ * There is no correct default — the right level depends entirely on what surrounds the
+ * card — so rather than pick a wrong one and guard it with a test, the type makes the
+ * compiler ask. Five call sites, five deliberate answers.
+ */
+function CardTitle({
+  className,
+  as: Heading,
+  ...props
+}: React.ComponentProps<"div"> & { as: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" }) {
+  return <Heading data-slot="card-title" className={cn("leading-none", className)} {...props} />;
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {

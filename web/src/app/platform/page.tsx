@@ -118,7 +118,7 @@ export default async function PlatformHome() {
                         type="submit"
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-red-700"
                       >
                         Suspend
                       </Button>

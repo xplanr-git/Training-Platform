@@ -149,7 +149,7 @@ export default async function TenantHome({
             <Link key={c.id} href={`/courses/${c.slug}`} className="group block">
               <Card className="flex h-full flex-col transition group-hover:border-brand-500 group-hover:shadow-md">
                 <CardHeader>
-                  <CardTitle className="text-base">{c.title}</CardTitle>
+                  <CardTitle as="h2" className="text-base">{c.title}</CardTitle>
                   <CardDescription className="line-clamp-3">
                     {c.description || 'No description yet.'}
                   </CardDescription>
