@@ -18,7 +18,15 @@ test('login page renders the sign-in form', async ({ page }) => {
 test('signup page renders the academy-creation form', async ({ page }) => {
   await page.goto('/signup');
   await expect(page.getByRole('heading', { name: /create your academy/i })).toBeVisible();
-  await expect(page.getByPlaceholder('Company / academy name')).toBeVisible();
+  // By LABEL, not by placeholder. This assertion used to read
+  // getByPlaceholder('Company / academy name') and broke when the accessibility pass
+  // gave these fields real <Label>s — a placeholder is not an accessible name, since
+  // it disappears the moment anyone types. Asserting the label tests what a screen
+  // reader and a voice-control user actually get, and it cannot be broken by the same
+  // improvement twice.
+  await expect(page.getByLabel('Company / academy name')).toBeVisible();
+  await expect(page.getByLabel('Work email')).toBeVisible();
+  await expect(page.getByLabel('Your web address')).toBeVisible();
 });
 
 test('responses carry security headers', async ({ request }) => {
