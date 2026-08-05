@@ -1,0 +1,18 @@
+# LF everywhere in the repository, checked out as LF on every platform.
+#
+# Why this exists: 31 tracked files were LF in HEAD but CRLF in the working tree, so
+# editing any of them produced a diff touching every line. That happened for real —
+# a 26-line change to the lesson player showed up as 932 changed lines, which makes a
+# review impossible without altering any behaviour. Zero files were CRLF in HEAD, so
+# LF was already the convention; nothing was enforcing it.
+* text=auto eol=lf
+
+# Binary assets git must not touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

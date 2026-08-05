@@ -240,10 +240,28 @@ regress; committed and pushed to both remotes.
       originally as unverifiable — it is pure logic, so exhaustive unit tests are better
       evidence than a browser check.
 
-- [ ] **No prettier config in the repo.** `npx prettier --write` therefore uses
-      prettier's defaults, which are double quotes — it reformatted a whole file
-      away from the codebase's single-quote style before being reverted. Either add
-      a `.prettierrc` matching current style or stop reaching for prettier here.
+- [x] **No prettier config in the repo.** Added `.prettierrc.json` matching the
+      MEASURED style (single quotes 3176 vs 1647, semicolons, 2-space, printWidth 100
+      — p99 line length is 102, and 100 minimises churn: 106 differing files vs 110 at
+      90 and 125 at 120). Deliberately did NOT run a sweep: 106 of 167 files still
+      differ, so this repo is hand-formatted, not prettier-formatted, and reformatting
+      two thirds of it is a scope decision for the owner rather than a side effect of a
+      config commit. The config exists so that IF anyone reaches for prettier it
+      produces house style instead of double quotes and CRLF — the two things that
+      actually caused damage. Also added `.gitattributes` (`* text=auto eol=lf`) and
+      `.editorconfig`, and normalised 31 working copies that were LF in HEAD but CRLF
+      on disk — every one a landmine that turns the next edit into a whole-file diff.
+
+- [ ] **Run a prettier sweep, or decide not to.** NEEDS A DECISION: 106 of 167 files
+      differ from `prettier --check` at the configured width. Formatting them is one
+      zero-behaviour commit that makes `prettier --check` usable as a CI gate, at the
+      cost of churning two thirds of the repo's `git blame`. Not mine to choose.
+
+- [ ] **My local gate did not include the E2E suite.** CI runs `npm run e2e`
+      (Playwright); my gate was typecheck, lint, `npm test` (vitest) and build, so a
+      broken smoke test shipped and CI went red on c1b844e. Fixed in 20a6c63 and
+      `npm run e2e` added to what I run. Worth making the gate explicit somewhere the
+      next person reads, because "all tests pass" meant two different things.
 
 - [ ] **An E2E test that actually signs in.** `tests/e2e/smoke.spec.ts` only
       visits public pages, so *every* authenticated route — the whole admin area,
@@ -621,3 +639,24 @@ Newest first. One line per completed item: what changed, and the commit.
   lessons still holds a youtubeUrl, so the legacy branch is live and cannot be retired.
   NOT verified: actual playback. No session, so no video was played in a browser — the
   logic is tested exhaustively, the rendering is not.
+- Prettier config, line endings, and a CI break I caused. The item offered two
+  options — a config matching current style, or stop using prettier. Measuring settled
+  it: even at the best-fitting width, 106 of 167 files differ, so no config "matches
+  current style" and a sweep is a 106-file decision I should not take unasked. What I
+  did instead fixes the damage prettier actually did: pin singleQuote and endOfLine so
+  running it cannot produce double quotes or CRLF.
+  The line-ending work is the substantive part. 31 tracked files were LF in HEAD but
+  CRLF on disk, with nothing declaring a convention and zero files CRLF in HEAD — so LF
+  was already the rule, unwritten. Normalising them produced NO diff (they matched HEAD
+  once renormalised) and removed 31 landmines, each of which would have turned its next
+  edit into a whole-file rewrite. That is not hypothetical: it happened last pass, where
+  a 26-line change showed as 932 changed lines. The cause was my own Python text-mode
+  writes, which translate to CRLF on Windows — the Write tool is fine.
+  Guard scoped to web/ and db/ on purpose: the legacy Vite prototype at the root is 127
+  CRLF files that CLAUDE.md schedules for deletion, and drizzle's migration metadata is
+  covered by the append-only rule. Six guards proven red.
+  And the thing that matters most from this pass: the user showed me CI was RED on my
+  previous commit. My gate ran vitest and never Playwright, so I had claimed a green
+  build on a red one. The break was my accessibility fix removing the placeholder the
+  smoke test asserted; the test now asserts the label, which is both correct and
+  unbreakable by the same improvement. `npm run e2e` is part of the gate from now on.
