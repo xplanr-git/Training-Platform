@@ -349,16 +349,28 @@ on the existing academy.
       (`status: 'pending'` until an admin accepts). Recommend admin approval —
       it needs no secret distribution and gives the academy a record of who
       asked. **Surface this choice to the owner before building.**
-- [ ] **Build it.** A `/join` route on the academy that creates the auth user and
-      a learner membership in the chosen state, reusing the existing
-      set-password flow rather than a second password path. Must not touch
-      `/signup`, which remains the academy-provisioning route.
-- [ ] **Admin side.** Pending requests visible in People with accept/decline,
-      audited like every other membership mutation.
-- [ ] **Guard it.** **DECIDED 2026-08-06 by the owner: build it now, in-process, no
-      new paid dependency.** Note the Vercel caveat when it lands: an in-process
-      limiter is per-instance and resets on a cold start, so it raises the cost of an
-      attack without bounding it. Upstash was offered and deferred.
+- [x] **Build it.** `/join` on the academy: name, email, password → auth user +
+      `memberships.status = 'pending'`, role learner. Migration 0013 adds the enum
+      value. Departed from "reuse the set-password flow" deliberately — the person
+      chooses their password at request time, so accepting is one admin decision
+      rather than a second round of email, and there is no invite token to keep
+      alive across an approval that may take days. `/signup` is untouched. Every
+      outcome returns the same response, so the form is not an oracle for which
+      addresses are registered.
+- [x] **Admin side.** A "Requests to join" section above the members table, oldest
+      first, shown only when there is something to decide. Accept moves 'pending' to
+      'invited' so the existing first-sign-in activation still applies; decline
+      deletes the membership and NOT the account, which is shared across academies.
+      Both scope on `status = 'pending'` AND tenant in the WHERE clause, so neither
+      can resurrect a deactivated member or reach another academy's row. Both
+      audited. A pending user signing in now reads "waiting for an administrator"
+      instead of the old "ask an administrator to invite you" — advice they had
+      already taken.
+- [x] **Guard it.** Done in 5d187cc, before the route existed. `/join` consults
+      `RULES.join` (5/hour) before its first database read — not merely before
+      creating an account, which an earlier version of the guard permitted and a
+      sabotage caught. Caveat stands: the limiter is per-instance, so a Vercel cold
+      start resets it. Upstash was offered and deferred.
       *Original item:* Rate limiting is still absent platform-wide; an open
       registration endpoint makes that materially worse. Note the exposure
       explicitly even if the limiter lands later.
@@ -834,4 +846,28 @@ Newest first. One line per completed item: what changed, and the commit.
   card border). Prettier itself was undeclared in every package.json; pinned exactly,
   because 3.9.6 and 3.6.2 disagree on two files and a floating formatter is a CI
   failure waiting for a release.
+
+- **Public sign-up, gated on admin approval.** The whole design rests on one property:
+  a 'pending' membership grants nothing. It holds STRUCTURALLY rather than by a
+  permission check — the access-token hook (migration 0010) and `primaryMembership`
+  both select `status in ('active','invited')`, so a pending row yields no tenant claim
+  and resolves to no academy. That is the good news and the hazard: adding 'pending' to
+  either list would turn every unapproved request into a member with nothing on screen
+  to show it, so both lists are now asserted, and the assertion proven red by actually
+  widening the hook.
+  Verified against Postgres rather than reasoned about: `pending` grants neither claim
+  while `invited` and `active` grant both, and `'pending'::membership_status` casts. The
+  first attempt at that check hung — an interactive transaction against Supabase's
+  transaction-mode pooler — and was replaced by a CTE that needs no transaction and no
+  write. Migration 0013 needed hand-trimming: `drizzle-kit generate` re-emitted two
+  DROP CONSTRAINTs that migrations 0009 and 0012 had already applied in hand-written
+  SQL its snapshot had not caught up with, and re-running them would have aborted it.
+  Eight sabotages proven red — and one of them found a hole in my own test. The
+  rate-limit guard asserted only "before createUser", which stayed GREEN when the check
+  was moved inside the account-creating branch, leaving an already-registered address
+  able to request without limit. It now asserts the limit precedes the first database
+  read and sits outside any branch. A guard that passes under the regression it was
+  written for is worse than no guard, and only sabotage finds those.
+  NOT verified: no request has been submitted end to end. Doing so writes an auth user
+  and a membership to production, which is the owner's call.
 

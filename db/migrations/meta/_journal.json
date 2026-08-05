@@ -92,6 +92,13 @@
       "when": 1785476000000,
       "tag": "0012_audit_log_drop_tenant_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785973145098,
+      "tag": "0013_membership_status_pending",
+      "breakpoints": true
     }
   ]
 }

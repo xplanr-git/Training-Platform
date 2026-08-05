@@ -42,7 +42,22 @@ export const membershipRole = pgEnum('membership_role', [
   'learner',
 ]);
 
-export const membershipStatus = pgEnum('membership_status', ['invited', 'active', 'deactivated']);
+/**
+ * `pending` is a REQUEST, not a membership: someone asked to join through /join
+ * and no admin has decided yet.
+ *
+ * It deliberately grants nothing, and does so by construction rather than by a
+ * check someone has to remember. The access-token hook (migration 0010) and
+ * primaryMembership both select `status in ('active','invited')`, so a pending
+ * row yields no tenant claim and resolves to no academy. Adding it to either
+ * list would silently open the door.
+ */
+export const membershipStatus = pgEnum('membership_status', [
+  'invited',
+  'active',
+  'deactivated',
+  'pending',
+]);
 
 export const courseStatus = pgEnum('course_status', ['draft', 'published', 'archived']);
 

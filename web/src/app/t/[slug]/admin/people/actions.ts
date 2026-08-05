@@ -246,3 +246,112 @@ export async function setMemberStatus(
 
   revalidatePath(`/t/${tenantSlug}/admin/people`);
 }
+
+/**
+ * Accepts a join request made through /join.
+ *
+ * Moves 'pending' to 'invited' rather than straight to 'active', so the existing
+ * lifecycle keeps working unchanged: activateMembershipOnSignIn flips 'invited'
+ * to 'active' on their next successful sign-in, which is the point at which they
+ * have demonstrably accepted. Going directly to 'active' would mark them as
+ * having signed in when they may never have.
+ *
+ * The status is checked in the WHERE clause, not read and then written, so this
+ * cannot resurrect a deactivated member or re-accept an already-accepted one:
+ * the update simply matches nothing and the guard below reports it.
+ */
+export async function acceptJoinRequest(tenantSlug: string, membershipId: string): Promise<void> {
+  const ctx = await requireAdmin();
+
+  const updated = await db.transaction(async (tx) => {
+    const [after] = await tx
+      .update(memberships)
+      .set({ status: 'invited' })
+      .where(
+        and(
+          eq(memberships.id, membershipId),
+          eq(memberships.tenantId, ctx.tenantId!),
+          eq(memberships.status, 'pending'),
+        ),
+      )
+      .returning();
+    if (!after) return null;
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'membership.request_accepted',
+      resourceType: 'membership',
+      resourceId: after.userId,
+      before: { status: 'pending' },
+      after: { status: 'invited', role: after.role },
+    });
+    return after;
+  });
+  if (!updated) throw new Error('That request is no longer pending. Reload the page.');
+
+  // Best-effort, and after the commit: a mail failure must not undo an
+  // acceptance. They already chose a password at /join, so this is a plain
+  // sign-in link, not a set-password token.
+  try {
+    const [row] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, updated.userId))
+      .limit(1);
+    const [tenant] = await db
+      .select({ name: tenants.name })
+      .from(tenants)
+      .where(eq(tenants.id, ctx.tenantId))
+      .limit(1);
+    if (row)
+      await sendInviteEmail(row.email, tenant?.name ?? 'your academy', absoluteUrl('/login'));
+  } catch (err) {
+    console.error('[join] acceptance email failed', err);
+  }
+
+  revalidatePath(`/t/${tenantSlug}/admin/people`);
+}
+
+/**
+ * Declines a join request: the membership row goes, the account stays.
+ *
+ * Deleting the auth user instead would be wrong on two counts — it is not ours
+ * to delete (the same person may belong to another academy through the shared
+ * `users` row), and it would let one academy's admin destroy an account they do
+ * not administer. Removing the membership removes exactly the thing this academy
+ * granted, which is nothing.
+ *
+ * Scoped to a row that is still 'pending' in THIS tenant, so it cannot be used
+ * to delete an accepted member's access.
+ */
+export async function declineJoinRequest(tenantSlug: string, membershipId: string): Promise<void> {
+  const ctx = await requireAdmin();
+
+  const deleted = await db.transaction(async (tx) => {
+    const [gone] = await tx
+      .delete(memberships)
+      .where(
+        and(
+          eq(memberships.id, membershipId),
+          eq(memberships.tenantId, ctx.tenantId!),
+          eq(memberships.status, 'pending'),
+        ),
+      )
+      .returning();
+    if (!gone) return null;
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'membership.request_declined',
+      resourceType: 'membership',
+      resourceId: gone.userId,
+      before: { status: 'pending', role: gone.role },
+    });
+    return gone;
+  });
+  if (!deleted) throw new Error('That request is no longer pending. Reload the page.');
+
+  // Deliberately no email. Telling someone an academy declined them is the
+  // academy's call to make in person, not an automated message from us.
+  revalidatePath(`/t/${tenantSlug}/admin/people`);
+}

@@ -6,6 +6,7 @@ export * from './audit';
 // drizzle-orm instance (avoids dual-instance type conflicts).
 export {
   eq,
+  ne,
   and,
   or,
   not,

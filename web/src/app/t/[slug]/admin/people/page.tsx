@@ -1,11 +1,23 @@
-import { db, and, or, eq, ilike, desc, count, memberships, users } from '@training-platform/db';
+import {
+  db,
+  and,
+  or,
+  eq,
+  ne,
+  ilike,
+  asc,
+  desc,
+  count,
+  memberships,
+  users,
+} from '@training-platform/db';
 import Link from 'next/link';
 import { EmptyRow } from '@/components/empty-state';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { InviteForm } from './invite-form';
-import { setMemberRole, setMemberStatus } from './actions';
+import { setMemberRole, setMemberStatus, acceptJoinRequest, declineJoinRequest } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +51,12 @@ export default async function People({
   const query = (q ?? '').trim();
   const ctx = await requireAdminForSlug(slug);
 
-  const filters = ctx.tenantId ? [eq(memberships.tenantId, ctx.tenantId)] : [];
+  // Pending rows are join REQUESTS, not members, and are listed separately
+  // below. Leaving them in this table would show someone with no access beside
+  // people who have it, with only a status pill to tell them apart.
+  const filters = ctx.tenantId
+    ? [eq(memberships.tenantId, ctx.tenantId), ne(memberships.status, 'pending')]
+    : [];
   if (ctx.tenantId && query) {
     filters.push(or(ilike(users.name, `%${query}%`), ilike(users.email, `%${query}%`))!);
   }
@@ -72,6 +89,21 @@ export default async function People({
         .offset(meta.offset)
     : [];
 
+  // Oldest first: a request that has waited longest should be decided first.
+  const requests = ctx.tenantId
+    ? await db
+        .select({
+          id: memberships.id,
+          name: users.name,
+          email: users.email,
+          createdAt: memberships.createdAt,
+        })
+        .from(memberships)
+        .innerJoin(users, eq(users.id, memberships.userId))
+        .where(and(eq(memberships.tenantId, ctx.tenantId), eq(memberships.status, 'pending')))
+        .orderBy(asc(memberships.createdAt))
+    : [];
+
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">People</h1>
@@ -80,6 +112,55 @@ export default async function People({
       <div className="mt-6">
         <InviteForm tenantSlug={slug} />
       </div>
+
+      {/*
+        Above the members table on purpose: a request is the only thing on this
+        page that needs a decision, and it is invisible to the person waiting
+        until someone makes it. Rendered only when there is something to decide,
+        so the page is unchanged for academies that never use /join.
+      */}
+      {requests.length > 0 && (
+        <section className="mt-6 rounded-(--radius-card) border border-border bg-surface">
+          <h2 className="border-b border-border px-4 py-3 font-medium">
+            Requests to join
+            <span className="ml-2 text-sm font-normal text-muted">{requests.length} waiting</span>
+          </h2>
+          <ul>
+            {requests.map((r) => (
+              <li
+                key={r.id}
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 last:border-b-0"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">{r.name || '—'}</p>
+                  <p className="text-sm text-muted">{r.email}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <NavForm action={acceptJoinRequest.bind(null, slug, r.id)} quiet>
+                    <Button type="submit" size="sm">
+                      Accept
+                    </Button>
+                  </NavForm>
+                  <NavForm
+                    action={declineJoinRequest.bind(null, slug, r.id)}
+                    quiet
+                    confirm={`Decline the request from ${r.email}? They are not told, and they can ask again.`}
+                  >
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      Decline
+                    </Button>
+                  </NavForm>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form method="get" className="mt-6 flex max-w-sm gap-2">
         <Input

@@ -1,0 +1,15 @@
+-- Adds the `pending` membership status: a REQUEST to join made through /join,
+-- which no admin has decided on yet.
+--
+-- It grants nothing, and does so structurally rather than by a check anyone has
+-- to remember. The access-token hook (0010) and primaryMembership both select
+-- `status in ('active','invited')`, so a pending row produces no tenant claim and
+-- resolves to no academy. Adding 'pending' to either list would open the door
+-- silently, which is why both are asserted in tests.
+--
+-- Hand-trimmed after `drizzle-kit generate`: it also re-emitted DROP CONSTRAINT
+-- for audit_log.tenant_id and progress_events.lesson_id, because migrations 0009
+-- and 0012 dropped those in hand-written SQL that drizzle's snapshot had not
+-- caught up with. Those constraints are already gone, so re-running the drops
+-- would abort this migration. The accompanying snapshot is correct as generated.
+ALTER TYPE "public"."membership_status" ADD VALUE 'pending';
