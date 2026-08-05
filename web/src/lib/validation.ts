@@ -77,9 +77,7 @@ export const ASSIGNABLE_ROLES = ['company_admin', 'instructor', 'learner'] as co
 export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
 export function isAssignableRole(value: unknown): value is AssignableRole {
-  return (
-    typeof value === 'string' && (ASSIGNABLE_ROLES as readonly string[]).includes(value)
-  );
+  return typeof value === 'string' && (ASSIGNABLE_ROLES as readonly string[]).includes(value);
 }
 
 /** Narrows untrusted input to an assignable role, or throws. */
@@ -97,10 +95,7 @@ export const SETTABLE_MEMBER_STATUSES = ['active', 'deactivated'] as const;
 export type SettableMemberStatus = (typeof SETTABLE_MEMBER_STATUSES)[number];
 
 export function parseMemberStatus(raw: unknown): SettableMemberStatus {
-  if (
-    typeof raw !== 'string' ||
-    !(SETTABLE_MEMBER_STATUSES as readonly string[]).includes(raw)
-  ) {
+  if (typeof raw !== 'string' || !(SETTABLE_MEMBER_STATUSES as readonly string[]).includes(raw)) {
     throw new Error('Invalid status.');
   }
   return raw as SettableMemberStatus;
@@ -124,5 +119,5 @@ export function parsePrice(raw: string | null | undefined): string | null {
   if (Math.round(n * 100) !== n * 100) {
     throw new Error('Price can have at most 2 decimal places.');
   }
-  return (n).toFixed(2);
+  return n.toFixed(2);
 }

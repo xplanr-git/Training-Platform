@@ -123,8 +123,8 @@ export function NoMatches({
       title={`No matches for “${query}”`}
       action={{ href: basePath, label: 'Clear search' }}
     >
-      Check the spelling, or try a shorter search — a single word usually works better
-      than a full title.
+      Check the spelling, or try a shorter search — a single word usually works better than a full
+      title.
     </EmptyState>
   );
 }

@@ -1,0 +1,39 @@
+# Build output and dependencies.
+node_modules/
+web/.next/
+web/out/
+dist/
+*.tsbuildinfo
+
+# Lockfiles: machine-written, and reformatting them creates noise in every diff.
+package-lock.json
+
+# Drizzle's own migration journal and snapshots. CLAUDE.md forbids editing a
+# shipped migration, and that includes its metadata — the checksums in
+# _journal.json are compared by `drizzle-kit check`, which CI runs.
+db/migrations/
+
+# The legacy Vite prototype. Scheduled for deletion (CLAUDE.md §8), 127 files of
+# it are still CRLF, and it is not edited any more — formatting it would be churn
+# on code nobody will touch again. Deliberately the same scope decision as
+# repo-hygiene.test.ts, which checks line endings in web/ and db/ only.
+src/
+supabase/
+utils/
+vite.config.ts
+index.html
+
+# Deprecated docs — paths deliberately not taken.
+docs/_archive/
+
+# Generated.
+web/next-env.d.ts
+
+# Playwright output.
+web/test-results/
+web/playwright-report/
+
+# Markdown is excluded deliberately. Prettier re-aligns tables, and CLAUDE.md and
+# DEPLOY.md are hand-curated documents whose tables would churn for no gain. The
+# value of a formatter is on code; prose is not worth a machine argument.
+*.md

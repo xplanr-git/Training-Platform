@@ -101,8 +101,8 @@ export default async function LearnerDashboard() {
           title="You have not started a course yet"
           action={{ href: '/', label: 'Browse courses' }}
         >
-          Pick a course to enrol. Your place is saved as you go, so you can stop after a
-          lesson and pick up where you left off — on a phone on site, or at a desk later.
+          Pick a course to enrol. Your place is saved as you go, so you can stop after a lesson and
+          pick up where you left off — on a phone on site, or at a desk later.
         </EmptyState>
       ) : (
         <div className="mt-6 space-y-3">

@@ -1,6 +1,16 @@
 'use server';
 
-import { db, audited, eq, and, asc, sql, inArray, memberships, tenants } from '@training-platform/db';
+import {
+  db,
+  audited,
+  eq,
+  and,
+  asc,
+  sql,
+  inArray,
+  memberships,
+  tenants,
+} from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 
 /**
@@ -28,12 +38,7 @@ async function primaryMembership(userId: string) {
     .select({ slug: tenants.slug, role: memberships.role, tenantId: tenants.id })
     .from(memberships)
     .innerJoin(tenants, eq(tenants.id, memberships.tenantId))
-    .where(
-      and(
-        eq(memberships.userId, userId),
-        inArray(memberships.status, ['active', 'invited']),
-      ),
-    )
+    .where(and(eq(memberships.userId, userId), inArray(memberships.status, ['active', 'invited'])))
     .orderBy(sql`(${memberships.status} = 'active') desc`, asc(memberships.createdAt))
     .limit(1);
   return row ?? null;
@@ -89,10 +94,7 @@ export async function activateMembershipOnSignIn() {
   if (!invited) return;
 
   await db.transaction(async (tx) => {
-    await tx
-      .update(memberships)
-      .set({ status: 'active' })
-      .where(eq(memberships.id, invited.id));
+    await tx.update(memberships).set({ status: 'active' }).where(eq(memberships.id, invited.id));
     await audited(tx, {
       tenantId: invited.tenantId,
       actorUserId: ctx.userId,

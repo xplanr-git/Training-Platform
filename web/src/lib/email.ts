@@ -35,7 +35,10 @@ function escapeHtml(value: string): string {
 
 /** Strips anything markup-like from a subject line and collapses whitespace. */
 function plainSubject(value: string): string {
-  return value.replace(/[<>\r\n]/g, ' ').replace(/\s+/g, ' ').trim();
+  return value
+    .replace(/[<>\r\n]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 async function send(to: string, subject: string, html: string): Promise<void> {
@@ -118,11 +121,7 @@ export async function sendEnrollmentEmail(to: string, courseTitle: string, learn
   );
 }
 
-export async function sendCertificateEmail(
-  to: string,
-  courseTitle: string,
-  verifyUrl: string,
-) {
+export async function sendCertificateEmail(to: string, courseTitle: string, verifyUrl: string) {
   const course = escapeHtml(courseTitle);
   await send(
     to,

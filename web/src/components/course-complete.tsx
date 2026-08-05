@@ -104,9 +104,8 @@ export function CourseComplete({
             */
             <>
               <p className="mt-1 text-sm leading-relaxed text-neutral-700">
-                You finished {courseTitle}. Your certificate has not been issued yet — if it
-                does not appear shortly, contact your academy administrator and mention this
-                course.
+                You finished {courseTitle}. Your certificate has not been issued yet — if it does
+                not appear shortly, contact your academy administrator and mention this course.
               </p>
               {reviewHref ? (
                 <div className="mt-4">

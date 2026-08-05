@@ -41,9 +41,7 @@ export default async function People({
 
   const filters = ctx.tenantId ? [eq(memberships.tenantId, ctx.tenantId)] : [];
   if (ctx.tenantId && query) {
-    filters.push(
-      or(ilike(users.name, `%${query}%`), ilike(users.email, `%${query}%`))!,
-    );
+    filters.push(or(ilike(users.name, `%${query}%`), ilike(users.email, `%${query}%`))!);
   }
 
   const [{ total } = { total: 0 }] = ctx.tenantId
@@ -115,7 +113,11 @@ export default async function People({
                 <TableCell className="font-medium">{m.name || '—'}</TableCell>
                 <TableCell className="text-muted">{m.email}</TableCell>
                 <TableCell>
-                  <NavForm action={setMemberRole.bind(null, slug, m.id, nextRole(m.role))} className="inline" quiet>
+                  <NavForm
+                    action={setMemberRole.bind(null, slug, m.id, nextRole(m.role))}
+                    className="inline"
+                    quiet
+                  >
                     <Button
                       type="submit"
                       variant="ghost"
@@ -137,13 +139,20 @@ export default async function People({
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={m.status === 'active' ? 'default' : 'outline'} className="capitalize">
+                  <Badge
+                    variant={m.status === 'active' ? 'default' : 'outline'}
+                    className="capitalize"
+                  >
                     {m.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   {m.status === 'deactivated' ? (
-                    <NavForm action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline" quiet>
+                    <NavForm
+                      action={setMemberStatus.bind(null, slug, m.id, 'active')}
+                      className="inline"
+                      quiet
+                    >
                       <Button type="submit" variant="ghost" size="sm">
                         Reactivate
                       </Button>
@@ -151,13 +160,22 @@ export default async function People({
                   ) : (
                     <div className="flex items-center justify-end gap-1">
                       {m.status === 'invited' && (
-                        <NavForm action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline" quiet>
+                        <NavForm
+                          action={setMemberStatus.bind(null, slug, m.id, 'active')}
+                          className="inline"
+                          quiet
+                        >
                           <Button type="submit" variant="ghost" size="sm">
                             Activate
                           </Button>
                         </NavForm>
                       )}
-                      <NavForm action={setMemberStatus.bind(null, slug, m.id, 'deactivated')} className="inline" quiet confirm="Deactivate this member? They lose access immediately. Their progress and certificates are kept, and you can reactivate them here.">
+                      <NavForm
+                        action={setMemberStatus.bind(null, slug, m.id, 'deactivated')}
+                        className="inline"
+                        quiet
+                        confirm="Deactivate this member? They lose access immediately. Their progress and certificates are kept, and you can reactivate them here."
+                      >
                         <Button type="submit" variant="ghost" size="sm" className="text-muted">
                           Deactivate
                         </Button>
@@ -180,8 +198,8 @@ export default async function People({
                     </EmptyRow>
                   ) : (
                     <EmptyRow title="No one here yet">
-                      Invite a contractor or dealer using the form above. They get an email
-                      with a link to set a password, and appear here once they accept.
+                      Invite a contractor or dealer using the form above. They get an email with a
+                      link to set a password, and appear here once they accept.
                     </EmptyRow>
                   )}
                 </TableCell>

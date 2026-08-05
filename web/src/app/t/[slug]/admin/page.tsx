@@ -1,13 +1,5 @@
 import Link from 'next/link';
-import {
-  db,
-  eq,
-  and,
-  count,
-  countDistinct,
-  courses,
-  enrollments,
-} from '@training-platform/db';
+import { db, eq, and, count, countDistinct, courses, enrollments } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 
 /**
@@ -51,8 +43,7 @@ export default async function TenantAdminOverview({
     <div>
       <h1 className="text-2xl font-semibold">Dashboard</h1>
       <p className="mt-2 text-muted">
-        Welcome to your academy admin. Use the sidebar to manage courses, people,
-        and settings.
+        Welcome to your academy admin. Use the sidebar to manage courses, people, and settings.
       </p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {stats.map((s) => (

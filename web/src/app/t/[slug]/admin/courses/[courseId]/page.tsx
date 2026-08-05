@@ -12,8 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { CONFERRABLE_TIERS } from '@/lib/connect-roles';
 
-const SELECT_CLS =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
+const SELECT_CLS = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 export default async function EditCourse({
   params,
@@ -119,8 +118,8 @@ export default async function EditCourse({
       <div className="mt-10 border-t border-border pt-6">
         <h2 className="text-sm font-medium text-destructive">Danger zone</h2>
         <p className="mt-1 text-sm text-muted">
-          Permanently delete this course and all its sections, lessons, quizzes, and
-          enrolments. This cannot be undone.
+          Permanently delete this course and all its sections, lessons, quizzes, and enrolments.
+          This cannot be undone.
         </p>
         <NavForm
           action={deleteCourse.bind(null, slug, courseId)}

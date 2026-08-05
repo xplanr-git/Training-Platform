@@ -16,9 +16,7 @@ export async function setCertificateRevoked(
     const [after] = await tx
       .update(certificates)
       .set({ revokedAt: revoked ? new Date() : null })
-      .where(
-        and(eq(certificates.id, certificateId), eq(certificates.tenantId, ctx.tenantId!)),
-      )
+      .where(and(eq(certificates.id, certificateId), eq(certificates.tenantId, ctx.tenantId!)))
       .returning();
     if (!after) throw new Error('Certificate not found');
 

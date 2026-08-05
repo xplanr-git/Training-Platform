@@ -54,11 +54,7 @@ async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
  * passing a lessonId/courseId from a course they aren't enrolled in — Drizzle
  * bypasses RLS, so ownership must be checked in app code.
  */
-async function assertLessonInCourse(
-  ctx: TenantContext,
-  lessonId: string,
-  courseId: string,
-) {
+async function assertLessonInCourse(ctx: TenantContext, lessonId: string, courseId: string) {
   const [row] = await db
     .select({ id: lessons.id })
     .from(lessons)
@@ -284,13 +280,13 @@ export async function submitQuizAttempt(
     .where(and(eq(quizzes.id, quizId), eq(quizzes.tenantId, ctx.tenantId)))
     .limit(1);
   // The quiz must be the one attached to this lesson.
-  if (!quiz || quiz.lessonId !== lessonId) throw new Error('This quiz has changed since you opened it. Reload the page and answer it again — your progress is safe.');
+  if (!quiz || quiz.lessonId !== lessonId)
+    throw new Error(
+      'This quiz has changed since you opened it. Reload the page and answer it again — your progress is safe.',
+    );
   const threshold = (quiz.settings as { passThreshold?: number })?.passThreshold ?? 70;
 
-  const questions = await db
-    .select()
-    .from(quizQuestions)
-    .where(eq(quizQuestions.quizId, quizId));
+  const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
 
   const responses: Record<string, number[]> = {};
   const durations: Record<string, number> = {};

@@ -8,11 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 
-export default async function NewCourse({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function NewCourse({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const action = createCourse.bind(null, slug);
 
@@ -26,12 +22,7 @@ export default async function NewCourse({
           <NavForm action={action} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                name="title"
-                required
-                placeholder="e.g. Deck Frame Installation"
-              />
+              <Input id="title" name="title" required placeholder="e.g. Deck Frame Installation" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Description</Label>

@@ -100,9 +100,7 @@ describe('the answer key is picked, not typed', () => {
   it('only the control that applies to the chosen type is rendered', () => {
     // The old form showed the number box and the True/False select at once.
     expect(FIELDS).toMatch(/type === 'true_false' \?/);
-    expect(FIELDS, 'the options textarea is for choice types only').toMatch(
-      /\{isChoice && \(/,
-    );
+    expect(FIELDS, 'the options textarea is for choice types only').toMatch(/\{isChoice && \(/);
   });
 
   it('an empty option list explains itself instead of showing an answer box', () => {

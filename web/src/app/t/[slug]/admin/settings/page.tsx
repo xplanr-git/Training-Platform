@@ -7,11 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { NavForm } from '@/components/nav-form';
 
-export default async function Settings({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function Settings({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const ctx = await requireAdminForSlug(slug);
 

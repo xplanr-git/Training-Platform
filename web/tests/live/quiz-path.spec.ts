@@ -7,7 +7,9 @@ requireLiveAdmin();
 
 const stamp = Date.now();
 const TITLE = `Quiz Path ${stamp}`;
-const SLUG = TITLE.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const SLUG = TITLE.toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
 
 test('quiz authoring → attempt → pass → completion → certificate', async ({ page }) => {
   // Login (subdomain-scoped session).

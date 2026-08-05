@@ -47,12 +47,10 @@ export default async function QuizEditor({
     return (
       <div className="max-w-3xl">
         <BackLink href={`/admin/courses/${courseId}/builder`}>Content</BackLink>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-          Quiz &middot; {lesson.title}
-        </h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Quiz &middot; {lesson.title}</h1>
         <p className="mt-1 text-sm text-muted">
-          This lesson has no quiz attached yet. Setting one up gives it a pass mark of
-          70%, which you can change straight afterwards.
+          This lesson has no quiz attached yet. Setting one up gives it a pass mark of 70%, which
+          you can change straight afterwards.
         </p>
         <NavForm action={ensureQuiz.bind(null, slug, courseId, lessonId)} className="mt-4">
           <Button type="submit">Set up this quiz</Button>
@@ -118,7 +116,11 @@ export default async function QuizEditor({
                         {QUESTION_TYPE_LABEL[q.type] ?? q.type}
                       </p>
                     </div>
-                    <NavForm action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)} quiet confirm="Delete this question? Any answers learners have already given to it go too. This cannot be undone.">
+                    <NavForm
+                      action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)}
+                      quiet
+                      confirm="Delete this question? Any answers learners have already given to it go too. This cannot be undone."
+                    >
                       <Button
                         type="submit"
                         variant="ghost"
@@ -166,8 +168,8 @@ export default async function QuizEditor({
         {questions.length === 0 && (
           <li>
             <EmptyState title="No questions yet">
-              Add the first one below. A question a learner skips is marked wrong, and they
-              pass at the percentage set in Pass threshold above.
+              Add the first one below. A question a learner skips is marked wrong, and they pass at
+              the percentage set in Pass threshold above.
             </EmptyState>
           </li>
         )}

@@ -14,9 +14,7 @@ const LEARNER_SURFACES = [
 ];
 
 /** Page shells that own the whole viewport. The player nests inside a layout. */
-const PAGE_SHELLS = LEARNER_SURFACES.filter(
-  (f) => !f.endsWith('[lessonId]/page.tsx'),
-);
+const PAGE_SHELLS = LEARNER_SURFACES.filter((f) => !f.endsWith('[lessonId]/page.tsx'));
 
 const CSS = read('src/app/globals.css');
 
@@ -119,8 +117,7 @@ describe('page rhythm is the same on every learner shell', () => {
   });
 
   it('container width follows the stated rule: grids wide, reading columns 3xl', () => {
-    const width = (f: string) =>
-      /<main className="[^"]*max-w-(\w+)/.exec(read(f))?.[1] ?? null;
+    const width = (f: string) => /<main className="[^"]*max-w-(\w+)/.exec(read(f))?.[1] ?? null;
     // Storefront is a 3-card grid, the dashboard a 4-tile stat grid; the rest are
     // single reading/working columns. This was three arbitrary-looking widths until
     // the rule was written down in globals.css.

@@ -1,13 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import {
-  db,
-  eq,
-  and,
-  quizzes,
-  quizQuestions,
-} from '@training-platform/db';
+import { db, eq, and, quizzes, quizQuestions } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { clampInt } from '@/lib/validation';
 import { parseCorrectIndices } from '@/lib/quiz';
@@ -17,11 +11,7 @@ function revalidateQuiz(slug: string, courseId: string, lessonId: string) {
 }
 
 /** Ensures a quiz row exists for a quiz lesson (backfill for older lessons). */
-export async function ensureQuiz(
-  slug: string,
-  courseId: string,
-  lessonId: string,
-) {
+export async function ensureQuiz(slug: string, courseId: string, lessonId: string) {
   const ctx = await requireAdmin();
   const [existing] = await db
     .select({ id: quizzes.id })
@@ -63,10 +53,7 @@ export async function addQuestion(
 
   const prompt = String(formData.get('prompt') ?? '').trim();
   if (!prompt) throw new Error('Prompt is required');
-  const type = String(formData.get('type') ?? 'mcq') as
-    | 'mcq'
-    | 'true_false'
-    | 'multi_select';
+  const type = String(formData.get('type') ?? 'mcq') as 'mcq' | 'true_false' | 'multi_select';
   const points = clampInt(formData.get('points'), 1, 100, 1);
 
   let options: string[];

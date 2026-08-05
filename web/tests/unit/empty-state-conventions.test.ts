@@ -94,10 +94,9 @@ describe('empty states use the shared component', () => {
         }
       }
     }
-    expect(
-      offenders,
-      `use <EmptyState> / <EmptyRow> instead:\n${offenders.join('\n')}`,
-    ).toEqual([]);
+    expect(offenders, `use <EmptyState> / <EmptyRow> instead:\n${offenders.join('\n')}`).toEqual(
+      [],
+    );
   });
 
   it('every zero-length branch renders an empty-state component', () => {
@@ -149,8 +148,10 @@ describe('the explanation text stays readable (WCAG 2.1 AA, 1.4.3)', () => {
 
   it('muted description text on the empty-state background clears 4.5:1', () => {
     const r = ratio(token('--color-muted'), token('--color-surface-muted'));
-    expect(r, `--color-muted on --color-surface-muted is ${r.toFixed(2)}:1, AA needs 4.5:1`).
-      toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+    expect(
+      r,
+      `--color-muted on --color-surface-muted is ${r.toFixed(2)}:1, AA needs 4.5:1`,
+    ).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
   });
 
   it('the title clears it comfortably too', () => {

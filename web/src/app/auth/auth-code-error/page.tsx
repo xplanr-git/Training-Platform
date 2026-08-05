@@ -1,13 +1,7 @@
 import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
  * Where /auth/confirm sends a link it could not verify.
@@ -32,14 +26,12 @@ export default function AuthCodeErrorPage() {
       <Card>
         <CardHeader>
           <CardTitle as="h1">That link has already been used</CardTitle>
-          <CardDescription>
-            Invitation and password links work once, then expire.
-          </CardDescription>
+          <CardDescription>Invitation and password links work once, then expire.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
           <p className="text-muted">
-            This also happens if the link was opened twice, or if your email provider
-            checked it before you did. Request a new one and it will work.
+            This also happens if the link was opened twice, or if your email provider checked it
+            before you did. Request a new one and it will work.
           </p>
           <Button asChild>
             <Link href="/login/forgot">Send me a new link</Link>

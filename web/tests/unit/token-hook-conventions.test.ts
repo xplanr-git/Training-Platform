@@ -32,14 +32,10 @@ function latestHookMigration(): string {
     .filter((f) => f.endsWith('.sql'))
     .sort();
   const hookFiles = files.filter((f) =>
-    readFileSync(join(MIGRATIONS, f), 'utf8').includes(
-      'function public.custom_access_token_hook',
-    ),
+    readFileSync(join(MIGRATIONS, f), 'utf8').includes('function public.custom_access_token_hook'),
   );
   expect(hookFiles.length, 'no migration defines custom_access_token_hook').toBeGreaterThan(0);
-  return stripComments(
-    readFileSync(join(MIGRATIONS, hookFiles[hookFiles.length - 1]), 'utf8'),
-  );
+  return stripComments(readFileSync(join(MIGRATIONS, hookFiles[hookFiles.length - 1]), 'utf8'));
 }
 
 describe('access-token hook membership scoping', () => {

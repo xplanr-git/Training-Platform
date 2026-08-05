@@ -111,10 +111,13 @@ describe('deriveProgress — estimated minutes left', () => {
 
     it('treats a zero or negative estimate as un-estimated, so it hedges', () => {
       // These are filtered out of the sum but still count as remaining work.
-      const p = deriveProgress([], [
-        { id: 'a', estimatedMinutes: 10 },
-        { id: 'b', estimatedMinutes: 0 },
-      ]);
+      const p = deriveProgress(
+        [],
+        [
+          { id: 'a', estimatedMinutes: 10 },
+          { id: 'b', estimatedMinutes: 0 },
+        ],
+      );
       expect(p.minutesLeft).toBe(10);
       expect(p.minutesLeftIsPartial).toBe(true);
     });

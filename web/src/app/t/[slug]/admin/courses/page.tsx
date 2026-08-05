@@ -35,7 +35,10 @@ export default async function CoursesList({
   if (ctx.tenantId && query) filters.push(ilike(courses.title, `%${query}%`));
 
   const [{ total } = { total: 0 }] = ctx.tenantId
-    ? await db.select({ total: count() }).from(courses).where(and(...filters))
+    ? await db
+        .select({ total: count() })
+        .from(courses)
+        .where(and(...filters))
     : [];
   const meta = pageMeta(parsePage(pageParam), total);
 
@@ -82,9 +85,9 @@ export default async function CoursesList({
             title="No courses yet"
             action={{ href: '/admin/courses/new', label: 'Create a course' }}
           >
-            A course is a set of lessons — videos, PDFs and quizzes — grouped into
-            sections. Create one, add lessons in the builder, then publish it when you
-            are ready for learners to see it.
+            A course is a set of lessons — videos, PDFs and quizzes — grouped into sections. Create
+            one, add lessons in the builder, then publish it when you are ready for learners to see
+            it.
           </EmptyState>
         )
       ) : (
@@ -101,10 +104,7 @@ export default async function CoursesList({
               {rows.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>
-                    <Link
-                      href={`/admin/courses/${c.id}`}
-                      className="font-medium hover:underline"
-                    >
+                    <Link href={`/admin/courses/${c.id}`} className="font-medium hover:underline">
                       {c.title}
                     </Link>
                     <span className="ml-2 text-xs text-muted">/{c.slug}</span>
@@ -128,8 +128,8 @@ export default async function CoursesList({
                       <NavForm
                         action={setCourseStatus.bind(null, slug, c.id, 'published')}
                         className="inline"
-            quiet
-          >
+                        quiet
+                      >
                         <Button type="submit" variant="ghost" size="sm">
                           Publish
                         </Button>
@@ -138,8 +138,9 @@ export default async function CoursesList({
                       <NavForm
                         action={setCourseStatus.bind(null, slug, c.id, 'archived')}
                         className="inline"
-            quiet confirm="Archive this course? Learners will no longer see it in the catalogue. Nothing is deleted, and you can publish it again from here."
-          >
+                        quiet
+                        confirm="Archive this course? Learners will no longer see it in the catalogue. Nothing is deleted, and you can publish it again from here."
+                      >
                         <Button type="submit" variant="ghost" size="sm">
                           Archive
                         </Button>

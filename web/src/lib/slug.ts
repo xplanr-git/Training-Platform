@@ -1,6 +1,19 @@
 const RESERVED = new Set([
-  'www', 'app', 'api', 'admin', 'platform', 'auth', 'login', 'signup',
-  'dashboard', 'account', 'verify', 'static', 'assets', 'mail', 'blog',
+  'www',
+  'app',
+  'api',
+  'admin',
+  'platform',
+  'auth',
+  'login',
+  'signup',
+  'dashboard',
+  'account',
+  'verify',
+  'static',
+  'assets',
+  'mail',
+  'blog',
 ]);
 
 /** Normalises free text into a candidate subdomain slug. */

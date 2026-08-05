@@ -93,7 +93,10 @@ describe('a border always names its colour', () => {
   it('the primitives that draw borders specify a border colour', () => {
     for (const p of PRIMITIVES) {
       const src = readFileSync(join(process.cwd(), p), 'utf8');
-      for (const m of src.matchAll(/"([^"]*\bborder\b[^"]*)"/g)) {
+      // Either quote style: the repo is single-quoted, and hardcoding `"` here
+      // made this guard silently stop finding anything the moment prettier
+      // normalised the primitives.
+      for (const m of src.matchAll(/['"]([^'"]*\bborder\b[^'"]*)['"]/g)) {
         /*
          * Consider only BARE tokens on the element itself. Two things had to be
          * excluded, and both were this test's own false positives against code that

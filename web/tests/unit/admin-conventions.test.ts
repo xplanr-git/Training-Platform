@@ -123,8 +123,10 @@ describe('the quiz builder does not describe behaviour it does not have', () => 
 describe('admin nav highlights exactly one section', () => {
   it('matches on whole path segments, not a bare prefix', () => {
     const src = read(SHELL);
-    expect(src, 'a bare startsWith lights up two items as soon as one path prefixes another')
-      .toMatch(/activePath === base \|\| activePath\.startsWith\(`\$\{base\}\/`\)/);
+    expect(
+      src,
+      'a bare startsWith lights up two items as soon as one path prefixes another',
+    ).toMatch(/activePath === base \|\| activePath\.startsWith\(`\$\{base\}\/`\)/);
     expect(src).not.toMatch(/activePath\.startsWith\(base\)\s*&&/);
   });
 });

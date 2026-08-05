@@ -8,13 +8,7 @@ import { safeHttpUrl } from '@/lib/validation';
 import { Pagination } from '@/components/pagination';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 /** Per-tenant SEO metadata for the storefront. */
 export async function generateMetadata({
@@ -67,9 +61,7 @@ export default async function TenantHome({
   const accent = branding.primaryColor || undefined;
   const logoUrl = safeHttpUrl(branding.logoUrl);
 
-  const filters = tenant
-    ? [eq(courses.tenantId, tenant.id), eq(courses.status, 'published')]
-    : [];
+  const filters = tenant ? [eq(courses.tenantId, tenant.id), eq(courses.status, 'published')] : [];
   if (tenant && query) filters.push(ilike(courses.title, `%${query}%`));
 
   // The count and the page of rows are independent, so they run together.
@@ -91,7 +83,10 @@ export default async function TenantHome({
   const requestedOffset = (requestedPage - 1) * PAGE_SIZE;
   const [countRows, requestedRows] = await Promise.all([
     tenant
-      ? db.select({ total: count() }).from(courses).where(and(...filters))
+      ? db
+          .select({ total: count() })
+          .from(courses)
+          .where(and(...filters))
       : Promise.resolve([] as Array<{ total: number }>),
     tenant ? rowsAt(requestedOffset) : Promise.resolve([] as Awaited<ReturnType<typeof rowsAt>>),
   ]);
@@ -139,8 +134,8 @@ export default async function TenantHome({
           <NoMatches query={query} basePath="/" />
         ) : (
           <EmptyState icon={<GraduationCap />} title="No courses published yet">
-            Training courses will appear here as soon as they are published. If you were
-            expecting one, ask whoever invited you — they may still be putting it together.
+            Training courses will appear here as soon as they are published. If you were expecting
+            one, ask whoever invited you — they may still be putting it together.
           </EmptyState>
         )
       ) : (
@@ -149,7 +144,9 @@ export default async function TenantHome({
             <Link key={c.id} href={`/courses/${c.slug}`} className="group block">
               <Card className="flex h-full flex-col transition group-hover:border-brand-500 group-hover:shadow-md">
                 <CardHeader>
-                  <CardTitle as="h2" className="text-base">{c.title}</CardTitle>
+                  <CardTitle as="h2" className="text-base">
+                    {c.title}
+                  </CardTitle>
                   <CardDescription className="line-clamp-3">
                     {c.description || 'No description yet.'}
                   </CardDescription>

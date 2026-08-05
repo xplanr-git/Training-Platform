@@ -8,13 +8,7 @@ import { activateMembershipOnSignIn, postSignInDestination } from '@/app/login/a
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
  * Where an invited or password-recovering user chooses a password.
@@ -110,8 +104,8 @@ export default function SetPasswordPage() {
           ) : !hasSession ? (
             <div className="flex flex-col gap-3 text-sm">
               <p className="text-muted">
-                Invitation and reset links can only be used once, and they expire. Ask for
-                a new one and it will work.
+                Invitation and reset links can only be used once, and they expire. Ask for a new one
+                and it will work.
               </p>
               <Button asChild>
                 <a href="/login/forgot">Send me a new link</a>

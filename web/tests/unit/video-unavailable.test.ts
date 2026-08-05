@@ -137,9 +137,7 @@ describe('the player uses it correctly', () => {
      * `source.kind === 'unavailable'`, which by construction excludes anything playable,
      * and isVideoFault() then excludes not-attached.
      */
-    expect(PAGE).toMatch(
-      /source\?\.kind === 'unavailable' && isVideoFault\(source\.unavailable\)/,
-    );
+    expect(PAGE).toMatch(/source\?\.kind === 'unavailable' && isVideoFault\(source\.unavailable\)/);
   });
 
   it('renders the component rather than a bare line', () => {
@@ -166,7 +164,10 @@ describe('the message suits its audience', () => {
     expect(C).toContain('BUNNY_LIBRARY_ID');
     const admin = C.slice(C.indexOf('function adminMessage'));
     expect(admin, 'the env var must be named in the admin message').toContain('BUNNY_LIBRARY_ID');
-    const learner = C.slice(C.indexOf('function learnerMessage'), C.indexOf('function adminMessage'));
+    const learner = C.slice(
+      C.indexOf('function learnerMessage'),
+      C.indexOf('function adminMessage'),
+    );
     expect(learner, 'learner copy must not carry infrastructure detail').not.toContain(
       'BUNNY_LIBRARY_ID',
     );
@@ -177,7 +178,10 @@ describe('the message suits its audience', () => {
   });
 
   it('never blames the learner or tells them to retry when retrying cannot help', () => {
-    const learner = C.slice(C.indexOf('function learnerMessage'), C.indexOf('function adminMessage'));
+    const learner = C.slice(
+      C.indexOf('function learnerMessage'),
+      C.indexOf('function adminMessage'),
+    );
     expect(learner).toMatch(/Nothing is wrong at your end|not with your device/);
     expect(learner.toLowerCase()).not.toContain('try again');
   });

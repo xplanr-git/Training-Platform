@@ -41,11 +41,7 @@ export async function generateMetadata({
     .from(courses)
     .innerJoin(tenants, eq(tenants.id, courses.tenantId))
     .where(
-      and(
-        eq(tenants.slug, slug),
-        eq(courses.slug, courseSlug),
-        eq(courses.status, 'published'),
-      ),
+      and(eq(tenants.slug, slug), eq(courses.slug, courseSlug), eq(courses.status, 'published')),
     )
     .limit(1);
   if (!row) return { title: 'Course not found' };
@@ -108,7 +104,11 @@ export default async function CourseLanding({
           .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.courseId, course.id)))
           .limit(1)
       : Promise.resolve([] as Array<{ id: string }>),
-    db.select().from(sections).where(eq(sections.courseId, course.id)).orderBy(asc(sections.position)),
+    db
+      .select()
+      .from(sections)
+      .where(eq(sections.courseId, course.id))
+      .orderBy(asc(sections.position)),
     db
       .select({
         id: lessons.id,
@@ -146,8 +146,8 @@ export default async function CourseLanding({
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
       {isPreview && (
         <div className="mb-6 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <b>Draft preview.</b> This course is not published, so only administrators of
-          this academy can see this page. Learners cannot see it at all.
+          <b>Draft preview.</b> This course is not published, so only administrators of this academy
+          can see this page. Learners cannot see it at all.
         </div>
       )}
       <BackLink href="/">All courses</BackLink>

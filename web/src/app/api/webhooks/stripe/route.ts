@@ -57,8 +57,7 @@ export async function POST(req: NextRequest) {
       }
       case 'charge.refunded': {
         const charge = event.data.object as Stripe.Charge;
-        const pi =
-          typeof charge.payment_intent === 'string' ? charge.payment_intent : null;
+        const pi = typeof charge.payment_intent === 'string' ? charge.payment_intent : null;
         if (pi) await handleRefund(pi);
         break;
       }
@@ -77,8 +76,7 @@ async function handleCoursePurchase(
 ) {
   const { tenantId, userId, courseId } = meta;
   if (!tenantId || !userId || !courseId) return;
-  const paymentIntent =
-    typeof session.payment_intent === 'string' ? session.payment_intent : null;
+  const paymentIntent = typeof session.payment_intent === 'string' ? session.payment_intent : null;
 
   await db.transaction(async (tx) => {
     // Idempotency: skip if we already recorded this payment intent.
@@ -156,8 +154,7 @@ async function handleSubscriptionCheckout(
   const { tenantId, planId } = meta;
   if (!tenantId) return;
   const customerId = typeof session.customer === 'string' ? session.customer : null;
-  const subId =
-    typeof session.subscription === 'string' ? session.subscription : null;
+  const subId = typeof session.subscription === 'string' ? session.subscription : null;
 
   const [existing] = await db
     .select({ id: subscriptions.id })
@@ -200,12 +197,7 @@ async function handleRefund(paymentIntent: string) {
       await tx
         .update(enrollments)
         .set({ status: 'cancelled' })
-        .where(
-          and(
-            eq(enrollments.userId, order.userId),
-            eq(enrollments.courseId, order.courseId),
-          ),
-        );
+        .where(and(eq(enrollments.userId, order.userId), eq(enrollments.courseId, order.courseId)));
     }
     await audited(tx, {
       tenantId: order.tenantId,

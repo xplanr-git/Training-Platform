@@ -27,16 +27,11 @@ export function Pagination({
     return `${basePath}?${sp.toString()}`;
   };
 
-  const linkClass =
-    'rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted';
-  const disabledClass =
-    'rounded-md border border-border px-3 py-1.5 text-sm text-muted opacity-50';
+  const linkClass = 'rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted';
+  const disabledClass = 'rounded-md border border-border px-3 py-1.5 text-sm text-muted opacity-50';
 
   return (
-    <nav
-      className="mt-4 flex items-center justify-between"
-      aria-label="Pagination"
-    >
+    <nav className="mt-4 flex items-center justify-between" aria-label="Pagination">
       <p className="text-sm text-muted">
         Page {meta.page} of {meta.pageCount} · {meta.total} total
       </p>

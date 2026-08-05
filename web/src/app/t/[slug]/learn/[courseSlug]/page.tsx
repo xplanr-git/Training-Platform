@@ -5,16 +5,7 @@ import { EmptyRow } from '@/components/empty-state';
 import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
 import { Check, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
-import {
-  db,
-  eq,
-  and,
-  asc,
-  courses,
-  sections,
-  lessons,
-  certificates,
-} from '@training-platform/db';
+import { db, eq, and, asc, courses, sections, lessons, certificates } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { getCourseProgress, formatMinutes } from '@/lib/progress';
@@ -53,7 +44,11 @@ export default async function Learn({
   // sequential round trips.
   const [view, sectionRows, lessonRows] = await Promise.all([
     resolveCourseView(ctx.userId, ctx.tenantId, course.id),
-    db.select().from(sections).where(eq(sections.courseId, course.id)).orderBy(asc(sections.position)),
+    db
+      .select()
+      .from(sections)
+      .where(eq(sections.courseId, course.id))
+      .orderBy(asc(sections.position)),
     db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)),
   ]);
   if (view.mode === 'denied') redirect(`/courses/${courseSlug}`);
@@ -114,8 +109,8 @@ export default async function Learn({
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
       {isPreview && (
         <div className="mt-3 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <b>Preview.</b> You are not enrolled, so nothing here is recorded — no
-          progress, no watch time, no certificate. This is how a learner will see it.
+          <b>Preview.</b> You are not enrolled, so nothing here is recorded — no progress, no watch
+          time, no certificate. This is how a learner will see it.
         </div>
       )}
 
@@ -162,8 +157,8 @@ export default async function Learn({
       <div className="mt-8 space-y-5">
         {sectionRows.length === 0 && (
           <EmptyState title="No lessons here yet">
-            You are enrolled, but this course has no content published yet. Nothing is wrong
-            on your end — you will be able to start as soon as lessons are added.
+            You are enrolled, but this course has no content published yet. Nothing is wrong on your
+            end — you will be able to start as soon as lessons are added.
           </EmptyState>
         )}
         {sectionRows.map((s) => (

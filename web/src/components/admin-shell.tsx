@@ -17,13 +17,7 @@ const ADMIN_BASE = '/admin';
  * routes; gated items route to the coming-soon panel with a "Soon" badge.
  * Subdomain middleware maps `/admin/*` to the internal `/t/[slug]/admin/*` tree.
  */
-function NavLinks({
-  activePath,
-  onNavigate,
-}: {
-  activePath: string;
-  onNavigate?: () => void;
-}) {
+function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?: () => void }) {
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-4">
       {ADMIN_NAV.map((group) => (

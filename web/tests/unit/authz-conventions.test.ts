@@ -21,10 +21,7 @@ import { join } from 'node:path';
  */
 
 const ADMIN_DIR = join(process.cwd(), 'src/app/t/[slug]/admin');
-const LEARN_ACTIONS = join(
-  process.cwd(),
-  'src/app/t/[slug]/learn/[courseSlug]/actions.ts',
-);
+const LEARN_ACTIONS = join(process.cwd(), 'src/app/t/[slug]/learn/[courseSlug]/actions.ts');
 
 /** Recursively collects every `actions.ts` under a directory. */
 function findActionFiles(dir: string): string[] {
@@ -97,10 +94,7 @@ describe('tenant guards', () => {
   // Normalized: on a CRLF checkout, '\n}\n' never matches and the body slice
   // below silently widens to the rest of the file — which would let this suite
   // pass with the guard removed.
-  const src = readFileSync(join(process.cwd(), 'src/lib/tenant.ts'), 'utf8').replace(
-    /\r\n/g,
-    '\n',
-  );
+  const src = readFileSync(join(process.cwd(), 'src/lib/tenant.ts'), 'utf8').replace(/\r\n/g, '\n');
 
   /** Extracts one top-level exported function body, failing if it can't. */
   function bodyOf(name: string): string {

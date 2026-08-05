@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import {
-  rateLimit,
-  parseForwardedFor,
-  __resetRateLimits,
-  RULES,
-} from '@/lib/rate-limit';
+import { rateLimit, parseForwardedFor, __resetRateLimits, RULES } from '@/lib/rate-limit';
 
 /**
  * The limiter is pure with an injectable clock, so these are behavioural rather

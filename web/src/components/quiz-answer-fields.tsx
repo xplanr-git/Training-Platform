@@ -85,9 +85,7 @@ export function QuizAnswerFields() {
         // Not an error: it is the ordinary state before any option is typed. The
         // old form showed an answer box here, which invited a number for options
         // that did not exist yet.
-        <p className="text-sm text-muted">
-          Type the options above, then tick the correct one.
-        </p>
+        <p className="text-sm text-muted">Type the options above, then tick the correct one.</p>
       ) : (
         <fieldset className="text-sm">
           <legend className="text-muted">

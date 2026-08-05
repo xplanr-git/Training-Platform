@@ -4,13 +4,7 @@ import { cn } from '@/components/ui/utils';
 import { ReorderControls } from '@/components/reorder-controls';
 import { EmptyState, EmptyRow } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
-import {
-  Trash2,
-  Video,
-  FileText,
-  HelpCircle,
-  BookOpen,
-} from 'lucide-react';
+import { Trash2, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
 import { db, eq, and, asc, courses, sections, lessons } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import {
@@ -27,11 +21,7 @@ import {
 } from './actions';
 import { VideoUpload } from '@/components/video-upload';
 import { AttachedVideo } from '@/components/attached-video';
-import {
-  hostedVideoFromContent,
-  availableProviders,
-  getBunnyVideoCached,
-} from '@/lib/video';
+import { hostedVideoFromContent, availableProviders, getBunnyVideoCached } from '@/lib/video';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -44,8 +34,7 @@ const LESSON_ICON: Record<string, typeof Video> = {
   quiz: HelpCircle,
 };
 
-const SELECT_CLS =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
+const SELECT_CLS = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 export default async function CourseBuilder({
   params,
@@ -139,7 +128,11 @@ export default async function CourseBuilder({
                   canMoveUp={i > 0}
                   canMoveDown={i < sectionRows.length - 1}
                 />
-                <NavForm action={deleteSection.bind(null, slug, courseId, s.id)} quiet confirm="Delete this section and every lesson in it? This cannot be undone.">
+                <NavForm
+                  action={deleteSection.bind(null, slug, courseId, s.id)}
+                  quiet
+                  confirm="Delete this section and every lesson in it? This cannot be undone."
+                >
                   <Button
                     type="submit"
                     variant="ghost"
@@ -184,7 +177,11 @@ export default async function CourseBuilder({
                             </Link>
                           </Button>
                         )}
-                        <NavForm action={deleteLesson.bind(null, slug, courseId, l.id)} quiet confirm="Delete this lesson? This cannot be undone.">
+                        <NavForm
+                          action={deleteLesson.bind(null, slug, courseId, l.id)}
+                          quiet
+                          confirm="Delete this lesson? This cannot be undone."
+                        >
                           <Button
                             type="submit"
                             variant="ghost"
@@ -294,9 +291,9 @@ export default async function CourseBuilder({
                                 )}
                                 {attachedId && !details && (
                                   <p className="mb-3 text-xs text-amber-700">
-                                    A video is attached ({attachedId}) but its details
-                                    could not be read from Bunny just now. Reload the
-                                    page to try again — the lesson itself is fine.
+                                    A video is attached ({attachedId}) but its details could not be
+                                    read from Bunny just now. Reload the page to try again — the
+                                    lesson itself is fine.
                                   </p>
                                 )}
                                 <VideoUpload
@@ -315,8 +312,8 @@ export default async function CourseBuilder({
                             );
                           })()}
                           <p className="mt-1.5 text-xs text-muted">
-                            Attach a Bunny video to enable watch-time tracking and
-                            cross-device resume. Video lessons are Bunny-only.
+                            Attach a Bunny video to enable watch-time tracking and cross-device
+                            resume. Video lessons are Bunny-only.
                           </p>
                         </div>
                       )}
@@ -336,8 +333,8 @@ export default async function CourseBuilder({
             <NavForm
               action={addLesson.bind(null, slug, courseId, s.id)}
               className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-muted px-4 py-3"
-            quiet
-          >
+              quiet
+            >
               <Input
                 name="title"
                 required
@@ -376,9 +373,15 @@ export default async function CourseBuilder({
       <NavForm
         action={addSection.bind(null, slug, courseId)}
         className="mt-6 flex items-center gap-2"
-            quiet
-          >
-        <Input name="title" required aria-label="New section title" placeholder="New section title" className="max-w-xs" />
+        quiet
+      >
+        <Input
+          name="title"
+          required
+          aria-label="New section title"
+          placeholder="New section title"
+          className="max-w-xs"
+        />
         <Button type="submit" variant="outline">
           Add section
         </Button>

@@ -11,9 +11,7 @@ import {
 
 describe('safeHttpUrl', () => {
   it('accepts absolute http(s) URLs', () => {
-    expect(safeHttpUrl('https://cdn.example.com/a.pdf')).toBe(
-      'https://cdn.example.com/a.pdf',
-    );
+    expect(safeHttpUrl('https://cdn.example.com/a.pdf')).toBe('https://cdn.example.com/a.pdf');
     expect(safeHttpUrl('http://example.com')).toBe('http://example.com/');
   });
 

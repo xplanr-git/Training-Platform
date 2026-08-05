@@ -75,8 +75,8 @@ export function AttachedVideo({
         )}
         {!playable && (
           <p className="mt-1 text-xs text-muted">
-            Reload this page to check again — the video keeps processing whether this
-            page is open or not.
+            Reload this page to check again — the video keeps processing whether this page is open
+            or not.
           </p>
         )}
         <p className="mt-1 truncate font-mono text-[11px] text-faint">{videoId}</p>

@@ -39,11 +39,7 @@ function formatSeconds(total: number): string {
 }
 
 /** Live insights — tenant-scoped aggregates + per-question friction metrics. */
-export default async function Analytics({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function Analytics({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const ctx = await requireAdminForSlug(slug);
   const tid = ctx.tenantId;
@@ -105,9 +101,7 @@ export default async function Analytics({
     })
     .from(progressEvents)
     .innerJoin(lessons, eq(lessons.id, progressEvents.lessonId))
-    .where(
-      and(eq(progressEvents.tenantId, tid), eq(progressEvents.eventType, 'video_progress')),
-    )
+    .where(and(eq(progressEvents.tenantId, tid), eq(progressEvents.eventType, 'video_progress')))
     .groupBy(progressEvents.lessonId, lessons.title, lessons.estimatedMinutes)
     .orderBy(sql`sum(${progressEvents.durationMs}) desc`)
     .limit(8);
@@ -192,13 +186,13 @@ export default async function Analytics({
       <section className="mt-10">
         <h2 className="text-lg font-semibold">Where learners get stuck</h2>
         <p className="mt-1 text-sm text-muted">
-          Questions ranked by attempts, with average time spent and how often they&apos;re
-          answered wrong — to spot friction points.
+          Questions ranked by attempts, with average time spent and how often they&apos;re answered
+          wrong — to spot friction points.
         </p>
         {friction.length === 0 ? (
           <EmptyState className="mt-4" title="No quiz answers yet">
-            Once learners start answering quiz questions, the ones they get wrong most often
-            — and spend longest on — will be listed here, hardest first.
+            Once learners start answering quiz questions, the ones they get wrong most often — and
+            spend longest on — will be listed here, hardest first.
           </EmptyState>
         ) : (
           <div className="mt-4 overflow-x-auto rounded-(--radius-card) border border-border">

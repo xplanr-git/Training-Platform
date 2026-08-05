@@ -5,7 +5,10 @@ import { join, resolve } from 'node:path';
 const ROOT = resolve(process.cwd(), '..');
 const CI = readFileSync(join(ROOT, '.github/workflows/ci.yml'), 'utf8').replace(/\r\n/g, '\n');
 const pkg = (dir: string) =>
-  JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8')).scripts as Record<string, string>;
+  JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8')).scripts as Record<
+    string,
+    string
+  >;
 
 /**
  * The gap this exists to close, stated plainly because it cost five commits.
@@ -27,10 +30,12 @@ function ciCommandsFor(job: string): string[] {
   const rest = CI.slice(start + 1);
   const nextJob = rest.search(/\n  [a-z0-9_-]+:\n/);
   const block = nextJob === -1 ? rest : rest.slice(0, nextJob);
-  return [...block.matchAll(/^\s*(?:- name: .*\n\s*)?run: (.+)$/gm)]
-    .map((m) => m[1].trim())
-    // npm ci and playwright install are environment setup, not checks.
-    .filter((c) => !/^npm ci$/.test(c) && !/playwright install/.test(c));
+  return (
+    [...block.matchAll(/^\s*(?:- name: .*\n\s*)?run: (.+)$/gm)]
+      .map((m) => m[1].trim())
+      // npm ci and playwright install are environment setup, not checks.
+      .filter((c) => !/^npm ci$/.test(c) && !/playwright install/.test(c))
+  );
 }
 
 describe('one local command runs everything CI runs', () => {

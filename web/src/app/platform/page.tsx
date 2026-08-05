@@ -131,8 +131,8 @@ export default async function PlatformHome() {
               <TableRow>
                 <TableCell colSpan={5} className="p-0">
                   <EmptyRow title="No academies yet">
-                    Each academy is a separate tenant with its own courses, learners and
-                    branding. One is created the first time someone signs up on a subdomain.
+                    Each academy is a separate tenant with its own courses, learners and branding.
+                    One is created the first time someone signs up on a subdomain.
                   </EmptyRow>
                 </TableCell>
               </TableRow>

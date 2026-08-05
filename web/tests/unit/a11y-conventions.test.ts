@@ -65,9 +65,10 @@ describe('form field boundaries clear 3:1 (1.4.11)', () => {
     // A boundary has two neighbours. #949494 passes against white (3.03) and FAILS
     // against the fill (2.90), which is why it was not the value chosen.
     const r = ratio(token('--color-input'), token('--color-input-background'));
-    expect(r, `--color-input on the field fill is ${r.toFixed(2)}:1, needs 3:1`).toBeGreaterThanOrEqual(
-      AA_NON_TEXT,
-    );
+    expect(
+      r,
+      `--color-input on the field fill is ${r.toFixed(2)}:1, needs 3:1`,
+    ).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 
   it('--color-border stays light, because it is decoration not a control boundary', () => {
@@ -86,7 +87,7 @@ describe('every heading level is chosen deliberately (1.3.1)', () => {
   it('CardTitle makes the compiler ask for a level', () => {
     const src = code('src/components/ui/card.tsx');
     expect(src, 'an optional prop would let the next call site repeat the bug').toMatch(
-      /as:\s*"h1"\s*\|\s*"h2"/,
+      /as:\s*['\"]h1['\"]\s*\|\s*['\"]h2['\"]/,
     );
     expect(src, 'no hardcoded heading element').not.toMatch(/<h4\b/);
   });
@@ -177,9 +178,7 @@ describe('controls have names, and the names match what is visible', () => {
      * were added to satisfy an earlier guard that only recognised aria-label; that
      * guard now accepts a wrapping label too.
      */
-    const src = code(
-      'src/app/t/[slug]/admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx',
-    );
+    const src = code('src/app/t/[slug]/admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx');
     const offenders: string[] = [];
     for (const m of src.matchAll(/<(Input|select|textarea)\b([\s\S]{0,300}?)\/?>/g)) {
       if (!/aria-label=/.test(m[2])) continue;
@@ -188,8 +187,10 @@ describe('controls have names, and the names match what is visible', () => {
         offenders.push(`line ${before.split('\n').length} <${m[1]}> is inside a <label>`);
       }
     }
-    expect(offenders, `drop the aria-label; the wrapping label already names it:\n${offenders.join('\n')}`)
-      .toEqual([]);
+    expect(
+      offenders,
+      `drop the aria-label; the wrapping label already names it:\n${offenders.join('\n')}`,
+    ).toEqual([]);
   });
 });
 

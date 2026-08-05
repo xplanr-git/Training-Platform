@@ -28,9 +28,7 @@ describe('the live suite cannot write to a project by accident', () => {
   });
 
   it('every spec requires the explicit opt-in', () => {
-    const unguarded = specs.filter(
-      (f) => !/require(LiveOptIn|LiveAdmin)\(\)/.test(code(f)),
-    );
+    const unguarded = specs.filter((f) => !/require(LiveOptIn|LiveAdmin)\(\)/.test(code(f)));
     expect(
       unguarded,
       `these could write to the target project with no opt-in: ${unguarded.join(', ')}`,
@@ -67,8 +65,7 @@ describe('the CI e2e run cannot pick up a writing spec', () => {
    */
   // Comments stripped: the live config's own doc comment says "No webServer —
   // start the dev server first", which satisfied the assertion below on prose alone.
-  const strip = (s: string) =>
-    s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   const ci = strip(readFileSync(join(WEB, 'playwright.config.ts'), 'utf8'));
   const live = strip(readFileSync(join(WEB, 'playwright.live.config.ts'), 'utf8'));
 

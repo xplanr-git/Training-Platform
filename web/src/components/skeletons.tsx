@@ -30,10 +30,7 @@ export function StatGridSkeleton({ count, cols }: { count: number; cols: 3 | 4 }
       className={`mt-6 grid grid-cols-2 gap-3 ${cols === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}
     >
       {Array.from({ length: count }, (_, i) => (
-        <div
-          key={i}
-          className="rounded-(--radius-card) border border-border bg-surface px-4 py-4"
-        >
+        <div key={i} className="rounded-(--radius-card) border border-border bg-surface px-4 py-4">
           <Skeleton className="h-3.5 w-20" />
           <Skeleton className="mt-2 h-7 w-12" />
         </div>
@@ -55,7 +52,10 @@ export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
         ))}
       </div>
       {Array.from({ length: rows }, (_, r) => (
-        <div key={r} className="flex items-center gap-4 border-b border-border px-4 py-3.5 last:border-b-0">
+        <div
+          key={r}
+          className="flex items-center gap-4 border-b border-border px-4 py-3.5 last:border-b-0"
+        >
           {Array.from({ length: cols }, (_, c) => (
             <Skeleton key={c} className={c === 0 ? 'h-4 flex-[2]' : 'h-4 flex-1'} />
           ))}

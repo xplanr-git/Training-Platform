@@ -7,13 +7,7 @@ import { requestPasswordReset } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
  * Request a password-reset link. Also the recovery route for an invitee whose
@@ -61,8 +55,8 @@ export default function ForgotPasswordPage() {
           {sent ? (
             <div className="flex flex-col gap-3 text-sm">
               <p className="text-muted">
-                The link works once and expires shortly. If it doesn&apos;t arrive, check
-                your spam folder, then try again.
+                The link works once and expires shortly. If it doesn&apos;t arrive, check your spam
+                folder, then try again.
               </p>
               <Button asChild variant="outline">
                 <Link href="/login">Back to sign in</Link>

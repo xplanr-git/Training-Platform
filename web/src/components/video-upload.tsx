@@ -166,11 +166,7 @@ export function VideoUpload({
             disabled={!file || uploading || pending}
             onClick={onUpload}
           >
-            {uploading
-              ? `Uploading ${percent ?? 0}%`
-              : done
-                ? 'Replace'
-                : 'Upload'}
+            {uploading ? `Uploading ${percent ?? 0}%` : done ? 'Replace' : 'Upload'}
           </Button>
         </div>
         {file && !uploading && (

@@ -42,26 +42,11 @@ export const membershipRole = pgEnum('membership_role', [
   'learner',
 ]);
 
-export const membershipStatus = pgEnum('membership_status', [
-  'invited',
-  'active',
-  'deactivated',
-]);
+export const membershipStatus = pgEnum('membership_status', ['invited', 'active', 'deactivated']);
 
-export const courseStatus = pgEnum('course_status', [
-  'draft',
-  'published',
-  'archived',
-]);
+export const courseStatus = pgEnum('course_status', ['draft', 'published', 'archived']);
 
-export const lessonType = pgEnum('lesson_type', [
-  'video',
-  'pdf',
-  'scorm',
-  'quiz',
-  'text',
-  'live',
-]);
+export const lessonType = pgEnum('lesson_type', ['video', 'pdf', 'scorm', 'quiz', 'text', 'live']);
 
 export const assetKind = pgEnum('asset_kind', [
   'mux_video',
@@ -103,12 +88,7 @@ export const subscriptionStatus = pgEnum('subscription_status', [
   'unpaid',
 ]);
 
-export const orderStatus = pgEnum('order_status', [
-  'pending',
-  'paid',
-  'failed',
-  'refunded',
-]);
+export const orderStatus = pgEnum('order_status', ['pending', 'paid', 'failed', 'refunded']);
 
 /* ── Tenancy & identity ────────────────────────────────────────────────── */
 

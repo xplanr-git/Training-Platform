@@ -84,11 +84,7 @@ export async function createCourse(tenantSlug: string, formData: FormData) {
   return { redirectTo: `/admin/courses/${created.id}` };
 }
 
-export async function updateCourse(
-  tenantSlug: string,
-  courseId: string,
-  formData: FormData,
-) {
+export async function updateCourse(tenantSlug: string, courseId: string, formData: FormData) {
   const ctx = await requireAdmin();
 
   const [before] = await db
@@ -96,7 +92,8 @@ export async function updateCourse(
     .from(courses)
     .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
     .limit(1);
-  if (!before) throw new Error('That course no longer exists. Go back to Courses and reload the list.');
+  if (!before)
+    throw new Error('That course no longer exists. Go back to Courses and reload the list.');
 
   const title = String(formData.get('title') ?? before.title).trim();
   if (!title) throw new Error('Title is required');

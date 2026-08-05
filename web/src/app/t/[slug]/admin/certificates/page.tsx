@@ -111,14 +111,28 @@ export default async function Certificates({
                       </a>
                     </Button>
                     {c.revokedAt ? (
-                      <NavForm action={setCertificateRevoked.bind(null, slug, c.id, false)} className="inline" quiet>
+                      <NavForm
+                        action={setCertificateRevoked.bind(null, slug, c.id, false)}
+                        className="inline"
+                        quiet
+                      >
                         <Button type="submit" variant="ghost" size="sm">
                           Reinstate
                         </Button>
                       </NavForm>
                     ) : (
-                      <NavForm action={setCertificateRevoked.bind(null, slug, c.id, true)} className="inline" quiet confirm="Revoke this certificate? Its public verification page will show it as revoked. You can reinstate it from this page.">
-                        <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                      <NavForm
+                        action={setCertificateRevoked.bind(null, slug, c.id, true)}
+                        className="inline"
+                        quiet
+                        confirm="Revoke this certificate? Its public verification page will show it as revoked. You can reinstate it from this page."
+                      >
+                        <Button
+                          type="submit"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                        >
                           Revoke
                         </Button>
                       </NavForm>
@@ -131,9 +145,9 @@ export default async function Certificates({
               <TableRow>
                 <TableCell colSpan={5} className="p-0">
                   <EmptyRow title="No certificates issued yet">
-                    Certificates are issued automatically the moment a learner finishes every
-                    lesson in a course. Each one gets a verification code that anyone can check
-                    without signing in.
+                    Certificates are issued automatically the moment a learner finishes every lesson
+                    in a course. Each one gets a verification code that anyone can check without
+                    signing in.
                   </EmptyRow>
                 </TableCell>
               </TableRow>

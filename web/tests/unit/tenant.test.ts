@@ -150,8 +150,6 @@ describe('tenantRewritePath — single-tenant mode', () => {
 
   it('ignores a blank or whitespace default', () => {
     expect(tenantRewritePath({ host: APEX, pathname: '/admin', defaultSlug: '' })).toBeNull();
-    expect(
-      tenantRewritePath({ host: APEX, pathname: '/admin', defaultSlug: null }),
-    ).toBeNull();
+    expect(tenantRewritePath({ host: APEX, pathname: '/admin', defaultSlug: null })).toBeNull();
   });
 });

@@ -13,7 +13,9 @@ requireLiveAdmin();
 
 const stamp = Date.now();
 const TITLE = `Golden Path ${stamp}`;
-const SLUG = TITLE.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const SLUG = TITLE.toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
 
 test('authored course → enroll → complete → certificate → verify', async ({ page }) => {
   await signInAsAdmin(page);

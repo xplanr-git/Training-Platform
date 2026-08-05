@@ -6,8 +6,7 @@ function required(name: string, value: string | undefined): string {
 }
 
 export const env = {
-  supabaseUrl: () =>
-    required('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL),
+  supabaseUrl: () => required('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL),
   supabaseAnonKey: () =>
     required('NEXT_PUBLIC_SUPABASE_ANON_KEY', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
   serviceRoleKey: () =>
@@ -20,8 +19,7 @@ export const env = {
   // written as bare `/admin/*` paths and resolved by the rewrite).
   defaultTenantSlug: () => process.env.DEFAULT_TENANT_SLUG?.trim() || null,
   stripeSecretKey: () => required('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY),
-  stripeWebhookSecret: () =>
-    required('STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET),
+  stripeWebhookSecret: () => required('STRIPE_WEBHOOK_SECRET', process.env.STRIPE_WEBHOOK_SECRET),
   appOrigin: () => {
     const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000';
     // Compare the HOST, not a string prefix: startsWith('localhost') also

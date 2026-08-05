@@ -75,7 +75,9 @@ describe('the admin shell has a definite height', () => {
     const footerAt = aside.lastIndexOf('<div className="border-t');
     expect(navAt, 'no NavLinks in the aside').toBeGreaterThan(-1);
     expect(footerAt, 'no footer in the aside').toBeGreaterThan(-1);
-    expect(footerAt, 'the footer must come after NavLinks, or it scrolls away with the links')
-      .toBeGreaterThan(navAt);
+    expect(
+      footerAt,
+      'the footer must come after NavLinks, or it scrolls away with the links',
+    ).toBeGreaterThan(navAt);
   });
 });

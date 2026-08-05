@@ -1,12 +1,5 @@
 import 'server-only';
-import {
-  db,
-  eq,
-  and,
-  inArray,
-  enrollments,
-  memberships,
-} from '@training-platform/db';
+import { db, eq, and, inArray, enrollments, memberships } from '@training-platform/db';
 import { deriveProgress, type CourseProgress, type LessonTiming } from '@/lib/progress-derive';
 
 /**

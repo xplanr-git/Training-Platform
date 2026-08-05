@@ -40,7 +40,9 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
   if (limited) return { ok: false, error: limited };
 
   const name = String(formData.get('name') ?? '').trim();
-  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const email = String(formData.get('email') ?? '')
+    .trim()
+    .toLowerCase();
   const password = String(formData.get('password') ?? '');
   const companyName = String(formData.get('companyName') ?? '').trim();
   const slug = normalizeSlug(String(formData.get('slug') ?? companyName));
@@ -60,7 +62,10 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
     .where(eq(tenants.slug, slug))
     .limit(1);
   if (existing.length > 0) {
-    return { ok: false, error: `The web address “${slug}” is already taken. Edit it and try again.` };
+    return {
+      ok: false,
+      error: `The web address “${slug}” is already taken. Edit it and try again.`,
+    };
   }
 
   const admin = createAdminClient();
@@ -71,16 +76,18 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
     user_metadata: { name },
   });
   if (authError || !created.user) {
-    return { ok: false, error: authError?.message ?? 'Could not create your account. That email may already have one — try signing in instead.' };
+    return {
+      ok: false,
+      error:
+        authError?.message ??
+        'Could not create your account. That email may already have one — try signing in instead.',
+    };
   }
   const userId = created.user.id;
 
   try {
     await db.transaction(async (tx) => {
-      await tx
-        .insert(users)
-        .values({ id: userId, email, name })
-        .onConflictDoNothing();
+      await tx.insert(users).values({ id: userId, email, name }).onConflictDoNothing();
 
       const [tenant] = await tx
         .insert(tenants)
@@ -121,7 +128,10 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
   } catch (e) {
     // Roll back the orphaned auth user so the email can be retried.
     await admin.auth.admin.deleteUser(userId).catch(() => {});
-    const message = e instanceof Error ? e.message : 'Your academy could not be set up. Nothing was saved, so it is safe to try again.';
+    const message =
+      e instanceof Error
+        ? e.message
+        : 'Your academy could not be set up. Nothing was saved, so it is safe to try again.';
     return { ok: false, error: message };
   }
 

@@ -45,18 +45,33 @@ function mapActivity(a: Record<string, unknown>): {
   const scorm = (a.scorm_url as string) || '';
 
   if (legacyType.includes('video') || youtube) {
-    return { type: 'video', content: { youtubeUrl: youtube }, asset: youtube ? { kind: 'youtube' } : undefined };
+    return {
+      type: 'video',
+      content: { youtubeUrl: youtube },
+      asset: youtube ? { kind: 'youtube' } : undefined,
+    };
   }
   if (legacyType.includes('pdf') || pdf) {
-    return { type: 'pdf', content: { url: pdf }, asset: pdf ? { kind: 'pdf', storagePath: pdf } : undefined };
+    return {
+      type: 'pdf',
+      content: { url: pdf },
+      asset: pdf ? { kind: 'pdf', storagePath: pdf } : undefined,
+    };
   }
   if (legacyType.includes('scorm') || scorm) {
-    return { type: 'scorm', content: { url: scorm }, asset: scorm ? { kind: 'scorm_package', storagePath: scorm } : undefined };
+    return {
+      type: 'scorm',
+      content: { url: scorm },
+      asset: scorm ? { kind: 'scorm_package', storagePath: scorm } : undefined,
+    };
   }
   if (legacyType.includes('quiz')) {
     return { type: 'quiz', content: {} };
   }
-  return { type: 'text', content: { body: (a.content as string) || (a.description as string) || '' } };
+  return {
+    type: 'text',
+    content: { body: (a.content as string) || (a.description as string) || '' },
+  };
 }
 
 async function main() {
@@ -82,7 +97,11 @@ async function main() {
     const companies = [...new Set(legacyCourses.map((c) => String(c.company_id)))];
     for (const company of companies) {
       const slug = slugify(company);
-      const [existing] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, slug)).limit(1);
+      const [existing] = await db
+        .select({ id: tenants.id })
+        .from(tenants)
+        .where(eq(tenants.slug, slug))
+        .limit(1);
       if (existing) {
         tenantIdByCompany.set(company, existing.id);
         continue;
@@ -91,7 +110,10 @@ async function main() {
         log(`would create tenant ${slug}`);
         tenantIdByCompany.set(company, `dry-${slug}`);
       } else {
-        const [t] = await db.insert(tenants).values({ slug, name: company, status: 'active' }).returning();
+        const [t] = await db
+          .insert(tenants)
+          .values({ slug, name: company, status: 'active' })
+          .returning();
         tenantIdByCompany.set(company, t.id);
       }
       stats.tenants++;
@@ -119,7 +141,9 @@ async function main() {
         select * from course_activities where course_id = ${String(c.id)} order by "order" asc`;
 
       if (DRY_RUN) {
-        log(`would migrate course "${c.title}" (${legacySections.length} sections, ${legacyActivities.length} activities)`);
+        log(
+          `would migrate course "${c.title}" (${legacySections.length} sections, ${legacyActivities.length} activities)`,
+        );
         stats.courses++;
         stats.sections += legacySections.length;
         stats.lessons += legacyActivities.length;

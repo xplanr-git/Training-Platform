@@ -13,21 +13,23 @@ import { sendEnrollmentEmail } from '@/lib/email';
  * Enrolls the current user in a published course (free path). Idempotent — a
  * repeat enroll is a no-op. Stripe checkout for priced courses is Phase E2.
  */
-export async function enrollFree(
-  tenantSlug: string,
-  courseId: string,
-  courseSlug: string,
-) {
+export async function enrollFree(tenantSlug: string, courseId: string, courseSlug: string) {
   const ctx = await getTenantContext();
   if (!ctx) redirect(`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`);
-  if (!ctx.tenantId) throw new Error('Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.');
+  if (!ctx.tenantId)
+    throw new Error(
+      'Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.',
+    );
 
   const [course] = await db
     .select({ id: courses.id, status: courses.status, title: courses.title })
     .from(courses)
     .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
     .limit(1);
-  if (!course || course.status !== 'published') throw new Error('This course is not open for enrolment. Nothing is wrong at your end — go back and refresh the course list.');
+  if (!course || course.status !== 'published')
+    throw new Error(
+      'This course is not open for enrolment. Nothing is wrong at your end — go back and refresh the course list.',
+    );
 
   const [existing] = await db
     .select({ id: enrollments.id })

@@ -16,11 +16,7 @@ import { env } from '@/lib/env';
  * Renders a branded, printable certificate using the tenant's template design
  * and confirms authenticity, issue date, and revocation.
  */
-export default async function VerifyCertificate({
-  params,
-}: {
-  params: Promise<{ code: string }>;
-}) {
+export default async function VerifyCertificate({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   // Host for the printed "check it here" line. Deliberately not absoluteUrl(),
   // which throws in production on a loopback origin — correct for an email, but it
@@ -50,7 +46,8 @@ export default async function VerifyCertificate({
         <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center">
           <h1 className="text-xl font-semibold">Certificate not found</h1>
           <p className="mt-2 text-muted">
-            No certificate matches this code. Check it against the certificate — copying and pasting the whole link is surest.
+            No certificate matches this code. Check it against the certificate — copying and pasting
+            the whole link is surest.
           </p>
         </div>
       </main>
@@ -126,8 +123,7 @@ export default async function VerifyCertificate({
 
         {cert.revokedAt && (
           <p className="mt-6 text-sm font-medium text-red-600">
-            This certificate was revoked on{' '}
-            {new Date(cert.revokedAt).toLocaleDateString()}.
+            This certificate was revoked on {new Date(cert.revokedAt).toLocaleDateString()}.
           </p>
         )}
         {/*
@@ -141,9 +137,7 @@ export default async function VerifyCertificate({
         <div className="mt-8 border-t border-border pt-4 text-center">
           <p className="text-xs text-muted">Verification code</p>
           <p className="mt-0.5 select-all break-all font-mono text-xs">{code}</p>
-          <p className="mt-1.5 text-xs text-muted">
-            Verify at {verifyHost}/verify
-          </p>
+          <p className="mt-1.5 text-xs text-muted">Verify at {verifyHost}/verify</p>
         </div>
       </article>
     </main>

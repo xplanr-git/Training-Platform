@@ -1,15 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import {
-  db,
-  audited,
-  eq,
-  and,
-  users,
-  memberships,
-  tenants,
-} from '@training-platform/db';
+import { db, audited, eq, and, users, memberships, tenants } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendInviteEmail } from '@/lib/email';
@@ -40,10 +32,7 @@ export interface ActionResult {
  * transaction commits and is best-effort — a mail failure must not roll back a
  * membership that was created.
  */
-export async function inviteMember(
-  tenantSlug: string,
-  formData: FormData,
-): Promise<ActionResult> {
+export async function inviteMember(tenantSlug: string, formData: FormData): Promise<ActionResult> {
   const ctx = await requireAdmin();
 
   // An admin is authenticated, so this is not an abuse gate so much as a blast
@@ -52,7 +41,9 @@ export async function inviteMember(
   const limited = await rateLimitExceeded('invite', RULES.invite, ctx.tenantId);
   if (limited) return { ok: false, error: limited };
 
-  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const email = String(formData.get('email') ?? '')
+    .trim()
+    .toLowerCase();
   const name = String(formData.get('name') ?? '').trim();
   if (!email) return { ok: false, error: 'Email is required' };
   // Server-side, not just the form's `required`: a Server Action is directly
@@ -98,7 +89,12 @@ export async function inviteMember(
       options: { redirectTo: absoluteUrl('/auth/confirm') },
     });
     if (error || !data.user) {
-      return { ok: false, error: error?.message ?? 'Could not create an account for that email. Check it for typos, then try again.' };
+      return {
+        ok: false,
+        error:
+          error?.message ??
+          'Could not create an account for that email. Check it for typos, then try again.',
+      };
     }
     userId = data.user.id;
 
@@ -110,10 +106,7 @@ export async function inviteMember(
         `&type=invite&next=${encodeURIComponent('/auth/set-password')}`;
     }
 
-    await db
-      .insert(users)
-      .values({ id: userId, email, name })
-      .onConflictDoNothing();
+    await db.insert(users).values({ id: userId, email, name }).onConflictDoNothing();
   } else if (!existingUser!.name.trim()) {
     /*
      * The row exists but holds no name — invited before a name was required, so
@@ -178,8 +171,8 @@ export async function inviteMember(
     // from. Tell the admin so they can fix the config and re-send.
     console.error('[invite] email failed', err);
     warning =
-      'Member added, but the invitation email could not be sent. Check RESEND_API_KEY '
-      + 'and that EMAIL_FROM uses a domain verified in Resend, then re-send.';
+      'Member added, but the invitation email could not be sent. Check RESEND_API_KEY ' +
+      'and that EMAIL_FROM uses a domain verified in Resend, then re-send.';
   }
 
   revalidatePath(`/t/${tenantSlug}/admin/people`);
@@ -200,9 +193,7 @@ export async function setMemberRole(
     const [after] = await tx
       .update(memberships)
       .set({ role: nextRole })
-      .where(
-        and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId!)),
-      )
+      .where(and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId!)))
       .returning();
     if (!after) throw new Error('That person is no longer in this academy. Reload the page.');
     await audited(tx, {
@@ -240,9 +231,7 @@ export async function setMemberStatus(
     const [after] = await tx
       .update(memberships)
       .set({ status: nextStatus })
-      .where(
-        and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId!)),
-      )
+      .where(and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId!)))
       .returning();
     if (!after) throw new Error('Membership not found');
     await audited(tx, {

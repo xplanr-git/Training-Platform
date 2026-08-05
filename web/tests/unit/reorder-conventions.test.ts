@@ -44,7 +44,7 @@ describe('a position swap reads and writes in one locked transaction', () => {
       });
 
       it('locks the rows it is about to reorder', () => {
-        expect(src, 'add .for(\'update\') or concurrent moves interleave').toContain("for('update')");
+        expect(src, "add .for('update') or concurrent moves interleave").toContain("for('update')");
       });
     });
   }

@@ -12,15 +12,18 @@
     "studio": "drizzle-kit studio",
     "check": "drizzle-kit check",
     "migrate:v1": "tsx migrate-v1-to-v2.ts",
-    "verify": "npm run check && tsc --noEmit"
+    "verify": "npm run format:check && npm run check && tsc --noEmit",
+    "format:check": "prettier --check \"*.ts\"",
+    "format": "prettier --write \"*.ts\""
   },
   "dependencies": {
     "drizzle-orm": "^0.36.4",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.28.1",
     "@types/node": "^20.14.0",
+    "drizzle-kit": "^0.28.1",
+    "prettier": "3.6.2",
     "typescript": "^5.6.3"
   }
 }

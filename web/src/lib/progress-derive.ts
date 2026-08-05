@@ -53,9 +53,7 @@ export function deriveProgress(
   const estimates = remaining
     .map((l) => l.estimatedMinutes)
     .filter((m): m is number => typeof m === 'number' && Number.isFinite(m) && m > 0);
-  const minutesLeft = estimates.length
-    ? estimates.reduce((sum, m) => sum + m, 0)
-    : null;
+  const minutesLeft = estimates.length ? estimates.reduce((sum, m) => sum + m, 0) : null;
   // Compared against REMAINING, not total: a course whose finished lessons were
   // the un-estimated ones is fully estimated from here on, and hedging there
   // would under-sell a figure that is actually complete.

@@ -128,7 +128,9 @@ describe('internal vocabulary does not reach the screen', () => {
     for (const f of FILES) {
       const src = code(f);
       // quoted strings that are rendered or thrown, not identifiers or imports
-      for (const m of src.matchAll(/(?:throw new Error\(|error:\s*|>)\s*'([^']*\btenant\b[^']*)'/gi)) {
+      for (const m of src.matchAll(
+        /(?:throw new Error\(|error:\s*|>)\s*'([^']*\btenant\b[^']*)'/gi,
+      )) {
         offenders.push(`${rel(f)} — "${m[1].slice(0, 60)}"`);
       }
     }
@@ -253,12 +255,13 @@ describe('the voice holds', () => {
 
   it('nobody is told to "contact support" when there is no support to contact', () => {
     // grep found no support address, mailto or contact route anywhere in the product.
-    const hasSupportRoute =
-      FILES.some((f) => /mailto:|\/support\b/.test(read(f)));
+    const hasSupportRoute = FILES.some((f) => /mailto:|\/support\b/.test(read(f)));
     const tellsThem = FILES.filter((f) => /contact support/i.test(code(f))).map(rel);
     if (!hasSupportRoute) {
-      expect(tellsThem, `there is no support channel to send them to:\n${tellsThem.join('\n')}`)
-        .toEqual([]);
+      expect(
+        tellsThem,
+        `there is no support channel to send them to:\n${tellsThem.join('\n')}`,
+      ).toEqual([]);
     }
   });
 });

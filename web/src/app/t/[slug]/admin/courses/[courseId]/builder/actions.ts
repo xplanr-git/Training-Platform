@@ -59,7 +59,10 @@ export async function startVideoUpload(
     return { ticket };
   } catch (e) {
     console.error('startVideoUpload failed:', e);
-    return { error: 'Bunny would not accept a new upload. Try again in a minute; if it persists, check the Bunny keys.' };
+    return {
+      error:
+        'Bunny would not accept a new upload. Try again in a minute; if it persists, check the Bunny keys.',
+    };
   }
 }
 
@@ -94,7 +97,10 @@ export async function attachBunnyFromUrl(
     return { videoId };
   } catch (e) {
     console.error('attachBunnyFromUrl failed:', e);
-    return { error: 'Bunny could not fetch that video. Check the link opens in a browser and points at a video file.' };
+    return {
+      error:
+        'Bunny could not fetch that video. Check the link opens in a browser and points at a video file.',
+    };
   }
 }
 
@@ -184,11 +190,7 @@ function revalidateBuilder(slug: string, courseId: string) {
  * learner saw "Video unavailable", watch tracking and resume stopped, and the
  * lesson vanished from Insights. Nothing warned the admin.
  */
-function contentFor(
-  type: string,
-  formData: FormData,
-  previous?: unknown,
-): Record<string, unknown> {
+function contentFor(type: string, formData: FormData, previous?: unknown): Record<string, unknown> {
   const prev = (previous ?? {}) as Record<string, unknown>;
   switch (type) {
     case 'text':
@@ -214,11 +216,7 @@ function contentFor(
   }
 }
 
-export async function addSection(
-  slug: string,
-  courseId: string,
-  formData: FormData,
-) {
+export async function addSection(slug: string, courseId: string, formData: FormData) {
   const ctx = await requireAdmin();
   await assertCourse(ctx.tenantId, courseId);
 
@@ -238,11 +236,7 @@ export async function addSection(
   revalidateBuilder(slug, courseId);
 }
 
-export async function deleteSection(
-  slug: string,
-  courseId: string,
-  sectionId: string,
-) {
+export async function deleteSection(slug: string, courseId: string, sectionId: string) {
   const ctx = await requireAdmin();
   await db
     .delete(sections)
@@ -260,11 +254,7 @@ export async function addLesson(
   await assertCourse(ctx.tenantId, courseId);
 
   const title = String(formData.get('title') ?? '').trim() || 'Untitled lesson';
-  const type = String(formData.get('type') ?? 'text') as
-    | 'text'
-    | 'video'
-    | 'pdf'
-    | 'quiz';
+  const type = String(formData.get('type') ?? 'text') as 'text' | 'video' | 'pdf' | 'quiz';
 
   const existing = await db
     .select({ position: lessons.position })
@@ -340,15 +330,9 @@ export async function updateLesson(
   revalidateBuilder(slug, courseId);
 }
 
-export async function deleteLesson(
-  slug: string,
-  courseId: string,
-  lessonId: string,
-) {
+export async function deleteLesson(slug: string, courseId: string, lessonId: string) {
   const ctx = await requireAdmin();
-  await db
-    .delete(lessons)
-    .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)));
+  await db.delete(lessons).where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)));
   revalidateBuilder(slug, courseId);
 }
 

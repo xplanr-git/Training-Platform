@@ -7,9 +7,7 @@ export const metadata: Metadata = {
   description: 'Product training and certification for Outdure contractors and dealers.',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>

@@ -258,10 +258,13 @@ regress; committed and pushed to both remotes.
       `.editorconfig`, and normalised 31 working copies that were LF in HEAD but CRLF
       on disk — every one a landmine that turns the next edit into a whole-file diff.
 
-- [ ] **Run a prettier sweep, or decide not to.** NEEDS A DECISION: 106 of 167 files
-      differ from `prettier --check` at the configured width. Formatting them is one
-      zero-behaviour commit that makes `prettier --check` usable as a CI gate, at the
-      cost of churning two thirds of the repo's `git blame`. Not mine to choose.
+- [x] **Run a prettier sweep.** Done, and `prettier --check` is now a CI gate in both
+      workspaces. 113 files formatted, scoped to `web/src`, `web/tests` and `db/*.ts` —
+      the legacy Vite prototype, drizzle's migration metadata and all markdown are
+      excluded, each for a stated reason in `.prettierignore`. Prettier is pinned
+      exactly (3.6.2): it was undeclared, so `npx` was fetching whatever was latest,
+      and 3.9.6 and 3.6.2 genuinely disagree on two files — an unpinned formatter turns
+      CI red on its own schedule.
 
 - [x] **My local gate did not include the E2E suite.** `npm run verify` in `web/` and
       `db/` now runs exactly what CI runs; ci-parity.test.ts fails if CI gains a step it
@@ -811,4 +814,24 @@ Newest first. One line per completed item: what changed, and the commit.
   deleting nothing and settling nothing. Ships ending in ROLLBACK, so running it as
   written only prints the dry run; verified by executing it exactly as shipped — the
   demo academy goes from 71 published junk courses to 1 real one, `outdure` untouched.
+
+- **The prettier sweep, and two ways the measurement was wrong before the work was.**
+  The item had been deferred twice as an owner decision on the grounds that it would
+  churn two thirds of the repo's `git blame`. Both halves of that turned out to be
+  measurement error. First, the original "106 of 167" was taken before `.prettierrc.json`
+  existed, i.e. against prettier's own defaults rather than house style. Second — and
+  this one nearly shipped — Git Bash expands `web/**/*.ts` NON-recursively, so the
+  root-level count of 43, and the "sweep" of 27 files I ran from it, silently covered
+  only files at shallow depths: the glob matched ZERO files under `src/lib`. Caught it
+  by re-measuring from inside `web/`, where prettier does its own globbing and found 86
+  differing of 180 candidates. Had I stopped at the first green, the repo would have
+  been left half-formatted, which is worse than either extreme.
+  Three guards broke on the real sweep, all the same cause: they hardcoded double
+  quotes (`/default: "h-11 [^"]*sm:h-10"/`) while `singleQuote: true` rewrote the
+  primitives. The values were unchanged, so the guards were over-specified rather than
+  the code being wrong — now quote-agnostic, and each re-proven red by breaking the
+  thing it guards (a sub-44px touch target, an optional heading level, a colourless
+  card border). Prettier itself was undeclared in every package.json; pinned exactly,
+  because 3.9.6 and 3.6.2 disagree on two files and a floating formatter is a CI
+  failure waiting for a release.
 

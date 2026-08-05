@@ -57,13 +57,17 @@ describe('server-action forms all route through NavForm', () => {
         if (tag.includes('method="get"')) continue; // search / navigation
         if (tag.includes('onSubmit')) continue; // client-managed
         if (!tag.includes('action=')) continue; // not an action form
-        offenders.push(`${file.replace(process.cwd(), '').replace(/\\/g, '/')} — ${
-          tag.replace(/\s+/g, ' ').slice(0, 70)
-        }`);
+        offenders.push(
+          `${file.replace(process.cwd(), '').replace(/\\/g, '/')} — ${tag
+            .replace(/\s+/g, ' ')
+            .slice(0, 70)}`,
+        );
       }
     }
-    expect(offenders, `use <NavForm> so failures and successes are visible:\n${offenders.join('\n')}`)
-      .toEqual([]);
+    expect(
+      offenders,
+      `use <NavForm> so failures and successes are visible:\n${offenders.join('\n')}`,
+    ).toEqual([]);
   });
 });
 

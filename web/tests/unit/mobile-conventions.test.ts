@@ -30,9 +30,9 @@ describe('the primitives are 44px on a phone and unchanged on a desktop', () => 
 
   it('Button default, sm and icon each clear 44px below sm', () => {
     const src = code('src/components/ui/button.tsx');
-    expect(src).toMatch(/default: "h-11 [^"]*sm:h-10"/);
-    expect(src).toMatch(/sm: "h-10 [^"]*sm:h-9"/);
-    expect(src).toMatch(/icon: "h-11 w-11 sm:h-10 sm:w-10"/);
+    expect(src).toMatch(/default: ['\"]h-11 [^'\"]*sm:h-10['\"]/);
+    expect(src).toMatch(/sm: ['\"]h-10 [^'\"]*sm:h-9['\"]/);
+    expect(src).toMatch(/icon: ['\"]h-11 w-11 sm:h-10 sm:w-10['\"]/);
   });
 });
 
@@ -73,7 +73,10 @@ describe('text links that act as controls have a real hit area', () => {
     // the PDF opener on a PDF lesson, the certificate link on the dashboard, and
     // password recovery on a shared site machine.
     const cases: [string, RegExp][] = [
-      ['src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx', /min-h-11[^"]*text-sm text-brand-700/],
+      [
+        'src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx',
+        /min-h-11[^"]*text-sm text-brand-700/,
+      ],
       ['src/app/t/[slug]/dashboard/page.tsx', /py-3 text-sm text-brand-700/],
       ['src/app/login/page.tsx', /min-h-11[^"]*text-xs text-muted underline/],
     ];
@@ -145,8 +148,13 @@ describe('a printed certificate is verifiable', () => {
 
   it('and is not hidden from print', () => {
     const article = src.slice(src.indexOf('<article'), src.indexOf('</article>'));
-    const codeLine = article.slice(Math.max(0, article.indexOf('{code}') - 300), article.indexOf('{code}'));
-    expect(codeLine, 'print:hidden on the code defeats the whole page').not.toContain('print:hidden');
+    const codeLine = article.slice(
+      Math.max(0, article.indexOf('{code}') - 300),
+      article.indexOf('{code}'),
+    );
+    expect(codeLine, 'print:hidden on the code defeats the whole page').not.toContain(
+      'print:hidden',
+    );
   });
 
   it('tells the reader where to check it', () => {

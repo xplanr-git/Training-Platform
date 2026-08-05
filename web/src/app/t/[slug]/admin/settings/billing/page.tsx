@@ -21,11 +21,7 @@ const SUBSCRIPTION_STATUS: Record<string, string> = {
   paused: 'Paused',
 };
 
-export default async function Billing({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function Billing({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const ctx = await requireAdminForSlug(slug);
 
@@ -45,7 +41,9 @@ export default async function Billing({
         <div className="mt-4 flex items-center justify-between rounded-(--radius-card) border border-border bg-surface p-5">
           <div>
             <p className="font-medium capitalize">{sub.planId} plan</p>
-            <p className="text-sm text-muted">Status: {SUBSCRIPTION_STATUS[sub.status] ?? sub.status}</p>
+            <p className="text-sm text-muted">
+              Status: {SUBSCRIPTION_STATUS[sub.status] ?? sub.status}
+            </p>
           </div>
           <NavForm action={openBillingPortal.bind(null, slug)}>
             <button className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted">

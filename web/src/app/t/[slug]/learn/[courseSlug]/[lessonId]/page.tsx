@@ -4,15 +4,7 @@ import { BackLink } from '@/components/back-link';
 import { VideoUnavailable } from '@/components/video-unavailable';
 import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
-import {
-  Video,
-  FileText,
-  HelpCircle,
-  BookOpen,
-  Check,
-  ArrowLeft,
-  ArrowRight,
-} from 'lucide-react';
+import { Video, FileText, HelpCircle, BookOpen, Check, ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   db,
   eq,
@@ -134,7 +126,6 @@ export default async function LessonPlayer({
   // having attached a video yet. That distinction is the point: previously nothing was
   // logged at all, so a missing BUNNY_LIBRARY_ID was invisible in production.
   if (source?.kind === 'unavailable' && isVideoFault(source.unavailable)) {
-
     console.error('[video unavailable]', {
       reason: source.unavailable.reason,
       lessonId: lesson.id,
@@ -197,7 +188,6 @@ export default async function LessonPlayer({
     title: s.title,
     items: bySection.get(s.id) ?? [],
   }));
-
 
   return (
     <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
@@ -268,7 +258,8 @@ export default async function LessonPlayer({
         <div className="mt-6">
           {lesson.type === 'text' && (
             <div className="whitespace-pre-line leading-relaxed text-neutral-700">
-              {content.body || 'Nothing has been written into this lesson yet. Carry on to the next one — it will not hold up your certificate.'}
+              {content.body ||
+                'Nothing has been written into this lesson yet. Carry on to the next one — it will not hold up your certificate.'}
             </div>
           )}
           {lesson.type === 'video' &&
@@ -328,7 +319,10 @@ export default async function LessonPlayer({
                 </a>
               </div>
             ) : (
-              <p className="text-muted">There is no PDF on this lesson yet. Carry on to the next one — it will not hold up your certificate.</p>
+              <p className="text-muted">
+                There is no PDF on this lesson yet. Carry on to the next one — it will not hold up
+                your certificate.
+              </p>
             ))}
           {isQuiz && (
             <div>
@@ -350,15 +344,14 @@ export default async function LessonPlayer({
                 </p>
               ) : questions.length === 0 ? (
                 <EmptyState title="This quiz has no questions yet">
-                  Nothing to answer here for now — it has not been written yet. Carry on to the
-                  next lesson; this one will not hold up your certificate.
+                  Nothing to answer here for now — it has not been written yet. Carry on to the next
+                  lesson; this one will not hold up your certificate.
                 </EmptyState>
               ) : !enrollmentId ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted">
-                    These are the questions as a learner sees them. Answers
-                    can&apos;t be submitted in a preview — an attempt needs an enrolment to
-                    record against.
+                    These are the questions as a learner sees them. Answers can&apos;t be submitted
+                    in a preview — an attempt needs an enrolment to record against.
                   </p>
                   <ol className="list-decimal space-y-3 pl-5">
                     {questions.map((q) => (

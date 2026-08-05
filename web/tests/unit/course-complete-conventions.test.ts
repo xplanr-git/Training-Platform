@@ -65,9 +65,10 @@ describe('the acknowledgement does not pre-empt the blocked wording decision', (
   it('claims no designation or tier', () => {
     const claims = ['Certified', 'Outdure Trained', 'now Trained', 'Verified Contractor'];
     const found = claims.filter((c) => PANEL.includes(c));
-    expect(found, `remove designation wording until the owner decides: ${found.join(', ')}`).toEqual(
-      [],
-    );
+    expect(
+      found,
+      `remove designation wording until the owner decides: ${found.join(', ')}`,
+    ).toEqual([]);
   });
 });
 

@@ -62,7 +62,10 @@ describe('all four admin tables are the same component family', () => {
     const root = /<div className="([^"]*bg-surface-muted[^"]*)">/.exec(
       read('src/components/admin-shell.tsx'),
     );
-    expect(root, 'the shell root is no longer grey, so the tables may not need a fill').not.toBeNull();
+    expect(
+      root,
+      'the shell root is no longer grey, so the tables may not need a fill',
+    ).not.toBeNull();
   });
 
   it('status columns use Badge, not a bespoke pill', () => {
@@ -148,10 +151,9 @@ describe('state is never conveyed by colour alone (WCAG 1.4.1)', () => {
     ]) {
       const src = read(f);
       for (const m of src.matchAll(/className="text-destructive([^"]*)"/g)) {
-        expect(
-          m[1],
-          `${f}: text-destructive needs hover:text-destructive beside it`,
-        ).toContain('hover:text-destructive');
+        expect(m[1], `${f}: text-destructive needs hover:text-destructive beside it`).toContain(
+          'hover:text-destructive',
+        );
       }
     }
   });

@@ -48,7 +48,9 @@ export function videoUnavailableReason(
   if (videoId && provider === 'bunny') {
     // A Bunny id with a configured host should have played. Say so plainly instead
     // of blaming configuration that is in fact fine.
-    return opts.hostConfigured ? { reason: 'unexpected' } : { reason: 'host-not-configured', videoId };
+    return opts.hostConfigured
+      ? { reason: 'unexpected' }
+      : { reason: 'host-not-configured', videoId };
   }
   // A stale legacy link is checked AFTER the hosted video: lessons migrated off
   // YouTube can carry both, and the hosted id is the real source.

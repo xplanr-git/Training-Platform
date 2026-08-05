@@ -62,9 +62,7 @@ export function parseCorrectIndices(
     }
     const oneBased = Number(token);
     if (oneBased < 1 || oneBased > optionCount) {
-      throw new Error(
-        `There is no option ${oneBased} — this question has ${optionCount}.`,
-      );
+      throw new Error(`There is no option ${oneBased} — this question has ${optionCount}.`);
     }
     indices.push(oneBased - 1);
   }
