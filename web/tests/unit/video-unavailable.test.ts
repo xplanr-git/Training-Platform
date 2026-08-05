@@ -96,22 +96,31 @@ describe('the player uses it correctly', () => {
   ).replace(/\r\n/g, '\n');
 
   it('the fallback branch can never render nothing', () => {
-    // `unavailable` is computed for every video lesson rather than only unplayable
-    // ones. Gating it on a second copy of the playability conditions would let the
-    // two drift, and the failure mode of that drift is an empty space where the
-    // player belongs — worse than the bare line this replaced.
-    const decl = /const unavailable =([\s\S]{0,220}?);\n/.exec(PAGE);
-    expect(decl, 'could not find the `unavailable` declaration').not.toBeNull();
-    const expr = decl?.[1] ?? '';
-    expect(expr, 'it must depend on the lesson type').toContain("lesson.type === 'video'");
-    expect(expr, 'and on nothing else — a second playability check could drift').not.toMatch(
-      /playable|bunnyLibraryId\(\) &&|youtubeEmbed/,
+    /*
+     * The guarantee is now structural rather than defensive. The player switches on a
+     * single discriminated union from resolveVideoSource, so the last branch IS the
+     * unavailable case — not a `: null`. Previously this was two separate decisions (a
+     * JSX ternary and a `playable` const) whose drift would leave an empty space where
+     * the player belongs; that shape can no longer be written.
+     */
+    expect(PAGE, 'the player must resolve one source').toMatch(/const source =/);
+    expect(PAGE).toMatch(/resolveVideoSource\(content, \{ libraryId:/);
+    const block = PAGE.slice(PAGE.indexOf("{lesson.type === 'video' &&"));
+    const videoBranch = block.slice(0, block.indexOf('))}') + 3);
+    expect(videoBranch, 'the final branch must render the component, not null').toMatch(
+      /\) : \([\s\S]{0,200}<VideoUnavailable/,
+    );
+    expect(videoBranch, 'a `: null` fallback is exactly the hole this removed').not.toMatch(
+      /: null\)\}/,
+    );
+    expect(videoBranch, 'no second playability check beside the switch').not.toMatch(
+      /bunnyLibraryId\(\) &&|youtubeEmbed\(/,
     );
   });
 
   it('logs a fault so a missing env var is findable in production', () => {
     // The backlog complaint was "nothing logged and no way to diagnose".
-    expect(PAGE).toMatch(/isVideoFault\(unavailable\)/);
+    expect(PAGE).toMatch(/isVideoFault\(source\.unavailable\)/);
     expect(PAGE).toMatch(/console\.error\('\[video unavailable\]'/);
     // Enough context to find the lesson without guessing.
     const log = PAGE.slice(PAGE.indexOf("console.error('[video unavailable]'"));
@@ -121,9 +130,16 @@ describe('the player uses it correctly', () => {
   });
 
   it('does not log the normal mid-authoring state', () => {
-    // A lesson awaiting its video is an ordinary state on a course being built. If
-    // it logged, the signal for the real faults would be buried.
-    expect(PAGE).toMatch(/!playable && isVideoFault\(unavailable\)/);
+    /*
+     * A lesson awaiting its video is an ordinary state on a course being built; if it
+     * logged, the signal for real faults would be buried. This used to need an explicit
+     * `!playable &&` gate. It no longer does: the log is reached only when
+     * `source.kind === 'unavailable'`, which by construction excludes anything playable,
+     * and isVideoFault() then excludes not-attached.
+     */
+    expect(PAGE).toMatch(
+      /source\?\.kind === 'unavailable' && isVideoFault\(source\.unavailable\)/,
+    );
   });
 
   it('renders the component rather than a bare line', () => {

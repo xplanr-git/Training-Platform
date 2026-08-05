@@ -229,15 +229,16 @@ regress; committed and pushed to both remotes.
       is deliberately kept: the field's own boundary darkening is a different signal,
       not a duplicate.
 
-- [ ] **The lesson player decides playability twice.** The JSX ternary checks
-      `hosted?.provider === 'bunny' && env.bunnyLibraryId()` and then
-      `youtubeEmbed(...)`; a `playable` const beside it repeats the same
-      conditions for the logging gate. A single `resolveVideoSource(content, …)`
-      returning bunny | youtube | unavailable would remove the duplication and let
-      the player switch on one value. NOT done in the same pass because it means
-      restructuring the working playback branches, and there is no way to verify
-      playback without an authenticated session — the drift hazard it creates
-      (a blank space where the player belongs) is meanwhile closed by a test.
+- [x] **The lesson player decides playability twice.** Now once:
+      `resolveVideoSource(content, { libraryId })` in `lib/video-source.ts` returns a
+      discriminated union — bunny | youtube | unavailable — and the JSX switches on
+      `kind`. The `playable` const and the duplicated conditions are gone, and so is
+      the `: null` fallback: the branches are exhaustive by construction, so the "empty
+      space where the player belongs" hazard cannot be written any more. Kept free of
+      `env` and of `lib/video.ts` (which imports React's `cache` and so cannot be
+      unit-tested), which is what made 14 behavioural tests possible. Deferred
+      originally as unverifiable — it is pure logic, so exhaustive unit tests are better
+      evidence than a browser check.
 
 - [ ] **No prettier config in the repo.** `npx prettier --write` therefore uses
       prettier's defaults, which are double quotes — it reformatted a whole file
@@ -263,7 +264,11 @@ regress; committed and pushed to both remotes.
 - [ ] **Friendlier correct-answer picker.** Right answers are typed as numbers
       ("2", or "1,3"). Error-prone for whoever writes quizzes.
 - [ ] **Retire the legacy YouTube renderer** once no lesson content holds a
-      `youtubeUrl`. Check the database before removing.
+      `youtubeUrl`. CHECKED 2026-08-05: of 3 video lessons, 1 still holds a
+      `youtubeUrl` and 2 are Bunny-hosted; none hold both. So the branch is live and
+      cannot be removed yet — migrating that one lesson to Bunny is the blocker, and it
+      is the same lesson flagged for migration earlier. The renderer now lives behind
+      `resolveVideoSource`, so retiring it is deleting one branch of a tested union.
 
 ## 5. Blocked — needs a decision from the account owner
 
@@ -598,3 +603,21 @@ Newest first. One line per completed item: what changed, and the commit.
   checkbox each show a single 2px brand-500 outline and no ring bands; fields keep the
   border-darkening signal. NOT verified: the admin routes as served, and no screen
   reader was run.
+- One playability decision. The player tested the same two conditions in two places —
+  a JSX ternary and a `playable` const — and I had patched around the drift risk with a
+  test rather than removing it. `resolveVideoSource` now returns a discriminated union
+  and the JSX switches on `kind`, which makes the branches exhaustive: the `: null`
+  fallback that was the actual hazard no longer has anywhere to live.
+  The item was parked as "no way to verify playback without a session". That framing was
+  wrong about what needed verifying — the decision is pure logic, so 14 unit tests state
+  every case outright, including the one that matters most: a lesson carrying BOTH a
+  Bunny id and a stale youtubeUrl must report host-not-configured rather than quietly
+  playing the YouTube copy, because the YouTube path records no progress at all and a
+  learner would finish a lesson the platform has no evidence of.
+  Three older guards had to be rewritten, not relaxed — they were pinned to the shape
+  being removed (`const unavailable`, `!playable &&`), while the invariants they protect
+  now hold structurally. All eight guards proven red.
+  Also checked the database while here, which answers the next item: 1 of 3 video
+  lessons still holds a youtubeUrl, so the legacy branch is live and cannot be retired.
+  NOT verified: actual playback. No session, so no video was played in a browser — the
+  logic is tested exhaustively, the rendering is not.

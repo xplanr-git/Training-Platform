@@ -36,7 +36,8 @@ import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { BunnyVideoPlayer } from '@/components/bunny-video-player';
 import { hostedVideoFromContent } from '@/lib/video';
-import { videoUnavailableReason, isVideoFault } from '@/lib/video-availability';
+import { isVideoFault } from '@/lib/video-availability';
+import { resolveVideoSource } from '@/lib/video-source';
 import { env } from '@/lib/env';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -48,20 +49,6 @@ const LESSON_ICON: Record<string, typeof Video> = {
   quiz: HelpCircle,
   text: BookOpen,
 };
-
-/**
- * LEGACY playback only. Video lessons are authored through Bunny; the builder
- * has no YouTube field. This exists so already-published YouTube lessons keep
- * playing until they are migrated. Such lessons emit NO progress events, so they
- * have no resume position and never appear in Insights' watch-time table.
- * Remove this once no lesson content holds a youtubeUrl.
- */
-function youtubeEmbed(url: string): string | null {
-  const m = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/,
-  );
-  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
-}
 
 function loadQuestions(quizId: string) {
   return db
@@ -133,27 +120,23 @@ export default async function LessonPlayer({
   const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
   const hosted = hostedVideoFromContent(content);
 
-  // Why a video lesson has nothing to play. Computed for every video lesson so the
-  // fallback can say something specific, and logged when it is a deployment or data
-  // fault rather than the author simply not having attached a video yet — that
-  // distinction is the whole point, and previously nothing was logged at all, so a
-  // missing BUNNY_LIBRARY_ID was invisible in production.
-  //
-  // Computed for EVERY video lesson, not just unplayable ones, so the fallback
-  // branch below always has something to render. Gating it on a second copy of the
-  // playability conditions would mean the JSX and this could drift, and the failure
-  // mode of that drift is rendering nothing at all — worse than the bare line this
-  // replaces. Logging is what gets gated instead.
-  const unavailable =
+  // ONE decision about what this lesson plays. It used to be made twice — a JSX
+  // ternary testing the Bunny id and library, and a `playable` const beside it
+  // repeating the same conditions for the logging gate. The branches below switch on
+  // `kind`, so they are exhaustive by construction and there is no path that renders
+  // nothing.
+  const source =
     lesson.type === 'video'
-      ? videoUnavailableReason(content, { hostConfigured: !!env.bunnyLibraryId() })
+      ? resolveVideoSource(content, { libraryId: env.bunnyLibraryId() ?? null })
       : null;
-  const playable =
-    (hosted?.provider === 'bunny' && env.bunnyLibraryId()) ||
-    youtubeEmbed(content.youtubeUrl ?? '');
-  if (unavailable && !playable && isVideoFault(unavailable)) {
+
+  // Logged when it is a deployment or data fault rather than the author simply not
+  // having attached a video yet. That distinction is the point: previously nothing was
+  // logged at all, so a missing BUNNY_LIBRARY_ID was invisible in production.
+  if (source?.kind === 'unavailable' && isVideoFault(source.unavailable)) {
+
     console.error('[video unavailable]', {
-      reason: unavailable.reason,
+      reason: source.unavailable.reason,
       lessonId: lesson.id,
       courseId: course.id,
       tenantId: ctx.tenantId,
@@ -289,11 +272,12 @@ export default async function LessonPlayer({
             </div>
           )}
           {lesson.type === 'video' &&
-            (hosted?.provider === 'bunny' && env.bunnyLibraryId() ? (
+            source &&
+            (source.kind === 'bunny' ? (
               enrollmentId ? (
                 <BunnyVideoPlayer
-                  libraryId={env.bunnyLibraryId()!}
-                  videoId={hosted.videoId}
+                  libraryId={source.libraryId}
+                  videoId={source.videoId}
                   enrollmentId={enrollmentId}
                   lessonId={lesson.id}
                   resumeAtSec={resumeAtSec}
@@ -304,7 +288,7 @@ export default async function LessonPlayer({
                    write watch time into the academy's analytics. */
                 <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
                   <iframe
-                    src={`https://iframe.mediadelivery.net/embed/${env.bunnyLibraryId()}/${hosted.videoId}`}
+                    src={`https://iframe.mediadelivery.net/embed/${source.libraryId}/${source.videoId}`}
                     className="h-full w-full"
                     allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                     allowFullScreen
@@ -312,22 +296,22 @@ export default async function LessonPlayer({
                   />
                 </div>
               )
-            ) : youtubeEmbed(content.youtubeUrl ?? '') ? (
+            ) : source.kind === 'youtube' ? (
               <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
                 <iframe
-                  src={youtubeEmbed(content.youtubeUrl ?? '')!}
+                  src={source.embedUrl}
                   className="h-full w-full"
                   allowFullScreen
                   title={lesson.title}
                 />
               </div>
-            ) : unavailable ? (
+            ) : (
               <VideoUnavailable
-                unavailable={unavailable}
+                unavailable={source.unavailable}
                 isPreview={isPreview}
                 builderHref={`/admin/courses/${course.id}/builder`}
               />
-            ) : null)}
+            ))}
           {lesson.type === 'pdf' &&
             (pdfUrl ? (
               <div>
