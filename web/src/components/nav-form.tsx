@@ -28,7 +28,7 @@ function friendly(message: string): string {
     return "You don't have permission to do that.";
   }
   if (message.includes('TENANT_INACTIVE')) {
-    return 'This academy is not currently active. Please contact support.';
+    return 'This academy is switched off, so nothing can be saved. Contact Outdure to switch it back on.';
   }
   if (message.includes('TENANT_MISMATCH') || message.includes('TENANT_NOT_FOUND')) {
     return 'That academy could not be found.';

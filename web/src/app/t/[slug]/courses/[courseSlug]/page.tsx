@@ -142,7 +142,7 @@ export default async function CourseLanding({
       {isPreview && (
         <div className="mb-6 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <b>Draft preview.</b> This course is not published, so only administrators of
-          this academy can see this page. Learners get a 404.
+          this academy can see this page. Learners cannot see it at all.
         </div>
       )}
       <BackLink href="/">All courses</BackLink>
@@ -209,7 +209,7 @@ export default async function CourseLanding({
         ) : !ctx ? (
           <Button asChild size="lg">
             <Link href={`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`}>
-              Sign in to enroll
+              Sign in to enrol
             </Link>
           </Button>
         ) : isAdmin ? (
@@ -224,7 +224,7 @@ export default async function CourseLanding({
             {!isPreview && (
               <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
                 <Button type="submit" size="lg" variant="outline">
-                  Enroll for real
+                  Enrol as a learner
                 </Button>
               </NavForm>
             )}
@@ -232,7 +232,7 @@ export default async function CourseLanding({
         ) : (
           <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
             <Button type="submit" size="lg">
-              Enroll for free
+              Enrol for free
             </Button>
           </NavForm>
         )}

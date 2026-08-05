@@ -200,7 +200,7 @@ export function VideoUpload({
 
       {/* 2. Pull from a URL. */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2.5">
-        <span className="text-xs text-muted">or ingest from a URL</span>
+        <span className="text-xs text-muted">or import from a link</span>
         <Input
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}
@@ -221,13 +221,13 @@ export function VideoUpload({
             })
           }
         >
-          {pending ? 'Ingesting…' : 'Ingest'}
+          {pending ? 'Importing…' : 'Import'}
         </Button>
       </div>
 
       {/* 3. Attach an existing library id. */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted">or attach an existing id</span>
+        <span className="text-xs text-muted">or attach a video already in Bunny</span>
         <Input
           value={videoId}
           onChange={(e) => setVideoId(e.target.value)}

@@ -20,14 +20,14 @@ export async function enrollFree(
 ) {
   const ctx = await getTenantContext();
   if (!ctx) redirect(`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`);
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  if (!ctx.tenantId) throw new Error('Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.');
 
   const [course] = await db
     .select({ id: courses.id, status: courses.status, title: courses.title })
     .from(courses)
     .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
     .limit(1);
-  if (!course || course.status !== 'published') throw new Error('Course not available');
+  if (!course || course.status !== 'published') throw new Error('This course is not open for enrolment. Nothing is wrong at your end — go back and refresh the course list.');
 
   const [existing] = await db
     .select({ id: enrollments.id })
@@ -85,7 +85,10 @@ export async function startCoursePurchase(
 ) {
   const ctx = await getTenantContext();
   if (!ctx) redirect(`/login?next=${encodeURIComponent(`/courses/${courseSlug}`)}`);
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  if (!ctx.tenantId)
+    throw new Error(
+      'Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.',
+    );
 
   const [course] = await db
     .select({

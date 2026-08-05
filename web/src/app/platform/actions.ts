@@ -12,7 +12,7 @@ type TenantStatus = 'trial' | 'active' | 'past_due' | 'suspended' | 'cancelled';
  */
 export async function setTenantStatus(tenantId: string, status: TenantStatus) {
   const ctx = await getTenantContext();
-  if (ctx?.role !== 'platform_admin') throw new Error('Forbidden');
+  if (ctx?.role !== 'platform_admin') throw new Error('FORBIDDEN');
 
   await db.transaction(async (tx) => {
     const [before] = await tx
@@ -25,7 +25,7 @@ export async function setTenantStatus(tenantId: string, status: TenantStatus) {
       .set({ status, updatedAt: new Date() })
       .where(eq(tenants.id, tenantId))
       .returning();
-    if (!after) throw new Error('Tenant not found');
+    if (!after) throw new Error('That academy could not be found.');
 
     await audited(tx, {
       tenantId,

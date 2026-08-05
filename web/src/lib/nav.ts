@@ -47,7 +47,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       live('courses', 'Courses', '/courses'),
       live('certificates', 'Certificates', '/certificates'),
-      gated('review-center', 'Review Center'),
+      gated('review-center', 'Review Centre'),
       gated('question-banks', 'Question Banks'),
       gated('gradebook', 'Gradebook'),
     ],
@@ -100,7 +100,7 @@ export const ADMIN_NAV: NavGroup[] = [
     id: 'marketing',
     label: 'Marketing',
     items: [
-      gated('affiliate-program', 'Affiliate Program'),
+      gated('affiliate-program', 'Affiliate Programme'),
       gated('marketing-forms', 'Marketing Forms'),
       gated('nps', 'NPS'),
     ],
@@ -128,7 +128,7 @@ export const ADMIN_NAV: NavGroup[] = [
     id: 'settings',
     label: 'Settings',
     items: [
-      live('school', 'School Settings', '/settings'),
+      live('school', 'Academy Settings', '/settings'),
       live('team', 'Team Management', '/people'),
       gated('billing-settings', 'Billing'),
       gated('security', 'Security'),

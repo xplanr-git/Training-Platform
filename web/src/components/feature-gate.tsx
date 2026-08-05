@@ -17,8 +17,8 @@ export function FeatureGate({ feature }: { feature: string }) {
       */}
       <h1 className="text-xl font-semibold">{feature}</h1>
       <p className="max-w-sm text-sm text-muted">
-        This is on the roadmap and not part of the current release. Contact us if
-        it&apos;s a priority for your academy.
+        This part of the academy is not built yet. If you need it, tell whoever looks after
+        this platform.
       </p>
     </div>
   );

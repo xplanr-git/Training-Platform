@@ -118,12 +118,12 @@ export default async function Analytics({
   const passedAttempts = Number(passed.n);
 
   const metrics = [
-    { label: 'Enrollments', value: totalEnr },
+    { label: 'Enrolments', value: totalEnr },
     { label: 'Completions', value: completed },
     { label: 'Completion rate', value: `${pct(completed, totalEnr)}%` },
     { label: 'Learners', value: Number(learners.n) },
     { label: 'Active (30d)', value: Number(active.n) },
-    { label: 'New enrollments (30d)', value: Number(recent.n) },
+    { label: 'New enrolments (30d)', value: Number(recent.n) },
     { label: 'Quiz attempts', value: totalAttempts },
     { label: 'Quiz pass rate', value: `${pct(passedAttempts, totalAttempts)}%` },
   ];

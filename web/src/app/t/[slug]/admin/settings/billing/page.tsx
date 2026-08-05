@@ -4,6 +4,23 @@ import { PLANS } from '@/lib/stripe';
 import { startSubscriptionCheckout, openBillingPortal } from './actions';
 import { NavForm } from '@/components/nav-form';
 
+/**
+ * Stripe's own status vocabulary, which the webhook writes through verbatim. It was
+ * rendered with a bare `capitalize`, and that does not split on an underscore — so an
+ * academy whose payment had failed read "Status: Past_due". platform/page.tsx already
+ * carries a label map for exactly this reason.
+ */
+const SUBSCRIPTION_STATUS: Record<string, string> = {
+  trialing: 'Trial',
+  active: 'Active',
+  past_due: 'Payment overdue',
+  canceled: 'Cancelled',
+  incomplete: 'Payment not finished',
+  incomplete_expired: 'Payment not finished',
+  unpaid: 'Unpaid',
+  paused: 'Paused',
+};
+
 export default async function Billing({
   params,
 }: {
@@ -22,13 +39,13 @@ export default async function Billing({
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-semibold">Plans &amp; Billing</h1>
+      <h1 className="text-2xl font-semibold">Plans and billing</h1>
 
       {sub ? (
         <div className="mt-4 flex items-center justify-between rounded-(--radius-card) border border-border bg-surface p-5">
           <div>
             <p className="font-medium capitalize">{sub.planId} plan</p>
-            <p className="text-sm text-muted capitalize">Status: {sub.status}</p>
+            <p className="text-sm text-muted">Status: {SUBSCRIPTION_STATUS[sub.status] ?? sub.status}</p>
           </div>
           <NavForm action={openBillingPortal.bind(null, slug)}>
             <button className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted">

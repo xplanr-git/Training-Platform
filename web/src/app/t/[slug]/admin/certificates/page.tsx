@@ -117,7 +117,7 @@ export default async function Certificates({
                         </Button>
                       </NavForm>
                     ) : (
-                      <NavForm action={setCertificateRevoked.bind(null, slug, c.id, true)} className="inline" quiet confirm="Revoke this certificate? Its public verification page will show it as revoked.">
+                      <NavForm action={setCertificateRevoked.bind(null, slug, c.id, true)} className="inline" quiet confirm="Revoke this certificate? Its public verification page will show it as revoked. You can reinstate it from this page.">
                         <Button type="submit" variant="ghost" size="sm" className="text-destructive">
                           Revoke
                         </Button>

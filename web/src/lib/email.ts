@@ -127,7 +127,7 @@ export async function sendCertificateEmail(
   await send(
     to,
     `Your certificate for ${courseTitle}`,
-    layout(`<h2>Congratulations!</h2>
+    layout(`<h2>Your certificate is ready</h2>
       <p>You've completed <strong>${course}</strong> and earned a certificate.</p>
       <p><a href="${escapeHtml(verifyUrl)}">View &amp; verify your certificate →</a></p>`),
   );

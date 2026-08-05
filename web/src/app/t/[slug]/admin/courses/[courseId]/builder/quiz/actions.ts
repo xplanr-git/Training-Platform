@@ -88,7 +88,7 @@ export async function addQuestion(
   }
 
   if (options.length < 2) throw new Error('Provide at least two options');
-  if (correct.length < 1) throw new Error('Mark at least one correct option');
+  if (correct.length < 1) throw new Error('Enter the number of the correct option — 2 for the second one, or 1,3 for two of them.');
 
   // Verify the quiz belongs to this tenant before writing to it (Drizzle
   // bypasses RLS — otherwise a forged quizId could inject into another
@@ -98,7 +98,7 @@ export async function addQuestion(
     .from(quizzes)
     .where(and(eq(quizzes.id, quizId), eq(quizzes.tenantId, ctx.tenantId)))
     .limit(1);
-  if (!owned) throw new Error('Quiz not found');
+  if (!owned) throw new Error('That quiz no longer exists. Reload the page.');
 
   const existing = await db
     .select({ position: quizQuestions.position })

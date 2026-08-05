@@ -18,6 +18,26 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
+/**
+ * Supabase's wording, in our voice and with a way forward. "Invalid login
+ * credentials" is accurate, anonymous and tells nobody what to do next — and this is
+ * the most-used screen in the product. Unknown messages fall through to a neutral
+ * line rather than leaking a provider string.
+ */
+function signInMessage(raw: string): string {
+  const m = raw.toLowerCase();
+  if (m.includes('invalid login credentials')) {
+    return 'That email and password do not match. Check them, or use “Forgot password?” to set a new one.';
+  }
+  if (m.includes('email not confirmed')) {
+    return 'You have not opened the link in your invitation email yet. Open it, set a password, then sign in.';
+  }
+  if (m.includes('rate limit') || m.includes('too many')) {
+    return 'Too many attempts. Wait a minute, then try again.';
+  }
+  return 'We could not sign you in. Try again in a moment.';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -33,7 +53,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(signInMessage(error.message));
       return;
     }
     // An invited member has now proven control of their email — mark active.

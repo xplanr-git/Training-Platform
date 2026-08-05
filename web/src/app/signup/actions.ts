@@ -53,7 +53,7 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
     .where(eq(tenants.slug, slug))
     .limit(1);
   if (existing.length > 0) {
-    return { ok: false, error: `The subdomain "${slug}" is taken.` };
+    return { ok: false, error: `The web address “${slug}” is already taken. Edit it and try again.` };
   }
 
   const admin = createAdminClient();
@@ -64,7 +64,7 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
     user_metadata: { name },
   });
   if (authError || !created.user) {
-    return { ok: false, error: authError?.message ?? 'Could not create account.' };
+    return { ok: false, error: authError?.message ?? 'Could not create your account. That email may already have one — try signing in instead.' };
   }
   const userId = created.user.id;
 
@@ -114,7 +114,7 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
   } catch (e) {
     // Roll back the orphaned auth user so the email can be retried.
     await admin.auth.admin.deleteUser(userId).catch(() => {});
-    const message = e instanceof Error ? e.message : 'Provisioning failed.';
+    const message = e instanceof Error ? e.message : 'Your academy could not be set up. Nothing was saved, so it is safe to try again.';
     return { ok: false, error: message };
   }
 

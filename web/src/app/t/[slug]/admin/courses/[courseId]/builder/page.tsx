@@ -189,7 +189,7 @@ export default async function CourseBuilder({
                             type="submit"
                             variant="ghost"
                             size="icon"
-                            aria-label="Remove lesson"
+                            aria-label="Delete lesson"
                             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -295,7 +295,8 @@ export default async function CourseBuilder({
                                 {attachedId && !details && (
                                   <p className="mb-3 text-xs text-amber-700">
                                     A video is attached ({attachedId}) but its details
-                                    could not be read from Bunny just now.
+                                    could not be read from Bunny just now. Reload the
+                                    page to try again — the lesson itself is fine.
                                   </p>
                                 )}
                                 <VideoUpload
@@ -353,7 +354,7 @@ export default async function CourseBuilder({
               <Input
                 name="url"
                 aria-label="PDF URL (used only by PDF lessons)"
-                placeholder="PDF URL (pdf)"
+                placeholder="PDF URL"
                 className="w-40"
               />
               <Input

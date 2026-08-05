@@ -62,7 +62,7 @@ export default async function CertificateTemplate({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tpl-accentcolor">Accent color</Label>
+          <Label htmlFor="tpl-accentcolor">Accent colour</Label>
           <Input
             id="tpl-accentcolor"
             name="accentColor"

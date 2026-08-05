@@ -94,7 +94,7 @@ export async function requireAdmin(): Promise<AdminContext> {
   const ctx = await getTenantContext();
   if (!ctx) throw new Error('UNAUTHENTICATED');
   if (!isAdminRole(ctx.role)) throw new Error('FORBIDDEN');
-  if (!ctx.tenantId) throw new Error('No tenant context');
+  if (!ctx.tenantId) throw new Error('TENANT_NOT_FOUND');
   await assertTenantActive(ctx.tenantId);
   return { ...ctx, tenantId: ctx.tenantId };
 }

@@ -285,7 +285,7 @@ export default async function LessonPlayer({
         <div className="mt-6">
           {lesson.type === 'text' && (
             <div className="whitespace-pre-line leading-relaxed text-neutral-700">
-              {content.body || 'No content.'}
+              {content.body || 'Nothing has been written into this lesson yet. Carry on to the next one — it will not hold up your certificate.'}
             </div>
           )}
           {lesson.type === 'video' &&
@@ -344,7 +344,7 @@ export default async function LessonPlayer({
                 </a>
               </div>
             ) : (
-              <p className="text-muted">No PDF attached.</p>
+              <p className="text-muted">There is no PDF on this lesson yet. Carry on to the next one — it will not hold up your certificate.</p>
             ))}
           {isQuiz && (
             <div>
@@ -357,7 +357,7 @@ export default async function LessonPlayer({
                       : 'border-amber-200 bg-amber-50 text-amber-800',
                   )}
                 >
-                  You scored {score}%. {passed === '1' ? 'Passed!' : 'Not passed — try again.'}
+                  You scored {score}%. {passed === '1' ? 'Passed.' : 'Not passed — try again.'}
                 </p>
               )}
               {done ? (
@@ -372,7 +372,7 @@ export default async function LessonPlayer({
               ) : !enrollmentId ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted">
-                    The questions below are shown as a dealer will see them. Answers
+                    These are the questions as a learner sees them. Answers
                     can&apos;t be submitted in a preview — an attempt needs an enrolment to
                     record against.
                   </p>

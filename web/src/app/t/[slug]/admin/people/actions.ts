@@ -82,7 +82,7 @@ export async function inviteMember(
       options: { redirectTo: absoluteUrl('/auth/confirm') },
     });
     if (error || !data.user) {
-      return { ok: false, error: error?.message ?? 'Could not invite user' };
+      return { ok: false, error: error?.message ?? 'Could not create an account for that email. Check it for typos, then try again.' };
     }
     userId = data.user.id;
 
@@ -174,7 +174,7 @@ export async function setMemberRole(
         and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId!)),
       )
       .returning();
-    if (!after) throw new Error('Membership not found');
+    if (!after) throw new Error('That person is no longer in this academy. Reload the page.');
     await audited(tx, {
       tenantId: ctx.tenantId,
       actorUserId: ctx.userId,
@@ -203,7 +203,7 @@ export async function setMemberStatus(
     .where(and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId)))
     .limit(1);
   if (target?.userId === ctx.userId && nextStatus === 'deactivated') {
-    throw new Error('You cannot deactivate your own membership.');
+    throw new Error('You cannot deactivate yourself. Ask another admin to do it for you.');
   }
 
   await db.transaction(async (tx) => {

@@ -157,7 +157,7 @@ export default async function People({
                           </Button>
                         </NavForm>
                       )}
-                      <NavForm action={setMemberStatus.bind(null, slug, m.id, 'deactivated')} className="inline" quiet confirm="Deactivate this member? They lose access immediately.">
+                      <NavForm action={setMemberStatus.bind(null, slug, m.id, 'deactivated')} className="inline" quiet confirm="Deactivate this member? They lose access immediately. Their progress and certificates are kept, and you can reactivate them here.">
                         <Button type="submit" variant="ghost" size="sm" className="text-muted">
                           Deactivate
                         </Button>

@@ -52,14 +52,14 @@ export async function startVideoUpload(
     .from(lessons)
     .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
     .limit(1);
-  if (!lesson) return { error: 'Lesson not found.' };
+  if (!lesson) return { error: 'That lesson no longer exists. Reload the builder.' };
 
   try {
     const ticket = await createBunnyTusTicket(title);
     return { ticket };
   } catch (e) {
     console.error('startVideoUpload failed:', e);
-    return { error: 'Could not prepare the upload at Bunny.' };
+    return { error: 'Bunny would not accept a new upload. Try again in a minute; if it persists, check the Bunny keys.' };
   }
 }
 
@@ -84,7 +84,7 @@ export async function attachBunnyFromUrl(
     return { error: 'Enter a valid http(s) URL.' };
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return { error: 'Only http(s) URLs are supported.' };
+    return { error: 'The link must start with http:// or https://.' };
   }
   try {
     const { videoId } = await createBunnyVideo(title);
@@ -94,7 +94,7 @@ export async function attachBunnyFromUrl(
     return { videoId };
   } catch (e) {
     console.error('attachBunnyFromUrl failed:', e);
-    return { error: 'Could not ingest the video at Bunny.' };
+    return { error: 'Bunny could not fetch that video. Check the link opens in a browser and points at a video file.' };
   }
 }
 
@@ -121,7 +121,7 @@ export async function attachVideo(
     details = await getBunnyVideo(id);
   } catch (e) {
     console.error('attachVideo lookup failed:', e);
-    return { error: 'Could not reach the video provider.' };
+    return { error: 'Could not reach Bunny to check that video. Try again in a minute.' };
   }
   if (!details) return { error: `No video found with id “${id}”.` };
 

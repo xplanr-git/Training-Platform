@@ -120,7 +120,7 @@ export default async function EditCourse({
         <h2 className="text-sm font-medium text-destructive">Danger zone</h2>
         <p className="mt-1 text-sm text-muted">
           Permanently delete this course and all its sections, lessons, quizzes, and
-          enrollments. This cannot be undone.
+          enrolments. This cannot be undone.
         </p>
         <NavForm
           action={deleteCourse.bind(null, slug, courseId)}

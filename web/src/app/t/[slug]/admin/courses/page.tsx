@@ -138,7 +138,7 @@ export default async function CoursesList({
                       <NavForm
                         action={setCourseStatus.bind(null, slug, c.id, 'archived')}
                         className="inline"
-            quiet confirm="Archive this course? Learners will no longer see it."
+            quiet confirm="Archive this course? Learners will no longer see it in the catalogue. Nothing is deleted, and you can publish it again from here."
           >
                         <Button type="submit" variant="ghost" size="sm">
                           Archive

@@ -284,7 +284,7 @@ export async function submitQuizAttempt(
     .where(and(eq(quizzes.id, quizId), eq(quizzes.tenantId, ctx.tenantId)))
     .limit(1);
   // The quiz must be the one attached to this lesson.
-  if (!quiz || quiz.lessonId !== lessonId) throw new Error('Quiz not found for this lesson');
+  if (!quiz || quiz.lessonId !== lessonId) throw new Error('This quiz has changed since you opened it. Reload the page and answer it again — your progress is safe.');
   const threshold = (quiz.settings as { passThreshold?: number })?.passThreshold ?? 70;
 
   const questions = await db

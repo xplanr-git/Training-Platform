@@ -177,9 +177,18 @@ regress; committed and pushed to both remotes.
       `dark:` variants with no dark theme, and v4's `dark:` defaults to
       prefers-color-scheme, so dark-preferring machines got half a dark theme — now
       class-based, plus `color-scheme: light`.
-- [ ] **Copy pass.** Buttons that say what happens, errors that say how to fix
-      it, no internal vocabulary leaking into the UI. Use the `design:ux-copy`
-      skill.
+- [x] **Copy pass.** Audited by concern with an adversarial refuter (75 findings
+      confirmed of ~140 reported) plus my own extraction of every button label,
+      confirmation and thrown error. Fixed: "School Settings" (LearnWorlds
+      vocabulary, directly above a subtitle saying "academy"); "Enroll for real",
+      a developer shorthand on the public course page, and American "Enroll"
+      throughout; raw Stripe `past_due` rendered as "Past_due" on the billing page;
+      Supabase's "Invalid login credentials" passed through verbatim on the
+      most-used screen; "No tenant context" reaching a learner under the enrol
+      button; "Please contact support" pointing at a support channel that does not
+      exist anywhere in the product; "ingest" as a button label; and ~20 errors
+      that said only that something failed. Four confirmations now name what is
+      lost and whether it can be undone.
 
 ## 4. Correctness items already identified
 
@@ -522,3 +531,27 @@ Newest first. One line per completed item: what changed, and the commit.
   NOT verified: the admin and player surfaces as served, still. And no screen reader
   was actually run — these are structural and computed checks, which is not the same
   as hearing what NVDA says.
+- Copy pass. The refuters were worth more here than on any previous item: they threw
+  out roughly half of what was reported, almost all of it padding a label that was
+  already clear in context, and they caught a constraint I would have walked into —
+  `friendly()` in nav-form.tsx passes a thrown message through only if it is UNDER 120
+  characters, so two of the proposed "more helpful" errors would have been swallowed
+  and shown as "Something went wrong." Every replacement is now length-checked, and a
+  guard fails the build if any thrown error crosses the line.
+  They also talked me out of a change I had queued: stripping the video id and vendor
+  name from a builder warning. Admins are given infrastructure detail deliberately
+  (video-unavailable.tsx documents the rule), so the id stays and only the missing
+  retry instruction was added.
+  Two findings came from my own guard rather than the audit, because the audit's
+  concerns did not cover email templates or a second occurrence: "Congratulations!"
+  in the certificate email (the only exclamation mark in the product), and a second
+  "No tenant context" I had missed on my first pass. The unreachable twin in
+  tenant.ts now throws the TENANT_NOT_FOUND sentinel that friendly() already maps,
+  rather than carrying prose nobody will read.
+  Twelve guards proven red. VERIFIED in a browser: "Sign in to enrol" on the real
+  course page with no American or internal words anywhere in the rendered text, and —
+  end to end against real auth — a deliberately failed sign-in now shows "That email
+  and password do not match. Check them, or use Forgot password? to set a new one."
+  in a role=alert, where it used to show Supabase's own wording.
+  NOT verified: the admin surfaces as served, still no session; and the email copy was
+  changed without sending one.

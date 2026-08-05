@@ -50,7 +50,7 @@ export default async function VerifyCertificate({
         <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center">
           <h1 className="text-xl font-semibold">Certificate not found</h1>
           <p className="mt-2 text-muted">
-            No certificate matches this code. It may be mistyped or revoked.
+            No certificate matches this code. Check it against the certificate — copying and pasting the whole link is surest.
           </p>
         </div>
       </main>

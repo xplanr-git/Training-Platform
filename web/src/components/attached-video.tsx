@@ -75,7 +75,7 @@ export function AttachedVideo({
         )}
         {!playable && (
           <p className="mt-1 text-xs text-muted">
-            Reload this page to check again — encoding continues at Bunny whether this
+            Reload this page to check again — the video keeps processing whether this
             page is open or not.
           </p>
         )}

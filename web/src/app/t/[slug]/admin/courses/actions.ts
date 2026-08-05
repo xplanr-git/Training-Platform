@@ -96,7 +96,7 @@ export async function updateCourse(
     .from(courses)
     .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
     .limit(1);
-  if (!before) throw new Error('Course not found');
+  if (!before) throw new Error('That course no longer exists. Go back to Courses and reload the list.');
 
   const title = String(formData.get('title') ?? before.title).trim();
   if (!title) throw new Error('Title is required');

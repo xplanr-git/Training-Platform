@@ -120,7 +120,7 @@ export default async function QuizEditor({
                         {QUESTION_TYPE_LABEL[q.type] ?? q.type}
                       </p>
                     </div>
-                    <NavForm action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)} quiet confirm="Delete this question?">
+                    <NavForm action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)} quiet confirm="Delete this question? Any answers learners have already given to it go too. This cannot be undone.">
                       <Button
                         type="submit"
                         variant="ghost"
