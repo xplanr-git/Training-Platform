@@ -135,7 +135,12 @@ export default async function CourseLanding({
     lessonsBySection.set(l.sectionId, arr);
   }
   const totalLessons = lessonRows.length;
-  const totalMinutes = lessonRows.reduce((sum, l) => sum + (l.estimatedMinutes ?? 0), 0);
+  // Estimates are optional per lesson, so this sum can cover only part of the
+  // course. Saying "about 30 min" for a five-lesson course where two are timed
+  // under-sells it with no hint that it is partial — hence the hedge below.
+  const timedLessons = lessonRows.filter((l) => (l.estimatedMinutes ?? 0) > 0);
+  const totalMinutes = timedLessons.reduce((sum, l) => sum + (l.estimatedMinutes ?? 0), 0);
+  const minutesArePartial = timedLessons.length > 0 && timedLessons.length < totalLessons;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
@@ -151,7 +156,9 @@ export default async function CourseLanding({
         {course.level && <Badge variant="secondary">{course.level}</Badge>}
         <span className="text-sm text-muted">
           {totalLessons} lesson{totalLessons === 1 ? '' : 's'}
-          {totalMinutes > 0 ? ` · about ${formatMinutes(totalMinutes)}` : ''}
+          {totalMinutes > 0
+            ? ` · ${minutesArePartial ? 'over' : 'about'} ${formatMinutes(totalMinutes)}`
+            : ''}
         </span>
       </div>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">{course.title}</h1>

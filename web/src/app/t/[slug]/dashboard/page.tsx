@@ -44,6 +44,7 @@ export default async function LearnerDashboard() {
         total: p.total,
         isComplete: p.isComplete,
         minutesLeft: p.minutesLeft,
+        minutesLeftIsPartial: p.minutesLeftIsPartial,
       };
     }),
   );
@@ -122,7 +123,7 @@ export default async function LearnerDashboard() {
                       <span className="shrink-0 text-xs text-muted tabular-nums">
                         {r.done}/{r.total} lessons
                         {!isDone && r.minutesLeft != null
-                          ? ` · about ${formatMinutes(r.minutesLeft)} left`
+                          ? ` · ${r.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(r.minutesLeft)} left`
                           : ''}
                       </span>
                     </div>

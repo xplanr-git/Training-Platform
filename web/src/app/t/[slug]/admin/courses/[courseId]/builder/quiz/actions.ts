@@ -10,6 +10,7 @@ import {
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { clampInt } from '@/lib/validation';
+import { parseCorrectIndices } from '@/lib/quiz';
 
 function revalidateQuiz(slug: string, courseId: string, lessonId: string) {
   revalidatePath(`/t/${slug}/admin/courses/${courseId}/builder/quiz/${lessonId}`);
@@ -73,22 +74,27 @@ export async function addQuestion(
 
   if (type === 'true_false') {
     options = ['True', 'False'];
-    correct = [Number(formData.get('correct_tf') ?? 0)];
+    // Guarded, not trusted: a crafted post used to store [NaN] here, which no
+    // answer can ever match.
+    const tf = Number(formData.get('correct_tf') ?? 0);
+    correct = [tf === 1 ? 1 : 0];
   } else {
     options = String(formData.get('options') ?? '')
       .split('\n')
       .map((o) => o.trim())
       .filter(Boolean);
-    // correct = comma-separated 1-based indices → 0-based, in range
-    correct = String(formData.get('correct') ?? '')
-      .split(',')
-      .map((n) => Number(n.trim()) - 1)
-      .filter((n) => Number.isInteger(n) && n >= 0 && n < options.length);
-    if (type === 'mcq' && correct.length > 1) correct = [correct[0]];
+    if (options.length < 2) throw new Error('Provide at least two options');
+    // getAll, so the option pickers can submit one value per checked box while a
+    // single comma-separated field still works: getAll(['1','3']) joins to '1,3',
+    // and get() would have returned only the first.
+    const raw = formData
+      .getAll('correct')
+      .map((v) => String(v))
+      .join(',');
+    // Throws on anything it cannot represent — see parseCorrectIndices for the
+    // three silent-corruption cases this replaces.
+    correct = parseCorrectIndices(raw, options.length, type);
   }
-
-  if (options.length < 2) throw new Error('Provide at least two options');
-  if (correct.length < 1) throw new Error('Enter the number of the correct option — 2 for the second one, or 1,3 for two of them.');
 
   // Verify the quiz belongs to this tenant before writing to it (Drizzle
   // bypasses RLS — otherwise a forged quizId could inject into another

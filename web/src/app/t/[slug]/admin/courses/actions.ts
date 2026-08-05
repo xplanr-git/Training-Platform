@@ -130,6 +130,19 @@ export async function updateCourse(
   revalidatePath(`/t/${tenantSlug}/admin/courses/${courseId}`);
 }
 
+/**
+ * Names one offending lesson and counts the rest.
+ *
+ * The length matters: these strings are thrown from a Server Action into
+ * NavForm, whose friendly() swaps anything 120 characters or longer for a
+ * generic apology. Joining every title made the message grow with the data
+ * until it silently stopped being shown at all.
+ */
+function nameFirst(rows: Array<{ title: string }>): string {
+  const first = `“${rows[0].title.slice(0, 40)}”`;
+  return rows.length === 1 ? first : `${first} and ${rows.length - 1} more`;
+}
+
 export async function setCourseStatus(
   tenantSlug: string,
   courseId: string,
@@ -166,11 +179,43 @@ export async function setCourseStatus(
     // No quizzes row at all is just as unfinishable as one with no questions.
     const empty = quizLessons.filter((q) => !q.quizId || Number(q.questions) === 0);
     if (empty.length > 0) {
-      const names = empty.map((l) => `“${l.title}”`).join(', ');
-      throw new Error(
-        `Add at least one question to ${names} before publishing — a quiz with no ` +
-          `questions cannot be passed, so learners could never finish the course.`,
+      // Kept short on purpose: NavForm's friendly() replaces anything 120
+      // characters or longer with a generic apology, and the previous wording was
+      // 143, so the explanation an admin needed never actually reached them.
+      throw new Error(`${nameFirst(empty)} has no questions, so it cannot be passed.`);
+    }
+
+    /*
+     * A question nobody can answer correctly is the same dead end as an empty
+     * quiz, and strict parsing on the way in cannot help the rows already
+     * written by the parser it replaced — which silently stored an out-of-range
+     * index as a dropped answer, and a duplicate as [1,1]. gradeQuiz compares
+     * option sets exactly, so both are unpassable.
+     */
+    const broken = await db
+      .select({ title: lessons.title })
+      .from(quizQuestions)
+      .innerJoin(quizzes, eq(quizzes.id, quizQuestions.quizId))
+      .innerJoin(lessons, eq(lessons.id, quizzes.lessonId))
+      .innerJoin(sections, eq(sections.id, lessons.sectionId))
+      .where(
+        and(
+          eq(sections.courseId, courseId),
+          eq(quizQuestions.tenantId, ctx.tenantId!),
+          sql`(
+            jsonb_array_length(${quizQuestions.correct}) = 0
+            or jsonb_array_length(${quizQuestions.correct}) <> (
+                 select count(distinct e.value)
+                 from jsonb_array_elements(${quizQuestions.correct}) e)
+            or exists (
+                 select 1 from jsonb_array_elements_text(${quizQuestions.correct}) c
+                 where c ~ '^[0-9]+$'
+                   and c::int >= jsonb_array_length(${quizQuestions.options}))
+          )`,
+        ),
       );
+    if (broken.length > 0) {
+      throw new Error(`${nameFirst(broken)} has a question no answer can pass.`);
     }
   }
 

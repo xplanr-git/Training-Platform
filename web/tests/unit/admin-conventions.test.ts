@@ -7,6 +7,10 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8').replace
 const BUILDER = 'src/app/t/[slug]/admin/courses/[courseId]/builder/page.tsx';
 const QUIZ = 'src/app/t/[slug]/admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx';
 const SHELL = 'src/components/admin-shell.tsx';
+// The quiz page's type/options/answer-key controls moved into this client
+// component when the answer key became a picker. Without it in the list below,
+// a nameless control there would ship green — the guard walked page files only.
+const ANSWER_FIELDS = 'src/components/quiz-answer-fields.tsx';
 
 describe('every control in the dense admin forms has a name that survives typing', () => {
   /*
@@ -20,6 +24,7 @@ describe('every control in the dense admin forms has a name that survives typing
   for (const [name, path] of [
     ['course builder', BUILDER],
     ['quiz builder', QUIZ],
+    ['quiz answer fields', ANSWER_FIELDS],
   ] as const) {
     it(`${name}: no Input, select or textarea is nameless`, () => {
       const src = read(path);
@@ -95,12 +100,23 @@ describe('the quiz builder does not describe behaviour it does not have', () => 
     expect(form).not.toMatch(/\brequired\b/);
   });
 
-  it('the two answer-key controls say which question types they apply to', () => {
-    // Both are rendered unconditionally and exactly one is ever read, so without
-    // this an author fills the wrong box and the question silently takes the other's
-    // answer.
-    expect(src).toMatch(/multiple choice only/);
-    expect(src).toMatch(/True \/ False only/);
+  it('only the answer-key control for the chosen type is rendered', () => {
+    /*
+     * This replaces a weaker guard. Both answer-key controls used to render
+     * unconditionally — a number box for multiple choice and a True/False select —
+     * with only one ever read, so the labels had to carry "— multiple choice only"
+     * and "— True / False only" to stop an author filling the wrong one and having
+     * the question silently take the other's answer.
+     *
+     * The picker branches on the type instead, so exactly one control exists at a
+     * time and the disambiguating suffixes are not just unnecessary but wrong:
+     * nothing is on screen to disambiguate from. Asserting the branch keeps that
+     * true; if both ever render again, the labels have to come back.
+     */
+    const fields = read(ANSWER_FIELDS);
+    expect(fields).toMatch(/type === 'true_false' \?/);
+    expect(src, 'the page no longer owns these controls').not.toMatch(/multiple choice only/);
+    expect(src).not.toMatch(/True \/ False only/);
   });
 });
 

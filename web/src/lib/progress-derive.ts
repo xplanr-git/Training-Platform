@@ -7,6 +7,17 @@ export interface CourseProgress {
   /** Minutes of author-estimated time left across incomplete lessons, or null
    *  when no remaining lesson carries an estimate. */
   minutesLeft: number | null;
+  /**
+   * True when `minutesLeft` covers only SOME of the remaining lessons, because
+   * the others carry no estimate. The real figure is therefore higher, so the UI
+   * must say "at least N min left" rather than "about N min left".
+   *
+   * Without this the number silently under-reports: three lessons left, one of
+   * them estimated at 20 minutes, and the learner is told "about 20 min left"
+   * for what is 20 minutes plus two lessons of unknown length. Always false when
+   * `minutesLeft` is null, so callers can ignore it on the fallback path.
+   */
+  minutesLeftIsPartial: boolean;
 }
 
 export interface LessonTiming {
@@ -45,6 +56,10 @@ export function deriveProgress(
   const minutesLeft = estimates.length
     ? estimates.reduce((sum, m) => sum + m, 0)
     : null;
+  // Compared against REMAINING, not total: a course whose finished lessons were
+  // the un-estimated ones is fully estimated from here on, and hedging there
+  // would under-sell a figure that is actually complete.
+  const minutesLeftIsPartial = estimates.length > 0 && estimates.length < remaining.length;
 
   return {
     completed,
@@ -53,6 +68,7 @@ export function deriveProgress(
     percent,
     isComplete: total > 0 && done >= total,
     minutesLeft,
+    minutesLeftIsPartial,
   };
 }
 

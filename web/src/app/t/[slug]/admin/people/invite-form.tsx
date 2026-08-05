@@ -40,7 +40,9 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
         <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="inv-name">Name</Label>
-            <Input id="inv-name" name="name" className="w-40" />
+            {/* Required: this is what prints on their certificate, and nothing in
+                the product can set it afterwards. The server enforces it too. */}
+            <Input id="inv-name" name="name" required className="w-40" />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="inv-email">Email</Label>

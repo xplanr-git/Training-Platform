@@ -65,6 +65,67 @@ describe('deriveProgress — estimated minutes left', () => {
     expect(deriveProgress(['a'], mixed).minutesLeft).toBe(20);
   });
 
+  /*
+   * The figure under-reported silently. With `a` done, two lessons remain but
+   * only one is estimated, so `minutesLeft` is 20 for what is 20 minutes PLUS a
+   * lesson of unknown length — and the learner was told "about 20 min left". The
+   * flag lets the UI say "at least", which is true.
+   */
+  describe('minutesLeftIsPartial', () => {
+    const mixed = [
+      { id: 'a', estimatedMinutes: 10 },
+      { id: 'b', estimatedMinutes: null },
+      { id: 'c', estimatedMinutes: 20 },
+    ];
+
+    it('is false when every remaining lesson is estimated', () => {
+      const p = deriveProgress([], timed);
+      expect(p.minutesLeft).toBe(30);
+      expect(p.minutesLeftIsPartial).toBe(false);
+    });
+
+    it('is true when only some remaining lessons are estimated', () => {
+      const p = deriveProgress(['a'], mixed);
+      expect(p.minutesLeft).toBe(20);
+      expect(p.minutesLeftIsPartial).toBe(true);
+    });
+
+    it('is false once the UN-estimated lesson is the one completed', () => {
+      // Guards the likeliest wrong implementation: comparing against TOTAL
+      // lessons rather than REMAINING ones would hedge here, under-selling a
+      // figure that is now complete.
+      const p = deriveProgress(['b'], mixed);
+      expect(p.minutesLeft).toBe(30);
+      expect(p.minutesLeftIsPartial).toBe(false);
+    });
+
+    it('is false when nothing remaining is estimated, since minutesLeft is null', () => {
+      const none = [
+        { id: 'a', estimatedMinutes: null },
+        { id: 'b', estimatedMinutes: null },
+      ];
+      const p = deriveProgress([], none);
+      expect(p.minutesLeft).toBeNull();
+      expect(p.minutesLeftIsPartial).toBe(false);
+    });
+
+    it('treats a zero or negative estimate as un-estimated, so it hedges', () => {
+      // These are filtered out of the sum but still count as remaining work.
+      const p = deriveProgress([], [
+        { id: 'a', estimatedMinutes: 10 },
+        { id: 'b', estimatedMinutes: 0 },
+      ]);
+      expect(p.minutesLeft).toBe(10);
+      expect(p.minutesLeftIsPartial).toBe(true);
+    });
+
+    it('is false on a complete course', () => {
+      const p = deriveProgress(['a', 'b', 'c'], mixed);
+      expect(p.minutesLeft).toBeNull();
+      expect(p.minutesLeftIsPartial).toBe(false);
+    });
+  });
+
   it('is null when no remaining lesson has an estimate (UI falls back)', () => {
     const none = [
       { id: 'a', estimatedMinutes: null },

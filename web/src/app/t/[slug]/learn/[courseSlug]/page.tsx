@@ -145,7 +145,7 @@ export default async function Learn({
                 {progress.done} of {progress.total} lessons
                 {!progress.isComplete && lessonsLeft > 0 ? ` · ${lessonsLeft} left` : ''}
                 {!progress.isComplete && progress.minutesLeft != null
-                  ? ` · about ${formatMinutes(progress.minutesLeft)} left`
+                  ? ` · ${progress.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(progress.minutesLeft)} left`
                   : ''}
               </span>
             </div>

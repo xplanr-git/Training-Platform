@@ -282,12 +282,27 @@ regress; committed and pushed to both remotes.
       are covered by a suite someone runs by hand, which is better than the "zero
       coverage" this item used to claim but still not a gate.
 
-- [ ] **Require a name on invitation.** Without one a certificate can read
-      "This certifies that " and nothing in the product can repair it.
-- [ ] **Honest "about N min left".** When only some remaining lessons carry an
-      estimate the figure silently under-reports, with no hint it is partial.
-- [ ] **Friendlier correct-answer picker.** Right answers are typed as numbers
-      ("2", or "1,3"). Error-prone for whoever writes quizzes.
+- [x] **Require a name on invitation.** Required server-side and on the form. The
+      item's wording was slightly wrong — a fallback em dash already existed, so it
+      read "This certifies that —", not a blank — but "nothing can repair it" was
+      exactly right: the only two writes to `users` are inserts, and there is no
+      profile page. Also fixed a second bug found in passing: for an email that
+      already had a `users` row the typed name was discarded entirely. It now fills a
+      BLANK name only, never overwrites one — `users` is shared across academies.
+- [x] **Honest "about N min left".** `deriveProgress` now returns
+      `minutesLeftIsPartial`, and the three render sites say "at least N min left"
+      (course landing: "over N") when only some remaining lessons are estimated.
+      Compared against REMAINING, not total, so a course whose un-estimated lessons
+      are already finished is not needlessly hedged.
+- [x] **Friendlier correct-answer picker.** The author now ticks a radio (one
+      answer) or checkbox (many) beside the option's own text, built live from the
+      options textarea, and only the control for the chosen type renders. The typed
+      numbers were worse than "error-prone": the parser FILTERED instead of
+      validating, so with three options "1,4" silently saved one answer and "2,2"
+      saved [1,1], which `gradeQuiz` can never match — an unpassable question in a
+      lesson that can only be completed by passing. `parseCorrectIndices` now throws,
+      de-duplicates, and accepts "1 3"/"1;3"; the publish guard refuses a course
+      holding a question no answer can pass, which covers rows written before the fix.
 - [ ] **Retire the legacy YouTube renderer** once no lesson content holds a
       `youtubeUrl`. CHECKED 2026-08-05: of 3 video lessons, 1 still holds a
       `youtubeUrl` and 2 are Bunny-hosted; none hold both. So the branch is live and
@@ -712,3 +727,54 @@ Newest first. One line per completed item: what changed, and the commit.
   tenant-creating spec and widening CI's `testDir` to swallow `tests/live`.
   The comment-matching trap caught me a fifth time: `not.toMatch(/webServer/)` passed
   against the live config's own comment saying "No webServer".
+
+- **Three correctness items, and two of the three premises needed correcting.** Scouted
+  each claim against the code with an adversarial refuter before writing anything,
+  which was worth it: the refuters killed an over-engineered validator (a new
+  `parseRequiredName` module, when the file already trims and the repo does this check
+  inline two directories away), corrected a split spec that would have started
+  rejecting `'2,'` and `' 2 '` — inputs that work today — and talked me out of an
+  admin rename control that would have let one academy rewrite the name printed on
+  another academy's certificates, since `users` is one row shared by email.
+
+  **Name on invitation.** The premise was half wrong: a fallback em dash already
+  existed at all three display sites, so a nameless certificate read "This certifies
+  that —". The other half was righter than written — nothing could repair it, verified
+  by exhaustion: two writes to `users`, both inserts, no `update(users)` anywhere, no
+  profile route, and /auth/set-password collects a password only. Now required on the
+  form and in the action. The pass also turned up a bug the item did not mention: the
+  insert sits inside `if (!userId)`, so for an email that already had a `users` row the
+  typed name was discarded while the form still said "Invitation sent." It now fills a
+  blank name and never overwrites a set one.
+
+  **"About N min left."** True as written. `minutesLeft` summed only the estimated
+  remaining lessons, so three left with one estimated at 20 minutes told the learner
+  "about 20 min left". Now `minutesLeftIsPartial` drives "at least" (and "over" on the
+  course landing, which had its own independent sum with the same flaw). The flag is
+  computed against REMAINING, not total — the guard for the likeliest wrong version.
+
+  **Correct-answer picker.** True, and the UX was the smaller half. The parser filtered
+  instead of validating, so of twelve realistic inputs it was wrong on seven: "1,4"
+  with three options silently saved one answer, "2,2" saved [1,1] which `gradeQuiz`
+  can never match, and an mcq key of "1,3" was truncated. Measured against the real old
+  implementation, not assumed. Now: radios/checkboxes beside each option's own text,
+  built live from the options textarea, only the control for the chosen type on screen,
+  and `parseCorrectIndices` throwing with the offending number named. A publish guard
+  covers what strict parsing cannot — the rows already written — verified by running its
+  SQL predicate against Postgres on six constructed cases plus real data (0 broken).
+
+  Found in passing, and fixed: the publish guard's careful explanation of why an empty
+  quiz cannot be published was 143 characters, and NavForm's friendly() replaces
+  anything ≥120 with "Something went wrong", so an admin was told nothing. It escaped
+  copy-conventions because that test only measured single-quoted literals — concatenated
+  and template messages were invisible to it. Both fixed.
+
+  Verified in a browser, not inferred: all four picker states in a probe page — mcq
+  radios, multi_select checkboxes submitting getAll ["1","3"], true_false hiding the
+  options entirely, and whitespace-only options showing the hint. One reading I made
+  from the accessibility tree was wrong again in the same way as the focus-ring item:
+  it displays a radio's VALUE, so the controls looked named "1"/"2"/"3". Querying
+  `input.labels` showed the real names were "Three"/"Four"/"Five" all along.
+
+  NOT verified: no authored quiz was saved end to end, because that writes to the
+  production project. 14 sabotages proven red across the three items.

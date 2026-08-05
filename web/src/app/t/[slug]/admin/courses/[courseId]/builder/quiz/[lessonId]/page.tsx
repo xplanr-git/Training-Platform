@@ -12,9 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { NavForm } from '@/components/nav-form';
-
-const SELECT_CLS =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
+import { QuizAnswerFields } from '@/components/quiz-answer-fields';
 
 /** Mirrors the options in the add-question type select. */
 const QUESTION_TYPE_LABEL: Record<string, string> = {
@@ -189,51 +187,7 @@ export default async function QuizEditor({
               aria-label="Question prompt"
               placeholder="Question prompt"
             />
-            <div className="flex gap-2">
-              <select name="type" aria-label="Question type" className={SELECT_CLS}>
-                <option value="mcq">Multiple choice (one answer)</option>
-                <option value="multi_select">Multiple choice (many answers)</option>
-                <option value="true_false">True / False</option>
-              </select>
-              <Input
-                name="points"
-                type="number"
-                min="1"
-                aria-label="Points for this question"
-                defaultValue={1}
-                className="w-20"
-              />
-            </div>
-            <Textarea
-              name="options"
-              rows={3}
-              aria-label="Options, one per line — multiple choice only"
-              placeholder="Options, one per line (ignored for True/False)"
-            />
-            {/*
-              Only ONE of these is ever read — addQuestion branches on the type select
-              above, and true_false ignores `correct` entirely while every other type
-              ignores `correct_tf`. Both are rendered unconditionally, so the label
-              text has to say which applies to what; otherwise an author fills in the
-              wrong box and the question silently takes the other one's answer.
-            */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <label className="flex items-center gap-2">
-                <span className="text-muted">
-                  Correct option #(s) <span className="text-xs">— multiple choice only</span>
-                </span>
-                <Input name="correct" placeholder="e.g. 2 or 1,3" className="w-28" />
-              </label>
-              <label className="flex items-center gap-2">
-                <span className="text-muted">
-                  Correct answer <span className="text-xs">— True / False only</span>
-                </span>
-                <select name="correct_tf" className={SELECT_CLS}>
-                  <option value="0">True</option>
-                  <option value="1">False</option>
-                </select>
-              </label>
-            </div>
+            <QuizAnswerFields />
             <Button type="submit">Add question</Button>
           </NavForm>
         </CardContent>

@@ -37,7 +37,9 @@ test('quiz authoring → attempt → pass → completion → certificate', async
   await page.locator('input[name=prompt]').fill('What is 2 + 2?');
   await page.locator('select[name=type]').selectOption('mcq');
   await page.locator('textarea[name=options]').fill('Three\nFour\nFive');
-  await page.locator('input[name=correct]').fill('2');
+  // The answer key is a radio beside the option's own text now, not a typed
+  // number — the options must be entered first for it to exist at all.
+  await page.getByRole('radio', { name: /Four/ }).check();
   await page.getByRole('button', { name: 'Add question' }).click();
   await expect(page.getByText('What is 2 + 2?')).toBeVisible({ timeout: 20_000 });
 

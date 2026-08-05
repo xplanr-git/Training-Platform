@@ -47,6 +47,14 @@ export async function inviteMember(
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const name = String(formData.get('name') ?? '').trim();
   if (!email) return { ok: false, error: 'Email is required' };
+  // Server-side, not just the form's `required`: a Server Action is directly
+  // invocable, and `users.name` is NOT NULL DEFAULT '' so a blank sails in. The
+  // name is what prints on their certificate, and there is nowhere in the
+  // product to set it afterwards — no profile page, and the two writes to
+  // `users` are both inserts — so a blank here is permanent.
+  if (!name) {
+    return { ok: false, error: 'A name is required — it prints on their certificate.' };
+  }
 
   // Checked at runtime, not cast: a tenant admin must not be able to mint a
   // platform_admin by posting the role directly. See ASSIGNABLE_ROLES.
@@ -59,7 +67,7 @@ export async function inviteMember(
 
   // Reuse the auth user if we already know them.
   const [existingUser] = await db
-    .select({ id: users.id })
+    .select({ id: users.id, name: users.name })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
@@ -98,6 +106,20 @@ export async function inviteMember(
       .insert(users)
       .values({ id: userId, email, name })
       .onConflictDoNothing();
+  } else if (!existingUser!.name.trim()) {
+    /*
+     * The row exists but holds no name — invited before a name was required, so
+     * their certificate would print an em dash. The typed name used to be
+     * discarded here entirely: the insert above sits inside `if (!userId)`, so
+     * for a known email the name went nowhere while the form still said
+     * "Invitation sent."
+     *
+     * Fill it, but ONLY when blank. `users` is a global row deliberately shared
+     * across academies (this lookup is by email, and memberships is unique on
+     * (tenant, user)), so overwriting a name that is already set would let this
+     * academy rename the person on another academy's certificates.
+     */
+    await db.update(users).set({ name }).where(eq(users.id, userId));
   }
 
   const [existingMembership] = await db
