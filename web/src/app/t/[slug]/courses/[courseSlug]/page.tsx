@@ -137,7 +137,7 @@ export default async function CourseLanding({
   const totalMinutes = lessonRows.reduce((sum, l) => sum + (l.estimatedMinutes ?? 0), 0);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
       {isPreview && (
         <div className="mb-6 rounded-[--radius-card] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <b>Draft preview.</b> This course is not published, so only administrators of
@@ -174,7 +174,7 @@ export default async function CourseLanding({
               const items = lessonsBySection.get(s.id) ?? [];
               return (
                 <AccordionItem key={s.id} value={s.id}>
-                  <AccordionTrigger className="text-sm font-medium">
+                  <AccordionTrigger className="text-base font-semibold">
                     {s.title || 'Section'}
                   </AccordionTrigger>
                   <AccordionContent>

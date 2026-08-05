@@ -64,7 +64,7 @@ export default async function LearnerDashboard() {
   ];
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
+    <main className="mx-auto max-w-4xl px-6 py-12 sm:py-14">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Your learning</h1>
@@ -112,7 +112,7 @@ export default async function LearnerDashboard() {
               <Card key={r.courseId}>
                 <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-semibold">
+                    <h2 className="text-base font-semibold">
                       <Link href={`/learn/${r.slug}`} className="hover:underline">
                         {r.title}
                       </Link>

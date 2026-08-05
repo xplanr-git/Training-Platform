@@ -90,9 +90,14 @@ regress; committed and pushed to both remotes.
 
 ## 3. Visual and interaction quality
 
-- [ ] **Design pass on the learner surfaces first** — storefront, course landing,
-      course outline, lesson player. These are what a dealer sees. Consistent
-      spacing scale, type hierarchy, focus states, hover affordances.
+- [x] **Design pass on the learner surfaces.** Scale now written down in
+      globals.css and enforced: two section headings were `text-sm`, i.e. SMALLER
+      than the body text, and on the course landing exactly the same size as the
+      lesson names they grouped — only weight separated them. Page rhythm unified
+      to `px-6 py-12 sm:py-14`; container widths kept but their rule stated (grids
+      wide, reading columns 3xl); hover on the outline rows now fades like the
+      player sidebar already did. Focus verified with a real keyboard Tab, which
+      turned up the finding below.
 - [ ] **Design pass on the admin surfaces** — tables, forms, the builder. The
       builder especially: it is a dense row of unlabelled inputs.
 - [ ] **Mobile.** Contractors use this on site. Verify every learner page at
@@ -119,6 +124,16 @@ regress; committed and pushed to both remotes.
       link, not by reading the code.
       NEEDS A DECISION: should the bare domain serve marketing or the catalogue
       at `/`? Do not guess — it changes what every visitor sees first.
+
+- [ ] **The UI kit's focus rings render nothing.** Measured in a browser: on both
+      a Button and an Input, `focus-visible:ring-*` computes to a TRANSPARENT
+      box-shadow, and several components also set `outline-none`. The global
+      `:focus-visible` block in globals.css is therefore the ONLY thing giving
+      keyboard users a visible focus indicator anywhere in the app — it survives
+      `outline-none` purely on specificity (`input:focus-visible` 0,1,1 beats the
+      `.outline-none` utility 0,1,0). That works, and is now guarded, but it is
+      accidental: the `ring-ring` / `--ring` variable the kit expects is not wired
+      to `--color-ring`. Worth fixing properly so components and globals agree.
 
 - [ ] **The lesson player decides playability twice.** The JSX ternary checks
       `hosted?.provider === 'bunny' && env.bunnyLibraryId()` and then
@@ -290,3 +305,20 @@ Newest first. One line per completed item: what changed, and the commit.
   while not-attached produces no line. NOT verified: the player's own call site
   firing on a real request, which needs an authenticated learner on a lesson whose
   video cannot play; the log mechanism was proven in the same runtime instead.
+- Learner design pass. The headline defect was a hierarchy inversion: section
+  headings at `text-sm` against a 16px body, and on the course landing the section
+  title was the exact same 14px as the lesson names inside it, so the only thing
+  marking it as a heading was font weight. Now 16px/600 above 14px/400 — measured
+  in the browser, not assumed. Nine `<Link>`s looked like they lacked hover
+  affordance and all nine turned out to be `<Button asChild>` wrappers, so nothing
+  was "fixed" there. Container widths already followed a rule (grids wide, reading
+  columns 3xl) and only looked arbitrary because it was unwritten; it is now in
+  globals.css rather than churned. Ten guards proven red. The real find came from
+  testing focus with an actual keyboard Tab rather than reading the CSS: the UI
+  kit's own `focus-visible:ring-*` computes to a transparent box-shadow, so that
+  one global block is the only focus indicator in the app, surviving component
+  `outline-none` on specificity alone. Guarded, and logged above as worth fixing
+  properly. NOT verified: how any of this LOOKS — the preview pane downscales
+  screenshots to unreadability, so the evidence here is computed values; and the
+  outline and player changes were not seen at all, since both need an
+  authenticated learner.

@@ -61,6 +61,24 @@ body {
   font-family: var(--font-sans);
 }
 
+/* ── Learner-surface scale ──────────────────────────────────────────────────
+   Written down because three container widths and two h1 sizes looked arbitrary
+   until the rule behind them was stated. It is not a new language; it is the one
+   already in use, minus the accidents.
+
+   Width      grids are wider than prose: storefront 5xl (3 cards), dashboard 4xl
+              (4 stat tiles); reading and working columns are 3xl.
+   Rhythm     page shells are `px-6 py-12 sm:py-14`; major sections `mt-10`.
+   Headings   front doors (storefront, course landing) h1 text-3xl; working pages
+              (dashboard, outline, player) h1 text-2xl. Section headings text-base
+              or larger — NEVER below it. Two were text-sm, i.e. a heading smaller
+              than the body text beneath it, and on the course landing exactly the
+              same size as the lesson names it was meant to group.
+   Rows       interactive rows carry `transition-colors` with their hover, so the
+              feedback is a fade rather than a snap.
+   Focus      handled globally below; nothing should override it.
+   ────────────────────────────────────────────────────────────────────────── */
+
 /* Visible keyboard focus for all interactive elements (a11y). Mouse clicks
    don't trigger :focus-visible, so this only shows for keyboard/AT users. */
 a:focus-visible,

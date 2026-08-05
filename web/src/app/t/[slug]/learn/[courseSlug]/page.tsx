@@ -108,7 +108,7 @@ export default async function Learn({
         : 'Continue where you left off';
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-1.5 text-sm text-muted hover:underline"
@@ -172,7 +172,7 @@ export default async function Learn({
         )}
         {sectionRows.map((s) => (
           <section key={s.id}>
-            <h2 className="mb-2 text-sm font-semibold">{s.title || 'Section'}</h2>
+            <h2 className="mb-2 text-base font-semibold">{s.title || 'Section'}</h2>
             <Card className="overflow-hidden p-0">
               <ul className="divide-y divide-border">
                 {(bySection.get(s.id) ?? []).map((l) => {
@@ -182,7 +182,7 @@ export default async function Learn({
                     <li key={l.id}>
                       <Link
                         href={`/learn/${courseSlug}/${l.id}`}
-                        className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-surface-muted"
+                        className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-muted"
                       >
                         {lDone ? (
                           <Check className="h-4 w-4 shrink-0 text-brand-600" />
