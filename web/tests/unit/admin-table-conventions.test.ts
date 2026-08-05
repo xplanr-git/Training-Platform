@@ -55,7 +55,14 @@ describe('all four admin tables are the same component family', () => {
   it('the admin shell is still the grey that makes that necessary', () => {
     // If the shell ever goes white, the reasoning above changes and this should be
     // revisited rather than silently kept.
-    expect(read('src/components/admin-shell.tsx')).toMatch(/flex min-h-screen bg-surface-muted/);
+    // Pin the BACKGROUND only. This originally matched the whole class string
+    // `flex min-h-screen bg-surface-muted`, which made it fail when the shell's
+    // HEIGHT changed — a property it has no opinion about. An over-specified guard
+    // fails on unrelated work, and the tempting fix is to delete it.
+    const root = /<div className="([^"]*bg-surface-muted[^"]*)">/.exec(
+      read('src/components/admin-shell.tsx'),
+    );
+    expect(root, 'the shell root is no longer grey, so the tables may not need a fill').not.toBeNull();
   });
 
   it('status columns use Badge, not a bespoke pill', () => {

@@ -192,13 +192,16 @@ regress; committed and pushed to both remotes.
 
 ## 4. Correctness items already identified
 
-- [ ] **Admin shell never scrolls its sidebar.** `admin-shell.tsx:111` is
-      `flex min-h-screen`, so the aside grows with the nav instead of the aside's
-      own `flex-1 overflow-y-auto` engaging — with ~40 nav items the sidebar
-      lengthens the document rather than scrolling inside itself. `h-screen` is
-      probably the fix, but it converts the admin area to a fixed app shell and I
-      cannot see the admin area to check, so it was left alone deliberately rather
-      than changed blind.
+- [x] **Admin shell never scrolls its sidebar.** Root is now `flex h-dvh
+      overflow-hidden` instead of `min-h-screen`. Both the sidebar nav and `<main>`
+      already carried `flex-1 overflow-y-auto`, which can only engage against a
+      DEFINITE height — measured at 1280x720 with the real 42-item nav: 2013px of
+      links in a 575px column, which instead made the whole document 2000px tall and
+      pushed the email and sign-out footer off the end of it. `dvh` rather than `vh`
+      because the admin area is used on phones, where a collapsing browser toolbar
+      makes 100vh taller than the visible viewport. This was deferred last time as
+      unverifiable; it is verifiable — AdminShell is a client component and renders
+      in a probe.
 
 - [ ] **In single-tenant mode, `/` is the marketing page, not the catalogue.**
       `tenantRewritePath` deliberately excludes `pathname === '/'` from the
@@ -555,3 +558,20 @@ Newest first. One line per completed item: what changed, and the commit.
   in a role=alert, where it used to show Supabase's own wording.
   NOT verified: the admin surfaces as served, still no session; and the email copy was
   changed without sending one.
+- Admin shell scroll. The item had been parked as "cannot see the admin area to
+  check", which was true when it was written and stopped being true two passes later:
+  AdminShell is a client component, so a probe page renders the real chrome. Worth
+  remembering that a blocker can expire quietly.
+  The defect was real and measurable: 2013px of nav inside a 575px column at
+  1280x720, so `flex-1 overflow-y-auto` on both the nav and `<main>` was inert and the
+  document itself grew instead. Fixed and verified at both sizes — desktop: document
+  no longer scrolls, nav and main each scroll internally, footer pinned and visible;
+  375px: aside hidden, main scrolls, the last row is reachable, no horizontal scroll,
+  and the drawer still opens with its own scrolling nav and visible sign-out.
+  It also broke one of my own guards, which is the interesting part: the admin-table
+  suite asserted the literal string `flex min-h-screen bg-surface-muted` when all it
+  cared about was that the shell is GREY (the reason those tables need a white fill).
+  An over-specified guard fails on unrelated work, and the tempting fix is to delete
+  it. Narrowed to the background alone and re-proven by turning the shell white.
+  NOT verified: the admin routes as served — still no session, so this is the real
+  component in a probe rather than /admin itself.

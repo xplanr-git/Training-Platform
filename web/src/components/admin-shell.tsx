@@ -106,7 +106,18 @@ export function AdminShell({
   const activePath = pathname.replace(/^\/t\/[^/]+/, '');
 
   return (
-    <div className="flex min-h-screen bg-surface-muted">
+    /*
+      h-dvh, not min-h-screen. Both the sidebar nav and <main> already carry
+      `flex-1 overflow-y-auto`, which can only engage if their container has a
+      DEFINITE height — with min-h-screen the container grows with its content, so
+      neither ever scrolled internally. With 42 nav items the aside simply made the
+      document longer, pushing the email and sign-out footer off the bottom of a
+      long page instead of pinning it.
+
+      dvh rather than vh because the admin area is used on phones, where the
+      browser's collapsing toolbar makes 100vh taller than the visible viewport.
+    */
+    <div className="flex h-dvh overflow-hidden bg-surface-muted">
       <a href="#main-content" className="sr-only skip-link">
         Skip to content
       </a>
