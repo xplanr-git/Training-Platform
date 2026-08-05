@@ -20,6 +20,8 @@ import {
   type AssignableRole,
   type SettableMemberStatus,
 } from '@/lib/validation';
+import { rateLimitExceeded } from '@/lib/rate-limit-guard';
+import { RULES } from '@/lib/rate-limit';
 
 export interface ActionResult {
   ok: boolean;
@@ -43,6 +45,12 @@ export async function inviteMember(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await requireAdmin();
+
+  // An admin is authenticated, so this is not an abuse gate so much as a blast
+  // radius one: the action sends mail through our Resend domain, and a scripted
+  // loop would burn reputation as well as quota.
+  const limited = await rateLimitExceeded('invite', RULES.invite, ctx.tenantId);
+  if (limited) return { ok: false, error: limited };
 
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const name = String(formData.get('name') ?? '').trim();

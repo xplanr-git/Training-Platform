@@ -204,6 +204,10 @@ regress; committed and pushed to both remotes.
       in a probe.
 
 - [ ] **In single-tenant mode, `/` is the marketing page, not the catalogue.**
+      **DECIDED 2026-08-06 by the owner: signed-out visitors get marketing, signed-in
+      users get the catalogue.** So `/` branches on session, and the five links that
+      mean "the course list" become correct for the people who click them.
+      Original finding below.
       `tenantRewritePath` deliberately excludes `pathname === '/'` from the
       default-slug rewrite (`lib/host.ts:108`), so on the bare domain the
       storefront is only at `/t/<slug>`. But five places link to `/` meaning
@@ -328,7 +332,13 @@ Do not start this until sections 1–4 are complete.
 What is wanted is different: a member of the public creating a **learner** account
 on the existing academy.
 
-- [ ] **Decide the gate, then build it.** Open sign-up on an internal dealer
+- [x] **Decide the gate.** **DECIDED 2026-08-06 by the owner: ADMIN APPROVAL.**
+      `/join` creates the auth user and a learner membership with
+      `status: 'pending'`; an admin accepts or declines in People. No secret to
+      distribute, and the academy keeps a record of who asked. The options as put to
+      the owner, and the reasoning, below.
+
+      *Original item:* Open sign-up on an internal dealer
       academy is a spam and access-control problem, so it needs one of:
       an invitation code, an email-domain allowlist, or admin approval
       (`status: 'pending'` until an admin accepts). Recommend admin approval —
@@ -340,7 +350,11 @@ on the existing academy.
       `/signup`, which remains the academy-provisioning route.
 - [ ] **Admin side.** Pending requests visible in People with accept/decline,
       audited like every other membership mutation.
-- [ ] **Guard it.** Rate limiting is still absent platform-wide; an open
+- [ ] **Guard it.** **DECIDED 2026-08-06 by the owner: build it now, in-process, no
+      new paid dependency.** Note the Vercel caveat when it lands: an in-process
+      limiter is per-instance and resets on a cold start, so it raises the cost of an
+      attack without bounding it. Upstash was offered and deferred.
+      *Original item:* Rate limiting is still absent platform-wide; an open
       registration endpoint makes that materially worse. Note the exposure
       explicitly even if the limiter lands later.
 

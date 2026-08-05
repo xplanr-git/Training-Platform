@@ -3,6 +3,8 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { absoluteUrl } from '@/lib/absolute-url';
+import { rateLimitExceeded } from '@/lib/rate-limit-guard';
+import { RULES } from '@/lib/rate-limit';
 
 /**
  * Sends a password-reset link.
@@ -16,14 +18,21 @@ import { absoluteUrl } from '@/lib/absolute-url';
  * form into an oracle for which of your dealers' emails are registered. The
  * caller therefore learns nothing; failures are logged server-side only.
  *
- * Not rate-limited. Anyone can make this send mail to a known address, which is
- * a nuisance vector rather than a breach (the mail only ever goes to the address
- * itself). Worth putting behind a limiter when one exists — see the Upstash note
- * in CLAUDE.md §4 #7.
+ * Rate-limited per IP and per address (RULES.passwordReset). Over budget, it
+ * returns the same { ok: true } WITHOUT sending — the uniform response is the
+ * point of this action, and the page catches everything and reports "sent"
+ * regardless, so a thrown message would reach nobody. A real person will not
+ * request five resets for one address in fifteen minutes; a script will.
  */
 export async function requestPasswordReset(email: string): Promise<{ ok: true }> {
   const address = email.trim().toLowerCase();
   if (!address || !address.includes('@')) return { ok: true };
+
+  const limited = await rateLimitExceeded('passwordReset', RULES.passwordReset, address);
+  if (limited) {
+    console.log(`[reset] rate limited for ${address}`);
+    return { ok: true };
+  }
 
   try {
     const admin = createAdminClient();

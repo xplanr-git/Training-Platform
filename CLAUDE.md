@@ -111,7 +111,7 @@ These are real, exploitable, and present in `main`. Do not ship before fixing.
 | 4 | JWT carries no role claim — every authorisation re-reads `profiles.role` | Supabase Auth | Add a Custom Access Token Hook (Supabase Auth Hooks) that injects `role` and `tenant_id` into JWT claims. |
 | 5 | Company suspension stored in `localStorage` | [src/app/utils/suspendedCompanies.ts](src/app/utils/suspendedCompanies.ts) | Move to `tenants.status` enum. RLS denies reads/writes when status = `'suspended'`. |
 | 6 | CORS `origin: "*"` on edge functions | Edge functions | Restrict to the app domain. |
-| 7 | No rate limiting on `/auth/signup`, `/auth/signin` | Edge functions | Vercel Edge Middleware rate limit or Upstash rate-limit. |
+| 7 | ~~No rate limiting~~ **PARTLY DONE (2026-08-06).** [rate-limit.ts](web/src/lib/rate-limit.ts) is an in-process sliding window applied to academy provisioning, password-reset mail and invitations. Two gaps remain, both deliberate: **sign-in is not covered and cannot be from here** — [login/page.tsx](web/src/app/login/page.tsx) calls `signInWithPassword` from the browser, so the request never reaches our server, and password-guessing is bounded only by Supabase's own auth limits; and the store is **per-instance**, so on Vercel a cold start resets it. | Server Actions | Upstash (or any shared store) to make it global; a route handler proxying sign-in if we ever want to limit that ourselves. |
 | 8 | No audit trail on user/role/course mutations | All write paths | Build `audit_log` table on day 1; every mutation goes through a helper that appends a hash-chained row. |
 
 ---

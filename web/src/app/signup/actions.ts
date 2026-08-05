@@ -13,6 +13,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { normalizeSlug, validateSlug } from '@/lib/slug';
 import { sendWelcomeEmail } from '@/lib/email';
 import { env } from '@/lib/env';
+import { rateLimitExceeded } from '@/lib/rate-limit-guard';
+import { RULES } from '@/lib/rate-limit';
 
 export interface ProvisionResult {
   ok: boolean;
@@ -32,6 +34,11 @@ export interface ProvisionResult {
  * carrying the new membership's tenant_id + role (via the access-token hook).
  */
 export async function provisionTenant(formData: FormData): Promise<ProvisionResult> {
+  // Before any validation or write: this mints a tenant, a user and a membership,
+  // so it is the most expensive thing an unauthenticated caller can trigger.
+  const limited = await rateLimitExceeded('provisionTenant', RULES.provisionTenant);
+  if (limited) return { ok: false, error: limited };
+
   const name = String(formData.get('name') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const password = String(formData.get('password') ?? '');
