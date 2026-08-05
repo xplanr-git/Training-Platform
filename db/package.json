@@ -11,7 +11,8 @@
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
     "check": "drizzle-kit check",
-    "migrate:v1": "tsx migrate-v1-to-v2.ts"
+    "migrate:v1": "tsx migrate-v1-to-v2.ts",
+    "verify": "npm run check && tsc --noEmit"
   },
   "dependencies": {
     "drizzle-orm": "^0.36.4",

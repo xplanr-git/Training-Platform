@@ -240,6 +240,8 @@ Read this before doing anything in this repo.
 11. **Don't write code that bypasses the audit log.** Once §4 #8 is in, every mutation on `tenants`, `memberships`, `roles`, `courses`, `enrollments`, `certificates` must go through the audit helper.
 12. **Don't restore the demo bypass.** The hardcoded admin in §4 #1 must stay deleted. Demo users live in migration `006_fix_demo_users.sql` and sign in via real Supabase Auth.
 13. **Verification before "done".** When a change is observable in a browser preview, use the `preview_*` tools to verify it. Do not declare a UI change complete based on type-check passing alone.
+    **The gate is `npm run verify` in `web/` and in `db/` — both, not one.** Those two scripts run exactly what CI runs and nothing less: `web` is typecheck → lint → vitest → build → **Playwright**, `db` is `drizzle-kit check` → tsc. Do not hand-assemble a subset. "All tests pass" is ambiguous — `npm test` is vitest only, and a gate that stopped there once shipped a broken smoke test and left CI red for five commits while each was reported green. [ci-parity.test.ts](web/tests/unit/ci-parity.test.ts) fails if CI ever gains a step `verify` does not run.
+    One gap `verify` cannot close: it runs the same *commands* as CI, not the same *runtime*. This machine is on Node 18.20.1, CI pins Node 20, so a Node-version-sensitive failure still only shows up on CI. Green locally means "the commands pass", not "CI will pass".
 14. **Never amend git commits.** Always create new commits. The pre-existing memory note covers this.
 15. **Ask before destructive ops.** Anything that touches production data, drops a table, force-pushes, or affects shared state needs explicit user authorisation. The audit covers what's safe to do unattended.
 

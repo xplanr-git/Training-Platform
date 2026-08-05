@@ -257,11 +257,9 @@ regress; committed and pushed to both remotes.
       zero-behaviour commit that makes `prettier --check` usable as a CI gate, at the
       cost of churning two thirds of the repo's `git blame`. Not mine to choose.
 
-- [ ] **My local gate did not include the E2E suite.** CI runs `npm run e2e`
-      (Playwright); my gate was typecheck, lint, `npm test` (vitest) and build, so a
-      broken smoke test shipped and CI went red on c1b844e. Fixed in 20a6c63 and
-      `npm run e2e` added to what I run. Worth making the gate explicit somewhere the
-      next person reads, because "all tests pass" meant two different things.
+- [x] **My local gate did not include the E2E suite.** `npm run verify` in `web/` and
+      `db/` now runs exactly what CI runs; ci-parity.test.ts fails if CI gains a step it
+      does not. Turned out the `db` job was missing from my gate too, not just e2e.
 
 - [ ] **An E2E test that actually signs in.** `tests/e2e/smoke.spec.ts` only
       visits public pages, so *every* authenticated route — the whole admin area,
@@ -660,3 +658,19 @@ Newest first. One line per completed item: what changed, and the commit.
   build on a red one. The break was my accessibility fix removing the placeholder the
   smoke test asserted; the test now asserts the label, which is both correct and
   unbreakable by the same improvement. `npm run e2e` is part of the gate from now on.
+
+- **The gate is now one command per workspace, and a test guards it.** Last pass I said
+  "`npm run e2e` is part of the gate from now on", which was a promise, not a mechanism.
+  Replaced it with `npm run verify` — `web/` runs typecheck, lint, vitest, build,
+  Playwright; `db/` runs `drizzle-kit check` and tsc. Writing it out exposed a second
+  hole I had not noticed: the `db` job was never in my gate at all, so the migration
+  consistency check had gone unrun for the whole backlog (it passes). ci-parity.test.ts
+  reads ci.yml, extracts every `run:` per job, and fails if any is absent from that
+  workspace's `verify`, so the next step added to CI cannot silently skip my gate.
+  Proven red five ways: dropping e2e from verify, dropping the drizzle check, adding a
+  CI step that verify does not run, reverting an action to the deprecated v4, and
+  letting one job's Node pin drift. Also fixed the deprecation warning on every CI run —
+  it was the *action* runtime (checkout/setup-node@v4 target Node 20), not our
+  `node-version: 20`, which CLAUDE.md pins deliberately; both actions are now @v5.
+  Stated in CLAUDE.md rule 13, including the gap `verify` cannot close: it matches CI's
+  commands but not its runtime, since this machine is Node 18.20.1 and CI is Node 20.
