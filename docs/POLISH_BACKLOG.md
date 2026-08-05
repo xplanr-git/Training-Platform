@@ -146,11 +146,19 @@ regress; committed and pushed to both remotes.
       Remaining under 44px and left deliberately: the storefront search input/button
       pair (36/40px → now 44px via the primitives) is fine, but pagination
       prev/next is ~33px and only renders above 25 courses. Noted, not chased.
-- [ ] **Certificate print output beyond the code.** Fixing the missing verification
-      code (see log) exposed that the printed certificate is otherwise untested: no
-      `@media print` block exists anywhere, so page margins, the status badge and
-      colour fidelity are whatever the browser decides. Worth one deliberate print
-      stylesheet now that the artifact matters.
+- [x] **Certificate print output.** One `@media print` block plus `@page`, scoped to
+      `[data-print-certificate]` so no other page's print output changes. Fixes three
+      real things: the screen shell is a centred `min-h-screen` column, and in print
+      `100vh` resolves against the page box, so `justify-center` pushed the
+      certificate down the sheet and the leftover height could spill onto a blank
+      second page; the certificate could be split across two sheets; and there were
+      no page margins of our own. Reading the markup also turned up that
+      `print:hidden` on the status row was hiding the **Revoked** badge from print —
+      PrintButton already carries its own rule, so the row's only effect was to
+      suppress the one warning that matters on a printed document. The revoked badge
+      now prints with an outline (backgrounds drop in print, borders and text colour
+      do not); the "Valid certificate" badge still does not, being a screen
+      affordance rather than part of the document.
 
 - [ ] **Accessibility sweep** (WCAG 2.1 AA). Contrast, focus visibility, form
       labels, heading order, `aria-live` for async regions. Use the
@@ -456,3 +464,22 @@ Newest first. One line per completed item: what changed, and the commit.
   instead of code. All source assertions in that suite now read comment-stripped.
   NOT verified: the outline, player and dashboard as served — still no authenticated
   session, so those three were measured via probes rendering the real components.
+- Certificate print stylesheet. Verified by flipping every `@media print` block to
+  `all` in the browser and reading computed styles before and after — the honest way
+  to check print CSS short of rendering to paper. Confirmed: `min-height 812px → 0`,
+  `justify-content center → flex-start`, `padding-top 56px → 0`, `box-shadow →
+  none`, `break-inside auto → avoid`, and screen state restored afterwards. The
+  certificate is 540px against ~1016px of printable A4 at 14mm margins, so it fits
+  one sheet with room. Two things worth recording. First, my initial flip found only
+  ONE print block and appeared to show `print:hidden` not working — Tailwind v4
+  compiles its `print:` variants inside `@layer utilities`, so a top-level walk of
+  `sheet.cssRules` misses them; recursing found four blocks and the rules applied
+  correctly. Second, reading the markup found a defect the item had not asked about:
+  `print:hidden` on the status row hid the Revoked badge, and since PrintButton
+  already carries its own rule, that was the row's *only* effect. A printed revoked
+  certificate now carries the warning at the top as well as the notice in the body.
+  NOT verified: actual paper or PDF output — there is no way to render one from here,
+  so this is computed-style verification, not visual. And the revoked path has no
+  real data to test (61 certificates, 0 revoked), so I applied the exact class string
+  the component emits for a revoked certificate to the live DOM and measured that,
+  rather than revoking a real certificate.

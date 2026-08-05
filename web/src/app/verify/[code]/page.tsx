@@ -71,11 +71,24 @@ export default async function VerifyCertificate({
   const heading = design.title || 'Certificate of Completion';
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6 py-14">
-      <div className="flex items-center justify-between print:hidden">
+    <main
+      data-print-certificate
+      className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6 py-14"
+    >
+      {/*
+        `print:hidden` used to sit on this whole row. PrintButton already carries its
+        own, so the only thing the row's rule actually hid was the STATUS BADGE — and
+        for a revoked certificate that badge is the warning. A printed revocation
+        should be unmissable, so the badge now prints when revoked and is hidden only
+        when it says "Valid certificate", which is a screen affordance rather than
+        part of the document.
+      */}
+      <div className="flex items-center justify-between">
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
-            cert.revokedAt ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+            cert.revokedAt
+              ? 'bg-red-50 text-red-700 print:border print:border-red-700'
+              : 'bg-green-50 text-green-700 print:hidden'
           }`}
         >
           {cert.revokedAt ? 'Revoked' : 'Valid certificate'}

@@ -119,3 +119,42 @@ summary:focus-visible,
   border: 1px solid var(--color-border);
   border-radius: 0.375rem;
 }
+
+/* ── Print ──────────────────────────────────────────────────────────────────
+   The certificate is the only artifact anyone deliberately prints, and it is a
+   real one: a contractor uses "Save as PDF" on a phone to keep a copy to show a
+   client. Until now there was no print stylesheet at all, so margins, page breaks
+   and whether a trailing blank page appeared were whatever the browser decided.
+
+   Scoped with [data-print-certificate] rather than `main`/`article` so printing any
+   other page is left exactly as it was — this makes no claim about pages nobody
+   designed for print.
+   ────────────────────────────────────────────────────────────────────────── */
+@page {
+  /* Browsers default to roughly half an inch plus their own header/footer. 14mm is
+     inside every common printer's unprintable edge and leaves the certificate's
+     accent border clear of the paper edge. */
+  margin: 14mm;
+}
+
+@media print {
+  [data-print-certificate] {
+    /* On screen this is a centred full-height column. In print, min-height: 100vh
+       resolves against the page box, so `justify-center` pushes the certificate down
+       the sheet and the leftover height can spill into a second, blank page. */
+    min-height: 0;
+    justify-content: flex-start;
+    /* @page owns the margins now; the screen padding would double them. */
+    padding: 0;
+    gap: 0;
+  }
+
+  [data-print-certificate] article {
+    /* Never split the certificate across two sheets. */
+    break-inside: avoid;
+    /* A shadow prints as a grey smear. The accent border is the frame that matters,
+       and borders and text colour print regardless of background settings, so the
+       tenant's accentColor survives without forcing print-color-adjust. */
+    box-shadow: none;
+  }
+}
