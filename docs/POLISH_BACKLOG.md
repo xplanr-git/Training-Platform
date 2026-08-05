@@ -794,3 +794,21 @@ Newest first. One line per completed item: what changed, and the commit.
 
   NOT verified: no authored quiz was saved end to end, because that writes to the
   production project. 14 sabotages proven red across the three items.
+
+- **The E2E junk cannot be deleted, and does not need to be.** The owner asked for a
+  scoped delete script to review. Writing it turned up why the obvious version would
+  not work: `enrollments.course_id` cascades from courses, `progress_events.enrollment_id`
+  cascades from enrollments, and `progress_events` carries an append-only trigger
+  (`before update or delete`, migrations/0001:162). Verified by attempting it against the
+  real database inside a rolled-back transaction — and the first attempt proved ME wrong
+  before it proved the point, because I picked a course with an enrollment but no events
+  and the delete succeeded. The trigger is `for each row`, so events decide, not
+  enrollments: 59 of the 73 junk courses have events and abort; 14 delete cleanly.
+  A single delete over all 73 therefore fails as a whole, and forcing it would be
+  deleting learner progress — the unsettled BLOCKED decision in §5. So
+  [cleanup-e2e-junk.sql](db/cleanup-e2e-junk.sql) ARCHIVES instead: the storefront reads
+  `status = 'published'`, so archiving empties the junk out of the catalogue while
+  deleting nothing and settling nothing. Ships ending in ROLLBACK, so running it as
+  written only prints the dry run; verified by executing it exactly as shipped — the
+  demo academy goes from 71 published junk courses to 1 real one, `outdure` untouched.
+
