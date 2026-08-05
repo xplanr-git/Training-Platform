@@ -99,6 +99,7 @@ export default async function EditCourse({
               <select
                 id="confersRoleCode"
                 name="confersRoleCode"
+                aria-describedby="confersRoleCode-help"
                 defaultValue={course.confersRoleCode ?? ''}
                 className={SELECT_CLS}
               >
@@ -109,7 +110,7 @@ export default async function EditCourse({
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-muted">
+              <p id="confersRoleCode-help" className="text-xs text-muted">
                 Completing this course advances the learner to this Connect tier.
               </p>
             </div>

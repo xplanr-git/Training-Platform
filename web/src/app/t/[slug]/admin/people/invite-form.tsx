@@ -57,11 +57,22 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
           <Button type="submit" disabled={pending}>
             {pending ? 'Inviting…' : 'Invite'}
           </Button>
-          {error && <p className="w-full text-sm text-destructive">{error}</p>}
-          {ok && !warning && (
-            <p className="w-full text-sm text-brand-600">Invitation sent.</p>
-          )}
-          {warning && <p className="w-full text-sm text-amber-600">{warning}</p>}
+          {/*
+            All three outcomes go in one polite live region so a screen-reader user
+            is told what happened. Nothing else on the page changes on success —
+            the members table is server-rendered and refreshes separately — so
+            without this, submitting was silent. The error also carries role=alert,
+            matching NavForm, which every other admin form goes through.
+          */}
+          <div aria-live="polite" className="w-full">
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            {ok && !warning && <p className="text-sm text-brand-600">Invitation sent.</p>}
+            {warning && <p className="text-sm text-amber-600">{warning}</p>}
+          </div>
         </form>
       </CardContent>
     </Card>

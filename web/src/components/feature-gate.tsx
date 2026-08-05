@@ -9,7 +9,13 @@ export function FeatureGate({ feature }: { feature: string }) {
       <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
         Coming soon
       </span>
-      <h2 className="text-xl font-semibold">{feature}</h2>
+      {/*
+        An h1, not an h2: this component IS the whole page for /admin/coming-soon,
+        so an h2 left the route with no h1 at all and a heading outline starting at
+        level 2. text-xl is kept — the panel is deliberately quieter than a working
+        page's title.
+      */}
+      <h1 className="text-xl font-semibold">{feature}</h1>
       <p className="max-w-sm text-sm text-muted">
         This is on the roadmap and not part of the current release. Contact us if
         it&apos;s a priority for your academy.

@@ -134,10 +134,19 @@ export function AdminShell({
             >
               <Menu className="h-5 w-5" />
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
+            <SheetContent side="left" className="flex w-72 flex-col gap-0 p-0">
               <SheetTitle className="sr-only">Admin navigation</SheetTitle>
               <Brand tenantName={tenantName} />
               <NavLinks activePath={activePath} onNavigate={() => setOpen(false)} />
+              {/*
+                Same footer as the desktop aside. It existed only there, so on a
+                phone there was no way to sign out of the admin area at all —
+                the drawer is the only navigation a mobile admin has.
+              */}
+              <div className="mt-auto border-t border-border px-4 py-3">
+                {userEmail && <p className="truncate text-xs text-muted">{userEmail}</p>}
+                <SignOutButton className="mt-1.5" />
+              </div>
             </SheetContent>
           </Sheet>
           <span className="flex items-center gap-2 font-semibold">

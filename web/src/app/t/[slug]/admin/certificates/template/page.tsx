@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { db, eq, certificateTemplates } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { saveCertificateTemplate } from './actions';
@@ -40,39 +43,36 @@ export default async function CertificateTemplate({
         action={saveCertificateTemplate.bind(null, slug)}
         className="mt-6 flex flex-col gap-4"
       >
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Heading</span>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tpl-title">Heading</Label>
+          <Input
+            id="tpl-title"
             name="title"
             defaultValue={design.title ?? ''}
             placeholder="Certificate of Completion"
-            className="rounded-md border border-border px-3 py-2"
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Signatory</span>
-          <input
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tpl-signatory">Signatory</Label>
+          <Input
+            id="tpl-signatory"
             name="signatory"
             defaultValue={design.signatory ?? ''}
             placeholder="Jane Doe, Director of Training"
-            className="rounded-md border border-border px-3 py-2"
           />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Accent color</span>
-          <input
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tpl-accentcolor">Accent color</Label>
+          <Input
+            id="tpl-accentcolor"
             name="accentColor"
             defaultValue={design.accentColor ?? ''}
-            placeholder="#2563eb"
-            className="w-40 rounded-md border border-border px-3 py-2"
+            placeholder="#2563eb" className="w-40"
           />
-        </label>
-        <button
-          type="submit"
-          className="self-start rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
+        </div>
+        <Button type="submit" className="self-start">
           Save template
-        </button>
+        </Button>
       </NavForm>
     </div>
   );

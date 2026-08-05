@@ -97,7 +97,7 @@ export default async function People({
         </Button>
       </form>
 
-      <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border">
+      <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border bg-surface">
         <Table>
           <TableHeader>
             <TableRow>
@@ -116,7 +116,15 @@ export default async function People({
                 <TableCell className="text-muted">{m.email}</TableCell>
                 <TableCell>
                   <NavForm action={setMemberRole.bind(null, slug, m.id, nextRole(m.role))} className="inline" quiet>
-                    <Button type="submit" variant="ghost" size="sm" title="Click to cycle role">
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Role: ${ROLE_LABELS[m.role] ?? m.role}. Activate to change to ${
+                        ROLE_LABELS[nextRole(m.role)] ?? nextRole(m.role)
+                      }.`}
+                      className="-ml-3"
+                    >
                       {ROLE_LABELS[m.role] ?? m.role}
                     </Button>
                   </NavForm>
@@ -141,7 +149,7 @@ export default async function People({
                       </Button>
                     </NavForm>
                   ) : (
-                    <>
+                    <div className="flex items-center justify-end gap-1">
                       {m.status === 'invited' && (
                         <NavForm action={setMemberStatus.bind(null, slug, m.id, 'active')} className="inline" quiet>
                           <Button type="submit" variant="ghost" size="sm">
@@ -154,7 +162,7 @@ export default async function People({
                           Deactivate
                         </Button>
                       </NavForm>
-                    </>
+                    </div>
                   )}
                 </TableCell>
               </TableRow>

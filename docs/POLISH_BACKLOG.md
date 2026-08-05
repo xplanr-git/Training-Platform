@@ -105,48 +105,28 @@ regress; committed and pushed to both remotes.
       which is the real value of having run it. The 35 medium/low findings are
       listed in the follow-up item below rather than silently dropped.
 
-- [ ] **Admin design pass, part two — the 35 medium/low findings.** From the same
-      audit, each already refuted once by a skeptic. Grouped roughly: the platform
-      table should adopt the Table primitive and Badge; `certificates/template`
-      uses raw inputs and a hand-rolled submit button instead of the primitives;
-      the invite form's messages sit in no live region; the quiz builder has no way
-      to EDIT a saved question and marks correct options by colour+icon alone; the
-      mobile admin drawer omits the sign-out footer. Full list:
-      - `admin/courses/[courseId]/builder/page.tsx:339` — The add-lesson submit is variant="secondary" (bg-secondary #f4f5f7, no border) on the form's own bg-surface-muted band (
-      - `admin/courses/[courseId]/builder/page.tsx:320` — Inputs in both add-forms have no fill contrast against what they sit on: Input supplies bg-input-background (#f9fafb) an
-      - `admin/courses/[courseId]/builder/page.tsx:152` — Both destructive controls are variant="ghost" + className="text-destructive" (147-155, 192-200)
-      - `components/video-upload.tsx:195` — The two ingest inputs are labelled by a sibling <span className="text-xs text-muted"> (195, 222), not a <label> — no htm
-      - `app/platform/page.tsx:41` — platform/page
-      - `admin/people/page.tsx:144` — The two row actions in the Actions cell stack vertically instead of sitting side by side, so an `invited` member's row i
-      - `admin/courses/page.tsx:91` — The three tenant-admin table wrappers have no surface fill, so they render grey-on-grey; only the platform table sets `b
-      - `app/platform/page.tsx:48` — Row actions are left-aligned on platform and right-aligned on the other three, and they are bare underlined links rather
-      - `app/platform/page.tsx:59` — The Members count — the only true numeric column in the four tables — is left-aligned in a proportional font, with no `t
-      - `app/platform/page.tsx:61` — Status is a bespoke pill built from five off-token colour families instead of the `Badge` the other three tables use, an
-      - `admin/people/page.tsx:119` — The Role value is a `size="sm"` Button sitting in a left-aligned data column, so its text is indented 12px past its own 
-      - `admin/people/invite-form.tsx:51` — The hand-rolled select classes disagree with the Input primitive on fill, shadow, and text size: `bg-transparent shadow-
-      - `admin/certificates/template/page.tsx:45` — All three fields are raw `<input>` elements with `className="rounded-md border border-border px-3 py-2"` (lines 49, 58, 
-      - `admin/certificates/template/page.tsx:70` — The submit control is a hand-rolled `<button className="self-start rounded-md bg-brand-600 px-4 py-2 text-sm font-medium
-      - `admin/people/invite-form.tsx:60` — The error, success, and warning messages (lines 60, 62, 64) sit in no live region and the error carries no `role="alert"
-      - `admin/certificates/template/page.tsx:41` — Field rhythm diverges from the other four admin forms: the form uses `gap-4` between fields and `gap-1` between label an
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:104` — The saved-question card never shows the question type, and every option renders a round marker (line 132) or a check (li
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:161` — Four of the six add-question fields have no label: the prompt input (161) and options textarea (170) are placeholder-onl
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:178` — The correct answer is chosen by typing 1-based line numbers into a free-text box whose only guidance is "e
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:100` — A saved question has no edit affordance — the card carries only a delete button (line 110), so correcting a typo in a pr
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:129` — Correct vs incorrect options are conveyed only by icon shape and colour — a lucide `Check` (line 130) or a bordered empt
-      - `components/admin-shell.tsx:131` — The mobile drawer renders only `Brand` + `NavLinks`; the email/sign-out footer exists solely in the desktop aside (lines
-      - `lib/nav.ts:133` — `/admin/settings/billing` is built and live, but both nav entries for it are `gated` — 'Plans & Billing' (line 92) and '
-      - `components/ui/table.tsx:60` — `TableRow` uses `hover:bg-muted/50` — `--color-muted` is the grey *text* token #6b7280, so the hover fill is a ~50% mid-
-      - `components/feature-gate.tsx:12` — The coming-soon page's top-level heading is an `h2` at `text-xl`; the route renders no `h1` at all (coming-soon/page
-      - `admin/courses/[courseId]/builder/page.tsx:224` — className={`${SELECT_CLS} h-8`} is raw string concatenation on a plain <select>, so it never passes through cn/twMerge a
-      - `admin/courses/[courseId]/builder/page.tsx:209` — The <summary> that is the only route to every lesson's editing controls is text-xs text-brand-700 with no padding — 12px
-      - `admin/courses/[courseId]/builder/page.tsx:214` — The edit-lesson NavForm puts flex flex-wrap items-center gap-2 on the <form>, and NavForm's status region is <div aria-l
-      - `app/platform/page.tsx:37` — The platform table's heading is `h2 text-xl font-semibold` where the other three are `h1 text-2xl font-semibold tracking
-      - `components/nav-form.tsx:151` — The shared form error renders `text-red-600` while the admin surface's established error/destructive colour is `text-des
-      - `admin/courses/[courseId]/page.tsx:112` — The help text 'Completing this course advances the learner to this Connect tier
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:16` — The page-local SELECT_CLS diverges from the Input primitive on four properties, and the two are rendered side by side in
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:145` — The empty state uses `EmptyRow` with `className="px-0"`, but the `<ol>` on line 96 has no border or background — the que
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:49` — The pre-initialisation state of the same page is styled and worded differently: the h1 is `{lesson
-      - `admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx:66` — The working column is `max-w-2xl` here (and on line 42), while the builder page it is reached from is `max-w-3xl` (build
+- [x] **Admin design pass, part two.** Worked the 35 medium/low findings. Five were
+      already fixed by part one and dropped. Landed: `platform/page.tsx` now uses the
+      Table primitive + Badge with a right-aligned, tabular member count (it was
+      hand-rolled markup and a bespoke five-colour status pill); all four tables sit
+      on `bg-surface`, WITHOUT which part one's row-hover fix was invisible — the
+      admin shell is grey, so an unfilled table hovered grey-on-grey; the certificate
+      template form uses Input/Label/Button instead of raw elements; the invite form
+      announces its outcome in a live region with `role="alert"` (it is the one admin
+      form not routed through NavForm, so it inherited none of that); the mobile
+      drawer now carries the sign-out footer, which existed only in the desktop aside
+      — a phone had NO way to sign out; destructive buttons keep their colour on
+      hover (ghost's `hover:text-accent-foreground` was overriding it); a correct quiz
+      option says "(correct)" rather than relying on a tick and a colour (WCAG 1.4.1);
+      the quiz card shows the question type; `FeatureGate` renders an h1 so
+      /admin/coming-soon has one; the tier help text is associated via
+      aria-describedby; the people table's row actions no longer stack and double the
+      row height; the edit-lesson disclosure has a real hit area.
+      DELIBERATELY SKIPPED: "a saved question has no edit affordance" is a missing
+      FEATURE (needs an updateQuestion action and form), not a design defect, and the
+      free-text answer-index picker already has its own item in §4 — neither is churn
+      to fold in here.
+
 - [ ] **Mobile.** Contractors use this on site. Verify every learner page at
       375px: no horizontal scroll, tap targets ≥44px, the lesson sidebar
       collapses sensibly.
@@ -409,3 +389,22 @@ Newest first. One line per completed item: what changed, and the commit.
   CSS, which is why it survived this long.
   NOT verified: any admin surface as rendered. The fixes were verified on public
   pages and on a throwaway probe rendering the Table and Card primitives directly.
+- Admin design pass part two. Five of the 35 were already fixed by part one, which
+  is why reconciling the list against the code came first rather than trusting it.
+  The most consequential fix was the least glamorous: three of the four admin tables
+  had no background, and since the admin shell root is `bg-surface-muted`, those
+  tables WERE that grey — so the row-hover fix shipped in part one was hovering grey
+  onto grey and changed nothing visible. Giving the tables a white fill is what made
+  the previous commit's fix real, which is a good argument for finishing a pass
+  rather than stopping at the high-severity items. Also found and fixed while
+  verifying: the sign-out button I had just added to the mobile drawer measured 20px
+  tall, under WCAG 2.2's 24px minimum — now 86x32. Twelve guards proven red, plus the
+  tap-size one. My own test again matched its own explanatory comment (naming
+  `<table>` while describing what was removed), for the second time in this backlog,
+  so comment-stripping is now a shared helper in that suite.
+  VERIFIED: for the first time, the real admin chrome — AdminShell rendered in a
+  probe showed the grey shell (#f9fafb) against a now-white table, 12px radius, grey
+  row borders, right-aligned numeric and action columns, Badge rendering; and at
+  375px the drawer opens with email + Sign out visible, 86x32, no horizontal scroll.
+  NOT verified: the admin pages as served to a real admin — still no authenticated
+  session, so the probe renders the components, not the routes.

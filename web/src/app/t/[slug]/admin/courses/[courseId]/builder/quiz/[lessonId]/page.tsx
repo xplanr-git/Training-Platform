@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { EmptyRow } from '@/components/empty-state';
+import { EmptyState } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Check, Trash2 } from 'lucide-react';
 import { db, eq, and, asc, lessons, quizzes, quizQuestions } from '@training-platform/db';
@@ -14,6 +14,13 @@ import { NavForm } from '@/components/nav-form';
 
 const SELECT_CLS =
   'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+/** Mirrors the options in the add-question type select. */
+const QUESTION_TYPE_LABEL: Record<string, string> = {
+  mcq: 'Multiple choice — one answer',
+  multi_select: 'Multiple choice — many answers',
+  true_false: 'True / False',
+};
 
 export default async function QuizEditor({
   params,
@@ -46,9 +53,15 @@ export default async function QuizEditor({
         >
           <ArrowLeft className="h-4 w-4" /> Content
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">{lesson.title}</h1>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight">
+          Quiz &middot; {lesson.title}
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          This lesson has no quiz attached yet. Setting one up gives it a pass mark of
+          70%, which you can change straight afterwards.
+        </p>
         <NavForm action={ensureQuiz.bind(null, slug, courseId, lessonId)} className="mt-4">
-          <Button type="submit">Initialize quiz</Button>
+          <Button type="submit">Set up this quiz</Button>
         </NavForm>
       </div>
     );
@@ -102,17 +115,27 @@ export default async function QuizEditor({
               <Card>
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium">
-                      {i + 1}. {q.prompt}{' '}
-                      <span className="text-xs font-normal text-muted">({q.points} pt)</span>
-                    </p>
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {i + 1}. {q.prompt}{' '}
+                        <span className="text-xs font-normal text-muted">({q.points} pt)</span>
+                      </p>
+                      {/*
+                        The type was never shown, so a multi-answer question and a
+                        single-answer one with two ticks looked identical — and which
+                        it is decides how the answer key was read.
+                      */}
+                      <p className="mt-0.5 text-xs text-muted">
+                        {QUESTION_TYPE_LABEL[q.type] ?? q.type}
+                      </p>
+                    </div>
                     <NavForm action={deleteQuestion.bind(null, slug, courseId, lessonId, q.id)} quiet confirm="Delete this question?">
                       <Button
                         type="submit"
                         variant="ghost"
                         size="icon"
                         aria-label="Delete question"
-                        className="text-destructive"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -127,11 +150,22 @@ export default async function QuizEditor({
                         }`}
                       >
                         {correct.includes(oi) ? (
-                          <Check className="h-4 w-4 shrink-0" />
+                          <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
                         ) : (
-                          <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-current" />
+                          <span
+                            aria-hidden="true"
+                            className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-current"
+                          />
                         )}
-                        {o}
+                        <span>{o}</span>
+                        {/*
+                          The tick and the colour were the ONLY signals. A screen
+                          reader got neither, and colour alone fails WCAG 1.4.1, so
+                          the state is now also stated in words.
+                        */}
+                        {correct.includes(oi) && (
+                          <span className="text-xs font-medium">(correct)</span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -142,10 +176,10 @@ export default async function QuizEditor({
         })}
         {questions.length === 0 && (
           <li>
-            <EmptyRow className="px-0" title="No questions yet">
+            <EmptyState title="No questions yet">
               Add the first one below. A question a learner skips is marked wrong, and they
               pass at the percentage set in Pass threshold above.
-            </EmptyRow>
+            </EmptyState>
           </li>
         )}
       </ol>

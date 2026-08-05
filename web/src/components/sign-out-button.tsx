@@ -29,7 +29,11 @@ export function SignOutButton({ className }: { className?: string }) {
       onClick={onClick}
       disabled={pending}
       className={cn(
-        'inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground disabled:opacity-50',
+        // Padding, not just text: measured at 20px tall, under WCAG 2.2's 24px
+        // minimum target size (2.5.8). It matters most exactly where it is smallest —
+        // the mobile admin drawer, on a phone, on site. The negative inset keeps it
+        // optically aligned with the text above it despite the new padding.
+        'inline-flex -ml-1.5 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:opacity-50',
         className,
       )}
     >

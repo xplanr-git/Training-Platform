@@ -150,7 +150,7 @@ export default async function CourseBuilder({
                     variant="ghost"
                     size="icon"
                     aria-label="Delete section"
-                    className="text-destructive"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -195,7 +195,7 @@ export default async function CourseBuilder({
                             variant="ghost"
                             size="icon"
                             aria-label="Remove lesson"
-                            className="text-destructive"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -207,7 +207,13 @@ export default async function CourseBuilder({
                         questions live in the quiz editor, but they still need a
                         time estimate so "about N min left" includes them. */}
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-brand-700">
+                      {/*
+                        This <summary> is the ONLY way into a lesson's editing
+                        controls, and it was 12px text with no padding — a hairline
+                        target on a touch screen. Padding gives it a real hit area
+                        without changing the visual language.
+                      */}
+                      <summary className="inline-flex cursor-pointer items-center rounded-md py-1.5 pr-2 text-sm text-brand-700 hover:underline">
                         Edit lesson
                       </summary>
                       <NavForm

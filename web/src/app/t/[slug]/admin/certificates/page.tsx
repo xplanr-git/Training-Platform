@@ -76,7 +76,7 @@ export default async function Certificates({
       </div>
       <p className="mt-1 text-muted">Issued completion certificates for your academy.</p>
 
-      <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border">
+      <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border bg-surface">
         <Table>
           <TableHeader>
             <TableRow>
