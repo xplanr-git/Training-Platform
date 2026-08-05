@@ -203,11 +203,13 @@ regress; committed and pushed to both remotes.
       unverifiable; it is verifiable — AdminShell is a client component and renders
       in a probe.
 
-- [ ] **In single-tenant mode, `/` is the marketing page, not the catalogue.**
+- [x] **In single-tenant mode, `/` is the marketing page, not the catalogue.**
       **DECIDED 2026-08-06 by the owner: signed-out visitors get marketing, signed-in
-      users get the catalogue.** So `/` branches on session, and the five links that
-      mean "the course list" become correct for the people who click them.
-      Original finding below.
+      users get the catalogue.** Done: `tenantRewritePath` takes `signedIn`, which the
+      middleware already had from `updateSession`, and only `/` on the apex consults it.
+      The five links needed no changes — they mean "the course list" and now reach it.
+      Verified signed-out with a real request; the signed-in leg is unit-tested only,
+      since faking a session needs credentials. Original finding below.
       `tenantRewritePath` deliberately excludes `pathname === '/'` from the
       default-slug rewrite (`lib/host.ts:108`), so on the bare domain the
       storefront is only at `/t/<slug>`. But five places link to `/` meaning

@@ -96,16 +96,32 @@ export function tenantRewritePath(opts: {
   host: string | null;
   pathname: string;
   defaultSlug?: string | null;
+  /**
+   * Whether the request carries a session. Only consulted for `/` on the apex.
+   *
+   * Decided by the owner on 2026-08-06: a signed-out visitor to the bare domain
+   * gets the marketing page, a signed-in one gets the catalogue. Before this,
+   * `/` was always marketing, and five places linked to `/` meaning "the course
+   * list" — the storefront's own pagination, the dashboard's "Browse courses",
+   * the course landing's "All courses" back-link, error.tsx and not-found.tsx.
+   * A signed-in learner clicking any of them landed on a page whose only control
+   * was "Sign in".
+   *
+   * A tenant SUBDOMAIN is unaffected: its root is the storefront either way, so
+   * this only changes the apex in single-tenant mode.
+   */
+  signedIn?: boolean;
 }): string | null {
-  const { host, pathname, defaultSlug } = opts;
+  const { host, pathname, defaultSlug, signedIn = false } = opts;
   if (matchesPrefix(pathname, SHARED_PREFIXES)) return null;
 
   const subdomain = tenantSlugFromHost(host);
   // On the apex, fall back to the configured single-tenant academy — but not for
   // routes that are meaningful only at the apex.
+  const apexRootStaysMarketing = pathname === '/' && !signedIn;
   const slug =
     subdomain ??
-    (defaultSlug && !(pathname === '/' || matchesPrefix(pathname, APEX_ONLY_PREFIXES))
+    (defaultSlug && !(apexRootStaysMarketing || matchesPrefix(pathname, APEX_ONLY_PREFIXES))
       ? defaultSlug
       : null);
   if (!slug) return null;

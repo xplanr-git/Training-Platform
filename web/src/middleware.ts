@@ -19,6 +19,8 @@ export async function middleware(request: NextRequest) {
     host: request.headers.get('host'),
     pathname,
     defaultSlug: env.defaultTenantSlug(),
+    // updateSession has already resolved this, so branching `/` on it is free.
+    signedIn: !!user,
   });
 
   if (rewritePath) {

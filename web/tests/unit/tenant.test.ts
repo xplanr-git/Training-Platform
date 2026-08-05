@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { tenantSlugFromHost, tenantRewritePath } from '@/lib/host';
 
 beforeAll(() => {
@@ -79,10 +81,64 @@ describe('tenantRewritePath — single-tenant mode', () => {
   });
 
   it('keeps the marketing page, platform admin and /dashboard on the apex', () => {
+    // `at` does not pass signedIn, so these are the SIGNED-OUT expectations.
     expect(at(APEX, '/')).toBeNull();
     expect(at(APEX, '/platform')).toBeNull();
     expect(at(APEX, '/platform/anything')).toBeNull();
     expect(at(APEX, '/dashboard')).toBeNull();
+  });
+
+  describe('the apex root depends on whether you are signed in', () => {
+    /*
+     * Owner decision, 2026-08-06: marketing for a visitor, the catalogue for
+     * someone signed in. Five places link to `/` meaning "the course list" — the
+     * storefront's pagination, the dashboard's "Browse courses", the course
+     * landing's "All courses" back-link, error.tsx and not-found.tsx — and a
+     * signed-in learner clicking any of them used to land on a page whose only
+     * control was "Sign in".
+     */
+    const root = (signedIn: boolean) =>
+      tenantRewritePath({ host: APEX, pathname: '/', defaultSlug: 'outdure', signedIn });
+
+    it('signed out: marketing', () => {
+      expect(root(false)).toBeNull();
+    });
+
+    it('signed in: the academy storefront', () => {
+      expect(root(true)).toBe('/t/outdure');
+    });
+
+    it('changes nothing else about the apex', () => {
+      // Only `/` is session-dependent. If this ever widened, a signed-in visitor
+      // would lose the platform-admin area and the apex dashboard.
+      for (const p of ['/platform', '/dashboard', '/login', '/signup', '/auth/confirm']) {
+        expect(
+          tenantRewritePath({ host: APEX, pathname: p, defaultSlug: 'outdure', signedIn: true }),
+          `${p} must not depend on the session`,
+        ).toBe(tenantRewritePath({ host: APEX, pathname: p, defaultSlug: 'outdure' }));
+      }
+    });
+
+    it('a subdomain root is the storefront either way', () => {
+      // A tenant subdomain has no marketing page to protect.
+      for (const signedIn of [true, false]) {
+        expect(
+          tenantRewritePath({ host: SUB, pathname: '/', defaultSlug: 'outdure', signedIn }),
+        ).toBe('/t/acme');
+      }
+    });
+
+    it('and with no default slug the apex root is still nothing', () => {
+      // Multi-tenant mode: the apex has no academy to show, signed in or not.
+      expect(tenantRewritePath({ host: APEX, pathname: '/', signedIn: true })).toBeNull();
+    });
+  });
+
+  it('the middleware passes the session through', () => {
+    // The branch above is worthless if the caller never sets it — and the
+    // middleware already has `user` from updateSession, so it is free.
+    const mw = readFileSync(join(process.cwd(), 'src/middleware.ts'), 'utf8');
+    expect(mw).toMatch(/signedIn:\s*!!user/);
   });
 
   it('still lets a real subdomain win over the default', () => {
