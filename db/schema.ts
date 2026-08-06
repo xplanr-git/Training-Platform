@@ -19,6 +19,7 @@ import {
   jsonb,
   integer,
   bigint,
+  bigserial,
   boolean,
   numeric,
   unique,
@@ -498,6 +499,22 @@ export const auditLog = pgTable(
   'audit_log',
   {
     id: uuid('id').defaultRandom().primaryKey(),
+    /**
+     * Monotonic chain position. The chain USED to be ordered by `occurred_at`,
+     * which defaults to now() = TRANSACTION START — so under concurrency the
+     * chain order did not match the commit order and no verifier could
+     * linearise it. The hash trigger takes a per-tenant advisory lock held to
+     * commit, so within a tenant this sequence is commit order exactly.
+     */
+    seq: bigserial('seq', { mode: 'number' }).notNull(),
+    /**
+     * Which canonicalisation produced `hash`. 1 = the pre-0015 algorithm, which
+     * concatenated fields with no delimiter and omitted id/ip/user_agent;
+     * 2 = canonical jsonb over every field. verify_audit_chain() can check the
+     * LINK on a v1 row (its successor's prev_hash) but cannot recompute its
+     * content hash, and says so rather than reporting it as tampered.
+     */
+    hashVersion: integer('hash_version').notNull().default(2),
     // NO foreign key, deliberately. audit_log is append-only, and its trigger
     // rejects both UPDATE and DELETE — so ANY referential action (cascade or
     // set null) aborts a tenant delete. The id is retained as a historical
@@ -516,5 +533,11 @@ export const auditLog = pgTable(
     prevHash: text('prev_hash'),
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({ tenantIdx: index('audit_log_tenant_idx').on(t.tenantId) }),
+  (t) => ({
+    tenantIdx: index('audit_log_tenant_idx').on(t.tenantId),
+    // The chain is walked per tenant in seq order, by both the hash trigger's
+    // predecessor lookup and verify_audit_chain().
+    tenantSeqIdx: index('audit_log_tenant_seq_idx').on(t.tenantId, t.seq),
+    seqUnique: unique('audit_log_seq_unique').on(t.seq),
+  }),
 );
