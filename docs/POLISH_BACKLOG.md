@@ -924,3 +924,29 @@ Newest first. One line per completed item: what changed, and the commit.
   had explicitly declined to add a session read here on speed grounds — correct then,
   wrong once the page became a default destination.
 
+- **"Signing out takes ages", then "it signed out but did not redirect".** Both
+  symptoms, one cause. The button awaited a GLOBAL `signOut()` — a network round trip
+  to revoke the refresh token everywhere, preceded by a token refresh if the access
+  token had expired — then called `router.push('/login')` immediately followed by
+  `router.refresh()`. The refresh invalidates the router cache and re-fetches the route
+  being LEFT, which since `/` started landing on the catalogue is the slowest page in
+  the app (854ms warm, 2.9s cold, measured against production). It also drops the
+  pending push, which is exactly the reported second symptom: the page re-rendered as
+  signed-out so the nav changed, and the URL never moved.
+  Now: `signOut({ scope: 'local' })` — no network, and clearing this browser is what a
+  shared site machine actually needs — followed by `window.location.replace('/login')`,
+  a hard navigation nothing can interrupt and which leaves no client cache holding a
+  signed-in render. Verified by clicking the real button in a probe: the JS context is
+  torn down mid-call and the browser lands on /login with the sign-in form.
+  Could NOT reproduce the failure locally, and said so: signed out and on a trivial
+  page the OLD code navigated fine in 207ms, because `signOut` short-circuits with no
+  session and refreshing a trivial page is cheap. The failure needs a real session and
+  the slow page together. So the fix is reasoned from measured page timings, not from a
+  reproduction.
+  Also fixed a regression I had introduced hours earlier: the storefront nav called
+  `auth.getUser()`, a network round trip to re-validate a JWT the middleware had
+  already validated on the same request — two auth calls per load on the page `/` now
+  lands on. `getSession()` reads the cookie locally. Measured signed-out: no difference,
+  because getUser short-circuits without a session, so the cost only ever landed on
+  signed-in users — the case with no test account to measure.
+

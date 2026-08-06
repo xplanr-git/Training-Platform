@@ -256,7 +256,7 @@ describe('the storefront is navigable, because / now lands there', () => {
   const STORE = code('src', 'app', 't', '[slug]', 'page.tsx');
 
   it('knows whether anyone is signed in', () => {
-    expect(STORE).toMatch(/auth\.getUser\(\)/);
+    expect(STORE).toMatch(/auth\.getSession\(\)/);
     expect(STORE).toMatch(/const signedIn =/);
   });
 
@@ -269,7 +269,7 @@ describe('the storefront is navigable, because / now lands there', () => {
     const batch = STORE.slice(STORE.indexOf('const [countRows'));
     const end = batch.indexOf(']);');
     expect(end).toBeGreaterThan(-1);
-    expect(batch.slice(0, end)).toMatch(/auth\.getUser\(\)/);
+    expect(batch.slice(0, end)).toMatch(/auth\.getSession\(\)/);
   });
 
   it('offers a signed-in learner their dashboard and a way out', () => {
@@ -285,5 +285,55 @@ describe('the storefront is navigable, because / now lands there', () => {
   it('shows one set or the other, never both', () => {
     // A "Sign in" link beside a "Sign out" button would be nonsense.
     expect(STORE).toMatch(/\{signedIn \?/);
+  });
+});
+
+describe('signing out does not make you wait for work nobody sees', () => {
+  /*
+   * Reported as "signing out takes ages". The button awaited a global signOut —
+   * a network round trip to Supabase to revoke the refresh token everywhere,
+   * preceded by a token refresh if the access token had expired — and then did
+   * router.push('/login') FOLLOWED BY router.refresh(). That refresh re-renders
+   * the route being LEFT, which since `/` started landing on the catalogue is the
+   * slowest page in the app: 854ms warm and 2.9s cold, measured against
+   * production. So the button sat on "Signing out…" re-rendering a page the
+   * person was already navigating away from.
+   */
+  const BTN = code('src', 'components', 'sign-out-button.tsx');
+
+  it('clears the session locally, without a network round trip', () => {
+    expect(BTN).toMatch(/signOut\(\{ scope: 'local' \}\)/);
+  });
+
+  it('leaves with one hard navigation, not two RSC fetches', () => {
+    expect(BTN).toMatch(/window\.location\.replace\('\/login'\)/);
+    expect(BTN, 'router.refresh re-renders the page being left').not.toMatch(/router\.refresh\(/);
+    expect(BTN, 'a soft push keeps the client cache holding a signed-in render').not.toMatch(
+      /router\.push\(/,
+    );
+  });
+
+  it('uses replace, so Back does not return to a page with no session', () => {
+    expect(BTN).not.toMatch(/window\.location\.assign|window\.location\.href =/);
+  });
+
+  it('still reports that it is working', () => {
+    // A hard navigation is not instant; without this the button looks dead.
+    expect(BTN).toMatch(/Signing out/);
+    expect(BTN).toMatch(/disabled=\{pending\}/);
+  });
+
+  it('the storefront does not re-validate a session the middleware just validated', () => {
+    /*
+     * getUser() is a network call to Supabase; getSession() reads the cookie.
+     * The middleware calls getUser on every request already, so using it again
+     * here made the landing page pay twice — for a decision about which nav
+     * links to draw.
+     */
+    const STORE = code('src', 'app', 't', '[slug]', 'page.tsx');
+    expect(STORE).toMatch(/auth\.getSession\(\)/);
+    expect(STORE, 'getUser here duplicates the middleware').not.toMatch(/auth\.getUser\(\)/);
+    // And the middleware must still be the one doing real validation.
+    expect(code('src', 'lib', 'supabase', 'middleware.ts')).toMatch(/auth\.getUser\(\)/);
   });
 });

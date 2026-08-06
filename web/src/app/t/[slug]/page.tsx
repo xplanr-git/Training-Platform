@@ -96,9 +96,24 @@ export default async function TenantHome({
           .where(and(...filters))
       : Promise.resolve([] as Array<{ total: number }>),
     tenant ? rowsAt(requestedOffset) : Promise.resolve([] as Awaited<ReturnType<typeof rowsAt>>),
-    supabase().then((c) => c.auth.getUser().then((r) => r.data.user)),
+    // getSession, NOT getUser: getUser makes a network round trip to Supabase to
+    // re-validate the JWT, and the middleware has ALREADY done exactly that on
+    // this request — so calling it here made the storefront pay for two auth
+    // round trips per page load, on the page `/` now lands on. getSession reads
+    // the cookie locally.
+    //
+    // Measured signed OUT: no difference, because getUser short-circuits with no
+    // session to validate. The cost only lands on signed-in users, which is the
+    // case that could not be measured here — no test account exists on this
+    // project. So this is a correct-by-construction fix, not a measured one.
+    //
+    // Safe for this specific use: the only thing it decides is which nav links to
+    // render. It grants no access and gates no data — every read on this page is
+    // scoped to the published courses of a tenant resolved from the URL. A forged
+    // cookie would buy someone a "Sign out" link and nothing else.
+    supabase().then((c) => c.auth.getSession().then((r) => !!r.data.session)),
   ]);
-  const signedIn = !!viewer;
+  const signedIn = viewer;
   const total = countRows[0]?.total ?? 0;
   const meta = pageMeta(requestedPage, total);
 
