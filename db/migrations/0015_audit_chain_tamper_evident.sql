@@ -1,5 +1,22 @@
 ALTER TABLE "audit_log" ADD COLUMN "seq" bigserial NOT NULL;--> statement-breakpoint
-ALTER TABLE "audit_log" ADD COLUMN "hash_version" integer DEFAULT 2 NOT NULL;--> statement-breakpoint
+-- Added with DEFAULT 1, then the default moved to 2 — deliberately, and NOT the
+-- `DEFAULT 2` drizzle-kit generated.
+--
+-- Existing rows were hashed by the pre-0015 algorithm and must be marked
+-- version 1. The obvious way to do that is
+--   update public.audit_log set hash_version = 1;
+-- and that ABORTS: audit_log carries audit_log_no_update (0001), a row-level
+-- trigger that rejects UPDATE, and this table had 489 rows when the migration
+-- was first run. It is the same append-only collision that 0009, 0012 and 0016
+-- each had to resolve, hit here by the migration that was supposed to be
+-- hardening the table.
+--
+-- Backfilling through the column DEFAULT avoids DML entirely: ADD COLUMN is
+-- DDL, so no row trigger fires, and every existing row lands on 1. Moving the
+-- default to 2 afterwards is metadata-only. Correct whether the table holds
+-- zero rows or a million, and it never touches the trigger.
+ALTER TABLE "audit_log" ADD COLUMN "hash_version" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE "audit_log" ALTER COLUMN "hash_version" SET DEFAULT 2;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "audit_log_tenant_seq_idx" ON "audit_log" USING btree ("tenant_id","seq");--> statement-breakpoint
 ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_seq_unique" UNIQUE("seq");--> statement-breakpoint
 
@@ -72,8 +89,8 @@ ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_seq_unique" UNIQUE("seq");--> 
 -- as tampered. Silently skipping them, or flagging them as forged, would each
 -- mislead an auditor in a different direction.
 
--- Everything already in the table predates the new canonicalisation.
-update public.audit_log set hash_version = 1;
+-- (Existing rows were marked hash_version = 1 by the column default above, not
+-- by an UPDATE — see the note on that statement.)
 
 -- ── The canonical form, defined ONCE ─────────────────────────────────────
 -- The trigger and the verifier must agree exactly. If they each built their own
@@ -170,9 +187,21 @@ begin
     where a.tenant_id is not distinct from tenant
     order by a.seq asc
   loop
-    -- Link integrity. Checkable for every row regardless of hash_version,
-    -- because it compares against the predecessor's STORED hash.
-    if r.prev_hash is distinct from expected_prev then
+    -- Link integrity, compared against the predecessor's STORED hash.
+    --
+    -- Skipped for v1 rows, and that is not laziness. `seq` was assigned to
+    -- pre-0015 rows by the ADD COLUMN rewrite, so it reflects PHYSICAL order,
+    -- whereas the old trigger chained them in `occurred_at desc, id desc`
+    -- order. Those usually agree for an append-only log and are not guaranteed
+    -- to. Walking v1 rows by seq and reporting every disagreement would emit
+    -- hundreds of "broken link" rows on the first run of a verifier nobody has
+    -- reason to trust yet — alarming, and worthless for rows whose contents are
+    -- already reported as unverifiable.
+    --
+    -- The v2 chain is unaffected: expected_prev still advances through the v1
+    -- rows below, so the FIRST v2 row's link back into the legacy segment is
+    -- checked normally, and everything after it is fully verified.
+    if r.hash_version >= 2 and r.prev_hash is distinct from expected_prev then
       seq := r.seq; id := r.id;
       problem := format(
         'broken link: prev_hash is %s, predecessor hash is %s',
