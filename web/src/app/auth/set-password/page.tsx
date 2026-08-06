@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { activateMembershipOnSignIn, postSignInDestination } from '@/app/login/actions';
@@ -19,7 +18,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
  * form that cannot work.
  */
 export default function SetPasswordPage() {
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -76,8 +74,12 @@ export default function SetPasswordPage() {
     } catch {
       // Fall back to the apex dashboard, which routes by membership.
     }
-    router.push(dest);
-    router.refresh();
+    // Hard navigation, matching sign-in: router.refresh() after router.push()
+    // re-fetches the route being left and can drop the push, which would strand
+    // a brand-new invitee on the set-password screen after their password was
+    // already changed — the worst possible moment to look broken. `loading` is
+    // never cleared here, so the button stays disabled until the document goes.
+    window.location.replace(dest);
   }
 
   return (

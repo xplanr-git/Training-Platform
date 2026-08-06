@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { activateMembershipOnSignIn, postSignInDestination } from './actions';
@@ -33,7 +32,6 @@ function signInMessage(raw: string): string {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -45,8 +43,16 @@ export default function LoginPage() {
     setError(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
     if (error) {
+      // Only on failure. This used to clear unconditionally, right here — so on
+      // SUCCESS the button went back to "Sign in" and re-enabled itself while
+      // three more round trips were still running (activateMembershipOnSignIn,
+      // postSignInDestination, then the navigation). Nothing on screen changed
+      // for a second or more, so the natural response was to press it again —
+      // and every extra press is another sign-in attempt against Supabase's auth
+      // rate limit, which is not ours to raise. The report was "I can't see if
+      // it's signing in, and then it doesn't if I click the button again".
+      setLoading(false);
       setError(signInMessage(error.message));
       return;
     }
@@ -69,8 +75,17 @@ export default function LoginPage() {
         // Fall back to the apex dashboard, which routes by membership.
       }
     }
-    router.push(dest);
-    router.refresh();
+    // A HARD navigation, for the same reason sign-out uses one: router.refresh()
+    // fired straight after router.push() re-fetches the route being LEFT and can
+    // drop the pending push, which on sign-out produced "it signed out but did
+    // not redirect". The same pair here risks signing you in and leaving you on
+    // the form. Replacing the document also guarantees the server renders with
+    // the session cookie that was just set, and replace() keeps Back from
+    // returning to a sign-in form you have already used.
+    //
+    // `loading` is deliberately never cleared on this path: the button stays
+    // disabled and reading "Signing in…" until the document is replaced.
+    window.location.replace(dest);
   }
 
   return (

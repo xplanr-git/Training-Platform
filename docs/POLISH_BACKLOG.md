@@ -950,3 +950,27 @@ Newest first. One line per completed item: what changed, and the commit.
   because getUser short-circuits without a session, so the cost only ever landed on
   signed-in users — the case with no test account to measure.
 
+- **"I can't see if it's signing in, and then it doesn't if I click the button again."**
+  The login button DID have a disabled/"Signing in…" state. It was cleared in the wrong
+  place: `setLoading(false)` ran immediately after the auth call and before three more
+  round trips (activateMembershipOnSignIn, postSignInDestination, the navigation), so
+  on SUCCESS the button re-enabled itself and read "Sign in" again while the work
+  continued. Nothing on screen moved, so pressing it again was the obvious thing to do
+  — and every press is another attempt against Supabase's auth rate limit, which
+  §4 #7 of CLAUDE.md records as not ours to raise. The UI defect manufactured the
+  lockout the owner then hit.
+  Fixed by clearing the flag only on the failure path, and by replacing
+  `router.push` + `router.refresh` with a hard navigation on sign-in AND set-password —
+  the same pair that produced "it signed out but did not redirect", which on those two
+  screens would strand someone on a form whose work had already succeeded. Signup
+  already had both right, which is what made the correct shape obvious.
+  The guard for this was WEAK and a sabotage caught it — the second time in two passes.
+  It looked for `setError` and `return` within a few hundred characters of the clear,
+  and stayed GREEN under the exact bug it was written for, because the error branch's
+  own setError and return sat inside the window. It now measures BRACE DEPTH from the
+  handler: depth 1 is the success path, depth 2+ is a branch. Re-proven red against the
+  precise shape that shipped.
+  NOT verified in a browser: the success path needs valid credentials, and the owner's
+  account was rate-limited at the time. The failure path and the button's state machine
+  are covered by the guards, not by a click.
+
