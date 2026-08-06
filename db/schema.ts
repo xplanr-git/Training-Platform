@@ -305,17 +305,31 @@ export const progressEvents = pgTable(
   'progress_events',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    tenantId: uuid('tenant_id')
-      .notNull()
-      .references(() => tenants.id, { onDelete: 'cascade' }),
-    enrollmentId: uuid('enrollment_id')
-      .notNull()
-      .references(() => enrollments.id, { onDelete: 'cascade' }),
-    // Intentionally NOT a foreign key: progress_events is append-only, so the
-    // ON DELETE SET NULL cascade tripped the forbid_mutation trigger and made
-    // any touched lesson undeletable (migration 0009). The id stays as a
-    // historical reference — an event must remain truthful about which lesson
-    // it recorded, even after that lesson is removed.
+    /**
+     * NOT foreign keys, for the same reason lessonId below is not — and
+     * resolved the same way (migration 0016; see also 0009 and 0012).
+     *
+     * progress_events is append-only: forbid_mutation rejects UPDATE and
+     * DELETE. Any referential action is therefore blocked by construction —
+     * CASCADE issues a DELETE, SET NULL issues an UPDATE, and both trip the
+     * trigger and abort the whole transaction. So while these cascaded from
+     * tenants and enrollments, deleting a tenant, a course or an enrollment
+     * FAILED for any learner who had generated a single event: verified on
+     * 2026-08-06, 59 of 73 junk courses could not be deleted.
+     *
+     * The ids stay as plain historical references. That is the right shape for
+     * an append-only event log — the event records what happened, and must stay
+     * truthful after its subject is gone.
+     *
+     * Consequence: readers must tolerate an enrollment_id or tenant_id with no
+     * matching row, and LEFT JOIN accordingly.
+     *
+     * NOT settled by this: whether learner progress may ever be DELETED (GDPR
+     * Article 17). Dropping the constraints unblocks deleting the parent while
+     * deleting no events. See docs/POLISH_BACKLOG.md §5 — owner decision.
+     */
+    tenantId: uuid('tenant_id').notNull(),
+    enrollmentId: uuid('enrollment_id').notNull(),
     lessonId: uuid('lesson_id'),
     eventType: text('event_type').notNull(),
     payload: jsonb('payload').notNull().default({}),

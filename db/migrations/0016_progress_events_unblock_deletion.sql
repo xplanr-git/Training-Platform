@@ -1,0 +1,56 @@
+ALTER TABLE "progress_events" DROP CONSTRAINT "progress_events_tenant_id_tenants_id_fk";
+--> statement-breakpoint
+ALTER TABLE "progress_events" DROP CONSTRAINT "progress_events_enrollment_id_enrollments_id_fk";
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- FIX: deleting a tenant, a course or an enrollment aborted for any learner who
+-- had generated a single progress event.
+--
+-- progress_events.tenant_id cascaded from tenants and .enrollment_id cascaded
+-- from enrollments, while progress_events itself carries an append-only trigger
+-- that rejects UPDATE and DELETE. Any referential action is therefore blocked by
+-- construction: CASCADE issues a DELETE and SET NULL issues an UPDATE, and both
+-- trip forbid_mutation and abort the enclosing transaction with
+--   "progress_events is append-only; DELETE is not permitted"
+--
+-- Not theoretical. Measured against the real database on 2026-08-06 inside a
+-- rolled-back transaction (db/cleanup-e2e-junk.sql): of 73 junk courses on the
+-- demo storefront, 59 could not be deleted and 14 could — the 14 being exactly
+-- those with an enrollment but no events. The admin's "Delete course" button
+-- returned an error for the rest, and 22 test tenants were similarly stuck.
+--
+-- Migration 0011 spotted this and deferred it, because the obvious fix looks
+-- like it needs the GDPR question answered first. It does not — see below.
+--
+-- ── The resolution, and what it deliberately does NOT decide ─────────────
+--
+-- OWNER DECISION, 2026-08-06: drop the two constraints; do not add an erasure
+-- path. docs/POLISH_BACKLOG.md §5 records "may learner progress be deleted?" as
+-- blocked and explicitly not to be settled unilaterally, and it stays blocked.
+--
+-- The important property of this fix is that it unblocks deleting the PARENT
+-- without deleting a single event. The ids remain as plain uuids — every event
+-- keeps recording which enrolment and which academy it belonged to — they simply
+-- stop being enforced against live rows. Nothing is erased, so the append-only
+-- guarantee is untouched and the watch-time evidence stays exactly as
+-- trustworthy as it was.
+--
+-- This is the same resolution this repo has now reached three times for the same
+-- collision: 0009 for progress_events.lesson_id, 0012 for audit_log.tenant_id,
+-- and here. For an append-only historical record it is the correct trade — the
+-- log describes something that happened and must survive the deletion of its
+-- subject without being rewritten.
+--
+-- STILL OPEN, and not addressed here: a GDPR Article 17 erasure request cannot
+-- be honoured in-product. A learner's progress events now SURVIVE the deletion
+-- of their enrolment, their course and their academy, orphaned but intact.
+-- Honouring erasure needs a deliberate, audited path that is permitted to DELETE
+-- (never UPDATE) these rows, and that is the blocked decision, not this one.
+--
+-- ── Consequence for readers ──────────────────────────────────────────────
+--
+-- Queries joining progress_events to enrollments or tenants must tolerate a
+-- missing parent and LEFT JOIN. Checked at the time of writing: the analytics
+-- page and lib/progress.ts both filter by enrollment_id from an enrollment they
+-- have already loaded, so neither is affected. Anything new that reports across
+-- deleted academies must handle the orphan case explicitly.

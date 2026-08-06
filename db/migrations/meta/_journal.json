@@ -113,6 +113,13 @@
       "when": 1785989146332,
       "tag": "0015_audit_chain_tamper_evident",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785990143843,
+      "tag": "0016_progress_events_unblock_deletion",
+      "breakpoints": true
     }
   ]
 }

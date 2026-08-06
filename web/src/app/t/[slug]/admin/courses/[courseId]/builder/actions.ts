@@ -227,20 +227,43 @@ export async function addSection(slug: string, courseId: string, formData: FormD
     .where(and(eq(sections.courseId, courseId), eq(sections.tenantId, ctx.tenantId)));
   const nextPos = existing.reduce((m, s) => Math.max(m, s.position), -1) + 1;
 
-  await db.insert(sections).values({
-    tenantId: ctx.tenantId,
-    courseId,
-    title,
-    position: nextPos,
+  await db.transaction(async (tx) => {
+    const [section] = await tx
+      .insert(sections)
+      .values({ tenantId: ctx.tenantId, courseId, title, position: nextPos })
+      .returning();
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'section.create',
+      resourceType: 'section',
+      resourceId: section.id,
+      after: { courseId, title, position: nextPos },
+    });
   });
   revalidateBuilder(slug, courseId);
 }
 
 export async function deleteSection(slug: string, courseId: string, sectionId: string) {
   const ctx = await requireAdmin();
-  await db
-    .delete(sections)
-    .where(and(eq(sections.id, sectionId), eq(sections.tenantId, ctx.tenantId)));
+  await db.transaction(async (tx) => {
+    // returning() so the audit records WHAT was removed. A delete audited with
+    // only an id says nothing once the row is gone, which is the moment the log
+    // is for.
+    const [before] = await tx
+      .delete(sections)
+      .where(and(eq(sections.id, sectionId), eq(sections.tenantId, ctx.tenantId!)))
+      .returning();
+    if (!before) return;
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'section.delete',
+      resourceType: 'section',
+      resourceId: sectionId,
+      before,
+    });
+  });
   revalidateBuilder(slug, courseId);
 }
 
@@ -255,6 +278,25 @@ export async function addLesson(
 
   const title = String(formData.get('title') ?? '').trim() || 'Untitled lesson';
   const type = String(formData.get('type') ?? 'text') as 'text' | 'video' | 'pdf' | 'quiz';
+
+  // The section must be in THIS course, not merely in this tenant. Without it a
+  // crafted post could file a lesson into another course of the caller's own
+  // academy: courseId and sectionId arrive separately and were each checked
+  // against the tenant but never against each other, so the lesson's course_id
+  // and its section's course_id could disagree — which the builder renders as a
+  // lesson that has vanished.
+  const [section] = await db
+    .select({ id: sections.id })
+    .from(sections)
+    .where(
+      and(
+        eq(sections.id, sectionId),
+        eq(sections.courseId, courseId),
+        eq(sections.tenantId, ctx.tenantId),
+      ),
+    )
+    .limit(1);
+  if (!section) throw new Error('That section is no longer part of this course. Reload the page.');
 
   const existing = await db
     .select({ position: lessons.position })
@@ -311,28 +353,54 @@ export async function updateLesson(
   // see contentFor. Also gives a real error instead of a silent no-op when the
   // lesson isn't in this tenant.
   const [existing] = await db
-    .select({ content: lessons.content })
+    .select()
     .from(lessons)
     .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
     .limit(1);
   if (!existing) throw new Error('Lesson not found');
 
-  await db
-    .update(lessons)
-    .set({
-      title,
-      type: type as 'text' | 'video' | 'pdf' | 'quiz',
-      estimatedMinutes: parseOptionalMinutes(formData.get('estimatedMinutes')),
-      content: contentFor(type, formData, existing.content),
-      updatedAt: new Date(),
-    })
-    .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)));
+  await db.transaction(async (tx) => {
+    const [after] = await tx
+      .update(lessons)
+      .set({
+        title,
+        type: type as 'text' | 'video' | 'pdf' | 'quiz',
+        estimatedMinutes: parseOptionalMinutes(formData.get('estimatedMinutes')),
+        content: contentFor(type, formData, existing.content),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId!)))
+      .returning();
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'lesson.update',
+      resourceType: 'lesson',
+      resourceId: lessonId,
+      before: existing,
+      after,
+    });
+  });
   revalidateBuilder(slug, courseId);
 }
 
 export async function deleteLesson(slug: string, courseId: string, lessonId: string) {
   const ctx = await requireAdmin();
-  await db.delete(lessons).where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)));
+  await db.transaction(async (tx) => {
+    const [before] = await tx
+      .delete(lessons)
+      .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId!)))
+      .returning();
+    if (!before) return;
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'lesson.delete',
+      resourceType: 'lesson',
+      resourceId: lessonId,
+      before,
+    });
+  });
   revalidateBuilder(slug, courseId);
 }
 
@@ -378,6 +446,15 @@ export async function moveSection(
       .update(sections)
       .set({ position: a.position })
       .where(and(eq(sections.id, b.id), eq(sections.tenantId, ctx.tenantId!)));
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'section.reorder',
+      resourceType: 'section',
+      resourceId: sectionId,
+      before: { position: a.position },
+      after: { position: b.position, swappedWith: b.id },
+    });
   });
   revalidateBuilder(slug, courseId);
 }
@@ -424,6 +501,15 @@ export async function moveLesson(
       .update(lessons)
       .set({ position: a.position })
       .where(and(eq(lessons.id, b.id), eq(lessons.tenantId, ctx.tenantId!)));
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'lesson.reorder',
+      resourceType: 'lesson',
+      resourceId: lessonId,
+      before: { position: a.position },
+      after: { position: b.position, swappedWith: b.id },
+    });
   });
   revalidateBuilder(slug, courseId);
 }

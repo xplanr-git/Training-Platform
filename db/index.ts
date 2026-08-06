@@ -15,6 +15,7 @@ export {
   asc,
   inArray,
   isNull,
+  isNotNull,
   gte,
   lte,
   count,

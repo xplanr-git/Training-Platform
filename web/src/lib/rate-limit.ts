@@ -141,4 +141,23 @@ export const RULES = {
   invite: { limit: 30, windowMs: 60 * 60 * 1000 },
   /** Public join requests — the route that makes all of this matter. */
   join: { limit: 5, windowMs: 60 * 60 * 1000 },
+  /**
+   * Quiz submissions, keyed on ENROLMENT rather than IP.
+   *
+   * Grading is server-side, but the result came back as `?score=&passed=` on
+   * every submission with nothing bounding how many a learner could make. With a
+   * handful of multiple-choice questions that is a brute-forced pass, and the
+   * pass auto-issues a certificate — so the integrity of an accredited
+   * credential rested on nobody trying. Keyed on the enrolment because that is
+   * the thing being protected; an IP key would punish a whole training room on
+   * one connection and be sidestepped by a phone.
+   *
+   * Paired with quizzes.settings.maxAttempts, which is the real cap. This just
+   * stops the seconds-long version.
+   */
+  quizAttempt: { limit: 10, windowMs: 10 * 60 * 1000 },
+  /** Video progress pings — unbounded appends are a storage-cost DoS. */
+  videoProgress: { limit: 240, windowMs: 60 * 1000 },
+  /** Enrolment and checkout: writes rows and creates Stripe sessions. */
+  enroll: { limit: 20, windowMs: 60 * 60 * 1000 },
 } as const satisfies Record<string, RateLimitRule>;

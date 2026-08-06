@@ -67,7 +67,11 @@ describe('a name typed for someone already known is not thrown away', () => {
    * so it now fills the name — but only when blank.
    */
   it('a blank existing name gets filled', () => {
-    expect(ACTIONS).toMatch(/db\s*\.update\(users\)\s*\.set\(\{\s*name\s*\}\)/);
+    // `db.` or `tx.`: the write now runs inside a transaction so it can be
+    // audited alongside — `users` is global, so this rename shows up on every
+    // academy the person belongs to. Matching either keeps the assertion about
+    // the BEHAVIOUR rather than about which handle performs it.
+    expect(ACTIONS).toMatch(/(db|tx)\s*\.update\(users\)\s*\.set\(\{\s*name\s*\}\)/);
   });
 
   it('and a name that is already set is never overwritten', () => {
@@ -83,7 +87,18 @@ describe('a name typed for someone already known is not thrown away', () => {
 
   it('the update is scoped to that one user id', () => {
     const tail = ACTIONS.slice(ACTIONS.search(/\.update\(users\)/));
-    expect(tail.slice(0, 200)).toMatch(/\.where\(eq\(users\.id,\s*userId\)\)/);
+    // `userId!` as well as `userId`: inside a transaction callback TypeScript no
+    // longer narrows the outer let, so the non-null assertion is required. The
+    // scoping — one user id, never a broader predicate — is what matters.
+    expect(tail.slice(0, 200)).toMatch(/\.where\(eq\(users\.id,\s*userId!?\)\)/);
+  });
+
+  it('the fill is audited, because `users` is shared across academies', () => {
+    // A write with effects on another academy's certificates and no record of
+    // who caused it is exactly what CLAUDE.md §7.11 exists to prevent.
+    const tail = ACTIONS.slice(ACTIONS.search(/\.update\(users\)/));
+    expect(tail.slice(0, 600)).toMatch(/audited\(tx,/);
+    expect(tail.slice(0, 600)).toMatch(/'user\.name_filled'/);
   });
 });
 

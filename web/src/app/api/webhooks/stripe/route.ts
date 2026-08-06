@@ -46,13 +46,44 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        await db
-          .update(subscriptions)
-          .set({
-            status: sub.status as never,
-            currentPeriodEnd: new Date(sub.current_period_end * 1000),
-          })
-          .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+        await db.transaction(async (tx) => {
+          // Read first: the audit needs the tenant this belongs to and the
+          // status it is moving away from, and after the UPDATE both are gone.
+          const [before] = await tx
+            .select({
+              id: subscriptions.id,
+              tenantId: subscriptions.tenantId,
+              status: subscriptions.status,
+              planId: subscriptions.planId,
+            })
+            .from(subscriptions)
+            .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+            .limit(1);
+          if (!before) return;
+
+          await tx
+            .update(subscriptions)
+            .set({
+              status: sub.status as never,
+              currentPeriodEnd: new Date(sub.current_period_end * 1000),
+            })
+            .where(eq(subscriptions.id, before.id));
+
+          // Whether an academy is entitled to trade is decided by this row, and
+          // it was being changed by an outside system with no record of who or
+          // why. "Why did this academy stop working on the 3rd" was previously
+          // answerable only from Stripe's dashboard. actorUserId is null: the
+          // actor is Stripe, not a person.
+          await audited(tx, {
+            tenantId: before.tenantId,
+            actorUserId: null,
+            action: `subscription.${event.type === 'customer.subscription.deleted' ? 'deleted' : 'updated'}`,
+            resourceType: 'subscription',
+            resourceId: sub.id,
+            before: { status: before.status, planId: before.planId },
+            after: { status: sub.status, currentPeriodEnd: sub.current_period_end },
+          });
+        });
         break;
       }
       case 'charge.refunded': {
@@ -162,25 +193,38 @@ async function handleSubscriptionCheckout(
     .where(eq(subscriptions.tenantId, tenantId))
     .limit(1);
 
-  if (existing) {
-    await db
-      .update(subscriptions)
-      .set({
+  await db.transaction(async (tx) => {
+    if (existing) {
+      await tx
+        .update(subscriptions)
+        .set({
+          stripeSubscriptionId: subId,
+          stripeCustomerId: customerId,
+          planId: planId ?? 'starter',
+          status: 'active',
+        })
+        .where(eq(subscriptions.id, existing.id));
+    } else {
+      await tx.insert(subscriptions).values({
+        tenantId,
         stripeSubscriptionId: subId,
         stripeCustomerId: customerId,
         planId: planId ?? 'starter',
         status: 'active',
-      })
-      .where(eq(subscriptions.id, existing.id));
-  } else {
-    await db.insert(subscriptions).values({
+      });
+    }
+
+    // The moment an academy starts paying, and on which plan — which decides
+    // its limits and entitlements. Unrecorded until now.
+    await audited(tx, {
       tenantId,
-      stripeSubscriptionId: subId,
-      stripeCustomerId: customerId,
-      planId: planId ?? 'starter',
-      status: 'active',
+      actorUserId: null,
+      action: existing ? 'subscription.update' : 'subscription.create',
+      resourceType: 'subscription',
+      resourceId: subId,
+      after: { planId: planId ?? 'starter', status: 'active', stripeCustomerId: customerId },
     });
-  }
+  });
 }
 
 async function handleRefund(paymentIntent: string) {

@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Check, Trash2 } from 'lucide-react';
 import { db, eq, and, asc, lessons, quizzes, quizQuestions } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
-import { ensureQuiz, addQuestion, deleteQuestion, setPassThreshold } from '../actions';
+import { ensureQuiz, addQuestion, deleteQuestion, saveQuizSettings } from '../actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,7 +65,11 @@ export default async function QuizEditor({
     .where(eq(quizQuestions.quizId, quiz.id))
     .orderBy(asc(quizQuestions.position));
 
-  const threshold = (quiz.settings as { passThreshold?: number })?.passThreshold ?? 70;
+  const quizSettings = quiz.settings as { passThreshold?: number; maxAttempts?: number };
+  const threshold = quizSettings?.passThreshold ?? 70;
+  // Mirrors DEFAULT_MAX_ATTEMPTS in the learner action, which applies to every
+  // quiz authored before this control existed.
+  const maxAttempts = quizSettings?.maxAttempts ?? 10;
 
   return (
     <div className="max-w-3xl">
@@ -73,8 +77,8 @@ export default async function QuizEditor({
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">Quiz · {lesson.title}</h1>
 
       <NavForm
-        action={setPassThreshold.bind(null, slug, courseId, lessonId, quiz.id)}
-        className="mt-4 flex items-end gap-2"
+        action={saveQuizSettings.bind(null, slug, courseId, lessonId, quiz.id)}
+        className="mt-4 flex flex-wrap items-end gap-2"
       >
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="threshold">Pass threshold (%)</Label>
@@ -88,9 +92,26 @@ export default async function QuizEditor({
             className="w-28"
           />
         </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="maxAttempts">Attempts allowed</Label>
+          <Input
+            id="maxAttempts"
+            name="maxAttempts"
+            type="number"
+            min="1"
+            max="100"
+            defaultValue={maxAttempts}
+            className="w-28"
+            aria-describedby="maxAttempts-hint"
+          />
+        </div>
         <Button type="submit" variant="outline">
           Save
         </Button>
+        <p id="maxAttempts-hint" className="w-full text-xs text-muted">
+          A learner who uses every attempt cannot submit again. Unlimited attempts would let someone
+          guess their way to a pass, and a pass issues a certificate.
+        </p>
       </NavForm>
 
       <ol className="mt-6 space-y-3">

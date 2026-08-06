@@ -88,7 +88,21 @@ export async function requestToJoin(tenantSlug: string, formData: FormData): Pro
     // across academies, so overwriting would rename this person on another
     // academy's certificates.
     if (!existingUser!.name.trim()) {
-      await db.update(users).set({ name }).where(eq(users.id, userId));
+      await db.transaction(async (tx) => {
+        await tx.update(users).set({ name }).where(eq(users.id, userId!));
+        // Audited because `users` is global: this write shows up on every
+        // academy this person belongs to, including their certificates.
+        // actorUserId is the person themselves — they supplied it on /join.
+        await audited(tx, {
+          tenantId: tenant.id,
+          actorUserId: userId,
+          action: 'user.name_filled',
+          resourceType: 'user',
+          resourceId: userId,
+          before: { name: '' },
+          after: { name, via: 'join_request' },
+        });
+      });
     }
   } else {
     const admin = createAdminClient();

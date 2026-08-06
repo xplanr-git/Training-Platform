@@ -120,7 +120,22 @@ export async function inviteMember(tenantSlug: string, formData: FormData): Prom
      * (tenant, user)), so overwriting a name that is already set would let this
      * academy rename the person on another academy's certificates.
      */
-    await db.update(users).set({ name }).where(eq(users.id, userId));
+    await db.transaction(async (tx) => {
+      await tx.update(users).set({ name }).where(eq(users.id, userId!));
+      // Audited because `users` is global: this write is visible on every
+      // academy this person belongs to, including their certificates. A
+      // cross-tenant effect with no record of who caused it is exactly what
+      // §7.11 is for.
+      await audited(tx, {
+        tenantId: ctx.tenantId,
+        actorUserId: ctx.userId,
+        action: 'user.name_filled',
+        resourceType: 'user',
+        resourceId: userId,
+        before: { name: '' },
+        after: { name },
+      });
+    });
   }
 
   const [existingMembership] = await db

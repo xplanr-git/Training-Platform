@@ -7,6 +7,8 @@ import {
   audited,
   eq,
   and,
+  count,
+  isNotNull,
   enrollments,
   progressEvents,
   certificates,
@@ -28,6 +30,17 @@ import { absoluteUrl } from '@/lib/absolute-url';
 import { buildCredential } from '@/lib/certificate';
 import { gradeQuiz } from '@/lib/quiz';
 import { sendCertificateEmail } from '@/lib/email';
+import { rateLimit, RULES } from '@/lib/rate-limit';
+import { safeRedirect } from '@/lib/safe-redirect';
+
+/**
+ * Attempts allowed at a quiz when its author has set no explicit
+ * `settings.maxAttempts` — which is every quiz created before this cap existed.
+ */
+const DEFAULT_MAX_ATTEMPTS = 10;
+
+/** Rate-limit bucket name for quiz submissions. */
+const RULES_QUIZ_ACTION = 'quizAttempt';
 
 async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
   const [enr] = await db
@@ -250,7 +263,19 @@ export async function markLessonComplete(
 
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}`);
   revalidatePath(`/t/${tenantSlug}/dashboard`);
-  return { redirectTo: nextHref ?? `/learn/${courseSlug}` };
+  /*
+   * nextHref arrives from the CALLER and is handed straight to router.push by
+   * nav-form.tsx, so it has to be validated like any other `?next=`. It was
+   * returned verbatim — an open redirect reachable by anyone who can invoke this
+   * action, which is any enrolled learner.
+   *
+   * safeRedirect validates by RESOLUTION rather than pattern, which is why it
+   * catches '//evil.com', '/\evil.com' and '/%09evil.com' alike. env.appOrigin()
+   * is the origin to resolve against; the fallback is where the button meant to go.
+   */
+  return {
+    redirectTo: safeRedirect(nextHref, env.appOrigin(), `/learn/${courseSlug}`),
+  };
 }
 
 /**
@@ -284,7 +309,57 @@ export async function submitQuizAttempt(
     throw new Error(
       'This quiz has changed since you opened it. Reload the page and answer it again — your progress is safe.',
     );
-  const threshold = (quiz.settings as { passThreshold?: number })?.passThreshold ?? 70;
+  const settings = quiz.settings as { passThreshold?: number; maxAttempts?: number };
+  const threshold = settings.passThreshold ?? 70;
+
+  /*
+   * Bound the number of attempts BEFORE grading.
+   *
+   * Submissions were unlimited and each one returned `?score=&passed=`, so a
+   * handful of multiple-choice questions could be brute-forced to a pass in
+   * seconds — and a pass auto-issues a certificate. For a platform selling
+   * audit-grade evidence of accredited training, "the learner guessed until it
+   * said yes" is the failure that matters most.
+   *
+   * Two independent bounds, because they stop different things. The rate limit
+   * makes rapid guessing impractical; this cap makes patient guessing
+   * impractical too. A rate limit alone just spreads the same attack over an
+   * afternoon.
+   *
+   * DEFAULT_MAX_ATTEMPTS applies where an author has set nothing, which today is
+   * every existing quiz. 10 is deliberately generous — a learner genuinely
+   * struggling with a hard quiz should not be locked out — while still bounding
+   * the guess count far below what brute force needs.
+   */
+  const maxAttempts =
+    Number.isInteger(settings.maxAttempts) && settings.maxAttempts! > 0
+      ? settings.maxAttempts!
+      : DEFAULT_MAX_ATTEMPTS;
+
+  const [{ used } = { used: 0 }] = await db
+    .select({ used: count() })
+    .from(quizAttempts)
+    .where(
+      and(
+        eq(quizAttempts.enrollmentId, enrollmentId),
+        eq(quizAttempts.quizId, quizId),
+        isNotNull(quizAttempts.submittedAt),
+      ),
+    );
+  if (used >= maxAttempts) {
+    throw new Error(
+      `You have used all ${maxAttempts} attempts at this quiz. Ask your administrator to reset it.`,
+    );
+  }
+
+  // Keyed on the enrolment, not the address: an IP key would punish a whole
+  // training room sharing one connection, and be sidestepped by a phone.
+  const limited = rateLimit(RULES_QUIZ_ACTION, enrollmentId, RULES.quizAttempt);
+  if (!limited.ok) {
+    throw new Error(
+      `Too many attempts in a short time. Try again in ${limited.retryAfterSeconds} seconds.`,
+    );
+  }
 
   const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
 
@@ -331,6 +406,29 @@ export async function submitQuizAttempt(
         })),
       );
     }
+    // A quiz attempt is the evidence a certificate rests on: for an accredited
+    // course, "when did this learner sit it, what did they score, was the
+    // threshold met" is the question an auditor asks. Recording the threshold
+    // and attempt number alongside the score matters because an admin can change
+    // the threshold afterwards (quiz.pass_threshold_change), and the log has to
+    // show what it was at the time.
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: passed ? 'quiz_attempt.passed' : 'quiz_attempt.failed',
+      resourceType: 'quiz_attempt',
+      resourceId: attempt.id,
+      after: {
+        quizId,
+        lessonId,
+        enrollmentId,
+        score,
+        passed,
+        threshold,
+        attemptNumber: used + 1,
+        maxAttempts,
+      },
+    });
   });
 
   if (passed) {
