@@ -205,3 +205,37 @@ describe('accepting and declining', () => {
     expect(accept.slice(commit, mail)).toMatch(/try \{/);
   });
 });
+
+describe('the way in is reachable', () => {
+  /*
+   * The route shipped linked from nowhere. A public sign-up page that only exists
+   * if you already know its URL is not public sign-up, and nothing in the test
+   * suite noticed — every other assertion was about what /join DOES, not whether
+   * anyone can get to it.
+   */
+  const HOME = code('src', 'app', 'page.tsx');
+
+  it('the marketing page offers it', () => {
+    expect(HOME).toMatch(/href="\/join"/);
+    expect(HOME).toMatch(/Request access/);
+  });
+
+  it('and only where it can resolve', () => {
+    /*
+     * /join is tenant-scoped — middleware rewrites it to /t/<slug>/join — so on a
+     * bare multi-tenant apex there is no academy to join and the link would 404.
+     * Gated on the single-tenant slug, which is the only thing that lets the apex
+     * resolve one.
+     */
+    expect(HOME).toMatch(/defaultTenantSlug\(\)/);
+    const gate = HOME.indexOf('defaultTenantSlug()');
+    const link = HOME.indexOf('href="/join"');
+    expect(gate).toBeLessThan(link);
+    expect(HOME).toMatch(/\{joinable && \(/);
+  });
+
+  it('the page it points at exists', () => {
+    // A link to a route nobody created is the same defect one step later.
+    expect(() => code('src', 'app', 't', '[slug]', 'join', 'page.tsx')).not.toThrow();
+  });
+});

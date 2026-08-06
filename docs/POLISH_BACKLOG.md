@@ -284,12 +284,27 @@ regress; committed and pushed to both remotes.
       every var documented in `.env.example`, guards on all of it. Verified by running
       the suite — 4 skipped, no navigation. The CI half is split out below.
 
-- [ ] **Run the live suite in CI.** NEEDS A DECISION: the specs exist, are runnable
-      and are now safe to run, but pointing them at anything means a seeded
-      non-production Supabase project with a known-password admin — not the live one.
-      That is an infra + cost call, not a code one. Until then authenticated routes
-      are covered by a suite someone runs by hand, which is better than the "zero
-      coverage" this item used to claim but still not a gate.
+- [ ] **Run the live suite in CI.** NEEDS A DECISION — but only one, and it is not a
+      code one: a non-production Supabase project. Everything on my side is done, so
+      the remaining work is a runbook, not development. Deliberately NOT adding the CI
+      job in advance: a workflow that skips until secrets appear cannot be tested
+      until it stops skipping, and untested CI that activates months later is a trap
+      rather than preparation.
+
+      When a project exists:
+      1. Create a Supabase project (free tier is enough) and apply `db/migrations`
+         against it: `DATABASE_URL=<new> npm run migrate` from `db/`.
+      2. Create one admin: sign up through `/signup` on a dev server pointed at it,
+         which provisions a tenant plus an owner in one step. Note the slug.
+      3. Add repo secrets: `ALLOW_LIVE_WRITES=1`, `DEMO_ADMIN_EMAIL`,
+         `DEMO_ADMIN_PASSWORD`, `LIVE_BASE_URL=http://<slug>.localhost:3010`, plus
+         that project's `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+         `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`.
+      4. Add a CI job that builds, starts the app on 3010, and runs
+         `npm run test:live`. Chromium resolves `*.localhost`, so the subdomain the
+         live config expects works without DNS.
+      Until then, authenticated routes are covered by a suite someone runs by hand —
+      better than the "zero coverage" this item used to claim, but still not a gate.
 
 - [x] **Require a name on invitation.** Required server-side and on the form. The
       item's wording was slightly wrong — a fallback em dash already existed, so it
@@ -870,4 +885,23 @@ Newest first. One line per completed item: what changed, and the commit.
   written for is worse than no guard, and only sabotage finds those.
   NOT verified: no request has been submitted end to end. Doing so writes an auth user
   and a membership to production, which is the owner's call.
+
+- **Finishing what the last pass left reachable only by URL.** `/join` shipped linked
+  from NOWHERE. Every test asserted what it does — the pending gate, the enumeration
+  safety, the audit trail — and none asked whether anyone could get to it, so a public
+  sign-up page was public only to people who already knew its address. The marketing
+  page now offers "Request access" beside "Sign in", gated on `DEFAULT_TENANT_SLUG`
+  because `/join` is tenant-scoped and would 404 on a bare multi-tenant apex. Verified
+  by fetching the page and following the link to a 200, and guarded by a test proven
+  red both by removing the link and by ungating it.
+  Deliberately NOT linked from two places. The storefront reads no session at all —
+  adding one to hide the link from members would undo the §1 speed work on a public
+  page. And the login page is a client component; splitting it to read a server-side
+  env var means refactoring a working auth screen for a link aimed at people who by
+  definition do not have an account yet.
+  Also added `.git-blame-ignore-revs` for the format sweep, which retroactively answers
+  the objection that deferred that item twice. Measured, and my first measurement was
+  wrong: `git -c blame.ignoreRevsFile= blame` does NOT disable a configured value, so
+  it reported no difference. Unsetting the config properly shows 28 of 50 lines in
+  button.tsx blamed on the sweep without the file and 0 with it.
 

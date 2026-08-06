@@ -1,0 +1,12 @@
+# Revisions to skip when running `git blame`.
+#
+# Formatting-only commits: they touch many lines without changing behaviour, so
+# blaming a line to one of them tells you nothing about why the code is that way.
+# GitHub honours this file automatically in its blame view.
+#
+# Locally, enable it once per clone:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: sweep with prettier and make the check a CI gate (113 files, zero
+# behaviour change — see docs/POLISH_BACKLOG.md for how it was verified).
+f4f4dd959edf8aae0752d516eba739c389da022c
