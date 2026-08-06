@@ -8,6 +8,8 @@ import { stripe } from '@/lib/stripe';
 import { env } from '@/lib/env';
 import { tenantOrigin } from '@/lib/host';
 import { sendEnrollmentEmail } from '@/lib/email';
+import { enforceRateLimit } from '@/lib/rate-limit-guard';
+import { RULES } from '@/lib/rate-limit';
 
 /**
  * Enrolls the current user in a published course (free path). Idempotent — a
@@ -20,6 +22,10 @@ export async function enrollFree(tenantSlug: string, courseId: string, courseSlu
     throw new Error(
       'Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.',
     );
+
+  // Writes a row and sends mail. Scoped to the user, not just the IP, so one
+  // account cannot enrol in every course on the storefront in a loop.
+  await enforceRateLimit('enroll', RULES.enroll, ctx.userId);
 
   const [course] = await db
     .select({ id: courses.id, status: courses.status, title: courses.title })
@@ -91,6 +97,11 @@ export async function startCoursePurchase(
     throw new Error(
       'Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.',
     );
+
+  // Each call creates a Stripe Checkout Session — a write against a third-party
+  // API with its own rate limits and, on some plans, its own costs. Uncapped,
+  // this was a way to burn our Stripe quota from a browser loop.
+  await enforceRateLimit('enroll', RULES.enroll, ctx.userId);
 
   const [course] = await db
     .select({

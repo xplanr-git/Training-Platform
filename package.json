@@ -1,11 +1,18 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "training-platform",
   "private": true,
   "version": "0.0.1",
+  "description": "Monorepo root. The LIVE app is web/ (Next.js) + db/ (Drizzle). The Vite prototype at this level is RETIRED — see CLAUDE.md §3.",
+  "engines": {
+    "node": ">=20 <21"
+  },
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "dev": "vite"
+    "verify": "npm --prefix db run verify && npm --prefix web run verify",
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "dev:legacy": "vite",
+    "build:legacy": "vite build"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

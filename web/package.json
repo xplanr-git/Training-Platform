@@ -2,6 +2,9 @@
   "name": "@training-platform/web",
   "version": "0.0.1",
   "private": true,
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +15,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "test:live": "playwright test --config playwright.live.config.ts",
-    "verify": "npm run format:check && npm run typecheck && npm run lint && npm run test && npm run build && npm run e2e",
+    "verify": "npm run format:check && npm run typecheck && npm run lint && npm run test && npm run build && npm run e2e && npm run test:live",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\""
   },

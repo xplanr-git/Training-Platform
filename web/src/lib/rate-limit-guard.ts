@@ -48,7 +48,7 @@ export async function rateLimitExceeded(
   const identifiers = scope ? [`ip:${ip}`, `scope:${scope.toLowerCase()}`] : [`ip:${ip}`];
 
   for (const identifier of identifiers) {
-    const result = rateLimit(action, identifier, rule);
+    const result = await rateLimit(action, identifier, rule);
     if (!result.ok) {
       const mins = Math.max(1, Math.ceil(result.retryAfterSeconds / 60));
       return `Too many attempts. Try again in about ${mins} minute${mins === 1 ? '' : 's'}.`;

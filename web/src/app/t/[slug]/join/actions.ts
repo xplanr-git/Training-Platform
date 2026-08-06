@@ -31,16 +31,23 @@ export interface JoinResult {
  * nothing else.
  */
 export async function requestToJoin(tenantSlug: string, formData: FormData): Promise<JoinResult> {
-  // First, before any account is minted: this is the one unauthenticated route
-  // that creates an auth user, so it is the cheapest thing to abuse.
-  const limited = await rateLimitExceeded('join', RULES.join);
-  if (limited) return { ok: false, error: limited };
-
+  // Reading the form is not a side effect, so parsing before the limit still
+  // means nothing is minted first.
   const name = String(formData.get('name') ?? '').trim();
   const email = String(formData.get('email') ?? '')
     .trim()
     .toLowerCase();
   const password = String(formData.get('password') ?? '');
+
+  // Before any account is minted: this is the one unauthenticated route that
+  // creates an auth user, so it is the cheapest thing to abuse.
+  //
+  // Scoped by address as well as IP, which passwordReset already did and this
+  // did not. Both matter and neither covers the other: an IP-only bucket lets
+  // an attacker on a botnet hammer ONE person's address from many addresses,
+  // while an address-only bucket lets one host enumerate many addresses.
+  const limited = await rateLimitExceeded('join', RULES.join, email || undefined);
+  if (limited) return { ok: false, error: limited };
 
   if (!name) {
     // Same reason as the invite path: this is what prints on their certificate,

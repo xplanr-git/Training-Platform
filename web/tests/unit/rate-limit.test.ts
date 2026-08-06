@@ -1,26 +1,32 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { rateLimit, parseForwardedFor, __resetRateLimits, RULES } from '@/lib/rate-limit';
+import {
+  rateLimit,
+  rateLimitLocal,
+  parseForwardedFor,
+  __resetRateLimits,
+  RULES,
+} from '@/lib/rate-limit';
 
 /**
  * The limiter is pure with an injectable clock, so these are behavioural rather
  * than source assertions — no wall-clock waiting, no flakiness.
  */
-describe('rateLimit', () => {
+describe('rateLimitLocal', () => {
   beforeEach(() => __resetRateLimits());
 
   const rule = { limit: 3, windowMs: 60_000 };
 
   it('allows up to the limit and reports what is left', () => {
-    expect(rateLimit('a', 'ip1', rule, 1000)).toMatchObject({ ok: true, remaining: 2 });
-    expect(rateLimit('a', 'ip1', rule, 1001)).toMatchObject({ ok: true, remaining: 1 });
-    expect(rateLimit('a', 'ip1', rule, 1002)).toMatchObject({ ok: true, remaining: 0 });
+    expect(rateLimitLocal('a', 'ip1', rule, 1000)).toMatchObject({ ok: true, remaining: 2 });
+    expect(rateLimitLocal('a', 'ip1', rule, 1001)).toMatchObject({ ok: true, remaining: 1 });
+    expect(rateLimitLocal('a', 'ip1', rule, 1002)).toMatchObject({ ok: true, remaining: 0 });
   });
 
   it('blocks the one after, with a retry-after', () => {
-    for (const t of [1000, 1001, 1002]) rateLimit('a', 'ip1', rule, t);
-    const blocked = rateLimit('a', 'ip1', rule, 1003);
+    for (const t of [1000, 1001, 1002]) rateLimitLocal('a', 'ip1', rule, t);
+    const blocked = rateLimitLocal('a', 'ip1', rule, 1003);
     expect(blocked.ok).toBe(false);
     expect(blocked.remaining).toBe(0);
     expect(blocked.retryAfterSeconds).toBe(60);
@@ -30,9 +36,9 @@ describe('rateLimit', () => {
     // The boundary is strict (`t > now - windowMs`), so the hit at 1000 expires
     // at 61_000, not after it. Pinned because an off-by-one here is either a
     // free extra request or a limit that outlasts its stated window.
-    for (const t of [1000, 1001, 1002]) rateLimit('a', 'ip1', rule, t);
-    expect(rateLimit('a', 'ip1', rule, 60_999).ok, 'one ms early').toBe(false);
-    expect(rateLimit('a', 'ip1', rule, 61_000).ok, 'oldest hit has expired').toBe(true);
+    for (const t of [1000, 1001, 1002]) rateLimitLocal('a', 'ip1', rule, t);
+    expect(rateLimitLocal('a', 'ip1', rule, 60_999).ok, 'one ms early').toBe(false);
+    expect(rateLimitLocal('a', 'ip1', rule, 61_000).ok, 'oldest hit has expired').toBe(true);
   });
 
   it('does NOT extend the window when it blocks', () => {
@@ -41,14 +47,14 @@ describe('rateLimit', () => {
      * client retrying in a tight loop would then keep pushing the window forward
      * and never be let back in, turning a one-minute limit into a permanent ban.
      */
-    for (const t of [1000, 1001, 1002]) rateLimit('a', 'ip1', rule, t);
-    for (let t = 1003; t < 60_000; t += 100) rateLimit('a', 'ip1', rule, t);
-    expect(rateLimit('a', 'ip1', rule, 61_002).ok).toBe(true);
+    for (const t of [1000, 1001, 1002]) rateLimitLocal('a', 'ip1', rule, t);
+    for (let t = 1003; t < 60_000; t += 100) rateLimitLocal('a', 'ip1', rule, t);
+    expect(rateLimitLocal('a', 'ip1', rule, 61_002).ok).toBe(true);
   });
 
   it('counts each identifier separately', () => {
-    for (const t of [1000, 1001, 1002]) rateLimit('a', 'ip1', rule, t);
-    expect(rateLimit('a', 'ip2', rule, 1003).ok).toBe(true);
+    for (const t of [1000, 1001, 1002]) rateLimitLocal('a', 'ip1', rule, t);
+    expect(rateLimitLocal('a', 'ip2', rule, 1003).ok).toBe(true);
   });
 
   it('counts each action separately', () => {
@@ -56,20 +62,20 @@ describe('rateLimit', () => {
      * Sharing a bucket across actions would let a burst of password-reset
      * attempts lock the same person out of accepting an invitation.
      */
-    for (const t of [1000, 1001, 1002]) rateLimit('passwordReset', 'ip1', rule, t);
-    expect(rateLimit('invite', 'ip1', rule, 1003).ok).toBe(true);
+    for (const t of [1000, 1001, 1002]) rateLimitLocal('passwordReset', 'ip1', rule, t);
+    expect(rateLimitLocal('invite', 'ip1', rule, 1003).ok).toBe(true);
   });
 
   it('reports a shrinking retry-after as the window drains', () => {
-    for (const t of [1000, 1001, 1002]) rateLimit('a', 'ip1', rule, t);
-    expect(rateLimit('a', 'ip1', rule, 31_000).retryAfterSeconds).toBe(30);
-    expect(rateLimit('a', 'ip1', rule, 55_000).retryAfterSeconds).toBe(6);
+    for (const t of [1000, 1001, 1002]) rateLimitLocal('a', 'ip1', rule, t);
+    expect(rateLimitLocal('a', 'ip1', rule, 31_000).retryAfterSeconds).toBe(30);
+    expect(rateLimitLocal('a', 'ip1', rule, 55_000).retryAfterSeconds).toBe(6);
   });
 
   it('never reports a retry-after of zero while blocked', () => {
     // A zero would tell a client to retry immediately, producing a hot loop.
-    for (const t of [1000, 1001, 1002]) rateLimit('a', 'ip1', rule, t);
-    const almost = rateLimit('a', 'ip1', rule, 60_999);
+    for (const t of [1000, 1001, 1002]) rateLimitLocal('a', 'ip1', rule, t);
+    const almost = rateLimitLocal('a', 'ip1', rule, 60_999);
     expect(almost.ok).toBe(false);
     expect(almost.retryAfterSeconds).toBeGreaterThanOrEqual(1);
   });
@@ -95,11 +101,129 @@ describe('parseForwardedFor', () => {
   });
 });
 
+describe('the shared store', () => {
+  /*
+   * Counting per-instance meant the real limit was "N per instance per window",
+   * and on Vercel a cold start reset it — so spraying requests wide enough to
+   * land on fresh instances defeated it. These cover the routing and, more
+   * importantly, the failure behaviour: an unreachable store must not take
+   * sign-up, invitations and enrolment down with it.
+   */
+  const realFetch = globalThis.fetch;
+  const env = { ...process.env };
+
+  beforeEach(() => __resetRateLimits());
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    process.env = { ...env };
+  });
+
+  const shared = { limit: 2, windowMs: 60_000, shared: true };
+
+  it('is not consulted at all when it is not configured', async () => {
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    let called = false;
+    globalThis.fetch = (async () => {
+      called = true;
+      throw new Error('should not be reached');
+    }) as typeof fetch;
+
+    await expect(rateLimit('a', 'ip1', shared, 1000)).resolves.toMatchObject({ ok: true });
+    expect(called, 'no store configured, so no network call').toBe(false);
+  });
+
+  it('is not consulted for a rule that does not ask for it', async () => {
+    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+    let called = false;
+    globalThis.fetch = (async () => {
+      called = true;
+      throw new Error('should not be reached');
+    }) as typeof fetch;
+
+    // videoProgress is deliberately per-instance: a Redis round trip on every
+    // heartbeat of every viewer is not worth it for a storage-cost guard.
+    await rateLimit('videoProgress', 'e1', RULES.videoProgress, 1000);
+    expect(called).toBe(false);
+  });
+
+  it('uses the store verdict when it answers', async () => {
+    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+    // [allowed, remaining, oldestScore] — blocked, oldest hit at t=1000.
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ result: [0, 0, 1000] }), { status: 200 })) as typeof fetch;
+
+    const r = await rateLimit('a', 'ip1', shared, 31_000);
+    expect(r.ok).toBe(false);
+    // Derived from the store's oldest score, not from local state.
+    expect(r.retryAfterSeconds).toBe(30);
+  });
+
+  it('FAILS OPEN to the in-process limiter when the store is unreachable', async () => {
+    /*
+     * The direction matters. Refusing everybody would turn a Redis blip into a
+     * total outage of sign-up, invitations and enrolment; falling back restores
+     * exactly the behaviour this app shipped with.
+     */
+    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+    globalThis.fetch = (async () => {
+      throw new Error('ECONNREFUSED');
+    }) as typeof fetch;
+
+    expect((await rateLimit('a', 'ip1', shared, 1000)).ok).toBe(true);
+    expect((await rateLimit('a', 'ip1', shared, 1001)).ok).toBe(true);
+    // Still counted locally — fail-open means fall back, not stop counting.
+    expect((await rateLimit('a', 'ip1', shared, 1002)).ok).toBe(false);
+  });
+
+  it('backs off after a failure rather than timing out on every request', async () => {
+    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls += 1;
+      throw new Error('ECONNREFUSED');
+    }) as typeof fetch;
+
+    await rateLimit('a', 'ip1', shared, 1000);
+    await rateLimit('a', 'ip2', shared, 1001);
+    await rateLimit('a', 'ip3', shared, 1002);
+    expect(calls, 'one failure should suppress the next attempts').toBe(1);
+  });
+
+  it('treats an error body as a failure rather than as a verdict', async () => {
+    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ error: 'NOSCRIPT' }), { status: 200 })) as typeof fetch;
+
+    // A 200 carrying an error must not be read as "allowed with 0 remaining".
+    expect((await rateLimit('a', 'ip1', shared, 1000)).ok).toBe(true);
+  });
+});
+
 describe('the rules are a policy, not magic numbers', () => {
   it('every rule has a positive limit and window', () => {
     for (const [name, rule] of Object.entries(RULES)) {
       expect(rule.limit, `${name}.limit`).toBeGreaterThan(0);
       expect(rule.windowMs, `${name}.windowMs`).toBeGreaterThan(0);
+    }
+  });
+
+  it('the rules that guard a real boundary are counted across instances', () => {
+    // Account creation, mail, money, and anything that grants something.
+    for (const name of [
+      'provisionTenant',
+      'passwordReset',
+      'invite',
+      'join',
+      'enroll',
+      'quizAttempt',
+    ] as const) {
+      expect(RULES[name].shared, `${name} should be shared`).toBe(true);
     }
   });
 

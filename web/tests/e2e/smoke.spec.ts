@@ -34,3 +34,34 @@ test('responses carry security headers', async ({ request }) => {
   expect(res.headers()['x-content-type-options']).toBe('nosniff');
   expect(res.headers()['x-frame-options']).toBe('SAMEORIGIN');
 });
+
+test('responses carry a Content-Security-Policy that confines exfiltration', async ({
+  request,
+}) => {
+  /*
+   * Six security headers were set and CSP was not — the one that matters most
+   * here. The Supabase auth cookie is scoped to the whole domain and is
+   * necessarily JS-readable, so one XSS on any subdomain yields tokens for every
+   * session on the platform. connect-src is what stops injected script posting
+   * them anywhere.
+   */
+  const res = await request.get('/');
+  const csp = res.headers()['content-security-policy'];
+  expect(csp, 'no Content-Security-Policy header').toBeTruthy();
+
+  for (const directive of [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+  ]) {
+    expect(csp, `missing: ${directive}`).toContain(directive);
+  }
+
+  // The point of the policy: a fixed allowlist, not a wildcard.
+  expect(csp).toContain('connect-src');
+  expect(csp, 'connect-src must not be open').not.toMatch(/connect-src[^;]*\*(?!\.)/);
+  // The video embed has to stay framed, or every video lesson goes blank.
+  expect(csp).toContain('https://iframe.mediadelivery.net');
+});

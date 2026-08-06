@@ -235,6 +235,23 @@ export async function recordVideoProgress(
   const watched = Math.min(600, Math.max(0, Math.round(Number(watchedSec) || 0)));
   if (watched <= 0 && position <= 0) return;
 
+  /*
+   * Bound the append rate.
+   *
+   * The player beats every ~15s, so ~4/minute is normal and the 240/minute
+   * ceiling is far above any real viewer. But this action is callable directly,
+   * it INSERTS on every call, and progress_events is append-only — so nothing
+   * could ever remove what a loop wrote. That is a storage-cost denial of
+   * service with no cleanup path, which makes it worth bounding even though the
+   * rows are individually harmless.
+   *
+   * Silent return rather than a throw: a heartbeat is fire-and-forget from the
+   * player, and surfacing "too many requests" over a video would be noise the
+   * viewer can neither understand nor act on.
+   */
+  const beat = await rateLimit('videoProgress', enrollmentId, RULES.videoProgress);
+  if (!beat.ok) return;
+
   await db.insert(progressEvents).values({
     tenantId: ctx.tenantId,
     enrollmentId,
@@ -354,7 +371,7 @@ export async function submitQuizAttempt(
 
   // Keyed on the enrolment, not the address: an IP key would punish a whole
   // training room sharing one connection, and be sidestepped by a phone.
-  const limited = rateLimit(RULES_QUIZ_ACTION, enrollmentId, RULES.quizAttempt);
+  const limited = await rateLimit(RULES_QUIZ_ACTION, enrollmentId, RULES.quizAttempt);
   if (!limited.ok) {
     throw new Error(
       `Too many attempts in a short time. Try again in ${limited.retryAfterSeconds} seconds.`,

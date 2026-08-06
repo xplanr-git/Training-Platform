@@ -39,10 +39,18 @@ function ciCommandsFor(job: string): string[] {
 }
 
 describe('one local command runs everything CI runs', () => {
-  it('every web + e2e check is in web/ verify', () => {
+  it('every web + e2e + live check is in web/ verify', () => {
     const verify = pkg('web').verify;
     expect(verify, 'web/package.json needs a "verify" script').toBeTruthy();
-    for (const cmd of [...ciCommandsFor('web'), ...ciCommandsFor('e2e')]) {
+    for (const cmd of [
+      ...ciCommandsFor('web'),
+      ...ciCommandsFor('e2e'),
+      // The four authenticated journeys and the RLS attack probes. They were
+      // written, then left out of CI and out of verify, so they ran only when
+      // someone remembered — which is how "zero coverage of authenticated
+      // routes" got recorded for journeys that already existed.
+      ...ciCommandsFor('live'),
+    ]) {
       expect(verify, `CI runs "${cmd}" in web/ but verify does not`).toContain(cmd);
     }
   });
@@ -62,10 +70,15 @@ describe('one local command runs everything CI runs', () => {
     expect(pkg('web').e2e, 'the e2e script itself must still exist').toBe('playwright test');
   });
 
-  it('CI still has all three jobs, so the parity check has something to compare', () => {
-    for (const job of ['db', 'web', 'e2e']) {
+  it('CI still has all four jobs, so the parity check has something to compare', () => {
+    for (const job of ['db', 'web', 'e2e', 'live']) {
       expect(ciCommandsFor(job).length, `job "${job}" runs no checks`).toBeGreaterThan(0);
     }
+  });
+
+  it('the live suite is wired in, since it was the coverage nobody was running', () => {
+    expect(pkg('web').verify).toContain('npm run test:live');
+    expect(pkg('web')['test:live']).toBe('playwright test --config playwright.live.config.ts');
   });
 });
 
@@ -86,7 +99,34 @@ describe('CI actions are not on a deprecated runtime', () => {
 
   it('and every job still pins a node-version, so runners cannot drift', () => {
     const pins = [...CI.matchAll(/node-version: (\S+)/g)].map((m) => m[1]);
-    expect(pins.length, 'expected one node-version pin per job').toBe(3);
+    expect(pins.length, 'expected one node-version pin per job').toBe(4);
     expect(new Set(pins).size, `jobs disagree on Node: ${pins.join(', ')}`).toBe(1);
+  });
+});
+
+describe('Node is pinned outside CI too', () => {
+  /*
+   * CI pinned Node 20 while the repo declared nothing at all — no engines, no
+   * .nvmrc, no packageManager. So a contributor (and this machine, on 18.20.1)
+   * could pass every local check on a different runtime from the one that
+   * decides the build. CLAUDE.md §7.13 already warns that local green means
+   * "the commands pass", not "CI will pass"; this narrows the gap rather than
+   * just documenting it.
+   */
+  const nvmrc = readFileSync(join(ROOT, '.nvmrc'), 'utf8').trim();
+
+  it('.nvmrc matches the version CI pins', () => {
+    const ciNode = CI.match(/node-version: (\S+)/)?.[1];
+    expect(nvmrc).toBe(ciNode);
+  });
+
+  it('every workspace declares an engines range that admits it', () => {
+    for (const dir of ['.', 'web', 'db']) {
+      const p = JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8')) as {
+        engines?: { node?: string };
+      };
+      expect(p.engines?.node, `${dir}/package.json has no engines.node`).toBeTruthy();
+      expect(p.engines!.node, `${dir} does not admit Node ${nvmrc}`).toContain(nvmrc);
+    }
   });
 });

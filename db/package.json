@@ -2,6 +2,9 @@
   "name": "@training-platform/db",
   "version": "0.0.1",
   "private": true,
+  "engines": {
+    "node": ">=20 <21"
+  },
   "type": "module",
   "description": "v2 Drizzle schema, migrations, and query helpers (source of truth for the database).",
   "main": "index.ts",
@@ -11,7 +14,6 @@
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
     "check": "drizzle-kit check",
-    "migrate:v1": "tsx migrate-v1-to-v2.ts",
     "verify": "npm run format:check && npm run check && tsc --noEmit",
     "format:check": "prettier --check \"*.ts\"",
     "format": "prettier --write \"*.ts\""

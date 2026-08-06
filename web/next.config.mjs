@@ -1,7 +1,60 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Content-Security-Policy.
+ *
+ * There was none, while six other security headers were set — and the omission
+ * mattered more here than it usually does. The Supabase auth cookie is scoped to
+ * `.training.structurebuild.co` (commit 083f1ac) and is necessarily readable by
+ * JavaScript, so ONE cross-site-scripting flaw on ANY subdomain yields session
+ * tokens for every account on the platform. A CSP is what stops injected script
+ * from reaching an attacker's origin with them.
+ *
+ * 'unsafe-inline' and 'unsafe-eval' on script-src are, regrettably, required:
+ * Next's App Router inlines its bootstrap and flight payload into the document,
+ * and removing them needs per-request nonces plumbed through the middleware —
+ * worth doing, but a bigger change than this and easy to get subtly wrong. The
+ * value here is therefore mostly in connect-src and frame-src: even with script
+ * injection, exfiltration has nowhere permitted to go.
+ */
+function contentSecurityPolicy() {
+  const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const posthog = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+  const connect = [
+    "'self'",
+    supabase,
+    // Supabase Realtime, if it is ever switched on, is a websocket to the same host.
+    supabase.replace(/^https:/, 'wss:'),
+    posthog,
+    'https://*.ingest.sentry.io',
+    'https://*.sentry.io',
+    // Direct-to-Bunny tus uploads from the course builder.
+    'https://video.bunnycdn.com',
+    'https://*.b-cdn.net',
+  ].filter(Boolean);
+
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "form-action 'self'",
+    // Stronger than the X-Frame-Options header alongside it, and understood by
+    // browsers that ignore that one.
+    "frame-ancestors 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "media-src 'self' blob: https:",
+    // The video player embed.
+    "frame-src 'self' https://iframe.mediadelivery.net",
+    `connect-src ${connect.join(' ')}`,
+  ].join('; ');
+}
 
 /** @type {import('next').NextConfig} */
 const securityHeaders = [
@@ -17,6 +70,7 @@ const securityHeaders = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=()',
   },
+  { key: 'Content-Security-Policy', value: contentSecurityPolicy() },
 ];
 
 const nextConfig = {
@@ -37,4 +91,30 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Source-map upload, so a production stack trace names a line of our source
+ * instead of a column in a minified chunk.
+ *
+ * A comment in src/instrumentation.ts claimed this was "wired in CI". It was
+ * not — withSentryConfig appeared nowhere, so no build has ever uploaded a map
+ * and every server-side Sentry event since was effectively unreadable.
+ *
+ * Upload only happens when SENTRY_AUTH_TOKEN, org and project are all present.
+ * Wrapping unconditionally is still correct and is what makes the client config
+ * take effect; without the token it simply skips the upload step, so a clone
+ * with no Sentry credentials builds exactly as before.
+ */
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // The plugin is loud by default; keep CI logs about our build, not its upload.
+  silent: !process.env.CI,
+  // Strip the maps from the client bundle after upload — otherwise anyone can
+  // fetch them and read the source.
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  // Route Sentry's browser requests through our own origin, so an ad blocker
+  // does not silently drop every error report.
+  tunnelRoute: '/monitoring',
+  disableLogger: true,
+});
