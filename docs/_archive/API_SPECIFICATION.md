@@ -1,3 +1,11 @@
+> **ARCHIVED — DO NOT ACT ON THIS DOCUMENT.**
+>
+> Archived 2026-08-06. It describes a path this project deliberately did not
+> take, and it contradicts the source of truth. See
+> [CLAUDE.md](../../CLAUDE.md), and [docs/_archive/README.md](README.md) for
+> what specifically is wrong with it. The live schema is `db/schema.ts`; the
+> live app is `web/`.
+
 # Outdure Edge - API Specification
 
 ## Base URLs

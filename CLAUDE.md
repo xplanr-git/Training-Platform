@@ -5,7 +5,7 @@
 >
 > **New to the repo?** Read this end-to-end. The load-bearing sections are §1 (locked decisions), §4 (security issues), and §7 (operating rules for AI assistants).
 
-Last reviewed: 2026-05-11.
+Last reviewed: 2026-08-06.
 
 ---
 
@@ -26,9 +26,31 @@ These are committed and **not** open for re-litigation without explicit founder 
 | Tenancy model | Multi-tenant from day 1 — every domain table carries `tenant_id`, RLS enforces |
 | Accreditation positioning | Platform provides audit-grade evidence (SCORM/xAPI/audit log/verifiable certs); customers earn their own accreditations using that evidence |
 
+### Single-tenant mode is a deployment configuration, not a different product
+
+The first production deployment — `training.structurebuild.co`, the Outdure
+Academy — runs **single-tenant**: `DEFAULT_TENANT_SLUG=outdure` makes the apex
+host serve one academy, so `/admin` and `/learn/...` resolve without a
+subdomain. [PLATFORM_OVERVIEW.md](PLATFORM_OVERVIEW.md) describes that
+deployment and is accurate.
+
+This does **not** contradict the multi-tenant decision above, and the two docs
+are not in conflict. The tenancy model is unchanged: every domain table still
+carries `tenant_id`, RLS still enforces it, `memberships` still resolves the
+academy, and leaving `DEFAULT_TENANT_SLUG` unset restores subdomain routing
+exactly. One tenant is the `n = 1` case of many, not a collapse of the model —
+see `tenantRewritePath` in [web/src/lib/host.ts](web/src/lib/host.ts), which is
+the whole of the difference.
+
+Stated explicitly because the omission was itself misleading: §1 read as
+denying the thing that was actually in production, which invited a contributor
+to "fix" the deployment towards subdomains, or to take the overview doc as
+evidence the mission had changed. Neither is right.
+
 ### What this is **not**
 
-- Not a single-brand portal — do not propose collapsing tenants.
+- Not a single-brand portal *as a product* — do not propose collapsing tenants
+  or removing `tenant_id`. (Single-tenant *deployment* is supported: see above.)
 - Not a marketplace (one storefront, many sellers) — every tenant is the seller.
 - Not a self-hosted product (yet) — managed SaaS only until enterprise demands it.
 - Not running AI features in the MVP. (See §11 Blue Sky.)
@@ -37,7 +59,11 @@ These are committed and **not** open for re-litigation without explicit founder 
 
 ## 2. Target tech stack
 
-### Migrating **from** (current state)
+> **This migration is DONE.** Both tables below are kept as a record of the
+> decision and its reasoning, not as outstanding work — the "migrating to"
+> column is what `web/` and `db/` are built on today. See §3.
+
+### Migrated **from** (the retired prototype)
 
 - Vite 6 + React 18 + TypeScript
 - Tailwind v4 + MUI + Radix UI (overlapping styling systems — MUI gets dropped)
@@ -45,7 +71,7 @@ These are committed and **not** open for re-litigation without explicit founder 
 - Hand-rolled state-based routing in [App.tsx](App.tsx) (no react-router)
 - Two near-duplicate Hono edge functions
 
-### Migrating **to** (Phase 0 / Phase 1 target)
+### Migrated **to** (what is running now)
 
 | Layer | Choice | Notes |
 |---|---|---|
@@ -69,50 +95,89 @@ These are committed and **not** open for re-litigation without explicit founder 
 | Hosting | **Vercel** (Next.js) + **Supabase** (DB/Storage/Edge Functions) + **Inngest Cloud** (jobs) | — |
 | CI | GitHub Actions | typecheck → lint → vitest → drizzle migration check → build → Playwright smoke → deploy |
 
-### Dependencies to drop during Phase 0
+### Dependencies dropped
 
-`@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`, `next-themes`, `cmdk` (unless we add a command palette), `react-slick` (use embla), `react-responsive-masonry`, `input-otp` (unless adding OTP MFA).
+`@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`, `next-themes`, `cmdk`, `react-slick`, `react-responsive-masonry`, `input-otp`.
 
-Expected bundle reduction: ~30–40%.
+**Done — none of these are in [web/package.json](web/package.json).** They remain
+in the ROOT `package.json`, which belongs to the retired Vite prototype; they are
+not shipped to users. §7.6 (no new MUI imports) still stands.
 
 ---
 
 ## 3. Current state (be honest with yourself)
 
-This codebase is a **high-fidelity prototype**, not a working product. As of 2026-05-11:
+**As of 2026-08-06 this is a shipped product, not a prototype.** The v2 app is
+live at `training.structurebuild.co`, deployed from remote `academy/main`.
 
-- **~75% of the UI reads mock data** from `src/app/data/*` and inline component arrays. Live Supabase calls happen in ~9 of 37 root components.
-- **5 of ~30 spec'd tables exist** in the database. Missing: `tenants`, `enrollments`, `progress_events`, `lessons` (as first-class), `quizzes`, `quiz_questions`, `quiz_attempts`, `certificates`, `roles`/`permissions`, `subscriptions`, `orders`, `audit_log`, `organizations`, `xapi_statements`.
-- **Suspension is a `localStorage` flag** — trivially bypassed.
-- **Progress is a Postgres text array** on `profiles` — no per-event data, no audit, no analytics.
-- **Two near-duplicate Hono edge functions** exist: [supabase/functions/server/index.tsx](supabase/functions/server/index.tsx) and [supabase/functions/make-server/index.tsx](supabase/functions/make-server/index.tsx). Pick one and delete the other in Phase 0.
+> Until 2026-08-06 this section described a Vite prototype with 5 tables, two
+> edge functions and "~75% mock UI" — three months out of date. Noted because
+> anyone who trusted it would have gone looking in the wrong codebase entirely.
 
-### What actually works end-to-end
+### Where the code lives
 
-- Auth: signup, signin, session restore, profile auto-provision ([src/app/utils/auth.ts](src/app/utils/auth.ts))
-- Course CRUD: create courses in [AdminCoursesPage.tsx](src/app/components/AdminCoursesPage.tsx)
-- Course builder: drag-drop sections/activities, file upload to Supabase Storage ([CourseBuilderPage.tsx](src/app/components/CourseBuilderPage.tsx)) — large file (~2000 lines), persists to `course_sections` and `course_activities`
-- Video lessons: play via `<iframe src={youtubeUrl}>` — no real player, no progress persistence
-- PDF preview in **authoring** (uses `pdfjs-dist`) — not in learner view
+- **`web/`** — Next.js 15 App Router. This is the application.
+- **`db/`** — Drizzle schema, **22 tables**, **16 migrations** (`0000`–`0016`).
+- **Root `src/`, `index.html`, `vite.config.ts`, `supabase/`** — the **RETIRED
+  Vite prototype**. Not deployed, not maintained. `npm run dev:legacy` still
+  starts it; `npm run dev` starts the real app. Deletion is unscheduled.
 
-Everything else is visual scaffolding.
+### What works end-to-end, live
+
+Auth (sign-up, sign-in, invitation, password reset, public `/join` gated on
+admin approval) · multi-tenant + single-tenant host routing · academy
+provisioning · course authoring with sections, lessons and reordering ·
+Bunny Stream video with resume and watch-time tracking · quizzes with
+server-side grading · enrolment (free and Stripe) · event-sourced progress ·
+completion certificates with public `/verify/:code` · admin People, Courses,
+Analytics, Certificates and Settings · transactional email via Resend ·
+append-only hash-chained audit log.
+
+### What is genuinely not built
+
+SCORM/xAPI playback (`xapi_statements` is schema-only), WorkOS SSO, custom
+domains, affiliates, community, interactive video, PWA offline — all Phase 2+.
+There is **no Activity Log screen**, so nothing in the product reads
+`audit_log` yet.
+
+### Known-open, with the decision owner
+
+- **May learner progress be deleted?** `progress_events` is append-only, which
+  is what makes the watch-time evidence trustworthy. Migration `0016` unblocked
+  deleting a tenant/course/enrolment *without* deleting events, so this is no
+  longer a blocker for housekeeping — but a **GDPR Article 17 erasure request
+  still cannot be honoured in-product**. See `docs/POLISH_BACKLOG.md` §5.
+- **Certificate wording** — same section.
 
 ---
 
-## 4. Critical security issues (fix in Phase 0)
+## 4. Security posture
 
-These are real, exploitable, and present in `main`. Do not ship before fixing.
+**Read this before hunting for bugs here.** Items 1–6 below are **FIXED**. They
+were listed as live and exploitable for three months after they were closed,
+which sent every reader looking for bugs that no longer exist and devalued the
+entries that are still real.
 
-| # | Issue | Location | Fix |
-|---|---|---|---|
-| 1 | Hardcoded admin bypass — `curtis@outdure.com` / `outdure` returns a forged `admin-token-*` JWT without going through Supabase Auth | [supabase/functions/server/index.tsx:139](supabase/functions/server/index.tsx) | Delete the bypass. Demo users live in migration `006_fix_demo_users.sql` and authenticate through Supabase Auth like everyone else. |
-| 2 | No role check on `/admin/create`, `/admin/list`, `DELETE /admin/:id` — any authenticated user can promote themselves to `platform_admin` | Edge functions | Add `requireRole('platform_admin')` middleware that reads role from JWT claim (after fix #4). |
-| 3 | Supabase URL + anon key checked into source | [utils/supabase/info.tsx](utils/supabase/info.tsx) | Move to `.env`, read via `import.meta.env.VITE_SUPABASE_*` (then `process.env.NEXT_PUBLIC_SUPABASE_*` after Next.js migration). |
-| 4 | JWT carries no role claim — every authorisation re-reads `profiles.role` | Supabase Auth | Add a Custom Access Token Hook (Supabase Auth Hooks) that injects `role` and `tenant_id` into JWT claims. |
-| 5 | Company suspension stored in `localStorage` | [src/app/utils/suspendedCompanies.ts](src/app/utils/suspendedCompanies.ts) | Move to `tenants.status` enum. RLS denies reads/writes when status = `'suspended'`. |
-| 6 | CORS `origin: "*"` on edge functions | Edge functions | Restrict to the app domain. |
-| 7 | ~~No rate limiting~~ **PARTLY DONE (2026-08-06).** [rate-limit.ts](web/src/lib/rate-limit.ts) is an in-process sliding window applied to academy provisioning, password-reset mail and invitations. Two gaps remain, both deliberate: **sign-in is not covered and cannot be from here** — [login/page.tsx](web/src/app/login/page.tsx) calls `signInWithPassword` from the browser, so the request never reaches our server, and password-guessing is bounded only by Supabase's own auth limits; and the store is **per-instance**, so on Vercel a cold start resets it. | Server Actions | Upstash (or any shared store) to make it global; a route handler proxying sign-in if we ever want to limit that ourselves. |
-| 8 | No audit trail on user/role/course mutations | All write paths | Build `audit_log` table on day 1; every mutation goes through a helper that appends a hash-chained row. |
+### Closed
+
+| # | Issue | Closed by |
+|---|---|---|
+| 1 | Hardcoded admin bypass returning a forged `admin-token-*` JWT | Deleted. **Must stay deleted — §7.12.** Legacy prototype only; the v2 app never had it. |
+| 2 | No role check on the edge-function admin routes | v2 replaced them. Every admin Server Action calls `requireAdmin()`, every admin page `requireAdminForSlug(slug)`; `authz-conventions.test.ts` fails CI if a guard is dropped. |
+| 3 | Supabase URL + anon key in source | v2 reads `NEXT_PUBLIC_SUPABASE_*` via [web/src/lib/env.ts](web/src/lib/env.ts). **The LEGACY project's anon key was committed and still needs rotating — DEPLOY.md §8.** |
+| 4 | JWT carries no role claim | Custom Access Token Hook, migrations `0002`/`0007`/`0010`. |
+| 5 | Suspension in `localStorage` | `tenants.status`, enforced in the tenant shell and in `assertTenantActive()`. |
+| 6 | CORS `origin: "*"` on edge functions | Allowlist via `ALLOWED_ORIGINS`. **Not yet redeployed to the legacy project — DEPLOY.md §8.** |
+
+### Still open, and what is actually true about each
+
+| # | Issue | State |
+|---|---|---|
+| 7 | Rate limiting | **Mostly done.** [rate-limit.ts](web/src/lib/rate-limit.ts) covers provisioning, password-reset mail, invitations, join requests, enrolment/checkout, quiz attempts and video heartbeats. Counting is **global** when `UPSTASH_REDIS_REST_*` are set and **per-instance** otherwise — check the deployment before calling it global. It fails **open** to per-instance if the store is unreachable, deliberately. **Sign-in is not covered and cannot be from here**: [login/page.tsx](web/src/app/login/page.tsx) calls `signInWithPassword` from the browser, so the request never reaches our server; password-guessing is bounded only by Supabase's own auth limits. |
+| 8 | Audit trail | **Built and enforced.** `audit_log` is append-only and hash-chained; `audited()` is required by `audit-coverage-conventions.test.ts`. Migration `0015` fixed three real defects (chain forked under concurrency, no canonicalisation, provenance fields unhashed) and added `verify_audit_chain()`. **Nothing in the product reads it** — there is no Activity Log screen. |
+| 9 | GDPR erasure | **Open.** Progress events now survive deletion of their enrolment, course and academy, so an Article 17 request cannot be honoured in-product. Owner decision — `docs/POLISH_BACKLOG.md` §5. |
+| 10 | CSP `script-src` | Allows `'unsafe-inline'` and `'unsafe-eval'`, which the App Router's inline bootstrap currently requires. `connect-src` is a strict allowlist, so exfiltration is still confined. Per-request nonces are the proper fix. |
+| 11 | Migrations `0014`–`0016` are **unapplied and unexecuted** | Written and reviewed, never run against Postgres. They must be applied to the v2 project, and `verify_audit_chain()` plus `web/tests/live/rls-attacks.spec.ts` run, before any of §4's claims can be treated as verified. |
 
 ---
 
@@ -251,46 +316,75 @@ Read this before doing anything in this repo.
 
 ```
 .
-├── CLAUDE.md                              ← you are here
-├── ARCHITECTURE.md                        single-source architecture doc (rewrite to match CLAUDE.md in Phase 0)
-├── README.md                              short, points to CLAUDE.md
+├── CLAUDE.md                          ← you are here. Source of truth.
+├── PLATFORM_OVERVIEW.md               the LIVE deployment (single-tenant, training.structurebuild.co)
+├── DEPLOY.md                          how to stand it up; §8 lists outstanding legacy tasks
+├── ARCHITECTURE.md                    architecture doc
+├── README.md                          short, points to CLAUDE.md
+├── package.json                       monorepo root. `npm run verify` fans out to db + web.
+│
+├── web/                               ★ THE APPLICATION (Next.js 15, App Router)
+│   ├── src/app/                       routes. `t/[slug]/` is the tenant tree:
+│   │   │                              admin/ (authoring, people, analytics),
+│   │   │                              learn/ (player, quizzes), courses/ (storefront)
+│   │   ├── dashboard/page.tsx         apex landing → landAfterSignIn resolves the destination
+│   │   ├── verify/[code]/             public certificate verification
+│   │   ├── api/webhooks/stripe/       payment + subscription webhooks
+│   │   ├── error.tsx, global-error.tsx    error boundaries (segment ones live under t/[slug])
+│   │   └── middleware.ts (src/)       session refresh + host→tenant rewrite
+│   ├── src/lib/
+│   │   ├── tenant.ts                  requireAdmin / requireAdminForSlug / requirePlatformAdmin
+│   │   ├── host.ts                    tenantRewritePath — subdomain AND single-tenant routing
+│   │   ├── rate-limit.ts              sliding window; shared store when Upstash is configured
+│   │   └── safe-redirect.ts           validates ?next= by resolution, not by pattern
+│   ├── tests/unit/                    ~520 tests, mostly architectural fitness guards
+│   ├── tests/e2e/                     unauthenticated smoke — runs on every push
+│   ├── tests/live/                    authenticated journeys + RLS attack probes (opt-in)
+│   └── sentry.client.config.ts        browser error reporting
+│
+├── db/                                ★ THE SCHEMA (source of truth for the database)
+│   ├── schema.ts                      22 tables, all tenant-scoped
+│   ├── client.ts                      `db` — BYPASSES RLS. Scope by tenant_id yourself.
+│   ├── audit.ts                       audited(tx, entry) — required by §7.11
+│   └── migrations/                    0000–0016, append-only. Next number is 0017.
+│
 ├── docs/
-│   ├── 03-permissions-rbac.md             RBAC reference (audit during Phase 0; align with 3-role model)
-│   ├── 04-ui-pages-flows.md               UX flows reference
-│   └── _archive/                          deprecated docs — do not act on
-├── guidelines/Guidelines.md               coding & UX conventions
-├── src/
-│   ├── App.tsx                            current root (state-based router — gets dismantled in Next.js migration)
-│   ├── app/
-│   │   ├── components/                    page-level components, ~37 of them; most are mock UI
-│   │   ├── data/                          mock data — to be deleted as features wire up
-│   │   ├── utils/
-│   │   │   ├── auth.ts                    real Supabase auth wrapper
-│   │   │   └── suspendedCompanies.ts      localStorage hack — replace with tenants.status
-│   │   └── types.ts                       domain types
-│   └── assets/                            figma:asset/* targets (Vite plugin remaps these)
-├── utils/supabase/
-│   ├── client.ts                          Supabase JS client singleton
-│   └── info.tsx                           HARDCODED creds — move to env vars
-├── supabase/
-│   ├── migrations/                        append-only SQL migrations
-│   └── functions/
-│       ├── server/index.tsx               Hono edge function — pick this one
-│       └── make-server/index.tsx          near-duplicate — delete
-├── vite.config.ts                         includes figma-asset-resolver plugin
-└── .claude/launch.json                    preview dev-server config (npm run dev → port 5173)
+│   ├── POLISH_BACKLOG.md              live backlog; §5 holds the owner-blocked decisions
+│   ├── MVP_EXECUTION_BRIEF.md         build brief
+│   ├── 03-permissions-rbac.md         RBAC reference
+│   ├── 04-ui-pages-flows.md           UX flows reference
+│   └── _archive/                      deprecated — DO NOT ACT ON (§7.2)
+│
+├── .github/workflows/ci.yml           db · web · e2e · live
+└── .claude/launch.json                preview config. `web-dev` (port 3010) is the real app.
+
+RETIRED — the Vite prototype. Not deployed, not maintained:
+  src/  index.html  vite.config.ts  utils/supabase/  supabase/
+  (supabase/functions/server only. `make-server` was deleted.)
 ```
 
 ---
 
 ## 9. Running locally
 
+**Node 20** — pinned in `.nvmrc` and in all three `package.json` `engines`, matching CI.
+
 ```sh
-npm install         # EBADENGINE warnings on Node 18 are expected; install completes
-npm run dev         # Vite default http://localhost:5173 (falls back to 5174 if 5173 is taken)
+# The real app (web/ + db/)
+npm install --prefix db && npm install --prefix web
+npm run dev                 # → http://localhost:3000  (web/, Next.js)
+npm run verify              # the gate: fans out to db/ AND web/. See §7.13.
 ```
 
-Use Node 20 LTS if anything Supabase- or PDF-related throws at runtime. Currently OK on Node 18 for everything except `pdfjs-dist` v5 and `@supabase/supabase-js` v2.95+ which warn but work.
+`web/` depends on `../db` via a `file:` link, so `db`'s dependencies must be
+installed for `web` to typecheck or build.
+
+The preview harness uses `.claude/launch.json` → **`web-dev`** on port 3010.
+
+```sh
+# The RETIRED Vite prototype, if you ever need it
+npm run dev:legacy          # → http://localhost:5173
+```
 
 ### Demo accounts
 
@@ -311,7 +405,18 @@ If sign-in fails against the *legacy* app, the hosted Supabase project doesn't h
 
 ### Environment
 
-Supabase project: `fyghhlxsorprmjyzbaiw` (creds currently hardcoded in [utils/supabase/info.tsx](utils/supabase/info.tsx); migrate to env in Phase 0).
+Two Supabase projects, and confusing them is the usual cause of "login is broken":
+
+- **v2 (live).** What `web/` uses. Configured entirely through env vars — copy
+  [web/.env.example](web/.env.example) to `web/.env.local`. Nothing is hardcoded.
+- **Legacy (retired prototype).** Project `fyghhlxsorprmjyzbaiw`, creds hardcoded
+  in [utils/supabase/info.tsx](utils/supabase/info.tsx). **That anon key is in git
+  history and must be treated as public — rotating it is an outstanding task
+  (DEPLOY.md §8).** Do not copy this pattern; §7.4.
+
+`web/.env.local` points at **production**. That matters for anything that writes:
+it is why the live E2E suite is default-off and why the RLS probes take their own
+`RLS_PROBE_*` target and refuse to run against the app's own project.
 
 ---
 

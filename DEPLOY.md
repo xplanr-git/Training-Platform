@@ -9,6 +9,64 @@ Do the steps in order. Each has a check you can run before moving on.
 
 ---
 
+## Status — where this runbook actually stands (2026-08-06)
+
+This document read as though nothing had shipped, while
+[PLATFORM_OVERVIEW.md](PLATFORM_OVERVIEW.md) said the platform was live. Both
+were right about different things, and neither said which. **The platform IS
+live** at `training.structurebuild.co`, deployed from remote `academy/main` in
+single-tenant mode (`DEFAULT_TENANT_SLUG=outdure`).
+
+| § | Step | State |
+|---|---|---|
+| 0 | Accounts | **Done** — except Upstash, now genuinely used if you want rate limits counted across instances (§9). |
+| 1 | Supabase v2 project | **Done.** ⚠️ Migrations `0014`–`0016` are **NOT applied** — see below. |
+| 2 | Access-token hook enabled | **Done** (`0002`, superseded by `0010`). |
+| 3 | First academy + admin | **Done.** |
+| 4 | Stripe | **Wired, gated off.** |
+| 5 | Vercel | **Done.** |
+| 6 | CI | **Done** — four jobs: db, web, e2e, live. |
+| 7 | Legacy course-data migration | **REMOVED.** Owner decision 2026-08-06; the script lost data silently. Details below. |
+| 8 | Harden + retire the legacy project | **NOT DONE — all four items outstanding.** |
+
+### Outstanding, in priority order
+
+1. **Apply migrations `0014`, `0015`, `0016`** to the v2 project. `0014` closes a
+   privilege-escalation hole that is **exploitable in production today**: one
+   `for all` RLS policy plus a blanket write grant let any learner `PATCH` their
+   own membership to `platform_admin` through the public PostgREST endpoint,
+   using only the anon key that ships in the client bundle. Until it is applied,
+   that hole is open.
+   ```sh
+   cd db && export DATABASE_URL="postgres://…v2…:5432/postgres" && npm run migrate
+   ```
+   Then confirm, as a smoke check:
+   ```sh
+   psql "$DATABASE_URL" -c "select * from verify_audit_chain(null) limit 20;"
+   ```
+   An empty result means the chain is intact. Rows whose `problem` mentions
+   `hash_version 1` are expected — those pre-date `0015` and are reported as
+   unverifiable rather than as tampered, by design.
+
+2. **Rotate the LEGACY anon key** (§8.3). It was committed to source and is in
+   git history, so it must be treated as public.
+
+3. **Apply legacy migration `010`** and **redeploy the legacy edge function**
+   with `ALLOWED_ORIGINS` (§8.1, §8.2) — or, if the legacy project is genuinely
+   finished with, delete the project outright, which closes all three at once.
+
+4. **Flip DNS** for any remaining legacy tenant (§8.4).
+
+### Not blocking, but worth knowing
+
+- A **disposable Supabase project** would let the `live` CI job actually run.
+  Today it passes with every spec SKIPPED, which is honest but is not coverage.
+  Populate the `ALLOW_LIVE_WRITES`, `DEMO_ADMIN_*` and `RLS_PROBE_*` secrets in
+  GitHub and point them at that project, never at production.
+- **GDPR erasure** is not possible in-product. Owner decision, `docs/POLISH_BACKLOG.md` §5.
+
+---
+
 ## 0. Accounts you need
 
 | Service | Used for | Required for MVP |
@@ -206,24 +264,42 @@ env). Add Vercel’s Git integration for preview deploys.
 
 ---
 
-## 7. Migrate legacy course data (optional)
+## 7. Migrate legacy course data — REMOVED, and deliberately not replaced
 
-If you have real courses in the legacy project, copy them into v2:
+`db/migrate-v1-to-v2.ts` was **deleted on 2026-08-06** by owner decision. There
+is no supported path for importing legacy Vite-prototype data, and this section
+records why rather than leaving the question open.
 
-```sh
-cd db
-export LEGACY_DATABASE_URL="postgres://…legacy…"   # read-only use
-export DATABASE_URL="postgres://…v2…"
-npx tsx migrate-v1-to-v2.ts --dry-run              # preview counts
-npx tsx migrate-v1-to-v2.ts                        # perform
-```
+The live platform already runs on the v2 project with real content, so no legacy
+data is coming across. The script that remained was not a dormant convenience —
+it lost data silently, and reported success while doing it:
 
-It creates a tenant per legacy company slug and maps courses/sections/activities
-into the v2 shape. Idempotent (skips already-migrated course slugs). Storage
-objects (uploaded files) must be copied separately if you relied on them.
+- **Slug collisions were counted as successes.** `slugify(title).slice(0, 63)`
+  with no collision handling: a second course whose first 63 characters matched
+  an existing one satisfied the duplicate check, was tallied under
+  `stats.skipped`, and never appeared. Dropped, and reported as a clean run.
+- **Content only.** No `users`, `memberships`, `enrollments`, `progress_events`,
+  `quizzes`, `quiz_attempts`, `certificates` or `orders`. A cutover using it
+  would have stranded every learner — CLAUDE.md §6 Phase 1 promises
+  `profiles.enrolled_courses[]` / `completed_lessons[]` are carried over, and
+  there was no path for them.
+- **Quiz activities became empty shells** — no `quizzes` or `quiz_questions`
+  rows, silent and uncounted.
+- **The dry run was not faithful.** The duplicate check was skipped under
+  `--dry-run`, so the preview overstated what a real run would do against a
+  partially-migrated target — the one case you use a preview for.
+- **Published state was lost** (every course forced to `draft`), legacy
+  timestamps were lost, tenant `name` was set to the raw `company_id`, any video
+  URL was tagged `kind: 'youtube'` even when it came from `video_url` (so the
+  player picked the wrong renderer), and orphan activities were dropped without
+  being counted or logged.
+- **No `audited()` calls anywhere** — a bulk import creating tenants and courses
+  wrote zero audit rows, against CLAUDE.md §7.11.
 
-**Check:** the dry-run’s reported counts match expectations; after the real run,
-a migrated course appears in that tenant’s admin course list.
+Keeping it would have meant someone eventually running it, seeing "success", and
+losing courses. If legacy import is ever genuinely needed, write it fresh
+against the schema of the day, with collision-safe slugs, a faithful dry run and
+audit rows — do not resurrect this from git history.
 
 ---
 

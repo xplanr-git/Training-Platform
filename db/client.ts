@@ -7,10 +7,20 @@
  * queries); it does NOT constrain this connection.
  *
  * Use `db` only in trusted server-only code — tenant provisioning, Stripe
- * webhooks, Inngest jobs, aggregations, migrations — and ALWAYS scope queries
- * by `tenant_id` yourself (call withTenant() first to resolve/verify the
- * tenant). For request-scoped, RLS-enforced reads/writes on behalf of a user,
- * use the Supabase client instead.
+ * webhooks, Inngest jobs, aggregations, migrations — and ALWAYS scope queries by
+ * `tenant_id` yourself.
+ *
+ * Authorization comes from the guards in web/src/lib/tenant.ts:
+ * `requireAdmin()` for Server Actions and `requireAdminForSlug(slug)` for pages.
+ * Both resolve the caller's role from `memberships` rather than from the JWT
+ * claim, and both return a context whose `tenantId` is the one to filter on.
+ * (This comment used to point at `withTenant()`, which was removed months ago
+ * because its verification was an argument nobody passed.)
+ *
+ * There is no "use the Supabase client instead" alternative for data: since
+ * migration 0014 the `authenticated` role has no write access through PostgREST
+ * at all, and the app makes zero data calls that way. Everything goes through
+ * here, which is exactly why the tenant scoping has to be deliberate.
  */
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';

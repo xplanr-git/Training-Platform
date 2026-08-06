@@ -7,7 +7,17 @@
 > Phase 1 is **built and live**. Phase 2 is **not built** — it is the expansion
 > path, described here so the boundary is unambiguous.
 >
-> Last verified against the code: 2026-08-04.
+> **Relationship to [CLAUDE.md](CLAUDE.md).** CLAUDE.md is the source of truth
+> for the product and its rules. This document describes one **deployment** of
+> it: `training.structurebuild.co`, running in single-tenant mode
+> (`DEFAULT_TENANT_SLUG=outdure`). That is a supported configuration of the
+> multi-tenant product, not a different product — CLAUDE.md §1 now says so
+> explicitly. Every domain table still carries `tenant_id`, RLS still enforces
+> it, and unsetting `DEFAULT_TENANT_SLUG` restores subdomain routing. Where the
+> two disagree on rules, CLAUDE.md wins; where they disagree on what is
+> deployed, this document is the one kept against reality.
+>
+> Last verified against the code: 2026-08-06.
 
 ---
 
@@ -46,9 +56,16 @@ Live at **`training.structurebuild.co`**.
 | Payments | Stripe — built, gated off | 17.5 |
 | Observability | Sentry + PostHog | — |
 | Hosting | Vercel (app) + Supabase (database, auth) | — |
-| Tests | Vitest (116 unit) + Playwright (live E2E) | — |
+| Tests | Vitest (~520 unit) + Playwright (e2e smoke in CI, authed journeys + RLS probes opt-in) | — |
 
-**Scale of the codebase:** 29 routes, 22 database tables, 11 migrations.
+**Scale of the codebase:** 29 routes, 22 database tables, 16 migrations
+(`0000`–`0016`).
+
+> Migrations `0014`–`0016` are **written but not yet applied**: they close a
+> PostgREST privilege-escalation hole, make the audit chain genuinely
+> tamper-evident, and unblock deleting a course that has learner activity. Until
+> they are applied to the v2 project, the security description below is the
+> intended state rather than the deployed one. See CLAUDE.md §4.
 
 ---
 
