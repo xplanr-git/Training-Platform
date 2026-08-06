@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { GraduationCap } from 'lucide-react';
 import { EmptyState, NoMatches } from '@/components/empty-state';
+import { SignOutButton } from '@/components/sign-out-button';
+import { createClient as supabase } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-platform/db';
 import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
@@ -81,7 +83,12 @@ export default async function TenantHome({
       .offset(offset);
 
   const requestedOffset = (requestedPage - 1) * PAGE_SIZE;
-  const [countRows, requestedRows] = await Promise.all([
+  // The viewer is read HERE, inside the existing Promise.all, so knowing who is
+  // looking costs no extra round trip. It is needed because this page became the
+  // landing page for signed-in users when `/` started following the session — and
+  // it had no header at all, so a learner arriving here had no way to reach their
+  // dashboard and no way to sign out, on a page they now land on by default.
+  const [countRows, requestedRows, viewer] = await Promise.all([
     tenant
       ? db
           .select({ total: count() })
@@ -89,7 +96,9 @@ export default async function TenantHome({
           .where(and(...filters))
       : Promise.resolve([] as Array<{ total: number }>),
     tenant ? rowsAt(requestedOffset) : Promise.resolve([] as Awaited<ReturnType<typeof rowsAt>>),
+    supabase().then((c) => c.auth.getUser().then((r) => r.data.user)),
   ]);
+  const signedIn = !!viewer;
   const total = countRows[0]?.total ?? 0;
   const meta = pageMeta(requestedPage, total);
 
@@ -101,6 +110,26 @@ export default async function TenantHome({
   return (
     <main className="mx-auto max-w-5xl px-6 py-12 sm:py-14">
       <header className="mb-10">
+        <nav className="mb-6 flex flex-wrap items-center justify-end gap-3 text-sm">
+          {signedIn ? (
+            <>
+              <Link href="/dashboard" className="text-brand-700 hover:underline">
+                My learning
+              </Link>
+              <SignOutButton />
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-brand-700 hover:underline">
+                Sign in
+              </Link>
+              {/* Always safe here: this page IS a tenant, so /join resolves. */}
+              <Link href="/join" className="text-brand-700 hover:underline">
+                Request access
+              </Link>
+            </>
+          )}
+        </nav>
         {logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt={tenant?.name ?? slug} className="mb-4 h-12 w-auto" />

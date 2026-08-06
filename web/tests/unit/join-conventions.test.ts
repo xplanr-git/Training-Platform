@@ -239,3 +239,51 @@ describe('the way in is reachable', () => {
     expect(() => code('src', 'app', 't', '[slug]', 'join', 'page.tsx')).not.toThrow();
   });
 });
+
+describe('the storefront is navigable, because / now lands there', () => {
+  /*
+   * When `/` started following the session, the catalogue became the landing page
+   * for every signed-in learner — and it had NO navigation whatsoever. Three
+   * course links and nothing else: no way to reach the dashboard, no way to sign
+   * out, on a page people now arrive at by default. sign-out-button.tsx's own
+   * doc comment says it "needs to be reachable from every signed-in surface
+   * (admin sidebar + learner header)", which this had quietly stopped honouring.
+   *
+   * Found by the owner looking at the deployed site, not by any test here — the
+   * routing change was verified as "signed-out still gets marketing" and nobody
+   * asked what the signed-in destination actually contained.
+   */
+  const STORE = code('src', 'app', 't', '[slug]', 'page.tsx');
+
+  it('knows whether anyone is signed in', () => {
+    expect(STORE).toMatch(/auth\.getUser\(\)/);
+    expect(STORE).toMatch(/const signedIn =/);
+  });
+
+  it('reads the viewer inside the existing Promise.all, not in series', () => {
+    // The §1 work parallelised this page's queries; a serial session read would
+    // hand that back for a nav bar.
+    // Anchored on the QUERY batch specifically: the page opens with a different
+    // Promise.all that destructures params, and matching that one instead made
+    // this assertion fail against correct code.
+    const batch = STORE.slice(STORE.indexOf('const [countRows'));
+    const end = batch.indexOf(']);');
+    expect(end).toBeGreaterThan(-1);
+    expect(batch.slice(0, end)).toMatch(/auth\.getUser\(\)/);
+  });
+
+  it('offers a signed-in learner their dashboard and a way out', () => {
+    expect(STORE).toMatch(/href="\/dashboard"/);
+    expect(STORE).toMatch(/<SignOutButton/);
+  });
+
+  it('and offers a visitor both ways in', () => {
+    expect(STORE).toMatch(/href="\/login"/);
+    expect(STORE).toMatch(/href="\/join"/);
+  });
+
+  it('shows one set or the other, never both', () => {
+    // A "Sign in" link beside a "Sign out" button would be nonsense.
+    expect(STORE).toMatch(/\{signedIn \?/);
+  });
+});

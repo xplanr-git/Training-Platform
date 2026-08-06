@@ -905,3 +905,22 @@ Newest first. One line per completed item: what changed, and the commit.
   it reported no difference. Unsetting the config properly shows 28 of 50 lines in
   button.tsx blamed on the sweep without the file and 0 with it.
 
+- **The landing page I created had no navigation, and the owner found it, not a test.**
+  Reported as "the home page does not have any sign in or request access". Production
+  was correct signed-OUT — fetched it, both links present, /join returns 200. The cause
+  was the routing change earlier the same day: `/` now follows the session, so a
+  signed-in user gets the catalogue, and the catalogue contained three course links and
+  nothing else. No dashboard link, no sign-out, on a page people now arrive at by
+  default. sign-out-button.tsx's own doc says it "needs to be reachable from every
+  signed-in surface (admin sidebar + learner header)" — that had quietly stopped being
+  true the moment the storefront became a landing page.
+  The gap in my own verification is the lesson: I checked that signed-out visitors still
+  got marketing, and never asked what the signed-in DESTINATION contained. Testing that
+  a redirect goes somewhere is not testing that the somewhere is usable.
+  Fixed with a nav on the storefront — dashboard + sign out when signed in, sign in +
+  request access when not. The viewer is read inside the page's EXISTING Promise.all,
+  so knowing who is looking costs no extra round trip and the §1 parallelism survives;
+  that is asserted too, because the obvious fix is a serial await. Earlier in the day I
+  had explicitly declined to add a session read here on speed grounds — correct then,
+  wrong once the page became a default destination.
+
