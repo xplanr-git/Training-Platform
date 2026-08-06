@@ -103,3 +103,65 @@ describe('auth forms keep saying they are working until the page changes', () =>
     expect(src).toMatch(/Too many attempts/);
   });
 });
+
+describe('the destination is resolved by the server, not asked for by the client', () => {
+  /*
+   * Reported as: "I attempted to sign in, it showed signing in, then it went
+   * back to the login form."
+   *
+   * postSignInDestination() returns '/login' whenever it cannot see a session.
+   * Both auth screens called it as a Server Action straight after
+   * authenticating — a fetch, made moments after the browser client wrote the
+   * session cookie, and not reliably able to see it. So a SUCCESSFUL sign-in
+   * resolved its own destination to the login page. Under the old
+   * router.push that was a no-op from /login and looked like nothing happening;
+   * with a hard navigation it became a visible bounce back to the form.
+   *
+   * The client no longer needs to know: it goes to /dashboard, which is a full
+   * document request where the cookie is unambiguous, and that page resolves the
+   * real destination and performs the activation.
+   */
+  it('neither auth screen asks the client-side for a destination', () => {
+    for (const [label, path] of [
+      ['sign in', ['app', 'login', 'page.tsx']],
+      ['set password', ['app', 'auth', 'set-password', 'page.tsx']],
+    ] as const) {
+      const src = code(...path);
+      expect(src, `${label} still calls postSignInDestination from the browser`).not.toMatch(
+        /postSignInDestination/,
+      );
+      expect(src, `${label} still calls activateMembershipOnSignIn from the browser`).not.toMatch(
+        /activateMembershipOnSignIn/,
+      );
+    }
+  });
+
+  it('sign-in leaves for /dashboard, honouring a validated ?next=', () => {
+    const src = code('app', 'login', 'page.tsx');
+    expect(src).toMatch(/next \?\? '\/dashboard'/);
+    // startsWith('/') alone let '//evil.com' through.
+    expect(src).toMatch(/safeRedirect\(rawNext, window\.location\.origin\)/);
+  });
+
+  it('the dashboard owns both jobs the screens gave up', () => {
+    const dash = code('app', 'dashboard', 'page.tsx');
+    expect(dash, 'nothing activates an accepted invitation any more').toMatch(
+      /await activateMembershipOnSignIn\(\)/,
+    );
+    expect(dash).toMatch(/await postSignInDestination\(\)/);
+  });
+
+  it('and it cannot bounce someone in a loop', () => {
+    // Redirecting to '/dashboard' from '/dashboard' would spin.
+    const dash = code('app', 'dashboard', 'page.tsx');
+    expect(dash).toMatch(/dest !== '\/dashboard'/);
+  });
+
+  it('activation failure never blocks reaching the courses', () => {
+    const dash = code('app', 'dashboard', 'page.tsx');
+    // The CALL, not the import on line 4 — which is what this matched first.
+    const at = dash.indexOf('await activateMembershipOnSignIn()');
+    expect(at, 'no call found, only an import').toBeGreaterThan(-1);
+    expect(dash.slice(Math.max(0, at - 120), at)).toMatch(/try \{/);
+  });
+});

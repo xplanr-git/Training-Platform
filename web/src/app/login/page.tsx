@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { activateMembershipOnSignIn, postSignInDestination } from './actions';
 import { safeRedirect } from '@/lib/safe-redirect';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,25 +55,29 @@ export default function LoginPage() {
       setError(signInMessage(error.message));
       return;
     }
-    // An invited member has now proven control of their email — mark active.
-    try {
-      await activateMembershipOnSignIn();
-    } catch {
-      // Non-fatal: never block sign-in on bookkeeping.
-    }
-    // Honour ?next=, else ask the server where to go: the destination needs the
-    // tenant slug, which the JWT doesn't carry.
-    // startsWith('/') alone let '//evil.com' through — resolve and compare origins.
+    /*
+     * Go to /dashboard and let the SERVER decide where you belong.
+     *
+     * This used to call two Server Actions from here first —
+     * activateMembershipOnSignIn, then postSignInDestination — and the second
+     * one returns '/login' whenever it cannot see a session. A Server Action is
+     * a fetch, and the session cookie the browser client had just written was
+     * not reliably visible to it, so a SUCCESSFUL sign-in resolved its
+     * destination to the login page. With the old router.push that was a no-op
+     * from /login and looked like nothing happening; with a hard navigation it
+     * became a visible bounce straight back to the form.
+     *
+     * /dashboard is reached by a full document request, where the cookie is
+     * unambiguous, and that page already resolves the real destination and
+     * performs the activation. So the client does not need to know either — it
+     * just has to leave. Two fewer round trips on the critical path as well.
+     *
+     * ?next= is still honoured: safeRedirect resolves and compares origins,
+     * because startsWith('/') alone let '//evil.com' through.
+     */
     const rawNext = new URLSearchParams(window.location.search).get('next');
     const next = rawNext ? safeRedirect(rawNext, window.location.origin) : null;
-    let dest = next ?? '/dashboard';
-    if (!next) {
-      try {
-        dest = await postSignInDestination();
-      } catch {
-        // Fall back to the apex dashboard, which routes by membership.
-      }
-    }
+    const dest = next ?? '/dashboard';
     // A HARD navigation, for the same reason sign-out uses one: router.refresh()
     // fired straight after router.push() re-fetches the route being LEFT and can
     // drop the pending push, which on sign-out produced "it signed out but did

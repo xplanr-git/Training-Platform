@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { activateMembershipOnSignIn, postSignInDestination } from '@/app/login/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,29 +55,21 @@ export default function SetPasswordPage() {
       return;
     }
 
-    // Setting a password from an emailed link proves control of the address, so
-    // this is an acceptance — flip 'invited' to 'active' exactly as signing in
-    // does. Without it the one path that actually proves acceptance left the
-    // membership pending, and the People list kept showing them as invited.
-    try {
-      await activateMembershipOnSignIn();
-    } catch {
-      // Non-fatal: never block on bookkeeping.
-    }
-
-    // Same destination logic as signing in normally: resolved server-side
-    // because it needs the tenant slug, which the JWT doesn't carry.
-    let dest = '/dashboard';
-    try {
-      dest = await postSignInDestination();
-    } catch {
-      // Fall back to the apex dashboard, which routes by membership.
-    }
-    // Hard navigation, matching sign-in: router.refresh() after router.push()
-    // re-fetches the route being left and can drop the push, which would strand
-    // a brand-new invitee on the set-password screen after their password was
-    // already changed — the worst possible moment to look broken. `loading` is
-    // never cleared here, so the button stays disabled until the document goes.
+    /*
+     * Same as sign-in: go to /dashboard and let the server route.
+     *
+     * This used to call activateMembershipOnSignIn and postSignInDestination as
+     * Server Actions from here, and the second returns '/login' when it cannot
+     * see a session — which would send a brand-new invitee back to a login form
+     * moments after their password was accepted. The dashboard resolves the
+     * destination on a full document request, where the cookie is unambiguous,
+     * and performs the activation itself.
+     *
+     * The activation still matters here: setting a password from an emailed link
+     * proves control of the address, so it is an acceptance and flips 'invited'
+     * to 'active'. It just happens server-side now.
+     */
+    const dest = '/dashboard';
     window.location.replace(dest);
   }
 

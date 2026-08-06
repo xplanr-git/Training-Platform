@@ -974,3 +974,27 @@ Newest first. One line per completed item: what changed, and the commit.
   account was rate-limited at the time. The failure path and the button's state machine
   are covered by the guards, not by a click.
 
+- **"It showed signing in, then went back to the login form."** The in-flight fix
+  worked — the button reported correctly — and that made the REAL defect visible for
+  the first time. `postSignInDestination()` returns `'/login'` whenever it cannot see a
+  session, and both auth screens called it as a Server Action immediately after
+  authenticating. So a SUCCESSFUL sign-in could resolve its own destination to the
+  login page. Under the old `router.push` that was a no-op from `/login` and read as
+  "nothing happened"; with the hard navigation it became a visible bounce. The same
+  single cause is behind every sign-in report in this session.
+  Fixed by removing the question rather than answering it: the client no longer asks
+  where to go. It navigates to `/dashboard`, a full document request where the cookie
+  is unambiguous, and that page resolves the destination and performs the invitation
+  activation — which also means the activation stops being silently skipped when the
+  Server Action could not see the session, the one path that actually proves someone
+  accepted. Two fewer round trips on the critical path, and set-password gets the same
+  treatment, where the old behaviour would have sent a brand-new invitee back to a
+  login form moments after their password was accepted.
+  Verified: signed-out `/dashboard` lands on `/login` in one hop with no loop, in a
+  real browser. NOT verified: a successful sign-in. It needs credentials, and the
+  account was rate-limited by the earlier defect. And the ROOT CAUSE is not proven —
+  I could not establish why a Server Action failed to see a cookie the browser had
+  just written. What is proven is that the code path which turns success into
+  `'/login'` is gone. If it still bounces, the next step is server-side logging, which
+  needs a deploy and a reproduction.
+

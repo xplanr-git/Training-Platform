@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { db, and, eq, asc, memberships, tenants } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
-import { postSignInDestination } from '@/app/login/actions';
+import { activateMembershipOnSignIn, postSignInDestination } from '@/app/login/actions';
 
 /**
  * Apex fallback dashboard. Every user belongs to a tenant, so route them to
@@ -17,6 +17,24 @@ import { postSignInDestination } from '@/app/login/actions';
 export default async function Dashboard() {
   const ctx = await getTenantContext();
   if (!ctx) redirect('/login');
+
+  /*
+   * The activation lives HERE now, not on the sign-in and set-password screens.
+   *
+   * Both used to call it as a Server Action from the browser immediately after
+   * authenticating, where the session cookie the client had just written was not
+   * reliably visible — so the one path that actually proves someone accepted an
+   * invitation could silently do nothing, and People kept showing them as
+   * invited. This page is a full document request, so the cookie is certain, and
+   * everyone arrives here right after signing in.
+   *
+   * Safe to run on every visit: it is a no-op once the membership is active.
+   */
+  try {
+    await activateMembershipOnSignIn();
+  } catch {
+    // Never block someone from reaching their courses over bookkeeping.
+  }
 
   const dest = await postSignInDestination();
   // Anything other than this page means we know where they belong. The guard
