@@ -144,6 +144,86 @@ describe('tenant guards', () => {
     expect(body).toMatch(/redirect\('\/login'\)/);
     expect(body).toMatch(/redirect\('\/dashboard'\)/);
   });
+
+  /*
+   * The guards must decide from the DATABASE, not from the access token.
+   *
+   * ctx.role is decoded from whatever token the cookie holds, and that token is
+   * only reissued on refresh — up to an hour. So demoting an admin
+   * (setMemberRole) or deactivating them (setMemberStatus) left them with full
+   * mutation rights over courses, people and certificates for that hour, while
+   * the admin who did it had already been told it was saved.
+   *
+   * primaryMembership() in login/actions.ts and isTenantAdmin() in
+   * course-access.ts already re-read the database for exactly this reason. The
+   * guard in front of every admin mutation did not.
+   */
+  it.each(['requireAdmin', 'requireAdminForSlug'])(
+    '%s resolves the role from memberships, not from the token claim',
+    (fn) => {
+      const body = bodyOf(fn);
+      expect(body, 'must consult the database').toMatch(/currentAdminRole\(/);
+      // The exact regression: trusting the decoded claim.
+      expect(body).not.toMatch(/isAdminRole\(ctx\.role\)/);
+      expect(body).not.toMatch(/ctx\.role !== /);
+    },
+  );
+
+  it('the membership lookup excludes deactivated and pending', () => {
+    // 'invited' must stay in: nothing flips a membership to 'active' until the
+    // apex /dashboard runs, and on a tenant subdomain that page is rewritten
+    // away — so requiring 'active' would lock out a freshly invited admin. What
+    // this guard exists to catch is 'deactivated'.
+    const fn = src.slice(src.indexOf('const currentMembershipRole = cache('));
+    const body = fn.slice(0, fn.indexOf('\n);'));
+    expect(body).toMatch(/inArray\(memberships\.status, \['active', 'invited'\]\)/);
+    expect(body).not.toMatch(/'deactivated'/);
+    expect(body).not.toMatch(/'pending'/);
+  });
+});
+
+describe('the platform-admin area checks the database too', () => {
+  /*
+   * /platform is the widest privilege in the product — it can suspend any
+   * academy on the platform — and it was the most loosely checked: both the
+   * layout and setTenantStatus tested `ctx.role === 'platform_admin'` straight
+   * off the decoded token, so a revoked platform admin kept it for up to an hour.
+   */
+  const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
+
+  it('the layout and the action both go through a database-backed guard', () => {
+    const layout = read('src/app/platform/layout.tsx');
+    const actions = read('src/app/platform/actions.ts');
+    expect(layout).toMatch(/requirePlatformAdminPage\(\)/);
+    expect(actions).toMatch(/requirePlatformAdmin\(\)/);
+    for (const [name, src] of [
+      ['layout', layout],
+      ['actions', actions],
+    ] as const) {
+      expect(src, `${name} still trusts the role claim`).not.toMatch(
+        /ctx\??\.role !== 'platform_admin'|ctx\??\.role === 'platform_admin'/,
+      );
+    }
+  });
+
+  it('the guard reads memberships rather than the claim', () => {
+    const tenant = read('src/lib/tenant.ts');
+    const start = tenant.indexOf('export const isPlatformAdmin = cache(');
+    expect(start, 'isPlatformAdmin not found').toBeGreaterThan(-1);
+    const body = tenant.slice(start, tenant.indexOf('\n});', start));
+    expect(body).toMatch(/from\(memberships\)/);
+    expect(body).toMatch(/eq\(memberships\.role, 'platform_admin'\)/);
+  });
+});
+
+describe('the admin shell does not re-decide authorization', () => {
+  it('delegates to requireAdminForSlug, so the URL academy is checked at the shell', () => {
+    // The hand-rolled guard here read the role claim AND ignored `slug`, so the
+    // shell rendered for an academy it had never verified the caller against.
+    const layout = readFileSync(join(process.cwd(), 'src/app/t/[slug]/admin/layout.tsx'), 'utf8');
+    expect(layout).toMatch(/requireAdminForSlug\(\s*slug\s*\)/);
+    expect(layout).not.toMatch(/ctx\.role !== /);
+  });
 });
 
 describe('assignable roles cannot be escalated', () => {

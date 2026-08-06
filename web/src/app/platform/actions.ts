@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { db, audited, eq, tenants } from '@training-platform/db';
-import { getTenantContext } from '@/lib/tenant';
+import { requirePlatformAdmin } from '@/lib/tenant';
 
 type TenantStatus = 'trial' | 'active' | 'past_due' | 'suspended' | 'cancelled';
 
@@ -11,8 +11,10 @@ type TenantStatus = 'trial' | 'active' | 'past_due' | 'suspended' | 'cancelled';
  * all access (enforced in the tenant layout + RLS). Audited.
  */
 export async function setTenantStatus(tenantId: string, status: TenantStatus) {
-  const ctx = await getTenantContext();
-  if (ctx?.role !== 'platform_admin') throw new Error('FORBIDDEN');
+  // Checked against memberships, not the token's role claim: this action can
+  // suspend any academy on the platform, and a revoked platform admin used to
+  // keep that power until their token refreshed.
+  const ctx = await requirePlatformAdmin();
 
   await db.transaction(async (tx) => {
     const [before] = await tx

@@ -1,11 +1,12 @@
-import { redirect } from 'next/navigation';
-import { getTenantContext } from '@/lib/tenant';
+import { requirePlatformAdminPage } from '@/lib/tenant';
 
-/** Platform-admin area guard. Only platform_admin role may enter. */
+/**
+ * Platform-admin area guard. Only a live platform_admin membership may enter —
+ * checked against the database rather than the token's role claim, which lags a
+ * revocation by up to an hour.
+ */
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await getTenantContext();
-  if (!ctx) redirect('/login?next=/platform');
-  if (ctx.role !== 'platform_admin') redirect('/');
+  await requirePlatformAdminPage();
 
   return (
     <div className="min-h-screen bg-surface-muted">

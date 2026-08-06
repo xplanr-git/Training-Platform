@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
-import { db, tenants, eq } from '@training-platform/db';
+import { db, tenants, memberships, eq, and, inArray } from '@training-platform/db';
 import { createClient } from '@/lib/supabase/server';
 
 export type AppRole = 'platform_admin' | 'company_admin' | 'instructor' | 'learner';
@@ -64,6 +64,60 @@ function isAdminRole(role: AppRole): boolean {
 }
 
 /**
+ * The caller's CURRENT role in a tenant, read from `memberships` — not from the
+ * JWT.
+ *
+ * The role claim is stamped into the access token at issuance and is then fixed
+ * until the token refreshes, which is up to an hour (autoRefreshToken). So
+ * demoting an admin (setMemberRole) or deactivating them (setMemberStatus) had
+ * no effect on what they could actually do for up to an hour after the admin
+ * doing it saw "Saved". For that hour a removed admin kept full mutation rights
+ * over courses, people and certificates.
+ *
+ * Two neighbouring call sites already re-read the database for exactly this
+ * reason — primaryMembership() in login/actions.ts and isTenantAdmin() in
+ * course-access.ts. The guard that gates every admin mutation did not.
+ *
+ * Status set: 'active' and 'invited', deliberately. It mirrors the access-token
+ * hook (migration 0010) and primaryMembership, so app and token agree on who
+ * holds a usable membership. 'invited' has to be included — nothing flips a
+ * membership to 'active' until the invitee reaches the apex /dashboard, and on a
+ * tenant subdomain that page is rewritten away, so an invited admin may legitimately
+ * still be 'invited'. Requiring 'active' here would lock them out of the academy
+ * they were just invited to administer. What matters is that 'deactivated' and
+ * 'pending' are excluded — those are the states this guard exists to catch.
+ *
+ * Cost: one indexed lookup on (user_id, tenant_id), deduplicated per request by
+ * cache() just as getTenantContext() is. The admin layout, the page and any
+ * action it invokes therefore share a single query.
+ */
+const currentMembershipRole = cache(
+  async (userId: string, tenantId: string): Promise<AppRole | null> => {
+    const [row] = await db
+      .select({ role: memberships.role })
+      .from(memberships)
+      .where(
+        and(
+          eq(memberships.userId, userId),
+          eq(memberships.tenantId, tenantId),
+          inArray(memberships.status, ['active', 'invited']),
+        ),
+      )
+      .limit(1);
+    return (row?.role as AppRole) ?? null;
+  },
+);
+
+/**
+ * Confirms the caller administers this tenant right now. Returns the role as
+ * stored, so callers report the truth rather than the claim.
+ */
+export async function currentAdminRole(userId: string, tenantId: string): Promise<AppRole | null> {
+  const role = await currentMembershipRole(userId, tenantId);
+  return role && isAdminRole(role) ? role : null;
+}
+
+/**
  * Refuses access when the tenant is no longer entitled to trade.
  *
  * The tenant shell blocks suspended *pages*, but Server Actions do not render
@@ -93,10 +147,16 @@ async function assertTenantActive(tenantId: string): Promise<void> {
 export async function requireAdmin(): Promise<AdminContext> {
   const ctx = await getTenantContext();
   if (!ctx) throw new Error('UNAUTHENTICATED');
-  if (!isAdminRole(ctx.role)) throw new Error('FORBIDDEN');
   if (!ctx.tenantId) throw new Error('TENANT_NOT_FOUND');
+
+  // Against the DATABASE, not ctx.role. See currentMembershipRole: a demotion or
+  // deactivation must take effect on the next request, not on the next token
+  // refresh up to an hour later.
+  const role = await currentAdminRole(ctx.userId, ctx.tenantId);
+  if (!role) throw new Error('FORBIDDEN');
+
   await assertTenantActive(ctx.tenantId);
-  return { ...ctx, tenantId: ctx.tenantId };
+  return { ...ctx, role, tenantId: ctx.tenantId };
 }
 
 /**
@@ -120,7 +180,6 @@ export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
   // both a poor experience and misleading — being signed out, or pointed at
   // someone else's academy, is a routing outcome, not a server fault.
   if (!ctx) redirect('/login');
-  if (!isAdminRole(ctx.role)) redirect('/dashboard');
 
   const [tenant] = await db
     .select({ id: tenants.id, status: tenants.status })
@@ -143,9 +202,60 @@ export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
   const tenantMismatch = ctx.tenantId !== tenant.id;
   if (tenantMismatch) notFound();
 
+  // Against the DATABASE, and against the URL's academy rather than the claim's.
+  // The role check used to read ctx.role, so a demoted or deactivated admin kept
+  // every admin PAGE for up to an hour — until their token refreshed. Deliberately
+  // placed after the tenant is resolved, so the membership is checked against the
+  // academy actually being administered.
+  const role = await currentAdminRole(ctx.userId, tenant.id);
+  if (!role) redirect('/dashboard');
+
   // Suspended tenants are shown an "unavailable" page by the tenant shell; this
   // stops an admin page rendering underneath it.
   if (tenant.status === 'suspended' || tenant.status === 'cancelled') notFound();
 
-  return { ...ctx, tenantId: tenant.id };
+  return { ...ctx, role, tenantId: tenant.id };
 }
+
+/**
+ * Guard for the cross-tenant /platform area — the widest privilege in the
+ * product, and the one that was checked most loosely.
+ *
+ * platform/layout.tsx and platform/actions.ts both tested `ctx.role ===
+ * 'platform_admin'` straight off the decoded token. Revoking someone's platform
+ * admin therefore left them able to suspend and un-suspend EVERY academy on the
+ * platform until their token happened to refresh.
+ *
+ * Unlike the tenant guards this is not scoped to one academy: it asks whether the
+ * caller holds a platform_admin membership anywhere, which is what the role means.
+ */
+export async function requirePlatformAdmin(): Promise<TenantContext> {
+  const ctx = await getTenantContext();
+  if (!ctx) throw new Error('UNAUTHENTICATED');
+  if (!(await isPlatformAdmin(ctx.userId))) throw new Error('FORBIDDEN');
+  return ctx;
+}
+
+/** As above, for pages: navigates instead of throwing. */
+export async function requirePlatformAdminPage(): Promise<TenantContext> {
+  const ctx = await getTenantContext();
+  if (!ctx) redirect('/login?next=/platform');
+  if (!(await isPlatformAdmin(ctx.userId))) redirect('/');
+  return ctx;
+}
+
+/** Whether this user holds a live platform_admin membership, per the database. */
+export const isPlatformAdmin = cache(async (userId: string): Promise<boolean> => {
+  const [row] = await db
+    .select({ id: memberships.id })
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.userId, userId),
+        eq(memberships.role, 'platform_admin'),
+        inArray(memberships.status, ['active', 'invited']),
+      ),
+    )
+    .limit(1);
+  return !!row;
+});

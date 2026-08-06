@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/empty-state';
 import { redirect } from 'next/navigation';
 import { Award } from 'lucide-react';
 import { db, eq, and, desc, enrollments, courses, certificates } from '@training-platform/db';
-import { getTenantContext } from '@/lib/tenant';
+import { getTenantContext, currentAdminRole } from '@/lib/tenant';
 import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,9 @@ export default async function LearnerDashboard() {
   const ctx = await getTenantContext();
   if (!ctx) redirect('/login');
   if (!ctx.tenantId) redirect('/');
-  const isAdmin = ctx.role === 'company_admin' || ctx.role === 'platform_admin';
+  // From memberships, not the role claim — otherwise a demoted admin keeps being
+  // offered an "Admin" link that then bounces them straight back here.
+  const isAdmin = !!(await currentAdminRole(ctx.userId, ctx.tenantId));
 
   const rows = await db
     .select({

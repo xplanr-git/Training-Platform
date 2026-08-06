@@ -137,10 +137,30 @@ describe('internal vocabulary does not reach the screen', () => {
     expect(offenders, `say "academy":\n${offenders.join('\n')}`).toEqual([]);
   });
 
-  it('the platform guard throws the sentinel friendly() actually matches', () => {
+  it('every guard sentinel is one friendly() actually matches', () => {
     // It threw 'Forbidden'; includes('FORBIDDEN') is case-sensitive, so the raw word
     // was shown instead of "You don't have permission to do that."
-    expect(code('src/app/platform/actions.ts')).toMatch(/throw new Error\('FORBIDDEN'\)/);
+    //
+    // Asserting the whole loop rather than one string in one file: the platform
+    // guard has since moved into lib/tenant.ts (requirePlatformAdmin), and a
+    // location-pinned check would have failed for a move while still passing for
+    // a genuinely unmatched sentinel.
+    const guards = code('src/lib/tenant.ts');
+    const navForm = code('src/components/nav-form.tsx');
+
+    const sentinels = [...guards.matchAll(/throw new Error\('([A-Z_]+)'\)/g)].map((m) => m[1]);
+    expect(
+      sentinels.length,
+      'no sentinels found — has lib/tenant.ts moved?',
+    ).toBeGreaterThanOrEqual(3);
+    // The platform guard is the one that regressed before; keep it named.
+    expect(sentinels).toContain('FORBIDDEN');
+
+    const unmatched = sentinels.filter((s) => !navForm.includes(`includes('${s}')`));
+    expect(
+      unmatched,
+      `friendly() would show these raw to the user: ${unmatched.join(', ')}`,
+    ).toEqual([]);
   });
 
   it('"ingest" and "provider" stay out of the interface', () => {
