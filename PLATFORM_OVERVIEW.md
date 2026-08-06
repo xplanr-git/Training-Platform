@@ -61,11 +61,14 @@ Live at **`training.structurebuild.co`**.
 **Scale of the codebase:** 29 routes, 22 database tables, 16 migrations
 (`0000`–`0016`).
 
-> Migrations `0014`–`0016` are **written but not yet applied**: they close a
+> Migrations `0014`–`0016` were **applied on 2026-08-07**: they close a
 > PostgREST privilege-escalation hole, make the audit chain genuinely
-> tamper-evident, and unblock deleting a course that has learner activity. Until
-> they are applied to the v2 project, the security description below is the
-> intended state rather than the deployed one. See CLAUDE.md §4.
+> tamper-evident, and unblock deleting a course that has learner activity. All
+> three are verified against the live database — see CLAUDE.md §4.
+>
+> The **application** changes from the same pass (CSP, client-side Sentry, error
+> boundaries, the database-backed admin guards) are committed but **not yet
+> deployed**, so the database is currently ahead of the running code.
 
 ---
 

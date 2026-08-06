@@ -20,7 +20,7 @@ single-tenant mode (`DEFAULT_TENANT_SLUG=outdure`).
 | § | Step | State |
 |---|---|---|
 | 0 | Accounts | **Done** — except Upstash, now genuinely used if you want rate limits counted across instances (§9). |
-| 1 | Supabase v2 project | **Done.** ⚠️ Migrations `0014`–`0016` are **NOT applied** — see below. |
+| 1 | Supabase v2 project | **Done.** Migrations `0000`–`0016` all applied (`0014`–`0016` on 2026-08-07). |
 | 2 | Access-token hook enabled | **Done** (`0002`, superseded by `0010`). |
 | 3 | First academy + admin | **Done.** |
 | 4 | Stripe | **Wired, gated off.** |
@@ -29,31 +29,44 @@ single-tenant mode (`DEFAULT_TENANT_SLUG=outdure`).
 | 7 | Legacy course-data migration | **REMOVED.** Owner decision 2026-08-06; the script lost data silently. Details below. |
 | 8 | Harden + retire the legacy project | **NOT DONE — all four items outstanding.** |
 
+### Done 2026-08-07 — the database is current
+
+Migrations `0014`–`0016` are applied to the v2 project. `0014` closed a
+privilege-escalation hole that WAS exploitable in production: one `for all` RLS
+policy plus a blanket write grant let any learner `PATCH` their own membership
+to `platform_admin` through the public PostgREST endpoint, using only the anon
+key that ships in the client bundle. Confirmed closed — `authenticated` now
+holds **zero** INSERT/UPDATE/DELETE privileges anywhere in `public`.
+
+Re-run the chain check any time:
+
+```bash
+psql "$DATABASE_URL" -c "select * from public.verify_audit_chain('<tenant-uuid>');"
+```
+
+No rows means intact. Rows saying `hash_version 1 predates migration 0015` are
+expected and not a problem — those were written by the old algorithm and are
+reported as unverifiable rather than as tampered, deliberately.
+
+> **A note for the next migration.** `0015` could not run as first written: its
+> backfill was `update audit_log set hash_version = 1`, and that table's own
+> append-only trigger rejects UPDATE. Anything that needs to touch existing rows
+> in `audit_log` or `progress_events` must do it through DDL (a column default)
+> rather than DML. Same collision as `0009`, `0012` and `0016`.
+
 ### Outstanding, in priority order
 
-1. **Apply migrations `0014`, `0015`, `0016`** to the v2 project. `0014` closes a
-   privilege-escalation hole that is **exploitable in production today**: one
-   `for all` RLS policy plus a blanket write grant let any learner `PATCH` their
-   own membership to `platform_admin` through the public PostgREST endpoint,
-   using only the anon key that ships in the client bundle. Until it is applied,
-   that hole is open.
-   ```sh
-   cd db && export DATABASE_URL="postgres://…v2…:5432/postgres" && npm run migrate
-   ```
-   Then confirm, as a smoke check:
-   ```sh
-   psql "$DATABASE_URL" -c "select * from verify_audit_chain(null) limit 20;"
-   ```
-   An empty result means the chain is intact. Rows whose `problem` mentions
-   `hash_version 1` are expected — those pre-date `0015` and are reported as
-   unverifiable rather than as tampered, by design.
+1. **Rotate the LEGACY anon key** (§8.3). It was committed to source and is in
+   git history, so it must be treated as public. **This is now the most exposed
+   thing on the list.**
 
-2. **Rotate the LEGACY anon key** (§8.3). It was committed to source and is in
-   git history, so it must be treated as public.
-
-3. **Apply legacy migration `010`** and **redeploy the legacy edge function**
+2. **Apply legacy migration `010`** and **redeploy the legacy edge function**
    with `ALLOWED_ORIGINS` (§8.1, §8.2) — or, if the legacy project is genuinely
    finished with, delete the project outright, which closes all three at once.
+
+3. **Deploy the app changes.** The database is ahead of the code: CSP,
+   client-side Sentry, the error boundaries and the guard fixes are committed
+   but not yet released, so the live site is still serving without them.
 
 4. **Flip DNS** for any remaining legacy tenant (§8.4).
 

@@ -157,12 +157,35 @@ describe('DEPLOY.md and PLATFORM_OVERVIEW.md agree on whether anything shipped',
     expect(overview).toMatch(/single-tenant mode/);
   });
 
-  it('neither claims the unapplied migrations are applied', () => {
+  it('all three say the same thing about the 0014-0016 migrations', () => {
+    /*
+     * These were applied on 2026-08-07. Before that all three docs said
+     * "unapplied", and the risk then was a doc claiming otherwise; the risk NOW
+     * is the reverse — a doc still telling someone to go and apply migrations
+     * that are already in place, which is how the last round of drift started.
+     *
+     * So: every one of them must mention the migrations, and none may still
+     * describe them as pending.
+     */
     for (const f of ['DEPLOY.md', 'PLATFORM_OVERVIEW.md', 'CLAUDE.md']) {
-      expect(read(f), `${f} should flag 0014-0016 as unapplied`).toMatch(
+      const src = read(f);
+      expect(src, `${f} does not mention 0014-0016 at all`).toMatch(
         /0014.{0,4}0016|`0014`, `0015`, `0016`/,
       );
+      expect(src, `${f} still calls them unapplied`).not.toMatch(
+        /(are|is) \*\*(NOT applied|unapplied[^*]*)\*\*|written but not yet applied/,
+      );
     }
+  });
+
+  it('DEPLOY.md still names what genuinely IS outstanding', () => {
+    // Applying the migrations dropped off this list; the legacy anon key did
+    // not, and it is now the most exposed item.
+    const deploy = read('DEPLOY.md');
+    expect(deploy).toMatch(/Rotate the LEGACY anon key/);
+    expect(deploy, 'the undeployed app changes must stay visible').toMatch(
+      /Deploy the app changes/,
+    );
   });
 });
 
