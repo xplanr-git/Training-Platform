@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { db, and, eq, asc, memberships, tenants } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
-import { activateMembershipOnSignIn, postSignInDestination } from '@/app/login/actions';
+import { landAfterSignIn } from '@/app/login/actions';
 
 /**
  * Apex fallback dashboard. Every user belongs to a tenant, so route them to
@@ -19,27 +19,17 @@ export default async function Dashboard() {
   if (!ctx) redirect('/login');
 
   /*
-   * The activation lives HERE now, not on the sign-in and set-password screens.
+   * The activation and the routing both live in landAfterSignIn, which the
+   * tenant-subdomain dashboard also calls — so the two hosts cannot drift.
    *
-   * Both used to call it as a Server Action from the browser immediately after
-   * authenticating, where the session cookie the client had just written was not
-   * reliably visible — so the one path that actually proves someone accepted an
-   * invitation could silently do nothing, and People kept showing them as
-   * invited. This page is a full document request, so the cookie is certain, and
-   * everyone arrives here right after signing in.
-   *
-   * Safe to run on every visit: it is a no-op once the membership is active.
+   * They used to be called as Server Actions from the sign-in and set-password
+   * screens, where the session cookie the client had just written was not
+   * reliably visible, so the one path that proves someone accepted an invitation
+   * could silently do nothing. A page is a full document request, so the cookie
+   * is certain. Safe on every visit: a no-op once the membership is active and
+   * once the caller is already where they belong.
    */
-  try {
-    await activateMembershipOnSignIn();
-  } catch {
-    // Never block someone from reaching their courses over bookkeeping.
-  }
-
-  const dest = await postSignInDestination();
-  // Anything other than this page means we know where they belong. The guard
-  // matters: redirecting to '/dashboard' from '/dashboard' would loop.
-  if (dest !== '/dashboard') redirect(dest);
+  await landAfterSignIn('/dashboard');
 
   /*
    * A pending join request lands here, because the access-token hook and

@@ -1,5 +1,6 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import {
   db,
   audited,
@@ -65,6 +66,40 @@ export async function postSignInDestination(): Promise<string> {
 
   const isAdmin = membership.role === 'company_admin' || membership.role === 'platform_admin';
   return `/t/${membership.slug}/${isAdmin ? 'admin' : 'dashboard'}`;
+}
+
+/**
+ * The single landing step every dashboard runs: accept the invitation if this is
+ * the first sign-in, then send the caller wherever they actually belong.
+ *
+ * ONE resolver, reached by a full document request. That is the shape 623f4ba
+ * moved towards and this finishes, because the apex was doing it and the tenant
+ * subdomain was not — which is a real difference in behaviour, not a tidiness
+ * point:
+ *
+ *   - `/dashboard` is in APEX_ONLY_PREFIXES, so on the apex it renders
+ *     app/dashboard/page.tsx and the resolver runs. On a tenant SUBDOMAIN
+ *     middleware rewrites it to `/t/<slug>/dashboard` first, so the resolver
+ *     never ran at all.
+ *   - So on a subdomain an admin signing in landed on the LEARNER dashboard,
+ *     and a brand-new invitee's membership was never flipped from 'invited' to
+ *     'active' — the People list kept showing them as invited however many times
+ *     they signed in.
+ *
+ * `here` is the path this page is already serving. Returning instead of
+ * redirecting when the destination matches is what stops a redirect loop, and it
+ * is why the caller passes its own path rather than this guessing.
+ */
+export async function landAfterSignIn(here: string): Promise<void> {
+  // Never block someone from reaching their courses over bookkeeping.
+  try {
+    await activateMembershipOnSignIn();
+  } catch {
+    // Intentionally swallowed; the activation is a no-op once active.
+  }
+
+  const dest = await postSignInDestination();
+  if (dest !== here && dest !== '/login') redirect(dest);
 }
 
 /**

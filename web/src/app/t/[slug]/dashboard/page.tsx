@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { Award } from 'lucide-react';
 import { db, eq, and, desc, enrollments, courses, certificates } from '@training-platform/db';
 import { getTenantContext, currentAdminRole } from '@/lib/tenant';
+import { landAfterSignIn } from '@/app/login/actions';
 import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -12,10 +13,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { SignOutButton } from '@/components/sign-out-button';
 
 /** Learner dashboard: the courses this user is enrolled in for this tenant. */
-export default async function LearnerDashboard() {
+export default async function LearnerDashboard({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const ctx = await getTenantContext();
   if (!ctx) redirect('/login');
   if (!ctx.tenantId) redirect('/');
+
+  /*
+   * The same landing step the apex /dashboard runs.
+   *
+   * On a tenant SUBDOMAIN middleware rewrites `/dashboard` to this route before
+   * the apex page can run, so neither the activation nor the routing happened
+   * here at all: an admin signing in on a subdomain landed on the LEARNER
+   * dashboard, and a new invitee stayed 'invited' however often they signed in.
+   * Passing this route's own path is what stops the redirect looping for the
+   * learner, for whom this page IS the destination.
+   */
+  await landAfterSignIn(`/t/${slug}/dashboard`);
   // From memberships, not the role claim — otherwise a demoted admin keeps being
   // offered an "Admin" link that then bounces them straight back here.
   const isAdmin = !!(await currentAdminRole(ctx.userId, ctx.tenantId));

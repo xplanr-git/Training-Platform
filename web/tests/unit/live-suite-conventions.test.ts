@@ -79,9 +79,34 @@ describe('the live suite cannot write to a project by accident', () => {
   });
 
   it('no spec re-rolls the login flow instead of using signInAsAdmin', () => {
-    // A hand-rolled login would also re-introduce the empty-password default.
-    const rolled = specs.filter((f) => /page\.goto\('\/login'\)/.test(code(f)));
+    /*
+     * A hand-rolled login would also re-introduce the empty-password default.
+     *
+     * ONE exemption: sign-in-journeys.spec.ts is the spec whose SUBJECT is the
+     * login flow. It cannot use signInAsAdmin, because that helper waits for
+     * `**​/admin` and most of these cases must land somewhere else — on
+     * /dashboard, on a ?next= target, or back with the session cleared. The
+     * property the rule protects is enforced for it by the next test instead.
+     */
+    const DRIVES_LOGIN_BY_DESIGN = ['sign-in-journeys.spec.ts'];
+    const rolled = specs
+      .filter((f) => !DRIVES_LOGIN_BY_DESIGN.includes(f))
+      .filter((f) => /page\.goto\('\/login'\)/.test(code(f)));
     expect(rolled, `should call signInAsAdmin: ${rolled.join(', ')}`).toEqual([]);
+  });
+
+  it('a spec that does drive the login form uses the fixture credentials', () => {
+    /*
+     * The real risk in a hand-rolled login is not the navigation, it is
+     * hardcoded or defaulted credentials — the original bug was a password
+     * defaulting to '', which turned a missing precondition into a confusing
+     * assertion failure twenty seconds later. So the exempted spec must take
+     * its credentials from fixtures.ts and must not contain a literal one.
+     */
+    const src = code('sign-in-journeys.spec.ts');
+    expect(src).toMatch(/LIVE_EMAIL/);
+    expect(src).toMatch(/LIVE_PASSWORD/);
+    expect(src, 'a literal password in a spec').not.toMatch(/fill\(\s*'(?!\s*')[^']{3,}'\s*\)/);
   });
 
   it('credentials have no fabricated defaults', () => {

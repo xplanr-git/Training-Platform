@@ -285,10 +285,31 @@ describe('post-sign-in routing does not trust JWT claims', () => {
     expect(body).toMatch(/eq\(memberships\.userId, ctx\.userId\)/);
   });
 
-  it('the apex dashboard reuses that one resolver rather than duplicating it', () => {
-    const dash = readFileSync(join(process.cwd(), 'src/app/dashboard/page.tsx'), 'utf8');
-    expect(dash).toMatch(/postSignInDestination\(/);
-    expect(dash).not.toMatch(/ctx\.role ===/);
+  it('BOTH dashboards reuse the one landing step rather than duplicating it', () => {
+    /*
+     * The apex and the tenant subdomain must not drift, because they are two
+     * hosts serving the same journey. `/dashboard` is in APEX_ONLY_PREFIXES, so
+     * on the apex it renders app/dashboard/page.tsx; on a subdomain middleware
+     * rewrites it to /t/[slug]/dashboard first. The subdomain route ran neither
+     * the activation nor the routing, so an admin signing in there landed on the
+     * LEARNER dashboard and a new invitee was never flipped to 'active'.
+     */
+    for (const p of ['src/app/dashboard/page.tsx', 'src/app/t/[slug]/dashboard/page.tsx']) {
+      const dash = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(dash, `${p} does not go through landAfterSignIn`).toMatch(/landAfterSignIn\(/);
+      expect(dash, `${p} decides routing from the role claim`).not.toMatch(/ctx\.role ===/);
+    }
+  });
+
+  it('the landing step passes its own path, so it cannot redirect to itself', () => {
+    // Redirecting to '/dashboard' from '/dashboard' is an infinite loop, and the
+    // learner is the case where the destination IS the current page.
+    const actions = readFileSync(join(process.cwd(), 'src/app/login/actions.ts'), 'utf8');
+    expect(actions).toMatch(/export async function landAfterSignIn\(here: string\)/);
+    expect(actions).toMatch(/dest !== here/);
+    // '/login' as a destination means "no session visible" — following it from a
+    // page reached WITH a session is the bounce 623f4ba fixed.
+    expect(actions).toMatch(/dest !== '\/login'/);
   });
 });
 

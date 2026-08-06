@@ -37,7 +37,16 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    // Carry the refreshed auth cookies across, exactly as the rewrite branch
+    // above does. Without this the branch returned a FRESH response and silently
+    // dropped whatever updateSession had just written — so a request arriving
+    // with an expired-but-refreshable token had its rotated cookies thrown away,
+    // and the next request started from the same stale token. That is the shape
+    // of a redirect loop, and it is why this must not be a bare
+    // NextResponse.redirect.
+    response.cookies.getAll().forEach((c) => redirectResponse.cookies.set(c));
+    return redirectResponse;
   }
 
   return response;

@@ -143,25 +143,55 @@ describe('the destination is resolved by the server, not asked for by the client
     expect(src).toMatch(/safeRedirect\(rawNext, window\.location\.origin\)/);
   });
 
-  it('the dashboard owns both jobs the screens gave up', () => {
-    const dash = code('app', 'dashboard', 'page.tsx');
-    expect(dash, 'nothing activates an accepted invitation any more').toMatch(
+  it('the dashboards own both jobs the screens gave up', () => {
+    /*
+     * Both of them. `/dashboard` is in APEX_ONLY_PREFIXES, so on the apex it
+     * renders app/dashboard/page.tsx; on a tenant SUBDOMAIN middleware rewrites
+     * it to /t/[slug]/dashboard first. The subdomain route did neither job, so
+     * an admin signing in there landed on the learner dashboard and a new
+     * invitee stayed 'invited' however often they signed in.
+     */
+    for (const path of [
+      ['app', 'dashboard', 'page.tsx'],
+      ['app', 't', '[slug]', 'dashboard', 'page.tsx'],
+    ] as const) {
+      const dash = code(...path);
+      expect(dash, `${path.join('/')} does not run the landing step`).toMatch(
+        /await landAfterSignIn\(/,
+      );
+    }
+  });
+
+  it('the landing step does both jobs, in one place', () => {
+    const actions = code('app', 'login', 'actions.ts');
+    const at = actions.indexOf('export async function landAfterSignIn');
+    expect(at, 'landAfterSignIn not found').toBeGreaterThan(-1);
+    const body = actions.slice(at);
+    expect(body, 'nothing activates an accepted invitation any more').toMatch(
       /await activateMembershipOnSignIn\(\)/,
     );
-    expect(dash).toMatch(/await postSignInDestination\(\)/);
+    expect(body).toMatch(/await postSignInDestination\(\)/);
   });
 
   it('and it cannot bounce someone in a loop', () => {
-    // Redirecting to '/dashboard' from '/dashboard' would spin.
-    const dash = code('app', 'dashboard', 'page.tsx');
-    expect(dash).toMatch(/dest !== '\/dashboard'/);
+    /*
+     * Redirecting to the page you are already on spins forever, and the learner
+     * is exactly that case — their destination IS the dashboard. The caller
+     * passes its own path so the comparison is against reality rather than a
+     * hardcoded '/dashboard' that was wrong on a subdomain.
+     */
+    const actions = code('app', 'login', 'actions.ts');
+    const body = actions.slice(actions.indexOf('export async function landAfterSignIn'));
+    expect(body).toMatch(/dest !== here/);
+    // '/login' means "no session visible"; following it from a page reached WITH
+    // a session is the bounce 623f4ba fixed.
+    expect(body).toMatch(/dest !== '\/login'/);
   });
 
   it('activation failure never blocks reaching the courses', () => {
-    const dash = code('app', 'dashboard', 'page.tsx');
-    // The CALL, not the import on line 4 — which is what this matched first.
-    const at = dash.indexOf('await activateMembershipOnSignIn()');
+    const actions = code('app', 'login', 'actions.ts');
+    const at = actions.indexOf('await activateMembershipOnSignIn()');
     expect(at, 'no call found, only an import').toBeGreaterThan(-1);
-    expect(dash.slice(Math.max(0, at - 120), at)).toMatch(/try \{/);
+    expect(actions.slice(Math.max(0, at - 120), at)).toMatch(/try \{/);
   });
 });
