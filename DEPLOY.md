@@ -38,15 +38,28 @@ to `platform_admin` through the public PostgREST endpoint, using only the anon
 key that ships in the client bundle. Confirmed closed — `authenticated` now
 holds **zero** INSERT/UPDATE/DELETE privileges anywhere in `public`.
 
-Re-run the chain check any time:
+**Re-check any time, including against production:**
 
 ```bash
-psql "$DATABASE_URL" -c "select * from public.verify_audit_chain('<tenant-uuid>');"
+psql "$DATABASE_URL" -f db/verify-security.sql
 ```
 
-No rows means intact. Rows saying `hash_version 1 predates migration 0015` are
-expected and not a problem — those were written by the old algorithm and are
-reported as unverifiable rather than as tampered, deliberately.
+[db/verify-security.sql](db/verify-security.sql) replays all six WP1 attacks as
+the `authenticated` role, confirms append-only still holds, and runs the audit
+chain check across every tenant. Every statement is inside a transaction that
+rolls back, and the last section prints row counts so you can see nothing moved.
+
+It exists because `web/tests/live/rls-attacks.spec.ts` — the faithful version,
+which drives PostgREST with a real learner session — refuses to run against the
+project the app uses, and so runs nowhere until the disposable project exists.
+The SQL script covers the GRANT layer, which is the layer that actually closed
+the hole and the layer a careless future `grant ... to authenticated` would
+silently reopen. It does not exercise the RLS policy predicates; only the
+Playwright suite does that.
+
+Last run 2026-08-07: all six attacks refused, control read succeeded, chain
+reported 445 legacy rows unverifiable and **zero** broken links or content
+mismatches.
 
 > **A note for the next migration.** `0015` could not run as first written: its
 > backfill was `update audit_log set hash_version = 1`, and that table's own

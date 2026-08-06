@@ -63,11 +63,24 @@ canonical jsonb payload that includes `id`/`ip`/`user_agent`, and
 `verify_audit_chain(tenant)` — which returns one row per problem and nothing at
 all when the chain is intact.
 
-> An earlier version of this section claimed tenant isolation, cross-tenant write
-> rejection, append-only enforcement and "hash-chain integrity" were all
+**Checking it, rather than believing it:**
+
+```sh
+psql "$DATABASE_URL" -f verify-security.sql
+```
+
+[verify-security.sql](verify-security.sql) is safe on production — every
+statement rolls back — and replays the six escalation attacks as the
+`authenticated` role, checks append-only enforcement, and verifies the audit
+chain per tenant. Verified against the live v2 project on 2026-08-07: all six
+refused, chain intact.
+
+> An earlier version of this section claimed tenant isolation, cross-tenant
+> write rejection, append-only enforcement and "hash-chain integrity" were all
 > *verified against Postgres and passing*. No verifier existed anywhere in the
-> repo at the time, and the chain forked under concurrent writes. Treat the
-> claims above as **describing the intended model**: run
-> `select * from verify_audit_chain(<tenant>)` and the probes in
-> `web/tests/live/rls-attacks.spec.ts` against a real project to establish what
-> actually holds.
+> repo at the time, and the chain forked under concurrent writes. The script
+> above is what that sentence should have pointed at, and now does. Note it
+> tests the GRANT layer, not the RLS policy predicates — with no JWT every
+> policy denies by default, so a pass says nothing about whether the predicates
+> are right. `web/tests/live/rls-attacks.spec.ts` is what covers those, and it
+> still needs a disposable project.
