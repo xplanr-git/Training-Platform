@@ -28,11 +28,47 @@ describe('the live suite cannot write to a project by accident', () => {
   });
 
   it('every spec requires the explicit opt-in', () => {
-    const unguarded = specs.filter((f) => !/require(LiveOptIn|LiveAdmin)\(\)/.test(code(f)));
+    // requireRlsProbeTarget is the third gate (tests/live/rls-attacks.spec.ts).
+    // It is only admissible here because it calls requireLiveOptIn() itself —
+    // asserted in the next test, so adding a name to this list cannot become a
+    // way around the opt-in.
+    const unguarded = specs.filter(
+      (f) => !/require(LiveOptIn|LiveAdmin|RlsProbeTarget)\(\)/.test(code(f)),
+    );
     expect(
       unguarded,
       `these could write to the target project with no opt-in: ${unguarded.join(', ')}`,
     ).toEqual([]);
+  });
+
+  it('every gate helper ultimately goes through requireLiveOptIn', () => {
+    const fx = readFileSync(join(LIVE_DIR, 'fixtures.ts'), 'utf8');
+    /** Body of an exported gate helper, so prose in its doc comment cannot satisfy this. */
+    const bodyOf = (name: string) => {
+      const start = fx.indexOf(`export function ${name}(): void {`);
+      expect(start, `${name} not found in fixtures.ts`).toBeGreaterThan(-1);
+      return fx.slice(start, fx.indexOf('\n}', start));
+    };
+    for (const gate of ['requireLiveAdmin', 'requireRlsProbeTarget']) {
+      expect(bodyOf(gate), `${gate} must delegate to requireLiveOptIn`).toMatch(
+        /requireLiveOptIn\(\)/,
+      );
+    }
+  });
+
+  it('the RLS probes cannot be aimed at the project the app uses', () => {
+    /*
+     * These probes attempt privilege escalation and forged writes. They take a
+     * dedicated RLS_PROBE_SUPABASE_URL rather than reading the app's
+     * NEXT_PUBLIC_SUPABASE_URL, precisely so they cannot inherit .env.local —
+     * which points at production. The equality check is the second lock.
+     */
+    const fx = readFileSync(join(LIVE_DIR, 'fixtures.ts'), 'utf8');
+    expect(fx).toMatch(/RLS_PROBE_SUPABASE_URL/);
+    expect(fx).toMatch(/RLS_PROBE_URL\.replace\(\/\\\/\$\/, ''\) === appUrl\.replace/);
+    const spec = readFileSync(join(LIVE_DIR, 'rls-attacks.spec.ts'), 'utf8');
+    // A fallback to the app's own project would defeat the separation entirely.
+    expect(spec).not.toMatch(/NEXT_PUBLIC_SUPABASE_URL/);
   });
 
   it('the opt-in is off unless ALLOW_LIVE_WRITES is exactly "1"', () => {
