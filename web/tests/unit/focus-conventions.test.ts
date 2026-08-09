@@ -25,7 +25,7 @@ const CSS = read(join(SRC, 'app/globals.css')).replace(/\/\*[\s\S]*?\*\//g, '');
 
 /**
  * There is exactly ONE focus treatment in this app: the global :focus-visible block in
- * globals.css, a 2px brand-500 outline at 2px offset. It is the only one that reaches
+ * globals.css, a 2px --color-focus outline at 2px offset. It is the only one that reaches
  * every focusable thing — links, summaries and [tabindex] elements included, none of
  * which the UI kit styles at all.
  *
@@ -40,10 +40,28 @@ const CSS = read(join(SRC, 'app/globals.css')).replace(/\/\*[\s\S]*?\*\//g, '');
  * measurement did not.
  */
 describe('one focus treatment, not two', () => {
-  it('the global rule still exists and is the brand outline', () => {
+  it('the global rule still exists and draws a visible outline', () => {
+    /*
+     * This asserted var(--color-brand-500). Under sb-ui that token is ink
+     * (#1b1b1e) — the same colour as the text and as every primary button — so
+     * keeping the assertion would have let the app's ONLY focus indicator go
+     * ink-on-ink while the test stayed green. The focus colour now has its own
+     * token precisely so a palette change cannot reach it.
+     */
     const block = CSS.slice(CSS.indexOf('a:focus-visible'), CSS.indexOf('.sr-only'));
-    expect(block).toMatch(/outline:\s*2px solid var\(--color-brand-500\)/);
+    expect(block).toMatch(/outline:\s*2px solid var\(--color-focus\)/);
     expect(block).toMatch(/outline-offset:/);
+  });
+
+  it('and the focus colour is distinguishable from ink, which is what it sits on', () => {
+    // Blue is otherwise links-only; the focus ring is the system's one sanctioned
+    // exception (GUIDELINES.md §1) and this is why it earns it.
+    const focus = /--color-focus:\s*(#[0-9a-fA-F]{6})/.exec(CSS)?.[1];
+    const ink = /--color-primary:\s*(#[0-9a-fA-F]{6})/.exec(CSS)?.[1];
+    expect(focus, '--color-focus is gone').toBeTruthy();
+    expect(focus, 'the focus ring is the same colour as the primary button it outlines').not.toBe(
+      ink,
+    );
   });
 
   it('nothing declares a competing focus ring', () => {

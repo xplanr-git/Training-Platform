@@ -1,0 +1,326 @@
+/* ============================================================================
+   STRUCTURE BUILD UI — sb-ui.css  ·  SINGLE SOURCE OF TRUTH  ·  v3.0
+   ----------------------------------------------------------------------------
+   Every Structure Build surface (product UI, documents, diagrams, marketing)
+   inherits from this one file. Rebrand = edit the tokens in :root; nothing else.
+   Classes are namespaced `sb-` so they can't collide with host-app or content CSS.
+
+   CONTENTS
+     1. Tokens (:root)            — colour, spacing, radius, type ramp
+     2. Base + type ramp
+     3. Focus + reduced motion
+     4. Buttons / CTA
+     5. Inputs / selects
+     6. Status tags / chips / tabs / breadcrumb
+     7. Tables (4 densities)
+     8. Cards / KPI
+     9. Options / spec lists / accordions (+ chevron rule)
+    10. Pagination / avatar / progress
+    11. Navigation (side / top / sub / sub-sub)
+    12. VISUALISATION LAYER — charts, sparklines, workflow, tree, org, Gantt
+   ============================================================================ */
+
+:root{
+  --font:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+
+  /* Spacing — the only gaps used */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px; --s16:64px; --s20:80px;
+  /* Radius — 10 structural, 6 small. Nothing else. */
+  --r:4px; --r-sm:2px;   /* minimal radius. Deck-frame / print: set --r:0 --r-sm:0 on <body>. Avatars stay round. */
+
+  /* Surfaces — neutral near-white shell, white elevated */
+  --bg:#FCFCFB; --surface:#FFFFFF; --sunken:#F1F1F0;
+  --row-hover:#F6F6F5; --row-sel:rgba(20,20,22,.05);
+  --border:#E7E6E3; --border-2:#EFEFED; --border-strong:#D5D4D0; --border-input:#CFCEC9;
+  --keyline:#1B1B1E;   /* THE separator — same near-black as the text; one consistent keyline everywhere */
+
+  /* Text — neutral grey-black (no brown), WCAG AA */
+  --text:#1B1B1E; --text-2:#45464A; --text-3:#6A6B70;
+
+  --ink:#1B1B1E; --ink-hover:#000; --on-ink:#FFF;
+  --link:#1F63C0; --link-hover:#164F9E; --focus:#1F63C0;
+
+  /* Status — reserved for state; AA text on the soft tint */
+  --green:#17743D;--green-bg:rgba(23,116,61,.11);
+  --amber:#8A5300;--amber-bg:rgba(138,83,0,.12);
+  --red:#B4302A;--red-bg:rgba(180,48,42,.10);
+  --blue:#2456B5;--blue-bg:rgba(36,86,181,.11);
+  --grey:#5E5A52;--grey-bg:rgba(94,90,82,.12);
+  --purple:#6A3FC0;--purple-bg:rgba(106,63,192,.10);
+
+  /* Categorical chart palette — fixed order, validated for CVD (light).
+     Use in order; never cycle; pair with legend + direct labels. */
+  --cat-1:#2456B5; --cat-2:#C77400; --cat-3:#1F8A5B; --cat-4:#7A3FB0; --cat-5:#B23A48;
+
+  --shadow:0 1px 2px rgba(20,20,22,.05); --shadow-pop:0 10px 30px rgba(20,20,22,.13);
+
+  /* Type ramp — the only sizes */
+  --fz-display:32px; --fz-h1:24px; --fz-h2:19px; --fz-h3:15px; --fz-body:14px; --fz-meta:12.5px; --fz-eye:11px;
+}
+
+*{box-sizing:border-box;}
+.sb, .sb *{font-family:var(--font);}
+
+/* Type ramp */
+.sb-display{font-size:var(--fz-display);font-weight:800;letter-spacing:-0.02em;line-height:1.1;margin:0;}
+.sb-h1{font-size:var(--fz-h1);font-weight:800;letter-spacing:-0.015em;line-height:1.15;margin:0;}
+.sb-h2{font-size:var(--fz-h2);font-weight:700;letter-spacing:-0.01em;line-height:1.2;margin:0;}
+.sb-h3{font-size:var(--fz-h3);font-weight:700;letter-spacing:-0.005em;margin:0;}
+.sb-body{font-size:var(--fz-body);color:var(--text-2);margin:0;}
+.sb-meta{font-size:var(--fz-meta);color:var(--text-3);}
+.sb-eyebrow{font-size:var(--fz-eye);font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);}
+.sb-period::after{content:'.';}
+.sb-num{font-variant-numeric:tabular-nums;}
+
+/* Focus */
+.sb a:focus-visible,.sb button:focus-visible,.sb [tabindex]:focus-visible,.sb select:focus-visible{
+  outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--focus);border-radius:var(--r-sm);}
+@media (prefers-reduced-motion:reduce){ .sb *{transition:none!important;animation:none!important;} }
+
+/* Surfaces */
+.sb-surface{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);}
+.sb-shell{background:var(--bg);}
+
+/* Buttons — primary is ink; blue is links only */
+.sb-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);height:38px;padding:0 var(--s4);
+  border-radius:var(--r);border:1px solid transparent;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;vertical-align:middle;}
+.sb-btn--primary{background:var(--ink);color:var(--on-ink);} .sb-btn--primary:hover{background:var(--ink-hover);}
+.sb-btn--secondary{background:var(--surface);color:var(--text-2);border-color:var(--border-input);} .sb-btn--secondary:hover{border-color:var(--border-strong);color:var(--text);}
+.sb-btn--ghost{background:transparent;color:var(--text-2);} .sb-btn--ghost:hover{background:var(--sunken);color:var(--text);}
+.sb-btn--icon{width:38px;padding:0;}
+.sb-btn.is-disabled{opacity:.4;cursor:not-allowed;}
+.sb-cta{width:100%;height:52px;justify-content:center;border-radius:var(--r);background:var(--ink);color:var(--on-ink);border:none;
+  font-family:inherit;font-size:15px;font-weight:700;letter-spacing:-0.01em;cursor:pointer;display:flex;align-items:center;}
+
+/* Inputs & selects */
+.sb-input{display:flex;align-items:center;gap:var(--s2);height:40px;padding:0 var(--s3);background:var(--surface);
+  border:1px solid var(--border-input);border-radius:var(--r);font-size:13.5px;color:var(--text);}
+.sb-input::placeholder{color:var(--text-3);}
+.sb-input:focus-visible{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(31,99,192,.18);}
+.sb-select{height:40px;padding:0 36px 0 12px;appearance:none;-webkit-appearance:none;
+  background:var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236A6B70' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6.5L8 10.5L12 6.5'/%3E%3C/svg%3E") no-repeat right 12px center / 12px;
+  border:1px solid var(--border-input);border-radius:var(--r);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--text);cursor:pointer;}
+.sb-select:hover{border-color:var(--border-strong);}
+
+/* Status tag — squared 5–6px + dot */
+.sb-tag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 var(--s2);border-radius:var(--r-sm);font-size:11.5px;font-weight:600;}
+.sb-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+.sb-tag--green{color:var(--green);background:var(--green-bg);} .sb-tag--amber{color:var(--amber);background:var(--amber-bg);}
+.sb-tag--red{color:var(--red);background:var(--red-bg);} .sb-tag--blue{color:var(--blue);background:var(--blue-bg);}
+.sb-tag--grey{color:var(--grey);background:var(--grey-bg);} .sb-tag--purple{color:var(--purple);background:var(--purple-bg);}
+
+/* Chip / tabs / breadcrumb */
+.sb-chip{display:inline-flex;align-items:center;height:30px;padding:0 var(--s3);border-radius:var(--r-sm);font-size:12.5px;font-weight:600;background:var(--sunken);color:var(--text-2);cursor:pointer;}
+.sb-chip.is-active{background:rgba(20,20,22,.06);color:var(--text);}
+.sb-tabs{display:flex;gap:var(--s6);border-bottom:1px solid var(--border);}
+.sb-tabs a{padding:var(--s3) 0;font-size:13.5px;font-weight:600;color:var(--text-3);border-bottom:2px solid transparent;margin-bottom:-1px;text-decoration:none;}
+.sb-tabs a.is-active{color:var(--text);border-bottom-color:var(--ink);}
+.sb-crumb{display:flex;align-items:center;gap:var(--s2);font-size:12.5px;color:var(--text-3);}
+.sb-crumb a{color:var(--text-3);text-decoration:none;} .sb-crumb .sep{color:var(--border-strong);} .sb-crumb .cur{color:var(--text);font-weight:600;}
+
+/* Table — one treatment; density modifiers; header no fill except compact tiers
+   KEYLINE RULE FOR TABLES (do not change): the dark --keyline is used ONLY under the HEADER row (2px).
+   Table ROWS use a light, quiet --border-2 divider — NEVER the dark ink keyline. Dark keylines
+   between items belong to flush lists / spec lists / accordions, not data tables. */
+.sb-table{background:var(--surface);border-radius:var(--r);overflow:hidden;}  /* borderless: the 2px header keyline + light row dividers define it, no outer box */
+.sb-thead{display:flex;align-items:center;height:46px;padding:0 var(--s5);border-bottom:2px solid var(--keyline);}  /* header keyline: dark ink 2px — the ONLY dark line in a table */
+.sb-th{font-size:12.5px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--text-3);}  /* header font is CONSTANT across every density */
+.sb-tr{display:flex;align-items:center;min-height:52px;padding:var(--s3) var(--s5);border-bottom:1px solid var(--border-2);color:var(--text-2);font-size:13.5px;}  /* rows: LIGHT divider only, never --keyline */
+.sb-tr:last-child{border-bottom:none;} .sb-tr.is-sel{background:var(--row-sel);} .sb-tr:hover{background:var(--row-hover);}
+.sb-c-id{font-weight:600;color:var(--text);} .sb-c-name{color:var(--text);} .sb-c-muted{color:var(--text-3);}
+.sb-money{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
+/* DENSITY = ROW HEIGHT ONLY. The header row and ALL fonts stay identical across densities;
+   only the data-row min-height/vertical padding changes. Horizontal padding is constant so
+   columns line up. Never restyle the header (no uppercase "category" font, no shrinking). */
+.sb-table--gen  .sb-tr{min-height:72px;padding:var(--s4) var(--s5);}
+.sb-table--std  .sb-tr{min-height:52px;padding:var(--s3) var(--s5);}
+.sb-table--cmp  .sb-tr{min-height:40px;padding:var(--s2) var(--s5);}
+.sb-table--vcmp .sb-tr{min-height:32px;padding:6px var(--s5);}
+
+/* Card / KPI */
+/* Card / KPI — borderless on the shell; grouped by whitespace, not a box. Add .sb-framed for a hairline where a box is genuinely needed (floating, or white-on-white). */
+.sb-card{background:var(--surface);border-radius:var(--r);}
+.sb-kpi{background:var(--surface);border-radius:var(--r);padding:var(--s5);}
+.sb-framed{border:1px solid var(--border);}
+.sb-kpi .l{font-size:13px;color:var(--text-2);font-weight:500;} .sb-kpi .v{font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-top:var(--s2);}
+.sb-kpi .d{font-size:12.5px;font-weight:700;margin-left:var(--s2);} .sb-up{color:var(--green);} .sb-dn{color:var(--red);}
+
+/* Option card — ink-inset selected state */
+.sb-option{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);min-height:74px;padding:var(--s5);
+  border-radius:var(--r);background:var(--surface);box-shadow:inset 0 0 0 1px var(--border-input);cursor:pointer;}
+.sb-option:hover{box-shadow:inset 0 0 0 1px var(--border-strong);}
+.sb-option.is-sel{background:var(--sunken);box-shadow:inset 0 0 0 2px var(--ink);}
+.sb-option.is-disabled{opacity:.45;cursor:default;}
+
+/* Spec list + accordion, with borderless (flush) keyline variant */
+.sb-spec{background:var(--surface);border-radius:var(--r);overflow:hidden;}
+.sb-spec .row{display:flex;justify-content:space-between;gap:var(--s4);padding:var(--s5);border-bottom:1px solid var(--keyline);}
+.sb-spec .row:last-child{border-bottom:none;} .sb-spec .k{color:var(--text-2);} .sb-spec .v{color:var(--text);font-weight:600;}
+.sb-spec.is-flush{background:none;border:none;border-radius:0;overflow:visible;}
+.sb-spec.is-flush .row{padding-left:0;padding-right:0;border-bottom:1px solid var(--keyline);}
+.sb-spec.is-flush .row:first-child{border-top:1px solid var(--keyline);} .sb-spec.is-flush .row:last-child{border-bottom:none;}
+.sb-acc{background:var(--surface);border-radius:var(--r);padding:0 var(--s5);}
+.sb-acc .item{border-bottom:1px solid var(--keyline);} .sb-acc .item:last-child{border-bottom:none;}
+.sb-acc .q{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:var(--s5) 0;cursor:pointer;font-size:15px;font-weight:700;color:var(--text);}
+.sb-acc .a{font-size:14px;color:var(--text-2);padding:0 0 var(--s5);max-width:700px;line-height:1.6;} .sb-acc .item:not(.is-open) .a{display:none;}
+/* chevron rule: collapsed points right, rotates down when expanded */
+.sb-acc .chev,.sb-chev{display:inline-flex;transition:transform .2s;transform:rotate(-90deg);color:var(--text-3);}
+.sb-acc .item.is-open .chev,.is-open > .sb-chev{transform:rotate(0deg);}
+.sb-acc.is-flush{background:none;border:none;border-radius:0;padding:0;}
+.sb-acc.is-flush .item{border-bottom:1px solid var(--keyline);} .sb-acc.is-flush .item:first-child{border-top:1px solid var(--keyline);}
+
+/* Pagination / avatar / progress */
+.sb-pageno{display:flex;align-items:center;gap:var(--s1);}
+.sb-pageno .pg{min-width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer;background:var(--surface);border:1px solid var(--border);}
+.sb-pageno .pg.is-active{background:var(--ink);color:var(--on-ink);border-color:var(--ink);}
+.sb-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--on-ink);background:var(--ink);}
+.sb-avatar--sm{width:26px;height:26px;font-size:10px;}
+.sb-avatar-stack{display:inline-flex;} .sb-avatar-stack .sb-avatar{box-shadow:0 0 0 2px var(--surface);} .sb-avatar-stack .sb-avatar:not(:first-child){margin-left:-8px;}
+.sb-progress{height:8px;background:var(--sunken);border-radius:var(--r-sm);overflow:hidden;} .sb-progress > span{display:block;height:100%;background:var(--ink);border-radius:var(--r-sm);}
+/* 3-dot step progress (Draft → Review → Live) */
+.sb-dots{display:inline-flex;align-items:center;gap:6px;} .sb-dots i{width:9px;height:9px;border-radius:50%;background:var(--sunken);box-shadow:inset 0 0 0 1px var(--border-strong);}
+.sb-dots i.on{background:var(--ink);box-shadow:none;}
+
+/* ============================================================================
+   11 · NAVIGATION — side menu, top bar, sub / sub-sub menus
+   ============================================================================ */
+/* App top bar */
+.sb-topbar{display:flex;align-items:center;gap:var(--s3);height:56px;padding:0 var(--s5);background:var(--surface);border-bottom:1px solid var(--border);}
+.sb-topbar .sb-mark{width:28px;height:28px;border-radius:var(--r-sm);background:var(--ink);display:flex;align-items:center;justify-content:center;flex:none;}
+.sb-topbar .sb-title{font-size:14px;font-weight:800;letter-spacing:-0.015em;color:var(--text);}
+.sb-topmenu{display:flex;gap:var(--s2);margin-left:var(--s5);}
+.sb-topmenu a{padding:0 var(--s3);height:34px;display:inline-flex;align-items:center;border-radius:var(--r-sm);font-size:13px;font-weight:600;color:var(--text-3);text-decoration:none;}
+.sb-topmenu a.is-active{background:var(--sunken);color:var(--text);} .sb-topmenu a:hover{color:var(--text);}
+/* Side menu */
+.sb-side{width:240px;background:var(--surface);border-right:1px solid var(--border);padding:var(--s4) var(--s3);}
+.sb-side .grp{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);padding:var(--s4) var(--s3) var(--s2);}
+.sb-nav{display:flex;flex-direction:column;gap:1px;}
+.sb-nav a{display:flex;align-items:center;gap:var(--s3);height:36px;padding:0 var(--s3);border-radius:var(--r-sm);font-size:13.5px;font-weight:600;color:var(--text-2);text-decoration:none;}
+.sb-nav a .ic{width:16px;height:16px;flex:none;color:var(--text-3);}
+.sb-nav a:hover{background:var(--sunken);color:var(--text);}
+.sb-nav a.is-active{background:var(--sunken);color:var(--text);box-shadow:inset 2px 0 0 var(--ink);}
+.sb-nav a.is-active .ic{color:var(--text);}
+/* Sub menu (indented) + sub-sub — hierarchy shown by indent alone, no vertical rail */
+.sb-subnav{display:flex;flex-direction:column;gap:1px;margin:2px 0 2px var(--s6);}
+.sb-subnav a{height:32px;padding-left:var(--s3);font-size:13px;font-weight:500;color:var(--text-3);}
+.sb-subnav a.is-active{color:var(--text);font-weight:600;box-shadow:none;background:var(--sunken);}
+.sb-subnav .sb-subnav{margin-left:var(--s4);} .sb-subnav .sb-subnav a{font-size:12.5px;}
+/* Menu section header with chevron (uses the .sb-chev rule below) */
+.sb-navsec{display:flex;align-items:center;justify-content:space-between;height:36px;padding:0 var(--s3);border-radius:var(--r-sm);font-size:13.5px;font-weight:600;color:var(--text-2);cursor:pointer;}
+.sb-navsec:hover{background:var(--sunken);color:var(--text);}
+
+/* ============================================================================
+   12 · VISUALISATION LAYER — charts, sparklines, workflow, tree, org, Gantt
+   Namespaced sb-viz-* so it never collides with host content.
+   Categorical palette --cat-1..5 (fixed order, CVD-validated). Status stays reserved.
+   ============================================================================ */
+.sb-viz{padding:var(--s5);}
+.sb-viz .ct{font-size:15px;font-weight:700;letter-spacing:-0.005em;margin:0;color:var(--text);}
+.sb-viz .cs{font-size:12.5px;color:var(--text-3);margin:2px 0 var(--s5);}
+.sb-legend{display:flex;gap:var(--s4);flex-wrap:wrap;margin-top:var(--s4);}
+.sb-legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);font-weight:600;}
+.sb-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+/* sparkline helper (inside KPI) */
+.sb-spark{margin-top:10px;display:block;} .sb-vs{font-size:11.5px;color:var(--text-3);margin-top:8px;} .sb-vs b{color:var(--text-2);font-weight:700;}
+/* vertical bars — magnitude, single ink hue */
+.sb-bars{display:flex;align-items:flex-end;gap:var(--s3);height:180px;padding-top:var(--s4);position:relative;}
+.sb-bars .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;}
+.sb-bars .bar{width:60%;max-width:34px;background:var(--ink);border-radius:4px 4px 0 0;}
+.sb-bars .vlab{font-size:11px;font-weight:700;color:var(--text);} .sb-bars .xlab{font-size:11px;color:var(--text-3);}
+.sb-gridline{position:absolute;left:0;right:0;border-top:1px solid var(--border-2);}
+/* horizontal bars — ranking */
+.sb-hbars{display:flex;flex-direction:column;gap:var(--s3);}
+.sb-hbar{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:var(--s3);font-size:12.5px;}
+.sb-hbar .name{color:var(--text-2);} .sb-hbar .track{height:14px;background:var(--sunken);border-radius:4px;overflow:hidden;} .sb-hbar .fill{height:100%;background:var(--ink);border-radius:4px;} .sb-hbar .val{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;}
+/* donut — categorical share */
+.sb-donut-wrap{display:flex;align-items:center;gap:var(--s6);flex-wrap:wrap;}
+.sb-donut{width:160px;height:160px;border-radius:50%;flex:none;position:relative;}
+.sb-donut::after{content:'';position:absolute;inset:26px;border-radius:50%;background:var(--surface);}
+.sb-donut .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;}
+.sb-donut .center b{font-size:22px;font-weight:800;letter-spacing:-0.02em;} .sb-donut .center span{font-size:11px;color:var(--text-3);}
+.sb-dleg{display:flex;flex-direction:column;gap:10px;} .sb-dleg .row{display:flex;align-items:center;gap:10px;font-size:13px;}
+.sb-dleg i{width:12px;height:12px;border-radius:3px;flex:none;} .sb-dleg .nm{color:var(--text-2);flex:1;} .sb-dleg .pc{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;}
+/* line chart */
+.sb-line svg{display:block;width:100%;height:auto;} .sb-line .axlab{font-size:11px;fill:var(--text-3);}
+/* stacked composition */
+.sb-stack{display:flex;flex-direction:column;gap:14px;}
+.sb-stackrow{display:grid;grid-template-columns:52px 1fr 62px;align-items:center;gap:12px;font-size:12px;}
+.sb-stackrow .q{color:var(--text-3);font-weight:600;} .sb-stackrow .tot{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;text-align:right;}
+.sb-stackbar{display:flex;height:22px;border-radius:4px;overflow:hidden;gap:2px;} .sb-stackbar span{height:100%;}
+/* funnel / pipeline */
+.sb-funnel{display:flex;flex-direction:column;gap:12px;}
+.sb-fstage .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;} .sb-fstage .nm{font-weight:600;color:var(--text);} .sb-fstage .vv{color:var(--text-2);font-variant-numeric:tabular-nums;}
+.sb-fbar{height:28px;background:var(--ink);border-radius:4px;display:flex;align-items:center;padding:0 10px;color:var(--on-ink);font-size:11px;font-weight:700;}
+.sb-fconv{font-size:11px;color:var(--text-3);margin-top:4px;}
+/* workflow (horizontal) */
+.sb-flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;}
+.sb-node{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r);padding:var(--s3) var(--s4);font-size:13px;font-weight:600;color:var(--text);box-shadow:var(--shadow);}
+.sb-node .nsub{font-size:11.5px;font-weight:400;color:var(--text-3);margin-top:2px;}
+.sb-flow .sb-node{flex:1;min-width:120px;text-align:center;}
+.sb-flow .arrow{flex:0 0 34px;display:flex;align-items:center;justify-content:center;color:var(--border-strong);}
+.sb-node.done{box-shadow:inset 0 0 0 2px var(--ink);} .sb-node.active{box-shadow:inset 0 0 0 2px var(--blue);} .sb-node.active .nsub{color:var(--blue);}
+/* nested tree (structure + org) — classic CSS connectors, ink keylines */
+.sb-tree{overflow-x:auto;padding:var(--s2) 0;}
+.sb-tree ul{display:flex;justify-content:center;padding-top:24px;position:relative;margin:0;list-style:none;}
+.sb-tree > ul{padding-top:0;}
+.sb-tree li{position:relative;padding:24px var(--s2) 0;display:flex;flex-direction:column;align-items:center;}
+.sb-tree li::before,.sb-tree li::after{content:'';position:absolute;top:0;right:50%;width:50%;height:24px;border-top:1px solid var(--keyline);}
+.sb-tree li::after{right:auto;left:50%;border-left:1px solid var(--keyline);}
+.sb-tree li:only-child::before,.sb-tree li:only-child::after{display:none;} .sb-tree li:only-child{padding-top:24px;}
+.sb-tree > ul > li{padding-top:0;} .sb-tree > ul > li::before,.sb-tree > ul > li::after{display:none;}
+.sb-tree li:first-child::before,.sb-tree li:last-child::after{border:0 none;}
+.sb-tree li:last-child::before{border-right:1px solid var(--keyline);}
+.sb-tree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:1px solid var(--keyline);width:0;height:24px;}
+.sb-tnode{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r);padding:10px 14px;font-size:13px;font-weight:700;color:var(--text);box-shadow:var(--shadow);text-align:center;min-width:130px;}
+.sb-tnode .sub{font-size:11px;font-weight:400;color:var(--text-3);margin-top:2px;}
+.sb-tnode .badge{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;color:var(--text-2);background:var(--sunken);border-radius:20px;padding:1px 8px;}
+.sb-tnode.root{background:var(--ink);color:var(--on-ink);border-color:var(--ink);} .sb-tnode.root .sub{color:var(--on-ink);opacity:.65;}
+.sb-tnode.dept{background:var(--sunken);border-color:var(--border-strong);}
+.sb-tleaf{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 11px;font-size:12px;font-weight:600;color:var(--text);text-align:center;min-width:112px;}
+.sb-tleaf .sp{display:block;font-size:10.5px;font-weight:400;color:var(--text-3);margin-top:1px;}
+/* Gantt engine — phases, subtasks, % complete, predecessors, milestone, today */
+.sb-gx{--labelW:210px;--colW:84px;--rowH:38px;position:relative;overflow-x:auto;border-radius:var(--r);background:var(--surface);}
+.sb-gx-in{position:relative;}
+.sb-gx-head{display:flex;border-bottom:1px solid var(--border);}
+.sb-gx-hl{flex:0 0 var(--labelW);padding:9px var(--s3);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);}
+.sb-gx-wk{flex:0 0 var(--colW);text-align:center;font-size:10.5px;font-weight:700;color:var(--text-3);padding:9px 0;border-left:1px solid var(--border-2);}
+.sb-gx-row{display:flex;align-items:center;height:var(--rowH);border-bottom:1px solid var(--border-2);}
+.sb-gx-row:last-child{border-bottom:none;}
+.sb-gx-lb{flex:0 0 var(--labelW);font-size:12.5px;color:var(--text);padding:0 var(--s3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+.sb-gx-lb.sub{padding-left:var(--s6);font-weight:500;color:var(--text-2);}
+.sb-gx-row.phase{background:var(--sunken);} .sb-gx-row.phase .sb-gx-lb{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);}
+.sb-gx-lane{position:relative;flex:1;height:100%;}
+.sb-gx-grid{position:absolute;inset:0;display:flex;} .sb-gx-grid i{flex:0 0 var(--colW);border-left:1px solid var(--border-2);}
+.sb-gx-bar{position:absolute;top:50%;transform:translateY(-50%);height:18px;border-radius:5px;overflow:hidden;display:flex;align-items:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);}
+.sb-gx-bar .pct{position:absolute;left:0;top:0;bottom:0;background:rgba(0,0,0,.30);}
+.sb-gx-bar .bl{position:relative;z-index:1;font-size:10px;font-weight:700;color:#fff;padding:0 7px;white-space:nowrap;}
+.sb-gx-ms{position:absolute;top:50%;width:13px;height:13px;background:var(--ink);transform:translate(-50%,-50%) rotate(45deg);}
+.sb-gx-today{position:absolute;width:2px;background:var(--red);z-index:4;}
+.sb-gx-deps{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:visible;}
+
+/* ============================================================================
+   13 · TASK LIST / HIERARCHY — Section > Task > Subtask > Sub-subtask
+   Built ON TOP of .sb-table (so it obeys the table keyline rule: header 2px dark,
+   rows light --border-2, NEVER a dark keyline between rows). Nesting is shown by
+   one indent step per level + tree guide lines, never by a dark divider.
+   ============================================================================ */
+/* SECTION grouping bar — the top level */
+.sb-section{display:flex;align-items:center;gap:10px;padding:var(--s3) var(--s5);background:var(--sunken);font-size:12.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--text);box-shadow:inset 3px 0 0 var(--ink);}
+.sb-section .meta{font-weight:600;color:var(--text-3);text-transform:none;letter-spacing:0;} .sb-section .bl{font-weight:700;color:var(--red);text-transform:none;}
+/* the name cell tree: guides + level weights */
+.sb-tl{display:flex;align-items:center;min-width:0;align-self:stretch;}
+.sb-tl .g{flex:none;width:26px;align-self:stretch;position:relative;}          /* one indent step = 26px */
+.sb-tl .g.rail::before{content:'';position:absolute;left:12px;top:0;bottom:0;border-left:1.5px solid var(--border-strong);}
+.sb-tl .g.tee::before{content:'';position:absolute;left:12px;top:0;bottom:0;border-left:1.5px solid var(--border-strong);}
+.sb-tl .g.tee::after{content:'';position:absolute;left:12px;top:50%;width:12px;border-top:1.5px solid var(--border-strong);}
+.sb-tl .g.elbow::before{content:'';position:absolute;left:12px;top:0;height:50%;border-left:1.5px solid var(--border-strong);}
+.sb-tl .g.elbow::after{content:'';position:absolute;left:12px;top:50%;width:12px;border-top:1.5px solid var(--border-strong);}
+.sb-tl .disc{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:var(--text-3);flex:none;margin-right:6px;}
+.sb-tl .disc.ph{visibility:hidden;}                                            /* keeps names aligned when no children */
+.sb-tl .n0{font-weight:600;color:var(--text);}   /* Task */
+.sb-tl .n1{font-weight:500;color:var(--text-2);}  /* Subtask */
+.sb-tl .n2{font-weight:500;color:var(--text-3);}  /* Sub-subtask */
+.sb-tl .ss{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--red);margin-left:8px;white-space:nowrap;}  /* SHOW-STOPPER flag */
+/* generous density reveals a secondary description line; denser tiers hide it */
+.sb-desc{display:block;font-size:12px;font-weight:400;color:var(--text-3);margin-top:3px;}
+.sb-table:not(.sb-table--gen) .sb-desc{display:none;}

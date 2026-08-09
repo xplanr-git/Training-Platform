@@ -1,0 +1,42 @@
+/* ============================================================================
+   STRUCTURE BUILD UI — sb-dark.css · DARK THEME · v3.0
+   ----------------------------------------------------------------------------
+   Token overlay for sb-ui.css. Apply with data-theme="dark" on <html> or <body>.
+   Same monochrome logic, inverted: ink becomes near-white, the shell near-black.
+   Blue remains links-only; status + categorical hues are lightened for AA
+   contrast on dark tints. Nothing else in sb-ui.css changes.
+   ============================================================================ */
+[data-theme="dark"]{
+  /* Surfaces — near-black shell, elevated panels one step lighter */
+  --bg:#131315; --surface:#1C1C1F; --sunken:#26262A;
+  --row-hover:#222225; --row-sel:rgba(242,242,243,.07);
+  --border:#2C2C31; --border-2:#242428; --border-strong:#3E3E45; --border-input:#47474F;
+  --keyline:#E9E9EB;   /* THE separator — same near-white as the text */
+
+  /* Text — neutral grey-white, WCAG AA */
+  --text:#F2F2F3; --text-2:#B7B8BE; --text-3:#8E8F96;
+
+  --ink:#F2F2F3; --ink-hover:#FFFFFF; --on-ink:#141416;
+  --link:#6EA3EA; --link-hover:#8FBAF2; --focus:#6EA3EA;
+
+  /* Status — lightened for AA on the dark tints; still reserved for state */
+  --green:#4FC57E;--green-bg:rgba(79,197,126,.14);
+  --amber:#E3A64E;--amber-bg:rgba(227,166,78,.14);
+  --red:#EA7A72;--red-bg:rgba(234,122,114,.13);
+  --blue:#7FA8EF;--blue-bg:rgba(127,168,239,.14);
+  --grey:#A9A49B;--grey-bg:rgba(169,164,155,.14);
+  --purple:#B392E9;--purple-bg:rgba(179,146,233,.13);
+
+  /* Categorical chart palette — same fixed order, lightened for dark, CVD-safe */
+  --cat-1:#7FA8EF; --cat-2:#E5A04F; --cat-3:#57C492; --cat-4:#B98FE8; --cat-5:#E4808C;
+
+  --shadow:0 1px 2px rgba(0,0,0,.45); --shadow-pop:0 10px 30px rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+/* Surgical overrides for the few light-only literals in sb-ui.css */
+[data-theme="dark"] .sb-chip.is-active{background:rgba(242,242,243,.10);}
+[data-theme="dark"] .sb-input:focus-visible{box-shadow:0 0 0 3px rgba(110,163,234,.25);}
+[data-theme="dark"] .sb-select{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238E8F96' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6.5L8 10.5L12 6.5'/%3E%3C/svg%3E");}
+[data-theme="dark"] .sb-gx-bar{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);}
+[data-theme="dark"] .sb-gx-bar .pct{background:rgba(0,0,0,.38);}
+[data-theme="dark"] .sb-gx-bar .bl{color:#16161A;}

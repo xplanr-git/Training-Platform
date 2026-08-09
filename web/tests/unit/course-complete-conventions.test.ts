@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { token, ratio, NEUTRAL_700, AA_NORMAL_TEXT } from './helpers/contrast';
+import { token, ratio, AA_NORMAL_TEXT } from './helpers/contrast';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8').replace(/\r\n/g, '\n');
 
@@ -72,28 +72,49 @@ describe('the acknowledgement does not pre-empt the blocked wording decision', (
   });
 });
 
-describe('body copy on the brand tint is readable (WCAG 2.1 AA, 1.4.3)', () => {
-  it('muted grey would FAIL on this background — hence neutral-700', () => {
-    // 4.38:1. It passes on white (4.63:1), which is exactly why reaching for the
-    // usual `text-muted` here looks right and is not.
-    const muted = ratio(token('--color-muted'), token('--color-brand-50'));
-    expect(muted).toBeLessThan(AA_NORMAL_TEXT);
-    expect(
-      PANEL,
-      `text-muted on --color-brand-50 is ${muted.toFixed(2)}:1 — below AA. Use text-neutral-700.`,
-    ).not.toMatch(/text-muted/);
+describe('body copy on the panel fill is readable (WCAG 2.1 AA, 1.4.3)', () => {
+  /*
+   * REWRITTEN, and worth saying why rather than just editing the numbers.
+   *
+   * This block used to assert "muted grey FAILS on this background — hence
+   * neutral-700", measured against --color-brand-50, the pale-blue tint the panel
+   * sat on. Under sb-ui the panel is sunken grey (#f1f1f0) and that premise is
+   * simply no longer true: muted measures 4.70:1 there and passes. Left alone the
+   * suite went red; "fixed" by flipping the comparison it would have asserted a
+   * fact about a colour the component no longer uses.
+   *
+   * What survives the palette change is the actual lesson: body copy must be
+   * measured against the panel's OWN fill, not against the page. So the fill is
+   * read from the component, and every colour on it is checked against that.
+   */
+  const FILL = token('--color-sunken');
+
+  it('the panel is filled with the sunken token, not a brand tint', () => {
+    expect(PANEL, 'the fill these ratios are computed against').toMatch(/bg-sunken/);
+    expect(PANEL, 'brand-* is the retired blue ramp').not.toMatch(/bg-brand-|border-brand-/);
   });
 
-  it('the colour actually used clears AA comfortably', () => {
-    expect(PANEL).toMatch(/text-neutral-700/);
-    expect(ratio(NEUTRAL_700, token('--color-brand-50'))).toBeGreaterThan(7);
+  it('body copy clears AA on that fill', () => {
+    expect(PANEL).toMatch(/text-foreground-2/);
+    expect(ratio(token('--color-foreground-2'), FILL)).toBeGreaterThan(7);
   });
 
-  it('the brand-700 accents clear AA too', () => {
-    // Used for the icon and the "Verification code" label.
-    expect(ratio(token('--color-brand-700'), token('--color-brand-50'))).toBeGreaterThanOrEqual(
-      AA_NORMAL_TEXT,
+  it('muted grey is still the wrong reach here, even though it now scrapes a pass', () => {
+    // 4.70:1 — over the line by 0.2. That is a margin narrow enough that any future
+    // darkening of the sunken fill silently drops it under, which is the argument
+    // for --text-2 rather than a re-run of the same near-miss.
+    const muted = ratio(token('--color-muted'), FILL);
+    expect(muted).toBeLessThan(5);
+    expect(PANEL, `text-muted on the sunken fill is only ${muted.toFixed(2)}:1`).not.toMatch(
+      /text-muted/,
     );
+  });
+
+  it('the ink accents clear AA on it too', () => {
+    // The medallion and the "Verification code" label.
+    expect(ratio(token('--color-foreground'), FILL)).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+    // The medallion is ink-filled, so its glyph is on ink, not on the panel.
+    expect(ratio(token('--color-primary-foreground'), token('--color-primary'))).toBeGreaterThan(7);
   });
 });
 

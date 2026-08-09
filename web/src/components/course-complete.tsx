@@ -21,9 +21,13 @@ import { Button } from '@/components/ui/button';
  * a name here would quietly pre-empt that and could contradict the certificate
  * itself.
  *
- * Body copy is `text-neutral-700`, not `text-muted`: muted grey on the brand-50
- * tint is 4.38:1, which fails WCAG AA for normal text. On white it passes at
- * 4.63:1, which is how it went unnoticed.
+ * Body copy is `text-foreground-2` (sb's --text-2), not `text-muted`. The panel
+ * used to sit on the pale-blue brand-50 tint, where muted grey measured 4.38:1
+ * and failed AA — it passes on white at 4.63:1, which is how that went unnoticed.
+ * The fill is now sunken grey, where muted measures 4.70:1 and technically
+ * passes, but only just; --text-2 clears it at 8.34:1 and is the token this copy
+ * should have been using all along. The lesson that outlasts the palette: measure
+ * body copy against the panel's OWN fill, never against the page.
  */
 export function CourseComplete({
   courseTitle,
@@ -40,24 +44,24 @@ export function CourseComplete({
   return (
     <section
       aria-labelledby="course-complete-heading"
-      className="rounded-(--radius-card) border border-brand-100 bg-brand-50 px-5 py-5"
+      className="bg-sunken rounded-(--radius-card) px-5 py-5"
     >
       <div className="flex items-start gap-3.5">
         <span
           aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700"
+          className="bg-primary text-primary-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-(--radius-card)"
         >
           <Award className="h-5 w-5" />
         </span>
 
         <div className="min-w-0 flex-1">
-          <h2 id="course-complete-heading" className="text-base font-semibold">
+          <h2 id="course-complete-heading" className="text-base font-bold">
             Course complete
           </h2>
 
           {verificationCode ? (
             <>
-              <p className="mt-1 text-sm leading-relaxed text-neutral-700">
+              <p className="mt-1 text-sm leading-relaxed text-foreground-2">
                 You finished {courseTitle}
                 {issuedAt ? (
                   <>
@@ -83,15 +87,15 @@ export function CourseComplete({
                 ) : null}
               </div>
 
-              <div className="mt-4 border-t border-brand-100 pt-3">
-                <p className="flex items-center gap-1.5 text-xs font-medium text-brand-700">
+              <div className="mt-4 border-t border-keyline pt-3">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />
                   Verification code
                 </p>
-                <p className="mt-1 select-all break-all font-mono text-xs text-neutral-700">
+                <p className="mt-1 select-all break-all font-mono text-xs text-foreground-2">
                   {verificationCode}
                 </p>
-                <p className="mt-1.5 text-xs leading-relaxed text-neutral-700">
+                <p className="mt-1.5 text-xs leading-relaxed text-foreground-2">
                   Anyone you share this with can check the certificate without signing in.
                 </p>
               </div>
@@ -103,7 +107,7 @@ export function CourseComplete({
               certificate" and linking nowhere would be worse than admitting it.
             */
             <>
-              <p className="mt-1 text-sm leading-relaxed text-neutral-700">
+              <p className="mt-1 text-sm leading-relaxed text-foreground-2">
                 You finished {courseTitle}. Your certificate has not been issued yet — if it does
                 not appear shortly, contact your academy administrator and mention this course.
               </p>

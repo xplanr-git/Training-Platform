@@ -50,8 +50,10 @@ describe('keyboard focus is visible, and only globals.css makes it so', () => {
   });
 
   it('draws an outline thick enough to see', () => {
-    const m = /outline:\s*(\d+)px solid var\(--color-brand-500\)/.exec(block);
-    expect(m, 'expected a brand-coloured outline').not.toBeNull();
+    // Was var(--color-brand-500); that token is ink under sb-ui, so the focus
+    // colour moved to its own --color-focus. See focus-conventions.test.ts.
+    const m = /outline:\s*(\d+)px solid var\(--color-focus\)/.exec(block);
+    expect(m, 'expected the focus-token outline').not.toBeNull();
     expect(Number(m?.[1] ?? 0)).toBeGreaterThanOrEqual(2);
     expect(block, 'offset it so it does not sit on the control edge').toMatch(/outline-offset:/);
   });
