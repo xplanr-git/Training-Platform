@@ -257,7 +257,7 @@ export default async function LessonPlayer({
 
         <div className="mt-6">
           {lesson.type === 'text' && (
-            <div className="whitespace-pre-line leading-relaxed text-neutral-700">
+            <div className="whitespace-pre-line leading-relaxed text-foreground-2">
               {content.body ||
                 'Nothing has been written into this lesson yet. Carry on to the next one — it will not hold up your certificate.'}
             </div>
@@ -313,7 +313,7 @@ export default async function LessonPlayer({
                   href={pdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-3 inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm text-brand-700 transition-colors hover:bg-surface-muted"
+                  className="mt-3 inline-flex min-h-11 items-center rounded-md border border-input px-3 text-sm font-semibold text-foreground-2 transition-colors hover:border-foreground hover:text-foreground"
                 >
                   Open PDF in new tab
                 </a>
@@ -339,7 +339,7 @@ export default async function LessonPlayer({
                 </p>
               )}
               {done ? (
-                <p className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600">
+                <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
                   <Check className="h-4 w-4" /> You have passed this quiz.
                 </p>
               ) : questions.length === 0 ? (
@@ -414,7 +414,7 @@ export default async function LessonPlayer({
               <span className="text-sm text-muted">End of course</span>
             )
           ) : done ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600">
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
               <Check className="h-4 w-4" /> Completed
             </span>
           ) : isQuiz ? (

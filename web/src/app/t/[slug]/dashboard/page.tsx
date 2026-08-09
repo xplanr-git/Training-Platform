@@ -146,7 +146,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                     {r.certCode && (
                       <a
                         href={`/verify/${r.certCode}`}
-                        className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-brand-700 hover:underline"
+                        className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-link hover:text-link-hover"
                       >
                         <Award className="h-4 w-4" /> View certificate
                       </a>

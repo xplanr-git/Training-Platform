@@ -27,11 +27,11 @@ every utility in the app.
 | /login + /login/forgot | PASS | 2026-08-09 | Ink medallion; "Forgot password?" and "Back to sign in" are real text links → `text-link`. Card takes the sanctioned hairline (white-on-white nesting, GUIDELINES §4b). |
 | /signup | PASS | 2026-08-09 | h1 inherits 700/-0.02em from base; `text-neutral-600` → `text-foreground-2`. |
 | /auth/set-password · /auth/auth-code-error | PASS | 2026-08-09 | Ink medallion, hairline card, `text-red-600` → `text-destructive`. `/auth/confirm` is a route handler with no UI — nothing to style. |
-| /t/[slug] (storefront) | TODO | | tenant branding.primaryColor stays functional — hero accent only |
-| /t/[slug]/join | TODO | | |
-| /t/[slug]/courses/[courseSlug] (course landing) | TODO | | lesson list = flush 1px keylines |
-| /t/[slug]/dashboard | TODO | | stat tiles: 700 tabular figures, borderless |
-| /t/[slug]/learn/[courseSlug] (outline, player, quiz, complete) | TODO | | quiz radio/checkbox on kit; progress = ink bar |
+| /t/[slug] (storefront) | PASS | 2026-08-09 | DOM-verified. Nav links → `text-link`. Course-card hover was `border-brand-500 + shadow-md`; now an ink hairline, no shadow. `branding.primaryColor` untouched and still applies to the hero h1 and the card CTA — the two accent points the brief sanctions. |
+| /t/[slug]/join | PASS | 2026-08-09 | DOM-verified. |
+| /t/[slug]/courses/[courseSlug] (course landing) | PASS-src | 2026-08-09 | `text-neutral-700` → `text-foreground-2`. Needs a published course to render; source-verified + build. |
+| /t/[slug]/dashboard | PASS-src | 2026-08-09 | Certificate link → `text-link`, keeps its `py-3` tap target. Requires auth. |
+| /t/[slug]/learn/[courseSlug] (outline, player, quiz, complete) | PASS-src | 2026-08-09 | Completion cues → `text-status-green`. Quiz option selected = ink border on sunken (was `border-brand-500`/`bg-brand-50`), native `accent-primary`. Lesson-nav active = sunken + 2px inset ink marker via a transparent-when-inactive left border, so selecting does not shift the list. Requires auth + enrolment. |
 | /t/[slug]/admin (dashboard) | TODO | | admin-shell nav: sunken + 2px inset ink marker |
 | /t/[slug]/admin/courses (+ editors, reorder, video-upload) | TODO | | table keyline rule; drag handles quiet |
 | /t/[slug]/admin/people | TODO | | role/status = squared dot+label tags |
@@ -70,6 +70,20 @@ every utility in the app.
 - **`rounded-full` retained** on: avatars, the radio dot, the status dot, the
   scroll-area thumb, and the Switch track/thumb — all either dots or the
   universal affordance for that control.
+- **`PASS-src` means source + build verified, not DOM-verified.** Those routes
+  need an authenticated learner with an enrolment, and no test account exists on
+  this Supabase project (the app's `.env.local` points at production, so signing
+  in or seeding is not something to do casually from here). They are covered by
+  the opt-in live Playwright journeys, which are default-off. Distinguished
+  rather than glossed, because "PASS" on a route nobody rendered is the kind of
+  claim this ledger exists to prevent.
+- **A tenant whose `primaryColor` is blue will show blue on the storefront hero**,
+  which locally contradicts "blue = links only". That is the tenant branding
+  feature working as specified (brief rule 12); it is confined to the storefront
+  and never enters the product shell.
+- **`uppercase` on the lesson-nav section label** is treated as a kicker, which
+  is the sanctioned use. It labels a group in a side nav rather than heading a
+  section of prose. Flagging it because it is a judgement call, not a rule.
 - **Admin shell sits on the sunken plane** (`bg-surface-muted` = `#f1f1f0`) with
   content panels on `bg-surface`. `--color-surface` is the warm shell `#fcfcfb`,
   not white, under sb; white is `--color-card`.

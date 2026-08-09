@@ -43,7 +43,7 @@ export function LessonNav({
     <nav className="space-y-4">
       {sections.map((g) => (
         <div key={g.id}>
-          <p className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <p className="mb-1 px-1 text-[11px] font-bold uppercase tracking-wider text-muted">
             {g.title || 'Section'}
           </p>
           <ul className="space-y-0.5">
@@ -57,14 +57,18 @@ export function LessonNav({
                     href={`/learn/${courseSlug}/${l.id}`}
                     aria-current={isCurrent ? 'page' : undefined}
                     className={cn(
-                      'flex items-center gap-2 rounded-md px-2 py-3 text-sm transition-colors lg:py-1.5',
+                      // The 2px inset ink marker is carried by a left border that
+                      // is TRANSPARENT when inactive rather than absent, so
+                      // selecting a lesson does not shift the whole list 2px to
+                      // the right.
+                      'flex items-center gap-2 rounded-md border-l-2 px-2 py-3 text-sm transition-colors lg:py-1.5',
                       isCurrent
-                        ? 'bg-brand-50 font-medium text-brand-700'
-                        : 'text-foreground hover:bg-surface-muted',
+                        ? 'border-primary bg-sunken font-bold'
+                        : 'border-transparent text-foreground hover:bg-surface-muted',
                     )}
                   >
                     {lDone ? (
-                      <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-600" />
+                      <Check aria-hidden="true" className="text-status-green h-4 w-4 shrink-0" />
                     ) : (
                       <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
                     )}

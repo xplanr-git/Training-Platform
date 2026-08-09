@@ -176,7 +176,7 @@ export default async function Learn({
                         className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-muted"
                       >
                         {lDone ? (
-                          <Check className="h-4 w-4 shrink-0 text-brand-600" />
+                          <Check className="h-4 w-4 shrink-0 text-status-green" />
                         ) : (
                           <Icon className="h-4 w-4 shrink-0 text-muted" />
                         )}
@@ -186,7 +186,7 @@ export default async function Learn({
                             {l.estimatedMinutes} min
                           </span>
                         )}
-                        {lDone && <span className="text-xs text-brand-600">Done</span>}
+                        {lDone && <span className="text-xs text-status-green">Done</span>}
                       </Link>
                     </li>
                   );

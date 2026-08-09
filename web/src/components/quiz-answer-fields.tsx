@@ -104,7 +104,7 @@ export function QuizAnswerFields() {
                   // parses. parseCorrectIndices converts to the stored 0-based.
                   value={i + 1}
                   required={type === 'mcq'}
-                  className="h-4 w-4 accent-brand-600"
+                  className="h-4 w-4 accent-primary"
                 />
                 {/*
                   The label text is the option text alone, so the control

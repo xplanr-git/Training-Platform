@@ -50,14 +50,14 @@ export function QuizForm({
               {q.options.map((o, oi) => (
                 <label
                   key={oi}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border px-3 py-3 text-sm transition-colors hover:bg-surface-muted has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border px-3 py-3 text-sm transition-colors hover:bg-surface-muted has-[:checked]:border-primary has-[:checked]:bg-sunken"
                 >
                   <input
                     type={multi ? 'checkbox' : 'radio'}
                     name={`q_${q.id}`}
                     value={oi}
                     onChange={() => recordAnswer(q.id)}
-                    className="accent-brand-600"
+                    className="accent-primary"
                   />
                   {o}
                 </label>

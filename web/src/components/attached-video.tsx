@@ -38,7 +38,7 @@ export function AttachedVideo({
 
   return (
     <div className="mb-3 flex gap-3 rounded-(--radius-card) border border-border bg-surface p-3">
-      <div className="relative flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded bg-neutral-900">
+      <div className="relative flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded bg-foreground">
         {thumbnailUrl ? (
           // A plain <img>, not next/image: the Bunny CDN host comes from an env var
           // rather than build-time config, and optimising a 28x16 admin thumbnail
@@ -50,7 +50,7 @@ export function AttachedVideo({
             className="h-full w-full object-cover"
           />
         ) : (
-          <Video className="h-6 w-6 text-neutral-500" aria-hidden />
+          <Video className="h-6 w-6 text-muted" aria-hidden />
         )}
       </div>
 
@@ -59,11 +59,13 @@ export function AttachedVideo({
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
           {duration && <span className="tabular-nums">{duration}</span>}
           {duration && <span aria-hidden>·</span>}
-          <span className={playable ? 'text-brand-600' : 'text-amber-700'}>{statusLabel}</span>
+          <span className={playable ? 'text-status-green' : 'text-status-amber'}>
+            {statusLabel}
+          </span>
         </p>
         {!playable && encodeProgress > 0 && (
           <div
-            className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-muted"
+            className="mt-1.5 h-1 w-full overflow-hidden rounded-sm bg-surface-muted"
             role="progressbar"
             aria-valuenow={encodeProgress}
             aria-valuemin={0}

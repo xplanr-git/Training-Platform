@@ -128,18 +128,18 @@ export default async function TenantHome({
         <nav className="mb-6 flex flex-wrap items-center justify-end gap-3 text-sm">
           {signedIn ? (
             <>
-              <Link href="/dashboard" className="text-brand-700 hover:underline">
+              <Link href="/dashboard" className="text-link hover:text-link-hover">
                 My learning
               </Link>
               <SignOutButton />
             </>
           ) : (
             <>
-              <Link href="/login" className="text-brand-700 hover:underline">
+              <Link href="/login" className="text-link hover:text-link-hover">
                 Sign in
               </Link>
               {/* Always safe here: this page IS a tenant, so /join resolves. */}
-              <Link href="/join" className="text-brand-700 hover:underline">
+              <Link href="/join" className="text-link hover:text-link-hover">
                 Request access
               </Link>
             </>
@@ -186,7 +186,7 @@ export default async function TenantHome({
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {catalog.map((c) => (
             <Link key={c.id} href={`/courses/${c.slug}`} className="group block">
-              <Card className="flex h-full flex-col transition group-hover:border-brand-500 group-hover:shadow-md">
+              <Card className="flex h-full flex-col border border-transparent transition-colors group-hover:border-keyline">
                 <CardHeader>
                   <CardTitle as="h2" className="text-base">
                     {c.title}
@@ -197,7 +197,7 @@ export default async function TenantHome({
                 </CardHeader>
                 <CardContent className="mt-auto">
                   <span
-                    className="text-sm font-medium text-brand-700 group-hover:underline"
+                    className="text-link group-hover:text-link-hover text-sm font-semibold group-hover:underline"
                     style={accent ? { color: accent } : undefined}
                   >
                     View course →

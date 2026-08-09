@@ -162,7 +162,7 @@ export default async function CourseLanding({
         </span>
       </div>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">{course.title}</h1>
-      <p className="mt-4 whitespace-pre-line text-neutral-700">
+      <p className="mt-4 whitespace-pre-line text-foreground-2">
         {course.description || 'No description yet.'}
       </p>
 
@@ -192,7 +192,7 @@ export default async function CourseLanding({
                         return (
                           <li
                             key={l.id}
-                            className="flex items-center gap-2.5 text-sm text-neutral-700"
+                            className="flex items-center gap-2.5 text-sm text-foreground-2"
                           >
                             <Icon className="h-4 w-4 shrink-0 text-muted" />
                             <span>{l.title || 'Untitled lesson'}</span>
