@@ -41,7 +41,7 @@ export default async function TenantAdminOverview({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <h1 className="text-2xl">Dashboard</h1>
       <p className="mt-2 text-muted">
         Welcome to your academy admin. Use the sidebar to manage courses, people, and settings.
       </p>
@@ -50,7 +50,7 @@ export default async function TenantAdminOverview({
           <Link
             key={s.label}
             href={s.href}
-            className="rounded-(--radius-card) border border-border bg-surface p-5 transition hover:shadow-md"
+            className="rounded-(--radius-card) border border-transparent bg-card p-5 transition-colors hover:border-keyline"
           >
             <p className="text-sm text-muted">{s.label}</p>
             <p className="mt-1 text-2xl font-semibold">{s.value}</p>

@@ -29,7 +29,7 @@ export default function Error({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="text-2xl font-semibold">Something went wrong</h1>
+      <h1 className="text-2xl">Something went wrong</h1>
       <p className="text-muted">
         An unexpected error occurred. You can try again, or head back home.
       </p>

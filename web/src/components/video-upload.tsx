@@ -177,7 +177,7 @@ export function VideoUpload({
         {uploading && percent !== null && (
           <div className="flex items-center gap-2">
             <div
-              className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted"
+              className="h-1.5 flex-1 overflow-hidden rounded-sm bg-surface-muted"
               role="progressbar"
               aria-valuenow={percent}
               aria-valuemin={0}
@@ -185,7 +185,7 @@ export function VideoUpload({
               aria-label="Upload progress"
             >
               <div
-                className="h-full bg-brand-600 transition-[width] duration-300"
+                className="h-full bg-primary transition-[width] duration-300"
                 style={{ width: `${percent}%` }}
               />
             </div>

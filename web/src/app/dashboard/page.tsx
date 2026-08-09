@@ -48,7 +48,7 @@ export default async function Dashboard() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-3 px-6 text-center">
-      <h1 className="text-xl font-semibold">You&apos;re signed in</h1>
+      <h1 className="text-xl">You&apos;re signed in</h1>
       {waiting ? (
         <p className="text-neutral-600">
           Your request to join {waiting.academy} is waiting for an administrator to accept it.

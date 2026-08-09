@@ -44,7 +44,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
     return (
       <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-14">
         <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center">
-          <h1 className="text-xl font-semibold">Certificate not found</h1>
+          <h1 className="text-xl">Certificate not found</h1>
           <p className="mt-2 text-muted">
             No certificate matches this code. Check it against the certificate — copying and pasting
             the whole link is surest.
@@ -98,7 +98,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
         style={{ border: `3px solid ${accent}` }}
       >
         <p className="text-sm uppercase tracking-widest text-muted">{cert.tenantName}</p>
-        <h1 className="mt-3 text-3xl font-semibold" style={{ color: accent }}>
+        <h1 className="mt-3 text-3xl" style={{ color: accent }}>
           {heading}
         </h1>
         <p className="mt-8 text-sm text-muted">This certifies that</p>

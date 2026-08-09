@@ -20,7 +20,7 @@ import { InviteForm } from './invite-form';
 import { setMemberRole, setMemberStatus, acceptJoinRequest, declineJoinRequest } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Badge, StatusBadge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -106,7 +106,7 @@ export default async function People({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">People</h1>
+      <h1 className="text-2xl">People</h1>
       <p className="mt-1 text-muted">Invite and manage members of your academy.</p>
 
       <div className="mt-6">
@@ -119,17 +119,26 @@ export default async function People({
         until someone makes it. Rendered only when there is something to decide,
         so the page is unchanged for academies that never use /join.
       */}
+      {/*
+        A flush list, not a data table — so it takes the keyline treatment: 2px
+        dark under its header, 1px dark between items, and no outer box
+        (GUIDELINES.md §2). A data table would keep light row dividers instead;
+        the distinction is what stops every list in the admin area from
+        converging on the same heavy grid.
+      */}
       {requests.length > 0 && (
-        <section className="mt-6 rounded-(--radius-card) border border-border bg-surface">
-          <h2 className="border-b border-border px-4 py-3 font-medium">
+        <section className="mt-6 rounded-(--radius-card) bg-surface">
+          <h2 className="border-b-2 border-keyline px-4 py-3 text-base font-bold">
             Requests to join
-            <span className="ml-2 text-sm font-normal text-muted">{requests.length} waiting</span>
+            <span className="ml-2 text-sm font-normal text-muted tabular-nums">
+              {requests.length} waiting
+            </span>
           </h2>
           <ul>
             {requests.map((r) => (
               <li
                 key={r.id}
-                className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 last:border-b-0"
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-keyline px-4 py-3 last:border-b-0"
               >
                 <div className="min-w-0">
                   <p className="font-medium">{r.name || '—'}</p>
@@ -176,7 +185,7 @@ export default async function People({
         </Button>
       </form>
 
-      <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border bg-surface">
+      <div className="mt-6 overflow-x-auto rounded-(--radius-card) bg-surface">
         <Table>
           <TableHeader>
             <TableRow>
@@ -220,12 +229,14 @@ export default async function People({
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant={m.status === 'active' ? 'default' : 'outline'}
+                  <StatusBadge
+                    tone={
+                      m.status === 'active' ? 'green' : m.status === 'invited' ? 'amber' : 'grey'
+                    }
                     className="capitalize"
                   >
                     {m.status}
-                  </Badge>
+                  </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right">
                   {m.status === 'deactivated' ? (
@@ -272,7 +283,10 @@ export default async function People({
                   {query ? (
                     <EmptyRow title={`No one matches “${query}”`}>
                       Search looks at names and email addresses. Try a shorter search, or{' '}
-                      <Link href="/admin/people" className="font-medium text-brand-700 underline">
+                      <Link
+                        href="/admin/people"
+                        className="text-link hover:text-link-hover font-semibold underline"
+                      >
                         show everyone
                       </Link>
                       .

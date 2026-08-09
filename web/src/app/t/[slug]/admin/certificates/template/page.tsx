@@ -34,7 +34,7 @@ export default async function CertificateTemplate({
       <Link href="/admin/certificates" className="text-sm text-muted hover:underline">
         ← Certificates
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">Certificate template</h1>
+      <h1 className="mt-2 text-2xl">Certificate template</h1>
       <p className="mt-1 text-muted">
         Applied to the public verification page for every certificate you issue.
       </p>

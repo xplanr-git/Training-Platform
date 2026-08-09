@@ -36,7 +36,7 @@ export default async function EditCourse({
     <div className="max-w-2xl">
       <BackLink href="/admin/courses">Courses</BackLink>
       <div className="mt-3 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{course.title}</h1>
+        <h1 className="text-2xl">{course.title}</h1>
         <div className="flex items-center gap-2">
           {/* Opens the learner view. Works for a draft too — admins of this
               academy may preview unpublished courses; learners get a 404. */}
@@ -116,7 +116,7 @@ export default async function EditCourse({
       </Card>
 
       <div className="mt-10 border-t border-border pt-6">
-        <h2 className="text-sm font-medium text-destructive">Danger zone</h2>
+        <h2 className="text-sm text-destructive">Danger zone</h2>
         <p className="mt-1 text-sm text-muted">
           Permanently delete this course and all its sections, lessons, quizzes, and enrolments.
           This cannot be undone.

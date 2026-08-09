@@ -43,7 +43,7 @@ export function SegmentError({
 
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center gap-3 px-6 py-16 text-center">
-      <h1 className="text-xl font-semibold">{title}</h1>
+      <h1 className="text-xl">{title}</h1>
       <p className="text-muted">{description}</p>
       {error.digest && (
         <p className="select-all font-mono text-xs text-muted">Reference: {error.digest}</p>

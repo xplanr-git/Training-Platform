@@ -15,7 +15,7 @@ import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { setCertificateRevoked } from './actions';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -69,14 +69,14 @@ export default async function Certificates({
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Certificates</h1>
+        <h1 className="text-2xl">Certificates</h1>
         <Button asChild variant="outline">
           <Link href="/admin/certificates/template">Edit template</Link>
         </Button>
       </div>
       <p className="mt-1 text-muted">Issued completion certificates for your academy.</p>
 
-      <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border bg-surface">
+      <div className="mt-6 overflow-x-auto rounded-(--radius-card) bg-surface">
         <Table>
           <TableHeader>
             <TableRow>
@@ -99,9 +99,9 @@ export default async function Certificates({
                   {new Date(c.issuedAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={c.revokedAt ? 'outline' : 'default'}>
+                  <StatusBadge tone={c.revokedAt ? 'red' : 'green'}>
                     {c.revokedAt ? 'Revoked' : 'Valid'}
-                  </Badge>
+                  </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

@@ -8,7 +8,7 @@ import { Pagination } from '@/components/pagination';
 import { setCourseStatus } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -55,7 +55,7 @@ export default async function CoursesList({
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Courses</h1>
+        <h1 className="text-2xl">Courses</h1>
         <Button asChild>
           <Link href="/admin/courses/new">New course</Link>
         </Button>
@@ -91,7 +91,7 @@ export default async function CoursesList({
           </EmptyState>
         )
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border bg-surface">
+        <div className="mt-6 overflow-x-auto rounded-(--radius-card) bg-surface">
           <Table>
             <TableHeader>
               <TableRow>
@@ -110,18 +110,14 @@ export default async function CoursesList({
                     <span className="ml-2 text-xs text-muted">/{c.slug}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        c.status === 'published'
-                          ? 'default'
-                          : c.status === 'archived'
-                            ? 'outline'
-                            : 'secondary'
+                    <StatusBadge
+                      tone={
+                        c.status === 'published' ? 'green' : c.status === 'draft' ? 'amber' : 'grey'
                       }
                       className="capitalize"
                     >
                       {c.status}
-                    </Badge>
+                    </StatusBadge>
                   </TableCell>
                   <TableCell className="text-right">
                     {c.status !== 'published' ? (

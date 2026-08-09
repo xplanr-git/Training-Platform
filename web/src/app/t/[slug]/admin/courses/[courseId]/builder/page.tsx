@@ -102,7 +102,7 @@ export default async function CourseBuilder({
     <div className="max-w-3xl">
       <BackLink href={`/admin/courses/${courseId}`}>Course</BackLink>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">{course.title}</h1>
+        <h1 className="text-2xl">{course.title}</h1>
         <Button asChild variant="outline" size="sm">
           <Link href={`/courses/${course.slug}`}>Preview as a learner</Link>
         </Button>
@@ -119,7 +119,7 @@ export default async function CourseBuilder({
         {sectionRows.map((s, i) => (
           <Card key={s.id} className="overflow-hidden p-0">
             <header className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2.5">
-              <h2 className="font-medium">{s.title}</h2>
+              <h2 className="text-base">{s.title}</h2>
               <div className="flex items-center gap-0.5">
                 <ReorderControls
                   label="section"
@@ -205,7 +205,7 @@ export default async function CourseBuilder({
                         target on a touch screen. Padding gives it a real hit area
                         without changing the visual language.
                       */}
-                      <summary className="inline-flex cursor-pointer items-center rounded-md py-1.5 pr-2 text-sm text-brand-700 hover:underline">
+                      <summary className="inline-flex cursor-pointer items-center rounded-md py-1.5 pr-2 text-sm font-semibold text-foreground-2 hover:text-foreground">
                         Edit lesson
                       </summary>
                       <NavForm

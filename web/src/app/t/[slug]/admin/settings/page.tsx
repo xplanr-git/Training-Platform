@@ -27,7 +27,7 @@ export default async function Settings({ params }: { params: Promise<{ slug: str
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Academy settings</h1>
+      <h1 className="text-2xl">Academy settings</h1>
       <p className="mt-1 text-muted">Your academy&apos;s name and storefront branding.</p>
 
       <Card className="mt-6">

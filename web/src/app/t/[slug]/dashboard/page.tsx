@@ -84,7 +84,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     <main className="mx-auto max-w-4xl px-6 py-12 sm:py-14">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Your learning</h1>
+          <h1 className="text-2xl">Your learning</h1>
           <p className="mt-1 text-muted">Pick up where you left off.</p>
         </div>
         <div className="flex shrink-0 items-center gap-4">
@@ -129,7 +129,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
               <Card key={r.courseId}>
                 <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-semibold">
+                    <h2 className="text-base">
                       <Link href={`/learn/${r.slug}`} className="hover:underline">
                         {r.title}
                       </Link>

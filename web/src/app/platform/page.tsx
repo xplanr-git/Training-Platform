@@ -59,7 +59,7 @@ export default async function PlatformHome() {
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Academies ({rows.length})</h1>
+        <h1 className="text-2xl">Academies ({rows.length})</h1>
       </div>
 
       {/*
@@ -68,7 +68,7 @@ export default async function PlatformHome() {
         header treatment, hover and border colour — and, being the only one with its
         own `bg-surface`, it was also the only one whose rows were not grey.
       */}
-      <div className="mt-6 overflow-x-auto rounded-(--radius-card) border border-border bg-surface">
+      <div className="mt-6 overflow-x-auto rounded-(--radius-card) bg-surface">
         <Table>
           <TableHeader>
             <TableRow>

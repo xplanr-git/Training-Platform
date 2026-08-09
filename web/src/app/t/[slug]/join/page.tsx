@@ -30,7 +30,7 @@ export default async function JoinPage({ params }: { params: Promise<{ slug: str
 
   return (
     <main className="mx-auto w-full max-w-md px-6 py-12 sm:py-14">
-      <h1 className="text-2xl font-semibold tracking-tight">Request access</h1>
+      <h1 className="text-2xl">Request access</h1>
       <p className="mt-2 text-muted">
         Ask to join {tenant.name}. An administrator reviews every request, so you will not be able
         to sign in to the courses until yours is accepted.

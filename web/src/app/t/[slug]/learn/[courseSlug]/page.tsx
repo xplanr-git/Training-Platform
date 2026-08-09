@@ -106,7 +106,7 @@ export default async function Learn({
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
       <BackLink href="/dashboard">Your learning</BackLink>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">{course.title}</h1>
+      <h1 className="mt-3 text-2xl">{course.title}</h1>
       {isPreview && (
         <div className="mt-3 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <b>Preview.</b> You are not enrolled, so nothing here is recorded — no progress, no watch
@@ -163,7 +163,7 @@ export default async function Learn({
         )}
         {sectionRows.map((s) => (
           <section key={s.id}>
-            <h2 className="mb-2 text-base font-semibold">{s.title || 'Section'}</h2>
+            <h2 className="mb-2 text-base">{s.title || 'Section'}</h2>
             <Card className="overflow-hidden p-0">
               <ul className="divide-y divide-border">
                 {(bySection.get(s.id) ?? []).map((l) => {

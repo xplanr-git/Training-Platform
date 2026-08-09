@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { db, eq, subscriptions } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { PLANS } from '@/lib/stripe';
@@ -35,7 +36,7 @@ export default async function Billing({ params }: { params: Promise<{ slug: stri
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-semibold">Plans and billing</h1>
+      <h1 className="text-2xl">Plans and billing</h1>
 
       {sub ? (
         <div className="mt-4 flex items-center justify-between rounded-(--radius-card) border border-border bg-surface p-5">
@@ -60,17 +61,19 @@ export default async function Billing({ params }: { params: Promise<{ slug: stri
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {PLANS.map((p) => (
           <div key={p.id} className="rounded-(--radius-card) border border-border bg-surface p-5">
-            <h2 className="font-semibold">{p.name}</h2>
+            <h2 className="text-base">{p.name}</h2>
             <p className="mt-1 text-sm text-muted">
               Up to {p.activeLearnerLimit.toLocaleString()} active learners
             </p>
             <NavForm action={startSubscriptionCheckout.bind(null, slug, p.id)} className="mt-4">
-              <button
-                disabled={sub?.planId === p.id}
-                className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-              >
+              {/*
+                Was a hand-rolled brand-600 button — the last blue fill in the
+                admin area, and a fifth button treatment besides. On the kit it
+                inherits the ink primary, the disabled state and the tap target.
+              */}
+              <Button type="submit" disabled={sub?.planId === p.id} className="w-full">
                 {sub?.planId === p.id ? 'Current plan' : 'Choose plan'}
-              </button>
+              </Button>
             </NavForm>
           </div>
         ))}

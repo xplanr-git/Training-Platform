@@ -47,7 +47,7 @@ export default async function QuizEditor({
     return (
       <div className="max-w-3xl">
         <BackLink href={`/admin/courses/${courseId}/builder`}>Content</BackLink>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Quiz &middot; {lesson.title}</h1>
+        <h1 className="mt-3 text-2xl">Quiz &middot; {lesson.title}</h1>
         <p className="mt-1 text-sm text-muted">
           This lesson has no quiz attached yet. Setting one up gives it a pass mark of 70%, which
           you can change straight afterwards.
@@ -74,7 +74,7 @@ export default async function QuizEditor({
   return (
     <div className="max-w-3xl">
       <BackLink href={`/admin/courses/${courseId}/builder`}>Content</BackLink>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">Quiz · {lesson.title}</h1>
+      <h1 className="mt-3 text-2xl">Quiz · {lesson.title}</h1>
 
       <NavForm
         action={saveQuizSettings.bind(null, slug, courseId, lessonId, quiz.id)}
@@ -158,7 +158,7 @@ export default async function QuizEditor({
                       <li
                         key={oi}
                         className={`flex items-center gap-2 ${
-                          correct.includes(oi) ? 'text-brand-700' : 'text-muted'
+                          correct.includes(oi) ? 'text-status-green' : 'text-muted'
                         }`}
                       >
                         {correct.includes(oi) ? (
@@ -203,7 +203,7 @@ export default async function QuizEditor({
             className="space-y-3"
             quiet
           >
-            <h2 className="font-medium">Add question</h2>
+            <h2 className="text-base">Add question</h2>
             <Input
               name="prompt"
               required

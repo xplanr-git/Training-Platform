@@ -15,7 +15,7 @@ export default async function NewCourse({ params }: { params: Promise<{ slug: st
   return (
     <div className="max-w-2xl">
       <BackLink href="/admin/courses">Courses</BackLink>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">New course</h1>
+      <h1 className="mt-3 text-2xl">New course</h1>
 
       <Card className="mt-6">
         <CardContent className="py-6">

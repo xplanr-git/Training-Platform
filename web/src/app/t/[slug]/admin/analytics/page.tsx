@@ -124,7 +124,7 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Insights</h1>
+      <h1 className="text-2xl">Insights</h1>
       <p className="mt-1 text-muted">Live metrics for your academy.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -132,7 +132,9 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
           <Card key={m.label}>
             <CardContent className="py-4">
               <p className="text-sm text-muted">{m.label}</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{m.value}</p>
+              <p className="mt-1 text-2xl font-extrabold tracking-[-0.02em] tabular-nums">
+                {m.value}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -140,11 +142,11 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
 
       {watch.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold">Video engagement</h2>
+          <h2 className="text-lg">Video engagement</h2>
           <p className="mt-1 text-sm text-muted">
             Actual time played per video lesson — not just who clicked “complete”.
           </p>
-          <div className="mt-4 overflow-x-auto rounded-(--radius-card) border border-border">
+          <div className="mt-4 overflow-x-auto rounded-(--radius-card) bg-surface">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -184,7 +186,7 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
       )}
 
       <section className="mt-10">
-        <h2 className="text-lg font-semibold">Where learners get stuck</h2>
+        <h2 className="text-lg">Where learners get stuck</h2>
         <p className="mt-1 text-sm text-muted">
           Questions ranked by attempts, with average time spent and how often they&apos;re answered
           wrong — to spot friction points.
@@ -195,7 +197,7 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
             spend longest on — will be listed here, hardest first.
           </EmptyState>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-(--radius-card) border border-border">
+          <div className="mt-4 overflow-x-auto rounded-(--radius-card) bg-surface">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -32,13 +32,13 @@ every utility in the app.
 | /t/[slug]/courses/[courseSlug] (course landing) | PASS-src | 2026-08-09 | `text-neutral-700` → `text-foreground-2`. Needs a published course to render; source-verified + build. |
 | /t/[slug]/dashboard | PASS-src | 2026-08-09 | Certificate link → `text-link`, keeps its `py-3` tap target. Requires auth. |
 | /t/[slug]/learn/[courseSlug] (outline, player, quiz, complete) | PASS-src | 2026-08-09 | Completion cues → `text-status-green`. Quiz option selected = ink border on sunken (was `border-brand-500`/`bg-brand-50`), native `accent-primary`. Lesson-nav active = sunken + 2px inset ink marker via a transparent-when-inactive left border, so selecting does not shift the list. Requires auth + enrolment. |
-| /t/[slug]/admin (dashboard) | TODO | | admin-shell nav: sunken + 2px inset ink marker |
-| /t/[slug]/admin/courses (+ editors, reorder, video-upload) | TODO | | table keyline rule; drag handles quiet |
-| /t/[slug]/admin/people | TODO | | role/status = squared dot+label tags |
-| /t/[slug]/admin/analytics | TODO | | charts: ink single-measure, cat palette multi |
-| /t/[slug]/admin/certificates | TODO | | |
-| /t/[slug]/admin/settings | TODO | | branding form: colour swatch preview keeps arbitrary colour |
-| /t/[slug]/admin/coming-soon | TODO | | |
+| /t/[slug]/admin (dashboard) | PASS-src | 2026-08-09 | Nav active = sunken + 2px inset ink marker (transparent-when-inactive left border, so switching items does not shift the labels). Stat tiles borderless white on the sunken shell; `hover:shadow-md` replaced with an ink hairline. |
+| /t/[slug]/admin/courses (+ editors, reorder, video-upload) | PASS-src | 2026-08-09 | Status → `StatusBadge` (published green / draft amber / archived grey). Upload progress bar ink on sunken, squared. Builder disclosure loses its underline — an underline means "link". |
+| /t/[slug]/admin/people | PASS-src | 2026-08-09 | Status → `StatusBadge`. The Connect **tier** stays a plain squared Badge with NO dot — see NOTES. "Requests to join" is a flush list, so it takes the 2px header + 1px item keylines, not table dividers. |
+| /t/[slug]/admin/analytics | PASS-src | 2026-08-09 | No charts exist yet — both panels are tables, already fully `tabular-nums`. KPI figures to 800/-0.02em. `--color-cat-1..5` are defined and unused; the first chart to land takes them. |
+| /t/[slug]/admin/certificates | PASS-src | 2026-08-09 | Valid → green, Revoked → red. |
+| /t/[slug]/admin/settings (+ billing) | PASS-src | 2026-08-09 | Billing's hand-rolled `bg-brand-600` button — the last blue fill in the admin area — moves to the kit. Branding colour swatch keeps its arbitrary tenant colour. |
+| /t/[slug]/admin/coming-soon | PASS-src | 2026-08-09 | The round pale-blue "Coming soon" pill becomes a squared grey status tag with its dot. |
 | /dashboard (cross-tenant) | TODO | | |
 | /platform (platform admin) | TODO | | |
 | /verify/[code] | TODO | | print styles must survive; certificate is a document — keyline header |
@@ -81,6 +81,11 @@ every utility in the app.
   which locally contradicts "blue = links only". That is the tenant branding
   feature working as specified (brief rule 12); it is confined to the storefront
   and never enters the product shell.
+- **The Connect tier column keeps a dotless Badge**, though this row's original
+  note asked for "role/status = squared dot+label tags". A tier is a category,
+  not a state, and GUIDELINES.md §5 is explicit that tones map to state and never
+  to category — a dot on it would claim the tier is a status the row is currently
+  in. Squared and neutral; the dot is reserved for the Status column beside it.
 - **`uppercase` on the lesson-nav section label** is treated as a kicker, which
   is the sanctioned use. It labels a group in a side nav rather than heading a
   section of prose. Flagging it because it is a judgement call, not a rule.

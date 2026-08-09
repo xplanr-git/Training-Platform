@@ -247,7 +247,7 @@ export default async function LessonPlayer({
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-muted text-muted">
             <HeaderIcon className="h-4 w-4" />
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight">{lesson.title}</h1>
+          <h1 className="text-2xl">{lesson.title}</h1>
           {isPreview && (
             <p className="mt-2 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
               Preview — nothing on this page is recorded.
