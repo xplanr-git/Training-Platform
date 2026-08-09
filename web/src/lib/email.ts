@@ -64,10 +64,10 @@ async function send(to: string, subject: string, html: string): Promise<void> {
 }
 
 function layout(body: string): string {
-  return `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0a0a0a">
+  return `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#1b1b1e">
     ${body}
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
-    <p style="font-size:12px;color:#6b7280">Sent by Outdure Academy.</p>
+    <hr style="border:none;border-top:1px solid #efefed;margin:24px 0"/>
+    <p style="font-size:12px;color:#6a6b70">Sent by Outdure Academy.</p>
   </div>`;
 }
 
@@ -105,7 +105,7 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
     layout(`<h2>Reset your password</h2>
       <p>Choose a new password using the link below. It works once and expires shortly.</p>
       <p><a href="${escapeHtml(resetUrl)}">Choose a new password →</a></p>
-      <p style="font-size:12px;color:#6b7280">If you didn't request this, you can ignore
+      <p style="font-size:12px;color:#6a6b70">If you didn't request this, you can ignore
       this email — nothing has changed.</p>`),
   );
 }

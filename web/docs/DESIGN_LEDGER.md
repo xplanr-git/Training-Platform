@@ -39,12 +39,12 @@ every utility in the app.
 | /t/[slug]/admin/certificates | PASS-src | 2026-08-09 | Valid → green, Revoked → red. |
 | /t/[slug]/admin/settings (+ billing) | PASS-src | 2026-08-09 | Billing's hand-rolled `bg-brand-600` button — the last blue fill in the admin area — moves to the kit. Branding colour swatch keeps its arbitrary tenant colour. |
 | /t/[slug]/admin/coming-soon | PASS-src | 2026-08-09 | The round pale-blue "Coming soon" pill becomes a squared grey status tag with its dot. |
-| /dashboard (cross-tenant) | TODO | | |
-| /platform (platform admin) | TODO | | |
-| /verify/[code] | TODO | | print styles must survive; certificate is a document — keyline header |
-| error.tsx / global-error / not-found / loading + skeletons | TODO | | |
-| empty-state / pagination / back-link / lesson-nav shared components | TODO | | |
-| lib/email.ts templates (if styled) | TODO | | ink header, no blue buttons |
+| /dashboard (cross-tenant) | PASS-src | 2026-08-09 | `text-neutral-600` → `text-foreground-2`. Requires auth. |
+| /platform (platform admin) | PASS-src | 2026-08-09 | Tenant status map → tones (active green, trial blue, past_due amber, suspended red, cancelled grey). Requires platform admin. |
+| /verify/[code] | PASS | 2026-08-09 | DOM-verified (not-found branch). **The default accent was `#2563eb`** — every tenant without a configured colour printed a blue-framed certificate. Now ink; tenant `accentColor` still wins. Status pill squared with its dot; print behaviour unchanged and re-guarded. Card shadow dropped — the 3px accent frame is the frame. |
+| error.tsx / global-error / not-found / loading + skeletons | PASS | 2026-08-09 | DOM-verified via a 404. Hand-rolled brand-600 buttons → kit. "404" becomes a proper eyebrow (it was brand blue, so it read as a link to nowhere). `global-error` keeps inline styles by necessity — see NOTES. |
+| empty-state / pagination / back-link / lesson-nav shared components | PASS | 2026-08-09 | Empty-state icon medallion squared. Pagination controls take the `--color-input` boundary (they are controls, 3.59:1) and tabular figures. |
+| lib/email.ts templates | PASS | 2026-08-09 | Shell greys → sb values. No buttons exist — every CTA is a bare `<a>`, so there was no blue button to remove and links staying blue is correct. |
 
 ## NOTES / intentional exceptions
 
@@ -81,6 +81,11 @@ every utility in the app.
   which locally contradicts "blue = links only". That is the tenant branding
   feature working as specified (brief rule 12); it is confined to the storefront
   and never enters the product shell.
+- **`global-error.tsx` keeps raw hex inline styles.** It renders its own
+  `<html>`/`<body>` and is the boundary that fires when the root layout itself
+  failed — it deliberately does not load the app's CSS, so no token is available
+  to it. Its `#2563eb` button is now `#1b1b1e`. Same reasoning for the certificate
+  accent default, which crosses into `style` and into print.
 - **The Connect tier column keeps a dotless Badge**, though this row's original
   note asked for "role/status = squared dot+label tags". A tier is a category,
   not a state, and GUIDELINES.md §5 is explicit that tones map to state and never

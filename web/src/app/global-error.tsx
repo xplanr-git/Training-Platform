@@ -72,9 +72,9 @@ export default function GlobalError({
               fontSize: '0.875rem',
               fontWeight: 500,
               color: '#fff',
-              background: '#2563eb',
+              background: '#1b1b1e',
               border: 0,
-              borderRadius: '0.375rem',
+              borderRadius: '4px',
               cursor: 'pointer',
             }}
           >

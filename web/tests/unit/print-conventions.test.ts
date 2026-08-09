@@ -78,17 +78,37 @@ describe('a printed certificate carries what makes it a certificate', () => {
     expect(VERIFY, 'the status row must not blanket-hide itself').not.toMatch(
       /<div className="flex items-center justify-between print:hidden">/,
     );
-    expect(VERIFY, 'the revoked badge needs a printed outline, since backgrounds drop').toMatch(
-      /print:border print:border-red-700/,
+    /*
+     * Both print behaviours in one assertion, because they are one decision:
+     * revoked prints WITH an outline, valid does not print at all.
+     *
+     * This used to pin `print:border print:border-red-700` and, below,
+     * `bg-green-50 text-green-700 print:hidden` — raw palette classes that moved
+     * when the badge became a StatusBadge, failing a print test for a reason
+     * that had nothing to do with print. The token names are still named here
+     * because on THIS guard the colour IS the subject: a printed red outline.
+     *
+     * The outline is what carries the warning. Browsers drop backgrounds in
+     * print by default, so the tint — and the tag's dot, which is also a
+     * background — cannot be relied on; the border and the red text can.
+     */
+    const badge = VERIFY.slice(VERIFY.indexOf('<StatusBadge'), VERIFY.indexOf('</StatusBadge>'));
+    expect(badge, 'revoked must print an outline; valid must not print').toMatch(
+      /cert\.revokedAt \? 'print:border print:border-status-red' : 'print:hidden'/,
     );
     // and the in-article notice, which is the other half of the warning
     const article = VERIFY.slice(VERIFY.indexOf('<article'), VERIFY.indexOf('</article>'));
     expect(article).toMatch(/was revoked on/);
   });
 
-  it('the "Valid certificate" badge does NOT print', () => {
-    // It is a screen affordance about the lookup, not part of the document.
-    expect(VERIFY).toMatch(/bg-green-50 text-green-700 print:hidden/);
+  it('the certificate itself carries no screen-only chrome', () => {
+    // The article IS the document. Anything inside it that disappears on paper
+    // is either decoration that should not be there, or information the printed
+    // certificate silently loses.
+    const article = VERIFY.slice(VERIFY.indexOf('<article'), VERIFY.indexOf('</article>'));
+    expect(article, 'print:hidden inside the certificate drops it from the paper').not.toMatch(
+      /print:hidden/,
+    );
   });
 
   it('the print button never prints itself', () => {

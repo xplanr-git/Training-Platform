@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
@@ -34,18 +35,10 @@ export default function Error({
         An unexpected error occurred. You can try again, or head back home.
       </p>
       <div className="flex gap-3">
-        <button
-          onClick={reset}
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
-          Try again
-        </button>
-        <Link
-          href="/"
-          className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted"
-        >
-          Go home
-        </Link>
+        <Button onClick={reset}>Try again</Button>
+        <Button asChild variant="outline">
+          <Link href="/">Go home</Link>
+        </Button>
       </div>
     </main>
   );

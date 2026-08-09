@@ -50,12 +50,12 @@ export default async function Dashboard() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-3 px-6 text-center">
       <h1 className="text-xl">You&apos;re signed in</h1>
       {waiting ? (
-        <p className="text-neutral-600">
+        <p className="text-foreground-2">
           Your request to join {waiting.academy} is waiting for an administrator to accept it.
           You&apos;ll be able to open the courses as soon as it is.
         </p>
       ) : (
-        <p className="text-neutral-600">
+        <p className="text-foreground-2">
           Your account isn&apos;t linked to an academy yet. Ask an administrator to invite you.
         </p>
       )}

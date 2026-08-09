@@ -49,7 +49,7 @@ export function EmptyState({
       {icon ? (
         <div
           aria-hidden="true"
-          className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-muted [&>svg]:h-5 [&>svg]:w-5"
+          className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-(--radius-card) border border-border bg-surface text-muted [&>svg]:h-5 [&>svg]:w-5"
         >
           {icon}
         </div>

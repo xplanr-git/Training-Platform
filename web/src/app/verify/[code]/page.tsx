@@ -1,3 +1,4 @@
+import { StatusBadge } from '@/components/ui/badge';
 import {
   db,
   eq,
@@ -64,7 +65,17 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
     signatory?: string;
     accentColor?: string;
   };
-  const accent = design.accentColor || '#2563eb';
+  /*
+   * The DEFAULT was #2563eb — the retired brand blue — so every tenant that has
+   * not chosen an accent was printing a blue-framed certificate under a
+   * monochrome system. Ink is the default now; a tenant's own accentColor still
+   * wins, which is the point of the field.
+   *
+   * A literal rather than a token because this value crosses into `style` and
+   * into print, where a CSS custom property is not guaranteed to resolve. It is
+   * --color-foreground; the two must be changed together.
+   */
+  const accent = design.accentColor || '#1b1b1e';
   const heading = design.title || 'Certificate of Completion';
 
   return (
@@ -81,23 +92,24 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
         part of the document.
       */}
       <div className="flex items-center justify-between">
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            cert.revokedAt
-              ? 'bg-red-50 text-red-700 print:border print:border-red-700'
-              : 'bg-green-50 text-green-700 print:hidden'
-          }`}
+        <StatusBadge
+          tone={cert.revokedAt ? 'red' : 'green'}
+          className={cert.revokedAt ? 'print:border print:border-status-red' : 'print:hidden'}
         >
           {cert.revokedAt ? 'Revoked' : 'Valid certificate'}
-        </span>
+        </StatusBadge>
         {!cert.revokedAt && <PrintButton />}
       </div>
 
       <article
-        className="rounded-(--radius-card) bg-surface p-10 text-center shadow-sm"
+        className="rounded-(--radius-card) bg-card p-10 text-center"
         style={{ border: `3px solid ${accent}` }}
       >
-        <p className="text-sm uppercase tracking-widest text-muted">{cert.tenantName}</p>
+        {/* A kicker above the real heading — the sanctioned use of an eyebrow,
+            and the size/weight sb specifies for one (11/700). */}
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted">
+          {cert.tenantName}
+        </p>
         <h1 className="mt-3 text-3xl" style={{ color: accent }}>
           {heading}
         </h1>
@@ -122,7 +134,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
         </div>
 
         {cert.revokedAt && (
-          <p className="mt-6 text-sm font-medium text-red-600">
+          <p className="text-destructive mt-6 text-sm font-semibold">
             This certificate was revoked on {new Date(cert.revokedAt).toLocaleDateString()}.
           </p>
         )}

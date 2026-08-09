@@ -2,7 +2,7 @@ import { db, desc, count, tenants, memberships } from '@training-platform/db';
 import { EmptyRow } from '@/components/empty-state';
 import { setTenantStatus } from './actions';
 import { NavForm } from '@/components/nav-form';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge, type StatusTone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -19,12 +19,12 @@ import {
  * sixth visual language for something the other three admin tables already express
  * with `Badge`.
  */
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  active: 'default',
-  trial: 'secondary',
-  past_due: 'outline',
-  suspended: 'destructive',
-  cancelled: 'secondary',
+const STATUS_TONE: Record<string, StatusTone> = {
+  active: 'green',
+  trial: 'blue',
+  past_due: 'amber',
+  suspended: 'red',
+  cancelled: 'grey',
 };
 
 /** The column printed the raw enum, so admins read "past_due". */
@@ -92,9 +92,9 @@ export default async function PlatformHome() {
                   {countByTenant.get(t.id) ?? 0}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[t.status] ?? 'secondary'}>
+                  <StatusBadge tone={STATUS_TONE[t.status] ?? 'grey'}>
                     {STATUS_LABEL[t.status] ?? t.status}
-                  </Badge>
+                  </StatusBadge>
                 </TableCell>
                 <TableCell className="text-right">
                   {t.status === 'suspended' ? (
