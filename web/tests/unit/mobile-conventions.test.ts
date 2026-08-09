@@ -69,16 +69,31 @@ describe('text links that act as controls have a real hit area', () => {
   });
 
   it('the three other bare-text controls carry padding or a min-height', () => {
-    // Each measured 20px (16px for the login one) and each is a real destination:
-    // the PDF opener on a PDF lesson, the certificate link on the dashboard, and
-    // password recovery on a shared site machine.
+    /*
+     * Each measured 20px (16px for the login one) and each is a real destination:
+     * the PDF opener on a PDF lesson, the certificate link on the dashboard, and
+     * password recovery on a shared site machine.
+     *
+     * Anchored on each control's HREF, and asserting only the sizing token.
+     * These regexes used to carry the colour too — `text-sm text-brand-700`,
+     * `text-xs text-muted underline` — so restyling the app failed a test about
+     * tap targets, which have nothing to do with colour. An over-specified guard
+     * fails on unrelated work, and the tempting fix is to delete it; the
+     * admin-table suite records the same lesson after pinning a shell's height.
+     */
     const cases: [string, RegExp][] = [
+      // The PDF opener on a PDF lesson.
       [
         'src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx',
-        /min-h-11[^"]*text-sm text-brand-700/,
+        /href=\{pdfUrl\}[\s\S]{0,240}?min-h-11/,
       ],
-      ['src/app/t/[slug]/dashboard/page.tsx', /py-3 text-sm text-brand-700/],
-      ['src/app/login/page.tsx', /min-h-11[^"]*text-xs text-muted underline/],
+      // The certificate link on a dashboard row.
+      [
+        'src/app/t/[slug]/dashboard/page.tsx',
+        /href=\{`\/verify\/\$\{r\.certCode\}`\}[\s\S]{0,240}?py-3/,
+      ],
+      // Password recovery, beside the password field.
+      ['src/app/login/page.tsx', /href="\/login\/forgot"[\s\S]{0,240}?min-h-11/],
     ];
     for (const [f, re] of cases) {
       expect(code(f), `${f} has a bare-text control again`).toMatch(re);

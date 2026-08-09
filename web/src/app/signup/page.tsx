@@ -48,8 +48,8 @@ export default function SignupPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6">
       <div>
-        <h1 className="text-2xl font-semibold">Create your academy</h1>
-        <p className="mt-1 text-sm text-neutral-600">14-day free trial. No card required.</p>
+        <h1 className="text-2xl">Create your academy</h1>
+        <p className="text-foreground-2 mt-1 text-sm">14-day free trial. No card required.</p>
       </div>
       {/*
         Rewritten for accessibility, not restyled. Every field had a placeholder and

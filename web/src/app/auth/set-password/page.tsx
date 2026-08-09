@@ -76,13 +76,13 @@ export default function SetPasswordPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 px-6 py-10">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-600 text-white">
+        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <GraduationCap className="h-5 w-5" />
         </span>
-        <span className="text-lg font-semibold">Outdure Academy</span>
+        <span className="text-lg font-bold">Outdure Academy</span>
       </div>
 
-      <Card>
+      <Card className="border border-border">
         <CardHeader>
           <CardTitle as="h1">Choose a password</CardTitle>
           <CardDescription>
@@ -130,7 +130,7 @@ export default function SetPasswordPage() {
                 />
               </div>
               {error && (
-                <p role="alert" className="text-sm text-red-600">
+                <p role="alert" className="text-sm text-destructive">
                   {error}
                 </p>
               )}
