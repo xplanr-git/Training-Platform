@@ -102,42 +102,62 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
       </div>
 
       <article
-        className="rounded-(--radius-card) bg-card p-10 text-center"
+        className="rounded-(--radius-card) bg-card px-10 py-14 text-center sm:px-16"
         style={{ border: `3px solid ${accent}` }}
       >
         {/* A kicker above the real heading — the sanctioned use of an eyebrow,
-            and the size/weight sb specifies for one (11/700). */}
+            and the size/weight sb specifies for one (11/700). This is the issuer. */}
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted">
           {cert.tenantName}
         </p>
-        <h1 className="mt-3 text-3xl" style={{ color: accent }}>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight" style={{ color: accent }}>
           {heading}
         </h1>
-        <p className="mt-8 text-sm text-muted">This certifies that</p>
-        <p className="mt-1 text-2xl font-medium">{cert.learnerName || '—'}</p>
-        <p className="mt-6 text-sm text-muted">has successfully completed</p>
-        <p className="mt-1 text-xl font-medium">{cert.courseTitle}</p>
+        {/* A short, symmetric accent rule under the title — a deliberate certificate
+            device, centred, not the lonely part-width divider it replaces. */}
+        <span
+          aria-hidden="true"
+          className="mx-auto mt-5 block h-[2px] w-12"
+          style={{ backgroundColor: accent }}
+        />
 
-        <div className="mt-10 flex items-end justify-between text-sm">
-          <div className="text-left">
-            <p className="border-t border-border pt-1 text-muted">
-              {new Date(cert.issuedAt).toLocaleDateString()}
-            </p>
-            <p className="text-xs text-muted">Date issued</p>
-          </div>
-          {design.signatory && (
-            <div className="text-right">
-              <p className="border-t border-border pt-1">{design.signatory}</p>
-              <p className="text-xs text-muted">Signatory</p>
-            </div>
-          )}
-        </div>
+        <p className="mt-10 text-sm text-muted">This certifies that</p>
+        {/* The recipient's name is the point of a certificate, so it is the hero —
+            the largest, heaviest element, above the title in visual weight. Ink, not
+            accent: a pale tenant accent must never cost the name its legibility. */}
+        <p className="mt-3 text-4xl font-bold tracking-tight text-foreground">
+          {cert.learnerName || '—'}
+        </p>
+        <p className="mt-8 text-sm text-muted">has successfully completed</p>
+        <p className="mt-3 text-xl font-semibold text-foreground">{cert.courseTitle}</p>
 
         {cert.revokedAt && (
-          <p className="text-destructive mt-6 text-sm font-semibold">
-            This certificate was revoked on {new Date(cert.revokedAt).toLocaleDateString()}.
+          <p className="mt-10 text-sm font-semibold text-destructive">
+            This certificate was revoked on{' '}
+            <span className="tabular-nums">
+              {new Date(cert.revokedAt).toLocaleDateString()}
+            </span>
+            .
           </p>
         )}
+
+        {/* Issued date: a single centred line, tabular figures. No signature rule —
+            a line above a printed date reads as somewhere to sign, which it is not. */}
+        <p className="mt-12 text-sm text-muted">
+          Issued <span className="tabular-nums text-foreground">{new Date(cert.issuedAt).toLocaleDateString()}</span>
+        </p>
+
+        {/* A signatory DOES sign, so it keeps the ruled line — centred, so the
+            composition stays balanced whether or not a signatory is configured. */}
+        {design.signatory && (
+          <div className="mx-auto mt-10 w-56">
+            <p className="border-t border-keyline pt-2 text-sm font-medium text-foreground">
+              {design.signatory}
+            </p>
+            <p className="mt-0.5 text-xs text-muted">Signatory</p>
+          </div>
+        )}
+
         {/*
           The verification code lives INSIDE the certificate, and prints.
           It used to sit outside the <article> carrying `print:hidden`, and there is
@@ -145,11 +165,20 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
           PDF" on a phone, produced a certificate with no code and no verify URL on
           it. An unverifiable certificate defeats the only purpose this page has, and
           Save-as-PDF is exactly how a contractor keeps a copy to show a client.
+
+          Sans + tabular, not font-mono: the spec rejects robot-monospace, and the
+          code is not transformed (case included) because /verify matches it verbatim.
         */}
-        <div className="mt-8 border-t border-border pt-4 text-center">
-          <p className="text-xs text-muted">Verification code</p>
-          <p className="mt-0.5 select-all break-all font-mono text-xs">{code}</p>
-          <p className="mt-1.5 text-xs text-muted">Verify at {verifyHost}/verify</p>
+        <div className="mt-12 border-t border-border pt-5 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted">
+            Verification code
+          </p>
+          <p className="mt-1.5 select-all break-all text-sm tabular-nums tracking-wide text-foreground">
+            {code}
+          </p>
+          <p className="mt-2 text-xs text-muted">
+            Verify at {verifyHost}/verify
+          </p>
         </div>
       </article>
     </main>
