@@ -67,7 +67,7 @@ export default async function CertificateTemplate({
             id="tpl-accentcolor"
             name="accentColor"
             defaultValue={design.accentColor ?? ''}
-            placeholder="#2563eb"
+            placeholder="#1b1b1e"
             className="w-40"
           />
         </div>

@@ -62,7 +62,7 @@ export default async function Settings({ params }: { params: Promise<{ slug: str
                   id="primaryColor"
                   name="primaryColor"
                   defaultValue={branding.primaryColor ?? ''}
-                  placeholder="#2563eb"
+                  placeholder="#1b1b1e"
                   className="w-40"
                 />
                 {branding.primaryColor && (

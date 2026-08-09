@@ -39,15 +39,15 @@ export default function GlobalError({
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
-          background: '#fff',
-          color: '#111',
+          background: '#fcfcfb',
+          color: '#1b1b1e',
         }}
       >
         <main style={{ maxWidth: '28rem', padding: '1.5rem', textAlign: 'center' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>
             Something went badly wrong
           </h1>
-          <p style={{ color: '#555', marginTop: '0.75rem' }}>
+          <p style={{ color: '#45464a', marginTop: '0.75rem' }}>
             The page could not be loaded at all. Reloading usually fixes it. If it keeps happening,
             let us know and quote this reference.
           </p>
@@ -57,7 +57,7 @@ export default function GlobalError({
                 marginTop: '0.75rem',
                 fontFamily: 'ui-monospace, monospace',
                 fontSize: '0.75rem',
-                color: '#777',
+                color: '#6a6b70',
                 userSelect: 'all',
               }}
             >
