@@ -134,17 +134,17 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
         {cert.revokedAt && (
           <p className="mt-10 text-sm font-semibold text-destructive">
             This certificate was revoked on{' '}
-            <span className="tabular-nums">
-              {new Date(cert.revokedAt).toLocaleDateString()}
-            </span>
-            .
+            <span className="tabular-nums">{new Date(cert.revokedAt).toLocaleDateString()}</span>.
           </p>
         )}
 
         {/* Issued date: a single centred line, tabular figures. No signature rule —
             a line above a printed date reads as somewhere to sign, which it is not. */}
         <p className="mt-12 text-sm text-muted">
-          Issued <span className="tabular-nums text-foreground">{new Date(cert.issuedAt).toLocaleDateString()}</span>
+          Issued{' '}
+          <span className="tabular-nums text-foreground">
+            {new Date(cert.issuedAt).toLocaleDateString()}
+          </span>
         </p>
 
         {/* A signatory DOES sign, so it keeps the ruled line — centred, so the
@@ -176,9 +176,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
           <p className="mt-1.5 select-all break-all text-sm tabular-nums tracking-wide text-foreground">
             {code}
           </p>
-          <p className="mt-2 text-xs text-muted">
-            Verify at {verifyHost}/verify
-          </p>
+          <p className="mt-2 text-xs text-muted">Verify at {verifyHost}/verify</p>
         </div>
       </article>
     </main>
