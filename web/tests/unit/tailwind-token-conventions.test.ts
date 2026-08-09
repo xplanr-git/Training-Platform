@@ -92,7 +92,25 @@ describe('a border always names its colour', () => {
 
   it('the primitives that draw borders specify a border colour', () => {
     for (const p of PRIMITIVES) {
-      const src = readFileSync(join(process.cwd(), p), 'utf8');
+      /*
+       * Comments stripped, and this one bit before it was stripped.
+       *
+       * The scan below pairs quote characters to find class strings. Prose is
+       * full of apostrophes and quotation marks, so a doc comment's quotes pair
+       * with the code's — and a comment that merely EXPLAINS the border policy
+       * (`border border-border`, "borderless by default") gets captured as if it
+       * were a class list, then fails for having a bare `border` in it. Adding
+       * the explanation to card.tsx broke this test against a card that had no
+       * border at all.
+       *
+       * Sibling guards in this suite already strip first for the mirror-image
+       * reason: a comment naming the banned markup made them PASS against broken
+       * code. Same root cause, opposite symptom.
+       */
+      const src = readFileSync(join(process.cwd(), p), 'utf8')
+        .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '');
       // Either quote style: the repo is single-quoted, and hardcoding `"` here
       // made this guard silently stop finding anything the moment prettier
       // normalised the primitives.
@@ -112,8 +130,13 @@ describe('a border always names its colour', () => {
           .split(/\s+/)
           .filter((t) => t && !t.includes(':'));
         const hasBareWidth = tokens.some((t) => /^border(-[btlrxy])?$/.test(t));
+        // `keyline` is the sb separator token — the 2px header rule and the 1px
+        // flush-list rule both name it explicitly, and a border that names it is
+        // exactly as deliberate as one naming --color-border.
         const hasColour = tokens.some((t) =>
-          /^border-(border|input|ring|brand-\d+|destructive|amber-\d+|transparent)$/.test(t),
+          /^border-(border|input|ring|keyline|primary|brand-\d+|destructive|amber-\d+|transparent)$/.test(
+            t,
+          ),
         );
         if (hasBareWidth && !hasColour) {
           expect.fail(

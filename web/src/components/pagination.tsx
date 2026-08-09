@@ -27,12 +27,21 @@ export function Pagination({
     return `${basePath}?${sp.toString()}`;
   };
 
-  const linkClass = 'rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-muted';
-  const disabledClass = 'rounded-md border border-border px-3 py-1.5 text-sm text-muted opacity-50';
+  /*
+   * These are controls, so they take --color-input (3.59:1) for their edge, not
+   * the decorative --color-border (1.12:1) they had. 1.4.11 governs what marks a
+   * component's extent, and a pager button whose boundary is invisible is a
+   * button you have to guess the edges of. Hover darkens the edge rather than
+   * filling it, matching Button's outline variant so the two read as one family.
+   */
+  const linkClass =
+    'rounded-md border border-input px-3 py-1.5 text-sm font-semibold text-foreground-2 transition-colors hover:border-foreground hover:text-foreground';
+  const disabledClass =
+    'rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-muted opacity-50';
 
   return (
     <nav className="mt-4 flex items-center justify-between" aria-label="Pagination">
-      <p className="text-sm text-muted">
+      <p className="text-sm text-muted tabular-nums">
         Page {meta.page} of {meta.pageCount} · {meta.total} total
       </p>
       <div className="flex gap-2">

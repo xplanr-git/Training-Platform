@@ -13,7 +13,11 @@ function Progress({
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
-      className={cn('bg-primary/20 relative h-2 w-full overflow-hidden rounded-full', className)}
+      // Ink fill on a sunken track. The track was bg-primary/20 — a 20% ink wash,
+      // which reads as a lighter version of the fill rather than as a groove the
+      // fill sits in. Squared to the 2px tag radius; a fully round bar is the pill
+      // shape GUIDELINES.md §9 rules out.
+      className={cn('bg-sunken relative h-2 w-full overflow-hidden rounded-sm', className)}
       {...props}
     >
       <ProgressPrimitive.Indicator

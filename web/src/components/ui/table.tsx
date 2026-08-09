@@ -16,8 +16,27 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
   );
 }
 
+/**
+ * THE TABLE KEYLINE RULE — GUIDELINES.md §2, and it says to read it twice.
+ *
+ * The dark ink keyline appears in a table in exactly ONE place: 2px under the
+ * header row. Body rows are separated by the light --color-border divider, or
+ * by nothing. Putting the dark keyline between every row is called out in the
+ * design system as the single most common mistake and the thing that makes a
+ * table look heavy and generated.
+ *
+ * It is encoded here, in the primitive, rather than left to each of the four
+ * admin tables — because "the header is darker than the rows" is a relationship,
+ * and a rule that lives in four places is a rule that will hold in three.
+ */
 function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
-  return <thead data-slot="table-header" className={cn('[&_tr]:border-b', className)} {...props} />;
+  return (
+    <thead
+      data-slot="table-header"
+      className={cn('[&_tr]:border-keyline [&_tr]:border-b-2', className)}
+      {...props}
+    />
+  );
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
@@ -48,7 +67,10 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     <tr
       data-slot="table-row"
       className={cn(
-        'hover:bg-surface-muted data-[state=selected]:bg-brand-50 border-b border-border transition-colors',
+        // Row divider is the LIGHT border, never --color-keyline. Selection is a
+        // neutral ink wash; it was brand-50, a pale blue, which under sb would
+        // have read as "these rows are links".
+        'hover:bg-surface-muted data-[state=selected]:bg-sunken border-b border-border transition-colors',
         className,
       )}
       {...props}
@@ -61,7 +83,11 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        // 12.5px/600 muted, and deliberately NOT uppercase: sb keeps the header
+        // font constant across every density, and the tracked-out uppercase
+        // "category" header is the other half of the heavy-table look the
+        // keyline rule is guarding against.
+        'text-muted h-10 px-2 text-left align-middle text-[12.5px] font-semibold whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       {...props}

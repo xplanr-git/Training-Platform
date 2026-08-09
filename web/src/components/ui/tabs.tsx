@@ -19,10 +19,7 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn(
-        'bg-surface-muted text-muted inline-flex h-9 w-fit items-center justify-center rounded-xl p-[3px] flex',
-        className,
-      )}
+      className={cn('border-border flex w-full items-center gap-6 border-b', className)}
       {...props}
     />
   );
@@ -33,7 +30,11 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "data-[state=active]:bg-card dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        // Underline tabs, not filled pills. The active tab is marked by an ink
+        // 2px underline plus a weight change — two channels, so the selection
+        // survives greyscale — and the -mb-px pulls it over the list's own
+        // border so the two lines occupy the same row rather than stacking.
+        "text-muted data-[state=active]:border-primary data-[state=active]:text-foreground -mb-px inline-flex items-center justify-center gap-1.5 border-b-2 border-transparent px-1 py-3 text-sm font-semibold whitespace-nowrap transition-colors data-[state=active]:font-bold disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

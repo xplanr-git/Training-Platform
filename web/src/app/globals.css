@@ -128,17 +128,29 @@
   --color-sunken: #f1f1f0;
 
   /* Status. State only, never decoration, and always rendered as a dot + label
-     tag so the meaning survives without colour (WCAG 1.4.1). */
+     tag so the meaning survives without colour (WCAG 1.4.1).
+
+     The tints are OPAQUE here, where sb-ui ships them as ~11% alpha of the text
+     colour. Each value below is precisely that alpha composited over white, so
+     on a white or shell background they render identically to sb — but a
+     translucent tint takes its contrast from whatever happens to be behind it,
+     and these tags do not stay on white. Measured: green on the sunken plane
+     (#f1f1f0), which is the admin shell's own background, composited to
+     4.43:1 — under AA, while the same tag passed at 4.99:1 on a table. A status
+     tag that is legible in one panel and not in the next is worse than one that
+     is uniformly plain, and it fails in exactly the place you would not think to
+     check. Opaque, the ratios hold anywhere: green 4.99, amber 5.30, red 5.28,
+     blue 5.77, grey 5.76 — all asserted in status-tone-conventions.test.ts. */
   --color-status-green: #17743d;
-  --color-status-green-bg: rgb(23 116 61 / 0.11);
+  --color-status-green-bg: #e5f0ea;
   --color-status-amber: #8a5300;
-  --color-status-amber-bg: rgb(138 83 0 / 0.12);
+  --color-status-amber-bg: #f1eae0;
   --color-status-red: #b4302a;
-  --color-status-red-bg: rgb(180 48 42 / 0.1);
+  --color-status-red-bg: #f8eaea;
   --color-status-blue: #2456b5;
-  --color-status-blue-bg: rgb(36 86 181 / 0.11);
+  --color-status-blue-bg: #e7ecf7;
   --color-status-grey: #5e5a52;
-  --color-status-grey-bg: rgb(94 90 82 / 0.12);
+  --color-status-grey-bg: #ecebea;
 
   /* Categorical chart palette. Fixed order, assigned never cycled, CVD-validated,
      and always paired with a legend. Separate from status: a chart series that

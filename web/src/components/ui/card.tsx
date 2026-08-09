@@ -3,12 +3,27 @@ import * as React from 'react';
 
 import { cn } from '@/components/ui/utils';
 
+/**
+ * Borderless by default.
+ *
+ * A white card on the #fcfcfb shell is separated by its own surface change, the
+ * keylines inside it and the whitespace around it; a border on top of all three
+ * is noise, and a page of bordered boxes is what GUIDELINES.md §4b is written
+ * against. Borders are kept for things that need an edge to read as pressable
+ * (controls) or to lift off the page (floating menus) — a card is neither.
+ *
+ * Where a card genuinely needs a frame — white nesting inside white, or a form
+ * that must read as one object — the call site adds `border border-border` for
+ * a hairline, or a `border-b-2 border-keyline` under its header for the heavier
+ * document treatment. Both are deliberate acts at the call site rather than a
+ * default nobody chose.
+ */
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card"
       className={cn(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border border-border',
+        'bg-card text-card-foreground flex flex-col gap-6 rounded-(--radius-card)',
         className,
       )}
       {...props}
