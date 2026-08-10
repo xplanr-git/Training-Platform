@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -36,23 +36,66 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  /*
+   * Submit guards, in refs so they take effect SYNCHRONOUSLY — before React
+   * re-renders and before the next submit event runs.
+   *
+   * A disabled submit button does not stop a form submit that a password
+   * manager triggers itself: 1Password (and others) autofill and then submit by
+   * dispatching the form's own submit event, which runs THIS handler directly,
+   * button state notwithstanding. When a sign-in then leaves the form on screen
+   * — any error does — the manager re-submits, and the cycle repeats fast enough
+   * to trip Supabase's auth rate limit. That limit is not ours to raise or
+   * intercept: sign-in goes browser->Supabase and never reaches our server (see
+   * lib/rate-limit.ts). One observed session sent ~600 sign-in requests this way
+   * and locked the account's whole IP out with 429s.
+   *
+   * `inFlight` collapses overlapping submits to one request; `cooldownUntil`
+   * makes a post-failure storm self-throttling. Together they make a single
+   * auto-submit harmless and a loop bounded — for every user, with nobody
+   * changing a 1Password setting.
+   */
+  const inFlight = useRef(false);
+  const cooldownUntil = useRef(0);
+  const rapidFailures = useRef(0);
+  const lastFailureAt = useRef(0);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // One request at a time; drop a resubmit that arrives while one is open.
+    if (inFlight.current) return;
+    // And drop anything arriving inside the post-failure cooldown below.
+    if (Date.now() < cooldownUntil.current) return;
+
+    inFlight.current = true;
     setLoading(true);
     setError(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // Only on failure. This used to clear unconditionally, right here — so on
-      // SUCCESS the button went back to "Sign in" and re-enabled itself while
-      // three more round trips were still running (activateMembershipOnSignIn,
-      // postSignInDestination, then the navigation). Nothing on screen changed
-      // for a second or more, so the natural response was to press it again —
-      // and every extra press is another sign-in attempt against Supabase's auth
-      // rate limit, which is not ours to raise. The report was "I can't see if
-      // it's signing in, and then it doesn't if I click the button again".
+      // Escalate the wait only for BACK-TO-BACK failures — the signature of an
+      // auto-submit loop, not of a person retyping. A failure spaced out like
+      // human typing resets the counter, so a genuine second attempt is never
+      // penalised; a burst backs off 0.5s, 1s, 2s… capped at 20s, which holds
+      // the request rate far below Supabase's auth limit.
+      const now = Date.now();
+      rapidFailures.current = now - lastFailureAt.current < 4000 ? rapidFailures.current + 1 : 1;
+      lastFailureAt.current = now;
+      if (rapidFailures.current >= 2) {
+        cooldownUntil.current = now + Math.min(500 * 2 ** (rapidFailures.current - 2), 20_000);
+      }
+
+      // Clear loading and re-open the form ONLY on failure. This used to clear
+      // unconditionally, right here — so on SUCCESS the button went back to
+      // "Sign in" and re-enabled itself while more round trips were still
+      // running, and the natural response was to press it again (another
+      // sign-in attempt against a rate limit that is not ours to raise). The
+      // report was "I can't see if it's signing in, and then it doesn't if I
+      // click the button again".
       setLoading(false);
       setError(signInMessage(error.message));
+      inFlight.current = false;
       return;
     }
     /*
@@ -86,8 +129,9 @@ export default function LoginPage() {
     // the session cookie that was just set, and replace() keeps Back from
     // returning to a sign-in form you have already used.
     //
-    // `loading` is deliberately never cleared on this path: the button stays
-    // disabled and reading "Signing in…" until the document is replaced.
+    // `loading` and `inFlight` are deliberately never cleared on this path: the
+    // button stays disabled and reading "Signing in…", and any trailing
+    // auto-submit is ignored, until the document is replaced.
     window.location.replace(dest);
   }
 

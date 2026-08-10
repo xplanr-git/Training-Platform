@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,17 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Synchronous re-entry guard. Provisioning creates a tenant, a user and a
+  // membership; a double submit (a fast double-click, or a password manager
+  // firing the form's submit event) would attempt a second provision and fail
+  // ungracefully on the slug-uniqueness constraint. `disabled` on the button
+  // does not stop a submit dispatched at the form, so the guard lives here.
+  const inFlight = useRef(false);
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
     setError(null);
 
@@ -29,6 +38,9 @@ export default function SignupPage() {
     if (!result.ok) {
       setError(result.error ?? 'Something went wrong.');
       setLoading(false);
+      // Re-open the form only on failure; success navigates away below with the
+      // guard still set, so a trailing auto-submit can't fire a second sign-in.
+      inFlight.current = false;
       return;
     }
 
