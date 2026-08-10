@@ -28,16 +28,28 @@ export const env = {
     const loopback = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
     return `${loopback ? 'http' : 'https'}://${root}`;
   },
-  // Cookie domain so the auth session is shared across tenant subdomains
-  // (e.g. `.outdure.app`). Returns undefined on localhost/IP where a leading-dot
-  // domain isn't valid — sessions there stay host-only (local dev limitation).
-  cookieDomain: () => {
-    const host = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000').split(':')[0];
-    if (host === 'localhost' || host === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-      return undefined;
-    }
-    return `.${host}`;
-  },
+  // Cookie domain for the auth session.
+  //
+  // Defaults to undefined — HOST-ONLY cookies — which is deterministic and, most
+  // importantly, IDENTICAL on the client and the server: both scope the cookie to
+  // the exact host, so a token rotation replaces it in place. That is the whole
+  // point of the default.
+  //
+  // The previous version derived `.${NEXT_PUBLIC_ROOT_DOMAIN}`. Because
+  // NEXT_PUBLIC_* is inlined into the client bundle at BUILD time but read by the
+  // server at RUNTIME, a deployment where those disagreed wrote the cookie at two
+  // different scopes (host-only vs `.host`). That left two `sb-*-auth-token`
+  // cookies whose refresh tokens rotated out of sync, so every refresh failed
+  // with `refresh_token_not_found` and the session bounced login -> dashboard ->
+  // login. Host-only removes that whole failure class, and needs no env at all.
+  //
+  // Set NEXT_PUBLIC_COOKIE_DOMAIN only for a MULTI-TENANT subdomain deployment
+  // where one session must be shared across `<tenant>.<root>` hosts — e.g.
+  // `.outdure.app`. A single-tenant deployment on one host must leave it UNSET:
+  // a shared-domain cookie there gains nothing and reintroduces the split-scope
+  // bug. Deliberately independent of NEXT_PUBLIC_ROOT_DOMAIN (which is for
+  // host->tenant ROUTING, a separate concern from cookie scope).
+  cookieDomain: () => process.env.NEXT_PUBLIC_COOKIE_DOMAIN?.trim() || undefined,
   resendApiKey: () => process.env.RESEND_API_KEY ?? null,
   // Bunny Stream. Library id + per-library access key; the CDN hostname is only
   // needed for direct HLS (the iframe embed is keyed on the library id).

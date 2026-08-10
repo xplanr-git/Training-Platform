@@ -222,7 +222,8 @@ These map to the env vars in §5 (`STRIPE_*`).
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | v2 anon key |
    | `SUPABASE_SERVICE_ROLE_KEY` | v2 service-role key (server-only) |
    | `DATABASE_URL` | v2 Postgres URI, **transaction pooler `:6543`** (server-only) |
-   | `NEXT_PUBLIC_ROOT_DOMAIN` | the host the app is served from, e.g. `training.structurebuild.co` |
+   | `NEXT_PUBLIC_ROOT_DOMAIN` | the host the app is served from, e.g. `training.structurebuild.co`. Used for ROUTING and links, **not** the cookie scope |
+   | `NEXT_PUBLIC_COOKIE_DOMAIN` | auth-cookie scope. **Leave UNSET for single-tenant** (host-only cookies). Set to `.<root>` (e.g. `.outdure.app`) only for multi-tenant subdomains — see §5a |
    | `DEFAULT_TENANT_SLUG` | **single-tenant mode** — the one academy the apex serves, e.g. `outdure`. Omit for multi-tenant subdomain routing (see §5a) |
    | `BUNNY_API_KEY` / `BUNNY_LIBRARY_ID` / `BUNNY_CDN_HOSTNAME` | Bunny Stream video library |
    | `RESEND_API_KEY` / `EMAIL_FROM` | required for invites — without it nobody can be onboarded |
@@ -250,6 +251,7 @@ storefront all resolve at the top level; no subdomain anywhere.
 | Vercel → Settings → Domains | `training.structurebuild.co` |
 | DNS (wherever `structurebuild.co` is hosted) | CNAME `training` → `cname.vercel-dns.com` |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | `training.structurebuild.co` |
+| `NEXT_PUBLIC_COOKIE_DOMAIN` | **leave unset** — the session cookie is host-only, the correct default for one host |
 | `DEFAULT_TENANT_SLUG` | the tenant's slug, e.g. `outdure` |
 
 No wildcard record, no second certificate. `/platform` (cross-tenant admin),
@@ -272,6 +274,7 @@ Each tenant gets a subdomain of the root.
 | Vercel → Domains | the apex (`outdure.app`) **and** a wildcard (`*.outdure.app`) |
 | DNS | CNAME/A for the apex, CNAME `*` for the wildcard |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | `outdure.app` |
+| `NEXT_PUBLIC_COOKIE_DOMAIN` | `.outdure.app` — **required here** so one session is shared across `<tenant>.outdure.app` hosts. Without it the cookie is host-only and a learner signed in on one subdomain is signed out on the next |
 | `DEFAULT_TENANT_SLUG` | leave unset |
 
 **Env var changes need a redeploy** — they are not picked up by the existing
