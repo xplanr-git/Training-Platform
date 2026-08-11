@@ -194,7 +194,11 @@ export const courses = pgTable(
     category: text('category'),
     // Connect tier this course confers on completion (e.g. CON_TRAINED).
     confersRoleCode: text('confers_role_code'),
-    certificateEnabled: boolean('certificate_enabled').notNull().default(false),
+    // Default ON (opt-out per course). The column shipped in the v2 schema but was
+    // never read — every completion issued a certificate regardless. Migration
+    // 0017 gates issuance on it and backfills existing courses to true so nothing
+    // stops issuing; admins can now turn it off per course.
+    certificateEnabled: boolean('certificate_enabled').notNull().default(true),
     certificateTemplateId: uuid('certificate_template_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

@@ -108,6 +108,22 @@ export default async function EditCourse({
                 Completing this course advances the learner to this Connect tier.
               </p>
             </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <input
+                  id="certificateEnabled"
+                  name="certificateEnabled"
+                  type="checkbox"
+                  defaultChecked={course.certificateEnabled}
+                  className="h-4 w-4 rounded border-input"
+                />
+                <Label htmlFor="certificateEnabled">Issue a certificate on completion</Label>
+              </div>
+              <p className="text-xs text-muted">
+                Learners who finish this course receive a verifiable certificate. Turn off for
+                courses that don&apos;t award one.
+              </p>
+            </div>
             <Button type="submit" className="self-start">
               Save changes
             </Button>

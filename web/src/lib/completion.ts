@@ -58,6 +58,8 @@ export async function finalizeCourseCompletion(opts: {
       learnerName: users.name,
       learnerEmail: users.email,
       confersRoleCode: courses.confersRoleCode,
+      certificateEnabled: courses.certificateEnabled,
+      certificateTemplateId: courses.certificateTemplateId,
     })
     .from(courses)
     .innerJoin(tenants, eq(tenants.id, courses.tenantId))
@@ -106,37 +108,43 @@ export async function finalizeCourseCompletion(opts: {
       });
     }
 
-    const [existingCert] = await tx
-      .select({ id: certificates.id })
-      .from(certificates)
-      .where(eq(certificates.enrollmentId, enrollmentId))
-      .limit(1);
+    // Certificates only when the course opts in. certificateEnabled defaults
+    // true (migration 0017 backfilled existing courses), so this changes nothing
+    // for courses that issue today; an admin can now turn it off per course.
+    if (meta.certificateEnabled) {
+      const [existingCert] = await tx
+        .select({ id: certificates.id })
+        .from(certificates)
+        .where(eq(certificates.enrollmentId, enrollmentId))
+        .limit(1);
 
-    if (!existingCert) {
-      await tx.insert(certificates).values({
-        tenantId,
-        enrollmentId,
-        verificationCode: code,
-        issuedAt,
-        credential: buildCredential({
+      if (!existingCert) {
+        await tx.insert(certificates).values({
+          tenantId,
+          enrollmentId,
+          templateId: meta.certificateTemplateId ?? null,
           verificationCode: code,
-          learnerName: meta.learnerName,
-          learnerEmail: meta.learnerEmail,
-          courseTitle: meta.courseTitle,
-          tenantName: meta.tenantName,
-          issuedAt: issuedAt.toISOString(),
-          verifyUrl,
-        }),
-      });
-      certIssued = true;
-      await audited(tx, {
-        tenantId,
-        actorUserId: learnerUserId,
-        action: 'certificate.issue',
-        resourceType: 'certificate',
-        resourceId: code,
-        after: { courseId },
-      });
+          issuedAt,
+          credential: buildCredential({
+            verificationCode: code,
+            learnerName: meta.learnerName,
+            learnerEmail: meta.learnerEmail,
+            courseTitle: meta.courseTitle,
+            tenantName: meta.tenantName,
+            issuedAt: issuedAt.toISOString(),
+            verifyUrl,
+          }),
+        });
+        certIssued = true;
+        await audited(tx, {
+          tenantId,
+          actorUserId: learnerUserId,
+          action: 'certificate.issue',
+          resourceType: 'certificate',
+          resourceId: code,
+          after: { courseId },
+        });
+      }
     }
 
     await audited(tx, {

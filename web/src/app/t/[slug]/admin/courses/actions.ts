@@ -105,11 +105,23 @@ export async function updateCourse(tenantSlug: string, courseId: string, formDat
   const status = statusRaw;
   const price = parsePrice(formData.get('price') as string | null);
   const confersRoleCode = parseConfersRoleCode(formData.get('confersRoleCode'));
+  // Checkbox: present as 'on' when ticked, absent when not. The editor always
+  // renders it (defaultChecked from the row), so a save reflects the box.
+  const certificateEnabled = formData.get('certificateEnabled') === 'on';
 
   await db.transaction(async (tx) => {
     const [after] = await tx
       .update(courses)
-      .set({ title, description, level, status, price, confersRoleCode, updatedAt: new Date() })
+      .set({
+        title,
+        description,
+        level,
+        status,
+        price,
+        confersRoleCode,
+        certificateEnabled,
+        updatedAt: new Date(),
+      })
       .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId!)))
       .returning();
 
