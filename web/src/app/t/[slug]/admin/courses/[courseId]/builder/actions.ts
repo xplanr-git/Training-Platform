@@ -14,6 +14,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
+import { ActionError } from '@/lib/action-errors';
 import { finalizeCourseCompletion } from '@/lib/completion';
 import { parseOptionalMinutes } from '@/lib/validation';
 import {
@@ -359,7 +360,7 @@ export async function updateLesson(
     .from(lessons)
     .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
     .limit(1);
-  if (!existing) throw new Error('Lesson not found');
+  if (!existing) throw new Error(ActionError.LESSON_NOT_FOUND);
 
   await db.transaction(async (tx) => {
     const [after] = await tx

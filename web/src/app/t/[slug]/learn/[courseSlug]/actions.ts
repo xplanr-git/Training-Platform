@@ -21,6 +21,7 @@ import {
 import { getTenantContext, type TenantContext } from '@/lib/tenant';
 import { ENROLLED_STATUSES } from '@/lib/course-access';
 import { assertNotViewingAs, isViewingAs } from '@/lib/view-as';
+import { ActionError } from '@/lib/action-errors';
 import { finalizeCourseCompletion } from '@/lib/completion';
 import { env } from '@/lib/env';
 import { gradeQuiz } from '@/lib/quiz';
@@ -55,7 +56,7 @@ async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
       ),
     )
     .limit(1);
-  if (!enr) throw new Error('Enrollment not found');
+  if (!enr) throw new Error(ActionError.ENROLLMENT_NOT_FOUND);
   return enr;
 }
 
@@ -76,7 +77,7 @@ async function assertLessonInCourse(ctx: TenantContext, lessonId: string, course
       ),
     )
     .limit(1);
-  if (!row) throw new Error('Lesson not found in this course');
+  if (!row) throw new Error(`${ActionError.LESSON_NOT_FOUND} in this course`);
 }
 
 /**

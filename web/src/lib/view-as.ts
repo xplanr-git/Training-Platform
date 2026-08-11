@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { db, eq, and, memberships, users } from '@training-platform/db';
 import { getTenantContext, currentAdminRole, type AppRole } from '@/lib/tenant';
+import { ActionError } from '@/lib/action-errors';
 
 /**
  * "View as" — an admin sees the app exactly as a member beneath them would, but
@@ -107,5 +108,5 @@ export async function isViewingAs(): Promise<boolean> {
  * honest refusal. Every learner-facing mutation calls it.
  */
 export async function assertNotViewingAs(): Promise<void> {
-  if (await getViewAs()) throw new Error('VIEW_AS_READONLY');
+  if (await getViewAs()) throw new Error(ActionError.VIEW_AS_READONLY);
 }

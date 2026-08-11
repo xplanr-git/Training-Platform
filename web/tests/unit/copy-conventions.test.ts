@@ -141,14 +141,18 @@ describe('internal vocabulary does not reach the screen', () => {
     // It threw 'Forbidden'; includes('FORBIDDEN') is case-sensitive, so the raw word
     // was shown instead of "You don't have permission to do that."
     //
-    // Asserting the whole loop rather than one string in one file: the platform
-    // guard has since moved into lib/tenant.ts (requirePlatformAdmin), and a
-    // location-pinned check would have failed for a move while still passing for
-    // a genuinely unmatched sentinel.
+    // Sentinels are now single-sourced in lib/action-errors and thrown/matched by
+    // name (throw new Error(ActionError.X) / includes(ActionError.X)), so this
+    // reads the names off the tenant guards and confirms friendly() references
+    // each. Asserting the whole loop rather than one string: the platform guard
+    // has since moved into lib/tenant.ts, and a location-pinned check would fail
+    // for a move while passing for a genuinely unmatched sentinel.
     const guards = code('src/lib/tenant.ts');
     const navForm = code('src/components/nav-form.tsx');
 
-    const sentinels = [...guards.matchAll(/throw new Error\('([A-Z_]+)'\)/g)].map((m) => m[1]);
+    const sentinels = [...guards.matchAll(/throw new Error\(ActionError\.([A-Z_]+)\)/g)].map(
+      (m) => m[1],
+    );
     expect(
       sentinels.length,
       'no sentinels found — has lib/tenant.ts moved?',
@@ -156,7 +160,7 @@ describe('internal vocabulary does not reach the screen', () => {
     // The platform guard is the one that regressed before; keep it named.
     expect(sentinels).toContain('FORBIDDEN');
 
-    const unmatched = sentinels.filter((s) => !navForm.includes(`includes('${s}')`));
+    const unmatched = sentinels.filter((s) => !navForm.includes(`ActionError.${s}`));
     expect(
       unmatched,
       `friendly() would show these raw to the user: ${unmatched.join(', ')}`,

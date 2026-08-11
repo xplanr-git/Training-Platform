@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { db, tenants, memberships, eq, and, inArray } from '@training-platform/db';
 import { createClient } from '@/lib/supabase/server';
+import { ActionError } from '@/lib/action-errors';
 
 export type AppRole = 'platform_admin' | 'company_admin' | 'instructor' | 'learner';
 
@@ -131,9 +132,9 @@ async function assertTenantActive(tenantId: string): Promise<void> {
     .from(tenants)
     .where(eq(tenants.id, tenantId))
     .limit(1);
-  if (!tenant) throw new Error('TENANT_NOT_FOUND');
+  if (!tenant) throw new Error(ActionError.TENANT_NOT_FOUND);
   if (tenant.status === 'suspended' || tenant.status === 'cancelled') {
-    throw new Error('TENANT_INACTIVE');
+    throw new Error(ActionError.TENANT_INACTIVE);
   }
 }
 
@@ -146,14 +147,14 @@ async function assertTenantActive(tenantId: string): Promise<void> {
  */
 export async function requireAdmin(): Promise<AdminContext> {
   const ctx = await getTenantContext();
-  if (!ctx) throw new Error('UNAUTHENTICATED');
-  if (!ctx.tenantId) throw new Error('TENANT_NOT_FOUND');
+  if (!ctx) throw new Error(ActionError.UNAUTHENTICATED);
+  if (!ctx.tenantId) throw new Error(ActionError.TENANT_NOT_FOUND);
 
   // Against the DATABASE, not ctx.role. See currentMembershipRole: a demotion or
   // deactivation must take effect on the next request, not on the next token
   // refresh up to an hour later.
   const role = await currentAdminRole(ctx.userId, ctx.tenantId);
-  if (!role) throw new Error('FORBIDDEN');
+  if (!role) throw new Error(ActionError.FORBIDDEN);
 
   await assertTenantActive(ctx.tenantId);
   return { ...ctx, role, tenantId: ctx.tenantId };
@@ -231,8 +232,8 @@ export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
  */
 export async function requirePlatformAdmin(): Promise<TenantContext> {
   const ctx = await getTenantContext();
-  if (!ctx) throw new Error('UNAUTHENTICATED');
-  if (!(await isPlatformAdmin(ctx.userId))) throw new Error('FORBIDDEN');
+  if (!ctx) throw new Error(ActionError.UNAUTHENTICATED);
+  if (!(await isPlatformAdmin(ctx.userId))) throw new Error(ActionError.FORBIDDEN);
   return ctx;
 }
 

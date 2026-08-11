@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
+import { ActionError } from '@/lib/action-errors';
 
 type ActionResult = { redirectTo?: string; error?: string } | void;
 
@@ -21,25 +22,25 @@ function isFrameworkNavigation(err: unknown): boolean {
  * internal message or a stack.
  */
 function friendly(message: string): string {
-  if (message.includes('UNAUTHENTICATED')) {
+  if (message.includes(ActionError.UNAUTHENTICATED)) {
     return 'Your session has expired. Please sign in again.';
   }
-  if (message.includes('FORBIDDEN')) {
+  if (message.includes(ActionError.FORBIDDEN)) {
     return "You don't have permission to do that.";
   }
-  if (message.includes('VIEW_AS_READONLY')) {
+  if (message.includes(ActionError.VIEW_AS_READONLY)) {
     return "You're viewing as someone else — exit view-as to make changes.";
   }
-  if (message.includes('TENANT_INACTIVE')) {
+  if (message.includes(ActionError.TENANT_INACTIVE)) {
     return 'This academy is switched off, so nothing can be saved. Contact Outdure to switch it back on.';
   }
-  if (message.includes('TENANT_MISMATCH') || message.includes('TENANT_NOT_FOUND')) {
+  if (message.includes(ActionError.TENANT_NOT_FOUND)) {
     return 'That academy could not be found.';
   }
-  if (message.includes('Enrollment not found')) {
+  if (message.includes(ActionError.ENROLLMENT_NOT_FOUND)) {
     return 'We could not find your enrolment for this course. Reload the page and try again.';
   }
-  if (message.includes('Lesson not found')) {
+  if (message.includes(ActionError.LESSON_NOT_FOUND)) {
     return 'That lesson is no longer part of this course. Reload the page.';
   }
   // Validator messages ('Invalid role.', 'Price cannot be negative.') are
