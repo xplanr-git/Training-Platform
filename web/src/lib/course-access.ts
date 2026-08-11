@@ -3,6 +3,18 @@ import { db, eq, and, inArray, enrollments, memberships } from '@training-platfo
 import { deriveProgress, type CourseProgress, type LessonTiming } from '@/lib/progress-derive';
 
 /**
+ * Enrollment statuses that grant course access. `cancelled` (e.g. after a
+ * refund) and `expired` are NOT access — so a refund actually removes the
+ * course, its completion path and its certificate, rather than leaving a
+ * refunded learner watching and earning a verifiable credential.
+ *
+ * Kept in one place because three call sites depend on the same rule: this
+ * resolver, the learn player's verifyEnrollment, and the storefront's
+ * enrolled check. They MUST agree, or access says one thing and progress another.
+ */
+export const ENROLLED_STATUSES = ['active', 'completed'] as const;
+
+/**
  * How the current viewer is allowed to see a course.
  *
  *  - `enrolled` — a learner (or an admin who genuinely enrolled). Progress is
@@ -52,7 +64,13 @@ export async function resolveCourseView(
   const [enrollment] = await db
     .select({ id: enrollments.id })
     .from(enrollments)
-    .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId)))
+    .where(
+      and(
+        eq(enrollments.userId, userId),
+        eq(enrollments.courseId, courseId),
+        inArray(enrollments.status, [...ENROLLED_STATUSES]),
+      ),
+    )
     .limit(1);
   if (enrollment) return { mode: 'enrolled', enrollmentId: enrollment.id };
 

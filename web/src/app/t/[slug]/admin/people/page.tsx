@@ -17,7 +17,8 @@ import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { InviteForm } from './invite-form';
-import { setMemberRole, setMemberStatus, acceptJoinRequest, declineJoinRequest } from './actions';
+import { RoleSelect } from './role-select';
+import { setMemberStatus, acceptJoinRequest, declineJoinRequest } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge, StatusBadge } from '@/components/ui/badge';
@@ -31,13 +32,6 @@ import {
 } from '@/components/ui/table';
 import { connectRoleLabel } from '@/lib/connect-roles';
 import { NavForm } from '@/components/nav-form';
-
-const ROLE_LABELS: Record<string, string> = {
-  company_admin: 'Admin',
-  instructor: 'Instructor',
-  learner: 'Learner',
-  platform_admin: 'Platform',
-};
 
 export default async function People({
   params,
@@ -203,23 +197,15 @@ export default async function People({
                 <TableCell className="font-medium">{m.name || '—'}</TableCell>
                 <TableCell className="text-muted">{m.email}</TableCell>
                 <TableCell>
-                  <NavForm
-                    action={setMemberRole.bind(null, slug, m.id, nextRole(m.role))}
-                    className="inline"
-                    quiet
-                  >
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Role: ${ROLE_LABELS[m.role] ?? m.role}. Activate to change to ${
-                        ROLE_LABELS[nextRole(m.role)] ?? nextRole(m.role)
-                      }.`}
-                      className="-ml-3"
-                    >
-                      {ROLE_LABELS[m.role] ?? m.role}
-                    </Button>
-                  </NavForm>
+                  <RoleSelect
+                    tenantSlug={slug}
+                    membershipId={m.id}
+                    role={m.role}
+                    personLabel={m.name || m.email}
+                    // Not your own row (no self role-change) and not a platform
+                    // admin (not demotable from a tenant screen).
+                    editable={m.role !== 'platform_admin' && m.userId !== ctx.userId}
+                  />
                 </TableCell>
                 <TableCell>
                   {connectRoleLabel(m.connectRoleCode) ? (
@@ -307,11 +293,4 @@ export default async function People({
       <Pagination meta={meta} basePath="/admin/people" params={{ q: query || undefined }} />
     </div>
   );
-}
-
-/** Cycles learner → instructor → company_admin → learner for quick role edits. */
-function nextRole(role: string): 'company_admin' | 'instructor' | 'learner' {
-  if (role === 'learner') return 'instructor';
-  if (role === 'instructor') return 'company_admin';
-  return 'learner';
 }

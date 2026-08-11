@@ -7,6 +7,7 @@ import {
   audited,
   eq,
   and,
+  inArray,
   count,
   isNotNull,
   enrollments,
@@ -23,6 +24,7 @@ import {
   quizAnswers,
 } from '@training-platform/db';
 import { getTenantContext, type TenantContext } from '@/lib/tenant';
+import { ENROLLED_STATUSES } from '@/lib/course-access';
 import { advanceTier } from '@/lib/connect-roles';
 import { getCourseProgress } from '@/lib/progress';
 import { env } from '@/lib/env';
@@ -55,6 +57,9 @@ async function verifyEnrollment(ctx: TenantContext, enrollmentId: string) {
         eq(enrollments.id, enrollmentId),
         eq(enrollments.userId, ctx.userId),
         eq(enrollments.tenantId, ctx.tenantId!),
+        // A cancelled/expired enrollment is not access: no progress writes, no
+        // completion, no certificate. Matches resolveCourseView's ENROLLED_STATUSES.
+        inArray(enrollments.status, [...ENROLLED_STATUSES]),
       ),
     )
     .limit(1);

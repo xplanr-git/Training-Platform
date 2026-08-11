@@ -12,7 +12,7 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin';
 import { normalizeSlug, validateSlug } from '@/lib/slug';
 import { sendWelcomeEmail } from '@/lib/email';
-import { env } from '@/lib/env';
+import { tenantOrigin } from '@/lib/host';
 import { rateLimitExceeded } from '@/lib/rate-limit-guard';
 import { RULES } from '@/lib/rate-limit';
 
@@ -135,10 +135,9 @@ export async function provisionTenant(formData: FormData): Promise<ProvisionResu
     return { ok: false, error: message };
   }
 
-  const root = env.rootDomain();
-  const origin = root.startsWith('localhost')
-    ? `http://${slug}.${root}`
-    : `https://${slug}.${root}`;
+  // tenantOrigin resolves single-tenant mode correctly; an inline
+  // `${slug}.${root}` names a host that doesn't exist there, breaking the link.
+  const origin = tenantOrigin(slug);
   try {
     await sendWelcomeEmail(email, name, companyName, `${origin}/admin`);
   } catch (e) {

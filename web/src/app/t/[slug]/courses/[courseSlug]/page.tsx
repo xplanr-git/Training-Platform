@@ -9,6 +9,7 @@ import {
   and,
   eq,
   asc,
+  inArray,
   tenants,
   courses,
   sections,
@@ -16,7 +17,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
-import { isTenantAdmin } from '@/lib/course-access';
+import { isTenantAdmin, ENROLLED_STATUSES } from '@/lib/course-access';
 import { formatMinutes } from '@/lib/progress-derive';
 import { enrollFree } from './actions';
 import { NavForm } from '@/components/nav-form';
@@ -101,7 +102,14 @@ export default async function CourseLanding({
       ? db
           .select({ id: enrollments.id })
           .from(enrollments)
-          .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.courseId, course.id)))
+          .where(
+            and(
+              eq(enrollments.userId, ctx.userId),
+              eq(enrollments.courseId, course.id),
+              // A refunded/cancelled enrollment shows "Enrol" again, not "Continue".
+              inArray(enrollments.status, [...ENROLLED_STATUSES]),
+            ),
+          )
           .limit(1)
       : Promise.resolve([] as Array<{ id: string }>),
     db

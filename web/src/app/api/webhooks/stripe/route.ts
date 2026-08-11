@@ -13,10 +13,43 @@ import {
 } from '@training-platform/db';
 import { stripe } from '@/lib/stripe';
 import { env } from '@/lib/env';
+import { tenantOrigin } from '@/lib/host';
 import { sendReceiptEmail, sendEnrollmentEmail } from '@/lib/email';
 
 // Stripe signature verification needs the raw body → Node runtime.
 export const runtime = 'nodejs';
+
+// The enum our `subscriptions.status` column accepts — derived from the schema so
+// it can't drift from the migration.
+type SubscriptionStatus = NonNullable<typeof subscriptions.$inferInsert.status>;
+
+/**
+ * Stripe's subscription-status union is WIDER than our enum: it also emits
+ * `paused` and `incomplete_expired`. Writing those raw — which the old
+ * `sub.status as never` cast silently allowed — makes the UPDATE throw at the pg
+ * enum, so the webhook 500s and Stripe retries the event indefinitely while the
+ * row that decides tenant entitlement never updates. Map explicitly, and default
+ * any status Stripe adds later to `past_due` rather than crashing.
+ */
+const STRIPE_SUBSCRIPTION_STATUS: Record<Stripe.Subscription.Status, SubscriptionStatus> = {
+  active: 'active',
+  trialing: 'trialing',
+  past_due: 'past_due',
+  unpaid: 'unpaid',
+  canceled: 'canceled',
+  incomplete: 'incomplete',
+  incomplete_expired: 'canceled', // never paid and now expired — a dead subscription
+  paused: 'past_due', // not actively billing; nearest "not currently entitled"
+};
+
+function toSubscriptionStatus(status: Stripe.Subscription.Status): SubscriptionStatus {
+  const mapped = STRIPE_SUBSCRIPTION_STATUS[status];
+  if (!mapped) {
+    console.warn(`[stripe] unmapped subscription status "${status}" — storing past_due`);
+    return 'past_due';
+  }
+  return mapped;
+}
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get('stripe-signature');
@@ -64,7 +97,7 @@ export async function POST(req: NextRequest) {
           await tx
             .update(subscriptions)
             .set({
-              status: sub.status as never,
+              status: toSubscriptionStatus(sub.status),
               currentPeriodEnd: new Date(sub.current_period_end * 1000),
             })
             .where(eq(subscriptions.id, before.id));
@@ -160,10 +193,11 @@ async function handleCoursePurchase(
         .where(eq(tenants.id, tenantId))
         .limit(1);
       if (course && tenant) {
-        const root = env.rootDomain();
-        const origin = root.startsWith('localhost')
-          ? `http://${tenant.slug}.${root}`
-          : `https://${tenant.slug}.${root}`;
+        // tenantOrigin, not an inline `${slug}.${root}`: in single-tenant mode
+        // (the live deployment) that host is in neither DNS nor the TLS cert, so
+        // the "Start learning" link failed at the browser. The free-enrolment
+        // path already uses this; the paid path must not diverge.
+        const origin = tenantOrigin(tenant.slug);
         await sendReceiptEmail(
           buyerEmail,
           course.title,

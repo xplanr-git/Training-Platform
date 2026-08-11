@@ -204,6 +204,19 @@ export async function setMemberRole(
   // the allowlist has to be enforced here — otherwise 'platform_admin' passes.
   const nextRole = parseAssignableRole(role);
 
+  // No changing your own role, mirroring the self-deactivation guard in
+  // setMemberStatus: the only self-change possible here is dropping your own
+  // admin, which would lock you out with no way back from this screen. The UI
+  // renders your row read-only, but a Server Action is directly invocable.
+  const [target] = await db
+    .select({ userId: memberships.userId })
+    .from(memberships)
+    .where(and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId)))
+    .limit(1);
+  if (target?.userId === ctx.userId) {
+    throw new Error('You cannot change your own role. Ask another admin to do it.');
+  }
+
   await db.transaction(async (tx) => {
     const [after] = await tx
       .update(memberships)
