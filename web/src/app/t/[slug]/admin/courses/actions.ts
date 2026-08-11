@@ -163,7 +163,9 @@ export async function setCourseStatus(
       .from(lessons)
       .where(and(eq(lessons.courseId, courseId), eq(lessons.tenantId, ctx.tenantId!)));
     if (Number(lessonCount) === 0) {
-      throw new Error('Add at least one lesson before publishing — an empty course cannot be completed.');
+      throw new Error(
+        'Add at least one lesson before publishing — an empty course cannot be completed.',
+      );
     }
 
     const quizLessons = await db
