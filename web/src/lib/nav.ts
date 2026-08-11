@@ -129,7 +129,10 @@ export const ADMIN_NAV: NavGroup[] = [
     label: 'Settings',
     items: [
       live('school', 'Academy Settings', '/settings'),
-      live('team', 'Team Management', '/people'),
+      // 'Team Management' used to live here also pointing at /people — the same
+      // screen as 'All Users' above. Two nav items sharing one href lit up two
+      // links at once and set aria-current on both. People management lives under
+      // Users ('All Users'); Settings keeps the academy-level settings only.
       gated('billing-settings', 'Billing'),
       gated('security', 'Security'),
       gated('privacy', 'Privacy / GDPR'),

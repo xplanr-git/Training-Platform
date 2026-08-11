@@ -44,7 +44,14 @@ export async function isTenantAdmin(userId: string, tenantId: string): Promise<b
       and(
         eq(memberships.userId, userId),
         eq(memberships.tenantId, tenantId),
-        inArray(memberships.status, ['active']),
+        // 'active' AND 'invited', matching currentMembershipRole and the
+        // access-token hook. This used to be 'active' only, which silently
+        // diverged: requireAdminForSlug lets a freshly-invited admin into the
+        // admin pages (an 'invited' membership never flips to 'active' until the
+        // apex /dashboard runs, and on a subdomain that page is rewritten away),
+        // yet this check denied that same admin the read-only course preview. The
+        // preview and the pages that link to it now agree on who is an admin.
+        inArray(memberships.status, ['active', 'invited']),
       ),
     )
     .limit(1);
