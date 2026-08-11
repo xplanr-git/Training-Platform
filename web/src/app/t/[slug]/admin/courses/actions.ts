@@ -6,6 +6,7 @@ import {
   audited,
   eq,
   and,
+  count,
   courses,
   lessons,
   sections,
@@ -153,6 +154,18 @@ export async function setCourseStatus(
   // certificate is never issued. Refuse to publish rather than let a learner
   // discover it halfway through.
   if (status === 'published') {
+    // A course with no lessons can never reach 100%, so it never completes and
+    // never issues a certificate — enrolling into it is a dead end with no
+    // resume button and no path forward. Refuse to publish, same reasoning as
+    // the empty-quiz guard below.
+    const [{ lessonCount } = { lessonCount: 0 }] = await db
+      .select({ lessonCount: count() })
+      .from(lessons)
+      .where(and(eq(lessons.courseId, courseId), eq(lessons.tenantId, ctx.tenantId!)));
+    if (Number(lessonCount) === 0) {
+      throw new Error('Add at least one lesson before publishing — an empty course cannot be completed.');
+    }
+
     const quizLessons = await db
       .select({
         title: lessons.title,

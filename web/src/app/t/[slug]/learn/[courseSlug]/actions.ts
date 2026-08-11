@@ -460,7 +460,10 @@ export async function submitQuizAttempt(
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}/${lessonId}`);
   revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}`);
   revalidatePath(`/t/${tenantSlug}/dashboard`);
+  // No score/passed in the URL: the lesson page reads the result from the
+  // recorded attempt, so grade state is never echoed through the address bar
+  // where it could be edited into a fake "Passed".
   return {
-    redirectTo: `/learn/${courseSlug}/${lessonId}?score=${score}&passed=${passed ? 1 : 0}`,
+    redirectTo: `/learn/${courseSlug}/${lessonId}`,
   };
 }

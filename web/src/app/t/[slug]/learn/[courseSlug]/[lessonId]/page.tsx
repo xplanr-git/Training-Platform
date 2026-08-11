@@ -10,7 +10,9 @@ import {
   eq,
   and,
   asc,
+  desc,
   sql,
+  isNotNull,
   courses,
   sections,
   lessons,
@@ -18,6 +20,7 @@ import {
   progressEvents,
   quizzes,
   quizQuestions,
+  quizAttempts,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
@@ -52,17 +55,10 @@ function loadQuestions(quizId: string) {
 
 export default async function LessonPlayer({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string; courseSlug: string; lessonId: string }>;
-  searchParams: Promise<{ score?: string; passed?: string }>;
 }) {
-  // Independent promises — awaiting them in sequence serialises two ticks for
-  // no reason. Same pattern applies to the query batches below.
-  const [{ slug, courseSlug, lessonId }, { score, passed }] = await Promise.all([
-    params,
-    searchParams,
-  ]);
+  const { slug, courseSlug, lessonId } = await params;
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect(`/login?next=${encodeURIComponent(`/learn/${courseSlug}`)}`);
 
@@ -165,7 +161,30 @@ export default async function LessonPlayer({
 
   // Questions need the quiz id, so they are the one genuinely serial follow-up.
   const quiz = quizRows[0] ?? null;
-  const questions = quiz ? await loadQuestions(quiz.id) : [];
+  // The result banner is read from the LAST recorded attempt, never from the URL.
+  // It used to render `?score=&passed=` straight off searchParams, so any learner
+  // could show a green "You scored 100%. Passed." by editing the address bar — a
+  // credibility problem for an audit-grade-evidence product. Grading and the real
+  // pass state (`done`) were always server-authoritative; this makes the banner
+  // agree with them.
+  const [questions, attemptRows] = await Promise.all([
+    quiz ? loadQuestions(quiz.id) : Promise.resolve([]),
+    quiz && enrollmentId
+      ? db
+          .select({ score: quizAttempts.score, passed: quizAttempts.passed })
+          .from(quizAttempts)
+          .where(
+            and(
+              eq(quizAttempts.enrollmentId, enrollmentId),
+              eq(quizAttempts.quizId, quiz.id),
+              isNotNull(quizAttempts.submittedAt),
+            ),
+          )
+          .orderBy(desc(quizAttempts.submittedAt))
+          .limit(1)
+      : Promise.resolve([] as Array<{ score: string | null; passed: boolean | null }>),
+  ]);
+  const lastAttempt = attemptRows[0] ?? null;
 
   // Resume at the furthest point this learner reached, from the append-only watch
   // events — so it follows them across devices.
@@ -326,16 +345,17 @@ export default async function LessonPlayer({
             ))}
           {isQuiz && (
             <div>
-              {score !== undefined && (
+              {lastAttempt && (
                 <p
                   className={cn(
                     'mb-5 rounded-(--radius-card) border px-4 py-3 text-sm',
-                    passed === '1'
+                    lastAttempt.passed
                       ? 'border-green-200 bg-green-50 text-green-800'
                       : 'border-amber-200 bg-amber-50 text-amber-800',
                   )}
                 >
-                  You scored {score}%. {passed === '1' ? 'Passed.' : 'Not passed — try again.'}
+                  You scored {Math.round(Number(lastAttempt.score ?? 0))}%.{' '}
+                  {lastAttempt.passed ? 'Passed.' : 'Not passed — try again.'}
                 </p>
               )}
               {done ? (
