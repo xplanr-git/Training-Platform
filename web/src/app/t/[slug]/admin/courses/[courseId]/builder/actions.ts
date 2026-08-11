@@ -11,8 +11,10 @@ import {
   sections,
   lessons,
   quizzes,
+  enrollments,
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
+import { finalizeCourseCompletion } from '@/lib/completion';
 import { parseOptionalMinutes } from '@/lib/validation';
 import {
   getBunnyVideo,
@@ -386,12 +388,12 @@ export async function updateLesson(
 
 export async function deleteLesson(slug: string, courseId: string, lessonId: string) {
   const ctx = await requireAdmin();
-  await db.transaction(async (tx) => {
+  const deleted = await db.transaction(async (tx) => {
     const [before] = await tx
       .delete(lessons)
       .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId!)))
       .returning();
-    if (!before) return;
+    if (!before) return null;
     await audited(tx, {
       tenantId: ctx.tenantId,
       actorUserId: ctx.userId,
@@ -400,7 +402,38 @@ export async function deleteLesson(slug: string, courseId: string, lessonId: str
       resourceId: lessonId,
       before,
     });
+    return before;
   });
+
+  // Removing a lesson lowers the course's total, which can push an already
+  // in-progress enrollment to 100%. Completion is otherwise materialised only by
+  // a learner completion event, so without this the course would show "complete"
+  // with the enrollment still active and no certificate ever issued. Reconcile
+  // every active enrollment; finalizeCourseCompletion no-ops those not yet at
+  // 100%. Admin-only and infrequent — a set-based pass is the scale fix if a
+  // course ever has enough learners for this loop to matter.
+  if (deleted) {
+    const active = await db
+      .select({ id: enrollments.id, userId: enrollments.userId, status: enrollments.status })
+      .from(enrollments)
+      .where(
+        and(
+          eq(enrollments.courseId, courseId),
+          eq(enrollments.tenantId, ctx.tenantId!),
+          eq(enrollments.status, 'active'),
+        ),
+      );
+    for (const e of active) {
+      await finalizeCourseCompletion({
+        tenantId: ctx.tenantId!,
+        learnerUserId: e.userId,
+        courseId,
+        enrollmentId: e.id,
+        enrollmentStatus: e.status,
+      });
+    }
+  }
+
   revalidateBuilder(slug, courseId);
 }
 

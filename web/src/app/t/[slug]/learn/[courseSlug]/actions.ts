@@ -12,11 +12,6 @@ import {
   isNotNull,
   enrollments,
   progressEvents,
-  certificates,
-  courses,
-  tenants,
-  users,
-  memberships,
   lessons,
   quizzes,
   quizQuestions,
@@ -25,13 +20,9 @@ import {
 } from '@training-platform/db';
 import { getTenantContext, type TenantContext } from '@/lib/tenant';
 import { ENROLLED_STATUSES } from '@/lib/course-access';
-import { advanceTier } from '@/lib/connect-roles';
-import { getCourseProgress } from '@/lib/progress';
+import { finalizeCourseCompletion } from '@/lib/completion';
 import { env } from '@/lib/env';
-import { absoluteUrl } from '@/lib/absolute-url';
-import { buildCredential } from '@/lib/certificate';
 import { gradeQuiz } from '@/lib/quiz';
-import { sendCertificateEmail } from '@/lib/email';
 import { rateLimit, RULES } from '@/lib/rate-limit';
 import { safeRedirect } from '@/lib/safe-redirect';
 
@@ -107,110 +98,16 @@ async function recordLessonCompleted(
     payload: {},
   });
 
-  const progress = await getCourseProgress(enrollmentId, courseId);
-  if (!progress.isComplete || enrollmentStatus === 'completed') return;
-
-  const [meta] = await db
-    .select({
-      courseTitle: courses.title,
-      tenantName: tenants.name,
-      learnerName: users.name,
-      learnerEmail: users.email,
-      confersRoleCode: courses.confersRoleCode,
-    })
-    .from(courses)
-    .innerJoin(tenants, eq(tenants.id, courses.tenantId))
-    .innerJoin(users, eq(users.id, ctx.userId))
-    .where(eq(courses.id, courseId))
-    .limit(1);
-
-  // Connect tier alignment: completing a course that confers a tier advances
-  // the learner's membership tier (same group, upward only).
-  const [mem] = await db
-    .select({ id: memberships.id, code: memberships.connectRoleCode })
-    .from(memberships)
-    .where(and(eq(memberships.userId, ctx.userId), eq(memberships.tenantId, ctx.tenantId!)))
-    .limit(1);
-  const nextCode = advanceTier(mem?.code, meta?.confersRoleCode);
-  const advancedTier = mem && nextCode && nextCode !== mem.code ? nextCode : null;
-
-  const code = crypto.randomUUID();
-  const issuedAt = new Date();
-  // absoluteUrl() REFUSES rather than emit a localhost link in production: this
-  // https:// was persisted into the credential JSON as its `id`, so a dev-issued
-  // certificate carried a permanently unreachable identifier.
-  const verifyUrl = absoluteUrl(`/verify/${code}`);
-
-  await db.transaction(async (tx) => {
-    await tx
-      .update(enrollments)
-      .set({ status: 'completed', completedAt: issuedAt })
-      .where(eq(enrollments.id, enrollmentId));
-
-    if (advancedTier && mem) {
-      await tx
-        .update(memberships)
-        .set({ connectRoleCode: advancedTier })
-        .where(eq(memberships.id, mem.id));
-      await audited(tx, {
-        tenantId: ctx.tenantId,
-        actorUserId: ctx.userId,
-        action: 'membership.tier_advanced',
-        resourceType: 'membership',
-        resourceId: mem.id,
-        after: { connectRoleCode: advancedTier, courseId },
-      });
-    }
-
-    const [existingCert] = await tx
-      .select({ id: certificates.id })
-      .from(certificates)
-      .where(eq(certificates.enrollmentId, enrollmentId))
-      .limit(1);
-
-    if (!existingCert && meta) {
-      await tx.insert(certificates).values({
-        tenantId: ctx.tenantId!,
-        enrollmentId,
-        verificationCode: code,
-        issuedAt,
-        credential: buildCredential({
-          verificationCode: code,
-          learnerName: meta.learnerName,
-          learnerEmail: meta.learnerEmail,
-          courseTitle: meta.courseTitle,
-          tenantName: meta.tenantName,
-          issuedAt: issuedAt.toISOString(),
-          verifyUrl,
-        }),
-      });
-      await audited(tx, {
-        tenantId: ctx.tenantId,
-        actorUserId: ctx.userId,
-        action: 'certificate.issue',
-        resourceType: 'certificate',
-        resourceId: code,
-        after: { courseId },
-      });
-    }
-
-    await audited(tx, {
-      tenantId: ctx.tenantId,
-      actorUserId: ctx.userId,
-      action: 'enrollment.completed',
-      resourceType: 'enrollment',
-      resourceId: enrollmentId,
-      after: { courseId },
-    });
+  // If that finished the course, mark it complete and issue the certificate.
+  // The learner here is the current caller; the same helper reconciles a course
+  // finished by lesson deletion for a different learner (see builder deleteLesson).
+  await finalizeCourseCompletion({
+    tenantId: ctx.tenantId!,
+    learnerUserId: ctx.userId,
+    courseId,
+    enrollmentId,
+    enrollmentStatus,
   });
-
-  if (meta?.learnerEmail) {
-    try {
-      await sendCertificateEmail(meta.learnerEmail, meta.courseTitle, verifyUrl);
-    } catch (e) {
-      console.error('certificate email failed:', e);
-    }
-  }
 }
 
 /**
