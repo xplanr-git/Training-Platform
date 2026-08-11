@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
-import { cn } from '@/components/ui/utils';
 import { ReorderControls } from '@/components/reorder-controls';
+import { LessonTypeFields } from './lesson-type-fields';
 import { EmptyState, EmptyRow } from '@/components/empty-state';
 import { notFound } from 'next/navigation';
 import { Trash2, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
@@ -33,8 +33,6 @@ const LESSON_ICON: Record<string, typeof Video> = {
   pdf: FileText,
   quiz: HelpCircle,
 };
-
-const SELECT_CLS = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 export default async function CourseBuilder({
   params,
@@ -228,32 +226,12 @@ export default async function CourseBuilder({
                         {l.type === 'quiz' ? (
                           <input type="hidden" name="type" value="quiz" />
                         ) : (
-                          <>
-                            <select
-                              name="type"
-                              aria-label="Lesson type"
-                              defaultValue={l.type}
-                              className={cn(SELECT_CLS, 'h-8')}
-                            >
-                              <option value="text">Text</option>
-                              <option value="video">Video</option>
-                              <option value="pdf">PDF</option>
-                            </select>
-                            <Input
-                              name="body"
-                              aria-label="Text body"
-                              defaultValue={c.body ?? ''}
-                              placeholder="Text body"
-                              className="h-8 w-40"
-                            />
-                            <Input
-                              name="url"
-                              aria-label="PDF URL"
-                              defaultValue={c.url ?? ''}
-                              placeholder="PDF URL"
-                              className="h-8 w-40"
-                            />
-                          </>
+                          <LessonTypeFields
+                            compact
+                            defaultType={l.type}
+                            defaultBody={c.body ?? ''}
+                            defaultUrl={c.url ?? ''}
+                          />
                         )}
                         <Input
                           name="estimatedMinutes"
@@ -342,18 +320,9 @@ export default async function CourseBuilder({
                 placeholder="Lesson title"
                 className="w-44"
               />
-              <select name="type" aria-label="Lesson type" className={SELECT_CLS}>
-                <option value="text">Text</option>
-                <option value="video">Video</option>
-                <option value="pdf">PDF</option>
-                <option value="quiz">Quiz</option>
-              </select>
-              <Input
-                name="url"
-                aria-label="PDF URL (used only by PDF lessons)"
-                placeholder="PDF URL"
-                className="w-40"
-              />
+              {/* Reveals the PDF URL field only when PDF is chosen (and none for
+                  video/quiz), instead of a stray "PDF URL" box on every add. */}
+              <LessonTypeFields allowQuiz />
               <Input
                 name="estimatedMinutes"
                 type="number"
