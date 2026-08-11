@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import { db, tenants, eq } from '@training-platform/db';
+import { getViewAs } from '@/lib/view-as';
+import { ViewAsBanner } from '@/components/view-as-banner';
 
 /**
  * Tenant shell. Resolves the tenant by subdomain slug and blocks access when
@@ -36,5 +38,13 @@ export default async function TenantLayout({
     );
   }
 
-  return <>{children}</>;
+  // Re-validated per request; a stale/forged/cross-tenant cookie resolves to null.
+  const viewAs = await getViewAs();
+
+  return (
+    <>
+      {viewAs && <ViewAsBanner name={viewAs.targetName} role={viewAs.targetRole} />}
+      {children}
+    </>
+  );
 }

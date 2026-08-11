@@ -7,6 +7,7 @@ import { redirect, notFound } from 'next/navigation';
 import { Check, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
 import { db, eq, and, asc, courses, sections, lessons, certificates } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { effectiveUserId } from '@/lib/view-as';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
@@ -38,12 +39,16 @@ export default async function Learn({
     .limit(1);
   if (!course) notFound();
 
+  // While viewing-as, read the target learner's course state (progress,
+  // certificate); the page has no write affordances, so nothing else changes.
+  const dataUserId = await effectiveUserId(ctx.userId);
+
   // An admin of this academy may PREVIEW without enrolling — read-only, so
   // nothing is recorded and they never appear in their own statistics.
   // All three key off course.id alone, so they go in one batch rather than three
   // sequential round trips.
   const [view, sectionRows, lessonRows] = await Promise.all([
-    resolveCourseView(ctx.userId, ctx.tenantId, course.id),
+    resolveCourseView(dataUserId, ctx.tenantId, course.id),
     db
       .select()
       .from(sections)

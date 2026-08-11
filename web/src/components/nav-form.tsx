@@ -27,6 +27,9 @@ function friendly(message: string): string {
   if (message.includes('FORBIDDEN')) {
     return "You don't have permission to do that.";
   }
+  if (message.includes('VIEW_AS_READONLY')) {
+    return "You're viewing as someone else — exit view-as to make changes.";
+  }
   if (message.includes('TENANT_INACTIVE')) {
     return 'This academy is switched off, so nothing can be saved. Contact Outdure to switch it back on.';
   }

@@ -23,6 +23,7 @@ import {
   quizAttempts,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
@@ -74,8 +75,15 @@ export default async function LessonPlayer({
   // preview never contaminates the academy's own evidence.
   // These three depend only on course.id, so they go together. Each round trip is
   // to Sydney; run serially they stack into the page's time-to-first-byte.
+  // While viewing-as, read the target learner's course state; authorization and
+  // writes stay the admin's, and `readOnly` renders the player without any write
+  // affordance (see below). Otherwise both are the caller's own id.
+  const viewingAs = await isViewingAs();
+  const readOnly = viewingAs;
+  const dataUserId = await effectiveUserId(ctx.userId);
+
   const [view, sectionRows, lessonRows, currentRows] = await Promise.all([
-    resolveCourseView(ctx.userId, ctx.tenantId, course.id),
+    resolveCourseView(dataUserId, ctx.tenantId, course.id),
     db
       .select({ id: sections.id, position: sections.position, title: sections.title })
       .from(sections)
@@ -286,9 +294,9 @@ export default async function LessonPlayer({
             <HeaderIcon className="h-4 w-4" />
           </span>
           <h1 className="text-2xl">{lesson.title}</h1>
-          {isPreview && (
+          {(isPreview || readOnly) && (
             <p className="mt-2 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              Preview — nothing on this page is recorded.
+              Read-only — nothing on this page is recorded.
             </p>
           )}
         </div>
@@ -303,7 +311,7 @@ export default async function LessonPlayer({
           {lesson.type === 'video' &&
             source &&
             (source.kind === 'bunny' ? (
-              enrollmentId ? (
+              enrollmentId && !readOnly ? (
                 <BunnyVideoPlayer
                   libraryId={source.libraryId}
                   videoId={source.videoId}
@@ -312,9 +320,9 @@ export default async function LessonPlayer({
                   resumeAtSec={resumeAtSec}
                 />
               ) : (
-                /* Preview: the bare embed, deliberately NOT the tracking player.
-                   recordVideoProgress needs an enrolment, and a preview must not
-                   write watch time into the academy's analytics. */
+                /* Preview OR view-as: the bare embed, deliberately NOT the
+                   tracking player. recordVideoProgress needs an enrolment and
+                   refuses while viewing-as; a look must not write watch time. */
                 <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
                   <iframe
                     src={`https://iframe.mediadelivery.net/embed/${source.libraryId}/${source.videoId}`}
@@ -386,11 +394,12 @@ export default async function LessonPlayer({
                   Nothing to answer here for now — it has not been written yet. Carry on to the next
                   lesson; this one will not hold up your certificate.
                 </EmptyState>
-              ) : !enrollmentId ? (
+              ) : !enrollmentId || readOnly ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted">
                     These are the questions as a learner sees them. Answers can&apos;t be submitted
-                    in a preview — an attempt needs an enrolment to record against.
+                    from a preview or a view-as — an attempt records against the learner&apos;s own
+                    enrolment.
                   </p>
                   <ol className="list-decimal space-y-3 pl-5">
                     {questions.map((q) => (
@@ -456,6 +465,18 @@ export default async function LessonPlayer({
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
               <Check className="h-4 w-4" /> Completed
             </span>
+          ) : readOnly ? (
+            // Viewing-as is read-only: navigate, but no "Complete" (which would
+            // issue a certificate) — and markLessonComplete refuses it anyway.
+            next ? (
+              <Button asChild>
+                <Link href={`/learn/${courseSlug}/${next.id}`}>
+                  Next lesson <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <span className="text-sm text-muted">End of course</span>
+            )
           ) : isQuiz ? (
             <span className="text-sm text-muted">Pass the quiz to complete</span>
           ) : (

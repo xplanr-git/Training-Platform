@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { db, audited, eq, and, courses, enrollments } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { assertNotViewingAs } from '@/lib/view-as';
 import { stripe } from '@/lib/stripe';
 import { env } from '@/lib/env';
 import { tenantOrigin } from '@/lib/host';
@@ -22,6 +23,7 @@ export async function enrollFree(tenantSlug: string, courseId: string, courseSlu
     throw new Error(
       'Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.',
     );
+  await assertNotViewingAs();
 
   // Writes a row and sends mail. Scoped to the user, not just the IP, so one
   // account cannot enrol in every course on the storefront in a loop.
@@ -97,6 +99,7 @@ export async function startCoursePurchase(
     throw new Error(
       'Your account is not linked to an academy yet. Sign out, sign in again, then tell whoever runs your academy.',
     );
+  await assertNotViewingAs();
 
   // Each call creates a Stripe Checkout Session — a write against a third-party
   // API with its own rate limits and, on some plans, its own costs. Uncapped,

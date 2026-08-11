@@ -16,6 +16,7 @@ import {
   lessons,
 } from '@training-platform/db';
 import { getTenantContext, currentAdminRole } from '@/lib/tenant';
+import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { landAfterSignIn } from '@/app/login/actions';
 import { deriveProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
@@ -40,10 +41,16 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
    * Passing this route's own path is what stops the redirect looping for the
    * learner, for whom this page IS the destination.
    */
-  await landAfterSignIn(`/t/${slug}/dashboard`);
+  const viewingAs = await isViewingAs();
+  // Skip the landing step while viewing-as: landAfterSignIn would route the admin
+  // to /admin and bounce them off the learner view they came to see.
+  if (!viewingAs) await landAfterSignIn(`/t/${slug}/dashboard`);
+  // The data is the viewed learner's; authorization stays the admin's.
+  const dataUserId = await effectiveUserId(ctx.userId);
   // From memberships, not the role claim — otherwise a demoted admin keeps being
-  // offered an "Admin" link that then bounces them straight back here.
-  const isAdmin = !!(await currentAdminRole(ctx.userId, ctx.tenantId));
+  // offered an "Admin" link that then bounces them straight back here. Hidden
+  // while viewing-as, since this is meant to read as the learner's own view.
+  const isAdmin = !viewingAs && !!(await currentAdminRole(ctx.userId, ctx.tenantId));
 
   const rows = await db
     .select({
@@ -58,7 +65,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     .from(enrollments)
     .innerJoin(courses, eq(courses.id, enrollments.courseId))
     .leftJoin(certificates, eq(certificates.enrollmentId, enrollments.id))
-    .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.tenantId, ctx.tenantId)))
+    .where(and(eq(enrollments.userId, dataUserId), eq(enrollments.tenantId, ctx.tenantId)))
     .orderBy(desc(enrollments.startedAt));
 
   // Progress WITHOUT the N+1. This used to map getCourseProgress over every

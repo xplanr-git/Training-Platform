@@ -17,6 +17,7 @@ import {
   enrollments,
 } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
+import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { isTenantAdmin, ENROLLED_STATUSES } from '@/lib/course-access';
 import { formatMinutes } from '@/lib/progress-derive';
 import { enrollFree } from './actions';
@@ -91,12 +92,17 @@ export default async function CourseLanding({
   if (!course) notFound();
 
   const ctx = await getTenantContext();
+  // View-as renders the target learner's view: their enrolment state, with the
+  // admin affordances suppressed (so a draft 404s and no "Enrol as a learner"
+  // shows). Authorization stays the admin's; enrolling is write-blocked anyway.
+  const viewingAs = ctx ? await isViewingAs() : false;
+  const dataUserId = ctx ? await effectiveUserId(ctx.userId) : '';
 
   // Admin check, enrolment check and the curriculum are mutually independent, so
   // they run together instead of four sequential round trips. The draft-visibility
   // decision below still gates the render — batching changes the timing, not the
   // authorisation.
-  const [isAdmin, enrolledRows, sectionRows, lessonRows] = await Promise.all([
+  const [rawIsAdmin, enrolledRows, sectionRows, lessonRows] = await Promise.all([
     ctx ? isTenantAdmin(ctx.userId, tenant.id) : Promise.resolve(false),
     ctx
       ? db
@@ -104,7 +110,7 @@ export default async function CourseLanding({
           .from(enrollments)
           .where(
             and(
-              eq(enrollments.userId, ctx.userId),
+              eq(enrollments.userId, dataUserId),
               eq(enrollments.courseId, course.id),
               // A refunded/cancelled enrollment shows "Enrol" again, not "Continue".
               inArray(enrollments.status, [...ENROLLED_STATUSES]),
@@ -130,6 +136,9 @@ export default async function CourseLanding({
       .orderBy(asc(lessons.position)),
   ]);
   const enrolled = enrolledRows.length > 0;
+  // While viewing-as, act as the learner: no admin CTAs, and a draft 404s below
+  // exactly as it would for the learner.
+  const isAdmin = rawIsAdmin && !viewingAs;
 
   // A draft is visible to this academy's admins only. 404 rather than 403 so an
   // unpublished course's existence isn't confirmed to anyone else.
@@ -244,6 +253,10 @@ export default async function CourseLanding({
               </NavForm>
             )}
           </>
+        ) : viewingAs ? (
+          <span className="text-sm text-muted">
+            Not enrolled — read-only while viewing as this learner.
+          </span>
         ) : (
           <NavForm action={enrollFree.bind(null, slug, course.id, courseSlug)}>
             <Button type="submit" size="lg">

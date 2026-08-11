@@ -19,6 +19,8 @@ import { Pagination } from '@/components/pagination';
 import { InviteForm } from './invite-form';
 import { RoleSelect } from './role-select';
 import { setMemberStatus, acceptJoinRequest, declineJoinRequest } from './actions';
+import { canViewAs } from '@/lib/view-as';
+import { startViewAs } from '@/lib/view-as-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge, StatusBadge } from '@/components/ui/badge';
@@ -237,6 +239,17 @@ export default async function People({
                     </NavForm>
                   ) : (
                     <div className="flex items-center justify-end gap-1">
+                      {canViewAs(ctx.role, m.role) && m.userId !== ctx.userId && (
+                        <NavForm
+                          action={startViewAs.bind(null, slug, m.userId)}
+                          className="inline"
+                          quiet
+                        >
+                          <Button type="submit" variant="ghost" size="sm">
+                            View as
+                          </Button>
+                        </NavForm>
+                      )}
                       {m.status === 'invited' && (
                         <NavForm
                           action={setMemberStatus.bind(null, slug, m.id, 'active')}

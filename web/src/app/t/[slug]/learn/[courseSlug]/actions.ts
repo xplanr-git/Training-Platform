@@ -20,6 +20,7 @@ import {
 } from '@training-platform/db';
 import { getTenantContext, type TenantContext } from '@/lib/tenant';
 import { ENROLLED_STATUSES } from '@/lib/course-access';
+import { assertNotViewingAs, isViewingAs } from '@/lib/view-as';
 import { finalizeCourseCompletion } from '@/lib/completion';
 import { env } from '@/lib/env';
 import { gradeQuiz } from '@/lib/quiz';
@@ -129,6 +130,9 @@ export async function recordVideoProgress(
 ) {
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) return;
+  // A viewing-as admin is read-only. Silent (not a throw): heartbeats are
+  // fire-and-forget, and the read-only player shouldn't be beating anyway.
+  if (await isViewingAs()) return;
   const enr = await verifyEnrollment(ctx, enrollmentId);
   await assertLessonInCourse(ctx, lessonId, enr.courseId);
 
@@ -174,6 +178,7 @@ export async function markLessonComplete(
 ) {
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
   const enr = await verifyEnrollment(ctx, enrollmentId);
   // Course is derived from the enrollment, never trusted from the client.
   await assertLessonInCourse(ctx, lessonId, enr.courseId);
@@ -214,6 +219,7 @@ export async function submitQuizAttempt(
 ) {
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
   const enr = await verifyEnrollment(ctx, enrollmentId);
   // Course is derived from the enrollment, never trusted from the client.
   await assertLessonInCourse(ctx, lessonId, enr.courseId);
