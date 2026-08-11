@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Check, Trash2 } from 'lucide-react';
 import { db, eq, and, asc, lessons, quizzes, quizQuestions } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
+import type { QuizSettings } from '@/lib/content-types';
 import { ensureQuiz, addQuestion, deleteQuestion, saveQuizSettings } from '../actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,7 +66,7 @@ export default async function QuizEditor({
     .where(eq(quizQuestions.quizId, quiz.id))
     .orderBy(asc(quizQuestions.position));
 
-  const quizSettings = quiz.settings as { passThreshold?: number; maxAttempts?: number };
+  const quizSettings = quiz.settings as QuizSettings;
   const threshold = quizSettings?.passThreshold ?? 70;
   // Mirrors DEFAULT_MAX_ATTEMPTS in the learner action, which applies to every
   // quiz authored before this control existed.

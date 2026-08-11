@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-platform/db';
 import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
 import { safeHttpUrl } from '@/lib/validation';
+import type { Branding } from '@/lib/content-types';
 import { Pagination } from '@/components/pagination';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ export async function generateMetadata({
     .where(eq(tenants.slug, slug))
     .limit(1);
   if (!t) return { title: 'Academy' };
-  const tagline = (t.branding as { tagline?: string } | null)?.tagline;
+  const tagline = (t.branding as Branding | null)?.tagline;
   const description = (tagline || `Browse courses from ${t.name}.`).slice(0, 160);
   return {
     title: `${t.name} — Courses`,
@@ -55,11 +56,7 @@ export default async function TenantHome({
     .where(eq(tenants.slug, slug))
     .limit(1);
 
-  const branding = (tenant?.branding ?? {}) as {
-    tagline?: string;
-    logoUrl?: string;
-    primaryColor?: string;
-  };
+  const branding = (tenant?.branding ?? {}) as Branding;
   const accent = branding.primaryColor || undefined;
   const logoUrl = safeHttpUrl(branding.logoUrl);
 

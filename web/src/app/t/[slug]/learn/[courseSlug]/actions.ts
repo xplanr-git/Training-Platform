@@ -22,6 +22,7 @@ import { getTenantContext, type TenantContext } from '@/lib/tenant';
 import { ENROLLED_STATUSES } from '@/lib/course-access';
 import { assertNotViewingAs, isViewingAs } from '@/lib/view-as';
 import { ActionError } from '@/lib/action-errors';
+import type { QuizSettings } from '@/lib/content-types';
 import { finalizeCourseCompletion } from '@/lib/completion';
 import { env } from '@/lib/env';
 import { gradeQuiz } from '@/lib/quiz';
@@ -235,7 +236,7 @@ export async function submitQuizAttempt(
     throw new Error(
       'This quiz has changed since you opened it. Reload the page and answer it again — your progress is safe.',
     );
-  const settings = quiz.settings as { passThreshold?: number; maxAttempts?: number };
+  const settings = quiz.settings as QuizSettings;
   const threshold = settings.passThreshold ?? 70;
 
   /*

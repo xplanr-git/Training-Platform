@@ -1,5 +1,6 @@
 import { db, eq, tenants } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
+import type { Branding } from '@/lib/content-types';
 import { updateSchoolSettings } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +20,7 @@ export default async function Settings({ params }: { params: Promise<{ slug: str
         .limit(1)
     : [];
 
-  const branding = (tenant?.branding ?? {}) as {
-    tagline?: string;
-    logoUrl?: string;
-    primaryColor?: string;
-  };
+  const branding = (tenant?.branding ?? {}) as Branding;
 
   return (
     <div className="max-w-2xl">

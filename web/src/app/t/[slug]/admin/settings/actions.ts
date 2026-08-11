@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { db, audited, eq, tenants } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
+import type { Branding } from '@/lib/content-types';
 
 /** Saves the academy's name and storefront branding. Admins only. */
 export async function updateSchoolSettings(tenantSlug: string, formData: FormData) {
@@ -11,7 +12,7 @@ export async function updateSchoolSettings(tenantSlug: string, formData: FormDat
   const name = String(formData.get('name') ?? '').trim();
   if (!name) throw new Error('Name is required');
 
-  const branding = {
+  const branding: Branding = {
     tagline: String(formData.get('tagline') ?? '').trim(),
     logoUrl: String(formData.get('logoUrl') ?? '').trim(),
     primaryColor: String(formData.get('primaryColor') ?? '').trim(),
