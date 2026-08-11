@@ -3,10 +3,21 @@ import { GraduationCap } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { redirect } from 'next/navigation';
 import { Award } from 'lucide-react';
-import { db, eq, and, desc, enrollments, courses, certificates } from '@training-platform/db';
+import {
+  db,
+  eq,
+  and,
+  desc,
+  inArray,
+  enrollments,
+  courses,
+  certificates,
+  progressEvents,
+  lessons,
+} from '@training-platform/db';
 import { getTenantContext, currentAdminRole } from '@/lib/tenant';
 import { landAfterSignIn } from '@/app/login/actions';
-import { getCourseProgress, formatMinutes } from '@/lib/progress';
+import { deriveProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -50,20 +61,71 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     .where(and(eq(enrollments.userId, ctx.userId), eq(enrollments.tenantId, ctx.tenantId)))
     .orderBy(desc(enrollments.startedAt));
 
-  const withProgress = await Promise.all(
-    rows.map(async (r) => {
-      const p = await getCourseProgress(r.enrollmentId, r.courseId);
-      return {
-        ...r,
-        percent: p.percent,
-        done: p.done,
-        total: p.total,
-        isComplete: p.isComplete,
-        minutesLeft: p.minutesLeft,
-        minutesLeftIsPartial: p.minutesLeftIsPartial,
-      };
-    }),
-  );
+  // Progress WITHOUT the N+1. This used to map getCourseProgress over every
+  // enrollment — 1 + 2N queries, and the 5-connection pool serialised them into
+  // waves, so a learner in ten courses paid ~five round-trip waves before the
+  // page rendered. Two set-based reads instead — completed lessons across all the
+  // learner's enrollments, and every lesson of the enrolled courses — then derive
+  // each in memory with the same pure function getCourseProgress used.
+  const enrollmentIds = rows.map((r) => r.enrollmentId);
+  const courseIds = [...new Set(rows.map((r) => r.courseId))];
+
+  const [completedRows, lessonRows] = await Promise.all([
+    enrollmentIds.length
+      ? db
+          .select({ enrollmentId: progressEvents.enrollmentId, lessonId: progressEvents.lessonId })
+          .from(progressEvents)
+          .where(
+            and(
+              inArray(progressEvents.enrollmentId, enrollmentIds),
+              eq(progressEvents.eventType, 'completed'),
+            ),
+          )
+      : Promise.resolve([] as Array<{ enrollmentId: string; lessonId: string | null }>),
+    courseIds.length
+      ? db
+          .select({
+            courseId: lessons.courseId,
+            id: lessons.id,
+            estimatedMinutes: lessons.estimatedMinutes,
+          })
+          .from(lessons)
+          .where(inArray(lessons.courseId, courseIds))
+      : Promise.resolve(
+          [] as Array<{ courseId: string; id: string; estimatedMinutes: number | null }>,
+        ),
+  ]);
+
+  const completedByEnrollment = new Map<string, string[]>();
+  for (const c of completedRows) {
+    if (!c.lessonId) continue;
+    const arr = completedByEnrollment.get(c.enrollmentId);
+    if (arr) arr.push(c.lessonId);
+    else completedByEnrollment.set(c.enrollmentId, [c.lessonId]);
+  }
+  const lessonsByCourse = new Map<string, Array<{ id: string; estimatedMinutes: number | null }>>();
+  for (const l of lessonRows) {
+    const item = { id: l.id, estimatedMinutes: l.estimatedMinutes };
+    const arr = lessonsByCourse.get(l.courseId);
+    if (arr) arr.push(item);
+    else lessonsByCourse.set(l.courseId, [item]);
+  }
+
+  const withProgress = rows.map((r) => {
+    const p = deriveProgress(
+      completedByEnrollment.get(r.enrollmentId) ?? [],
+      lessonsByCourse.get(r.courseId) ?? [],
+    );
+    return {
+      ...r,
+      percent: p.percent,
+      done: p.done,
+      total: p.total,
+      isComplete: p.isComplete,
+      minutesLeft: p.minutesLeft,
+      minutesLeftIsPartial: p.minutesLeftIsPartial,
+    };
+  });
 
   // "Done" is derived from the append-only log, not enrollment.completedAt: if
   // an author adds a lesson to a course a learner already finished, there is

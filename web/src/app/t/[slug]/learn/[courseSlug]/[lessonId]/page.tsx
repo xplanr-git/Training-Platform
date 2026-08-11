@@ -74,14 +74,33 @@ export default async function LessonPlayer({
   // preview never contaminates the academy's own evidence.
   // These three depend only on course.id, so they go together. Each round trip is
   // to Sydney; run serially they stack into the page's time-to-first-byte.
-  const [view, sectionRows, lessonRows] = await Promise.all([
+  const [view, sectionRows, lessonRows, currentRows] = await Promise.all([
     resolveCourseView(ctx.userId, ctx.tenantId, course.id),
     db
       .select({ id: sections.id, position: sections.position, title: sections.title })
       .from(sections)
       .where(eq(sections.courseId, course.id))
       .orderBy(asc(sections.position)),
-    db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)),
+    // Outline fields only — NOT content. This used to pull every lesson's
+    // `content` jsonb (text bodies can be large) just to render the nav, when
+    // only the CURRENT lesson's content is read — fetched on its own below.
+    db
+      .select({
+        id: lessons.id,
+        sectionId: lessons.sectionId,
+        position: lessons.position,
+        type: lessons.type,
+        title: lessons.title,
+        estimatedMinutes: lessons.estimatedMinutes,
+      })
+      .from(lessons)
+      .where(eq(lessons.courseId, course.id))
+      .orderBy(asc(lessons.position)),
+    db
+      .select({ content: lessons.content })
+      .from(lessons)
+      .where(and(eq(lessons.id, lessonId), eq(lessons.courseId, course.id)))
+      .limit(1),
   ]);
   if (view.mode === 'denied') redirect(`/courses/${courseSlug}`);
   const isPreview = view.mode === 'preview';
@@ -101,7 +120,7 @@ export default async function LessonPlayer({
   const prev = idx > 0 ? ordered[idx - 1] : null;
   const next = idx < ordered.length - 1 ? ordered[idx + 1] : null;
 
-  const content = (lesson.content ?? {}) as Record<string, string>;
+  const content = (currentRows[0]?.content ?? {}) as Record<string, string>;
   const pdfUrl = safeHttpUrl(content.url);
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
   const isQuiz = lesson.type === 'quiz';

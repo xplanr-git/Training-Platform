@@ -46,65 +46,73 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const [[enr], [comp], [learners], [recent], [attempts], [passed]] = await Promise.all([
-    db.select({ n: count() }).from(enrollments).where(eq(enrollments.tenantId, tid)),
-    db
-      .select({ n: count() })
-      .from(enrollments)
-      .where(and(eq(enrollments.tenantId, tid), eq(enrollments.status, 'completed'))),
-    db
-      .select({ n: countDistinct(enrollments.userId) })
-      .from(enrollments)
-      .where(eq(enrollments.tenantId, tid)),
-    db
-      .select({ n: count() })
-      .from(enrollments)
-      .where(and(eq(enrollments.tenantId, tid), gte(enrollments.startedAt, thirtyDaysAgo))),
-    db.select({ n: count() }).from(quizAttempts).where(eq(quizAttempts.tenantId, tid)),
-    db
-      .select({ n: count() })
-      .from(quizAttempts)
-      .where(and(eq(quizAttempts.tenantId, tid), eq(quizAttempts.passed, true))),
-  ]);
-
-  const [active] = await db
-    .select({ n: countDistinct(progressEvents.enrollmentId) })
-    .from(progressEvents)
-    .where(and(eq(progressEvents.tenantId, tid), gte(progressEvents.occurredAt, thirtyDaysAgo)));
-
-  // Per-question friction: attempts, average time spent (duration_ms), and how
-  // often the question is answered wrong. Ranked by attempts (most-answered
-  // first). Aggregated in SQL; small internal data so no extra indexing needed.
-  const friction = await db
-    .select({
-      prompt: quizQuestions.prompt,
-      answers: count(),
-      avgMs: sql<string | null>`round(avg(${quizAnswers.durationMs}))`,
-      wrong: sql<string>`sum(case when ${quizAnswers.isCorrect} is false then 1 else 0 end)`,
-    })
-    .from(quizAnswers)
-    .innerJoin(quizQuestions, eq(quizQuestions.id, quizAnswers.questionId))
-    .where(eq(quizAnswers.tenantId, tid))
-    .groupBy(quizAnswers.questionId, quizQuestions.prompt)
-    .orderBy(sql`count(*) desc`)
-    .limit(8);
-
-  // Video watch time per lesson, from the append-only watch events. Compared
-  // against the author's time estimate to show how much is actually watched.
-  const watch = await db
-    .select({
-      title: lessons.title,
-      estimatedMinutes: lessons.estimatedMinutes,
-      viewers: countDistinct(progressEvents.enrollmentId),
-      watchedSec: sql<string>`coalesce(sum(${progressEvents.durationMs}), 0) / 1000`,
-      furthestSec: sql<string | null>`max((${progressEvents.payload} ->> 'positionSec')::numeric)`,
-    })
-    .from(progressEvents)
-    .innerJoin(lessons, eq(lessons.id, progressEvents.lessonId))
-    .where(and(eq(progressEvents.tenantId, tid), eq(progressEvents.eventType, 'video_progress')))
-    .groupBy(progressEvents.lessonId, lessons.title, lessons.estimatedMinutes)
-    .orderBy(sql`sum(${progressEvents.durationMs}) desc`)
-    .limit(8);
+  // One wave, not four. All nine queries are independent, so awaiting the counts,
+  // then `active`, then `friction`, then `watch` in sequence stacked four Sydney
+  // round trips onto the page's time-to-first-byte. Batched, it waits on the
+  // slowest single query. (Indexes for these scans land in migration 0018.)
+  const [[enr], [comp], [learners], [recent], [attempts], [passed], [active], friction, watch] =
+    await Promise.all([
+      db.select({ n: count() }).from(enrollments).where(eq(enrollments.tenantId, tid)),
+      db
+        .select({ n: count() })
+        .from(enrollments)
+        .where(and(eq(enrollments.tenantId, tid), eq(enrollments.status, 'completed'))),
+      db
+        .select({ n: countDistinct(enrollments.userId) })
+        .from(enrollments)
+        .where(eq(enrollments.tenantId, tid)),
+      db
+        .select({ n: count() })
+        .from(enrollments)
+        .where(and(eq(enrollments.tenantId, tid), gte(enrollments.startedAt, thirtyDaysAgo))),
+      db.select({ n: count() }).from(quizAttempts).where(eq(quizAttempts.tenantId, tid)),
+      db
+        .select({ n: count() })
+        .from(quizAttempts)
+        .where(and(eq(quizAttempts.tenantId, tid), eq(quizAttempts.passed, true))),
+      // Distinct enrollments with any event in the last 30 days.
+      db
+        .select({ n: countDistinct(progressEvents.enrollmentId) })
+        .from(progressEvents)
+        .where(
+          and(eq(progressEvents.tenantId, tid), gte(progressEvents.occurredAt, thirtyDaysAgo)),
+        ),
+      // Per-question friction: attempts, average time spent (duration_ms), and
+      // how often the question is answered wrong. Ranked by attempts, hardest first.
+      db
+        .select({
+          prompt: quizQuestions.prompt,
+          answers: count(),
+          avgMs: sql<string | null>`round(avg(${quizAnswers.durationMs}))`,
+          wrong: sql<string>`sum(case when ${quizAnswers.isCorrect} is false then 1 else 0 end)`,
+        })
+        .from(quizAnswers)
+        .innerJoin(quizQuestions, eq(quizQuestions.id, quizAnswers.questionId))
+        .where(eq(quizAnswers.tenantId, tid))
+        .groupBy(quizAnswers.questionId, quizQuestions.prompt)
+        .orderBy(sql`count(*) desc`)
+        .limit(8),
+      // Video watch time per lesson, from the append-only watch events. Compared
+      // against the author's time estimate to show how much is actually watched.
+      db
+        .select({
+          title: lessons.title,
+          estimatedMinutes: lessons.estimatedMinutes,
+          viewers: countDistinct(progressEvents.enrollmentId),
+          watchedSec: sql<string>`coalesce(sum(${progressEvents.durationMs}), 0) / 1000`,
+          furthestSec: sql<
+            string | null
+          >`max((${progressEvents.payload} ->> 'positionSec')::numeric)`,
+        })
+        .from(progressEvents)
+        .innerJoin(lessons, eq(lessons.id, progressEvents.lessonId))
+        .where(
+          and(eq(progressEvents.tenantId, tid), eq(progressEvents.eventType, 'video_progress')),
+        )
+        .groupBy(progressEvents.lessonId, lessons.title, lessons.estimatedMinutes)
+        .orderBy(sql`sum(${progressEvents.durationMs}) desc`)
+        .limit(8),
+    ]);
 
   const totalEnr = Number(enr.n);
   const completed = Number(comp.n);

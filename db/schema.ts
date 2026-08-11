@@ -343,6 +343,16 @@ export const progressEvents = pgTable(
   (t) => ({
     enrollmentIdx: index('progress_events_enrollment_idx').on(t.enrollmentId),
     lessonIdx: index('progress_events_lesson_idx').on(t.lessonId),
+    // Analytics scans this, the fastest-growing table. tenant_id alone is not
+    // selective on a single-tenant deployment, so the selective columns lead:
+    // event_type + lesson_id for the per-lesson watch rollup, occurred_at for
+    // the "active in last 30 days" count.
+    analyticsWatchIdx: index('progress_events_tenant_event_lesson_idx').on(
+      t.tenantId,
+      t.eventType,
+      t.lessonId,
+    ),
+    analyticsActiveIdx: index('progress_events_tenant_occurred_idx').on(t.tenantId, t.occurredAt),
   }),
 );
 
@@ -398,27 +408,38 @@ export const quizAttempts = pgTable(
     score: numeric('score', { precision: 5, scale: 2 }),
     passed: boolean('passed'),
   },
-  (t) => ({ enrollmentIdx: index('quiz_attempts_enrollment_idx').on(t.enrollmentId) }),
+  (t) => ({
+    enrollmentIdx: index('quiz_attempts_enrollment_idx').on(t.enrollmentId),
+    // Analytics counts attempts (and passes) per tenant.
+    tenantPassedIdx: index('quiz_attempts_tenant_passed_idx').on(t.tenantId, t.passed),
+  }),
 );
 
-export const quizAnswers = pgTable('quiz_answers', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  attemptId: uuid('attempt_id')
-    .notNull()
-    .references(() => quizAttempts.id, { onDelete: 'cascade' }),
-  questionId: uuid('question_id')
-    .notNull()
-    .references(() => quizQuestions.id, { onDelete: 'cascade' }),
-  response: jsonb('response').notNull().default({}),
-  isCorrect: boolean('is_correct'),
-  pointsAwarded: integer('points_awarded').notNull().default(0),
-  // Per-question time spent, ms (friction insight). Nullable — legacy answers
-  // and clients that don't report timing leave it null.
-  durationMs: integer('duration_ms'),
-});
+export const quizAnswers = pgTable(
+  'quiz_answers',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    attemptId: uuid('attempt_id')
+      .notNull()
+      .references(() => quizAttempts.id, { onDelete: 'cascade' }),
+    questionId: uuid('question_id')
+      .notNull()
+      .references(() => quizQuestions.id, { onDelete: 'cascade' }),
+    response: jsonb('response').notNull().default({}),
+    isCorrect: boolean('is_correct'),
+    pointsAwarded: integer('points_awarded').notNull().default(0),
+    // Per-question time spent, ms (friction insight). Nullable — legacy answers
+    // and clients that don't report timing leave it null.
+    durationMs: integer('duration_ms'),
+  },
+  // Analytics friction ranking scans this: WHERE tenant_id GROUP BY question_id.
+  (t) => ({
+    tenantQuestionIdx: index('quiz_answers_tenant_question_idx').on(t.tenantId, t.questionId),
+  }),
+);
 
 /* ── Certificates ──────────────────────────────────────────────────────── */
 
@@ -451,7 +472,11 @@ export const certificates = pgTable(
     revokedAt: timestamp('revoked_at', { withTimezone: true }),
     credential: jsonb('credential').notNull().default({}),
   },
-  (t) => ({ enrollmentIdx: index('certificates_enrollment_idx').on(t.enrollmentId) }),
+  (t) => ({
+    enrollmentIdx: index('certificates_enrollment_idx').on(t.enrollmentId),
+    // The certificates admin page counts + lists by tenant.
+    tenantIdx: index('certificates_tenant_idx').on(t.tenantId),
+  }),
 );
 
 /* ── xAPI (schema-only at MVP) ─────────────────────────────────────────── */

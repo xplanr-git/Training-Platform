@@ -127,6 +127,13 @@
       "when": 1786418995725,
       "tag": "0017_certificate_enabled_default_on",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786421131601,
+      "tag": "0018_analytics_indexes",
+      "breakpoints": true
     }
   ]
 }
