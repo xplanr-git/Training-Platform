@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BackLink } from '@/components/back-link';
 import { notFound } from 'next/navigation';
-import { db, eq, and, courses } from '@training-platform/db';
+import { db, eq, and, count, courses, enrollments, certificates } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { updateCourse, deleteCourse } from '../actions';
 import { NavForm } from '@/components/nav-form';
@@ -23,12 +23,26 @@ export default async function EditCourse({
   const ctx = await requireAdminForSlug(slug);
   if (!ctx.tenantId) notFound();
 
-  const [course] = await db
-    .select()
-    .from(courses)
-    .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
-    .limit(1);
+  /*
+    The certificate count is fetched alongside the course, not after it: it is only
+    used by the danger zone, but a serial round trip for one integer on every visit
+    to the edit screen is not worth the tidier control flow.
+  */
+  const [[course], [certStats]] = await Promise.all([
+    db
+      .select()
+      .from(courses)
+      .where(and(eq(courses.id, courseId), eq(courses.tenantId, ctx.tenantId)))
+      .limit(1),
+    db
+      .select({ issued: count() })
+      .from(certificates)
+      .innerJoin(enrollments, eq(enrollments.id, certificates.enrollmentId))
+      .where(and(eq(enrollments.courseId, courseId), eq(certificates.tenantId, ctx.tenantId))),
+  ]);
   if (!course) notFound();
+
+  const issuedCertificates = certStats?.issued ?? 0;
 
   const action = updateCourse.bind(null, slug, courseId);
 
@@ -137,10 +151,31 @@ export default async function EditCourse({
           Permanently delete this course and all its sections, lessons, quizzes, and enrolments.
           This cannot be undone.
         </p>
+        {/*
+          Certificates were the one thing the old copy did not name, and they are
+          the most consequential thing the delete destroys. The cascade runs
+          courses -> enrollments -> certificates (both onDelete: 'cascade' in
+          db/schema.ts), so deleting a superseded course silently invalidates every
+          public /verify/:code page a learner is relying on — including ones already
+          shown to a client or an auditor.
+
+          The count sits here rather than only in the dialog so it is visible before
+          the click, and it is the real number for THIS course, not a general
+          warning that reads as boilerplate.
+        */}
+        {issuedCertificates > 0 && (
+          <p className="mt-2 text-sm font-semibold text-destructive">
+            This course has issued {issuedCertificates}{' '}
+            {issuedCertificates === 1 ? 'certificate' : 'certificates'}. Deleting it destroys{' '}
+            {issuedCertificates === 1 ? 'it' : 'them'} too, and{' '}
+            {issuedCertificates === 1 ? 'its' : 'their'} public verification{' '}
+            {issuedCertificates === 1 ? 'link stops' : 'links stop'} working.
+          </p>
+        )}
         <NavForm
           action={deleteCourse.bind(null, slug, courseId)}
           className="mt-3"
-          confirm="Delete this course and all its content? This cannot be undone."
+          confirm="Delete this course and everything in it? This also destroys every certificate the course has issued, so their public verification links stop working, and none of it can be undone."
         >
           <Button
             type="submit"
