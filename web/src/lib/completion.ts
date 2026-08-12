@@ -38,6 +38,54 @@ import { sendCertificateEmail } from '@/lib/email';
  * progress derivation, meta lookup, tier advancement, a multi-write transaction
  * and email in one ~120-line function coupled to "the caller is the learner".
  */
+/**
+ * Re-checks every active enrollment on a course after its lesson total has been
+ * REDUCED, and finalizes any that this pushed to 100%.
+ *
+ * Removing content lowers the denominator progress is derived from, so a deletion
+ * can complete a course for a learner who did nothing. Completion is otherwise
+ * materialised only by a learner completion event, so without this pass the course
+ * reads "100% complete" while the enrollment stays `active` and no certificate is
+ * ever issued — and the learner has no way to trigger it.
+ *
+ * This lived inline in deleteLesson, which meant deleteSection did not do it.
+ * Deleting a section cascades to every lesson in it (`lessons.section_id ->
+ * sections.id ON DELETE CASCADE`), so the more content an author removed in one
+ * click, the more learners it stranded — the bug scaled with the size of the tidy-up
+ * while the one guarded path handled the smallest case. Any future action that
+ * removes lessons must call this too.
+ *
+ * finalizeCourseCompletion is idempotent and no-ops below 100%, so calling it for
+ * every active enrollment is safe. Admin-only and infrequent; a set-based pass is
+ * the scale fix if a course ever has enough learners for this loop to matter.
+ */
+export async function reconcileCourseCompletions(opts: {
+  tenantId: string;
+  courseId: string;
+}): Promise<void> {
+  const { tenantId, courseId } = opts;
+  const active = await db
+    .select({ id: enrollments.id, userId: enrollments.userId, status: enrollments.status })
+    .from(enrollments)
+    .where(
+      and(
+        eq(enrollments.courseId, courseId),
+        eq(enrollments.tenantId, tenantId),
+        eq(enrollments.status, 'active'),
+      ),
+    );
+
+  for (const e of active) {
+    await finalizeCourseCompletion({
+      tenantId,
+      learnerUserId: e.userId,
+      courseId,
+      enrollmentId: e.id,
+      enrollmentStatus: e.status,
+    });
+  }
+}
+
 export async function finalizeCourseCompletion(opts: {
   tenantId: string;
   learnerUserId: string;

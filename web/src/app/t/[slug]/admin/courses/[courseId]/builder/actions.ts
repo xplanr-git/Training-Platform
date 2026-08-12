@@ -11,11 +11,10 @@ import {
   sections,
   lessons,
   quizzes,
-  enrollments,
 } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { ActionError } from '@/lib/action-errors';
-import { finalizeCourseCompletion } from '@/lib/completion';
+import { reconcileCourseCompletions } from '@/lib/completion';
 import { parseOptionalMinutes } from '@/lib/validation';
 import {
   getBunnyVideo,
@@ -249,7 +248,7 @@ export async function addSection(slug: string, courseId: string, formData: FormD
 
 export async function deleteSection(slug: string, courseId: string, sectionId: string) {
   const ctx = await requireAdmin();
-  await db.transaction(async (tx) => {
+  const deleted = await db.transaction(async (tx) => {
     // returning() so the audit records WHAT was removed. A delete audited with
     // only an id says nothing once the row is gone, which is the moment the log
     // is for.
@@ -257,7 +256,7 @@ export async function deleteSection(slug: string, courseId: string, sectionId: s
       .delete(sections)
       .where(and(eq(sections.id, sectionId), eq(sections.tenantId, ctx.tenantId!)))
       .returning();
-    if (!before) return;
+    if (!before) return null;
     await audited(tx, {
       tenantId: ctx.tenantId,
       actorUserId: ctx.userId,
@@ -266,7 +265,18 @@ export async function deleteSection(slug: string, courseId: string, sectionId: s
       resourceId: sectionId,
       before,
     });
+    return before;
   });
+
+  // Deleting a section cascades to every lesson in it (lessons.section_id ->
+  // sections.id ON DELETE CASCADE), so this lowers the course total exactly as
+  // deleteLesson does — only by more at once. Without this pass, removing a whole
+  // section left every affected learner reading "100% complete" with the enrollment
+  // still active and no certificate ever issued.
+  if (deleted) {
+    await reconcileCourseCompletions({ tenantId: ctx.tenantId!, courseId });
+  }
+
   revalidateBuilder(slug, courseId);
 }
 
@@ -407,32 +417,10 @@ export async function deleteLesson(slug: string, courseId: string, lessonId: str
   });
 
   // Removing a lesson lowers the course's total, which can push an already
-  // in-progress enrollment to 100%. Completion is otherwise materialised only by
-  // a learner completion event, so without this the course would show "complete"
-  // with the enrollment still active and no certificate ever issued. Reconcile
-  // every active enrollment; finalizeCourseCompletion no-ops those not yet at
-  // 100%. Admin-only and infrequent — a set-based pass is the scale fix if a
-  // course ever has enough learners for this loop to matter.
+  // in-progress enrollment to 100%. See reconcileCourseCompletions for why this
+  // is required on every path that removes lessons.
   if (deleted) {
-    const active = await db
-      .select({ id: enrollments.id, userId: enrollments.userId, status: enrollments.status })
-      .from(enrollments)
-      .where(
-        and(
-          eq(enrollments.courseId, courseId),
-          eq(enrollments.tenantId, ctx.tenantId!),
-          eq(enrollments.status, 'active'),
-        ),
-      );
-    for (const e of active) {
-      await finalizeCourseCompletion({
-        tenantId: ctx.tenantId!,
-        learnerUserId: e.userId,
-        courseId,
-        enrollmentId: e.id,
-        enrollmentStatus: e.status,
-      });
-    }
+    await reconcileCourseCompletions({ tenantId: ctx.tenantId!, courseId });
   }
 
   revalidateBuilder(slug, courseId);
