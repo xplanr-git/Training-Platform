@@ -34,14 +34,19 @@ export function CourseComplete({
   courseTitle,
   verificationCode,
   issuedAt,
+  revokedAt,
   reviewHref,
 }: {
   courseTitle: string;
   /** Null when the course is complete but no certificate row exists. */
   verificationCode: string | null;
   issuedAt: Date | null;
+  /** Set once an admin withdraws the credential. Reversible — see setCertificateRevoked. */
+  revokedAt?: Date | null;
   reviewHref: string | null;
 }) {
+  const revoked = Boolean(verificationCode && revokedAt);
+
   return (
     <section
       aria-labelledby="course-complete-heading"
@@ -60,7 +65,37 @@ export function CourseComplete({
             Course complete
           </h2>
 
-          {verificationCode ? (
+          {revoked ? (
+            /*
+              Revoked. This panel used to render the happy path regardless, so a
+              learner whose credential had been withdrawn was still told they had
+              earned it and still handed a "View your certificate" button. They
+              found out only when someone else checked the code.
+
+              The code stays visible and the link stays live: /verify states the
+              withdrawal and its date, and hiding it would leave the learner unable
+              to see what a third party sees. What changes is that nothing here
+              claims they hold it.
+            */
+            <>
+              <p className="mt-1 text-sm leading-relaxed text-foreground-2">
+                You finished {courseTitle}, but the certificate issued for it was withdrawn on{' '}
+                {formatDateLong(revokedAt)}. Your academy administrator can tell you why, and can
+                reinstate it.
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/verify/${verificationCode}`}>See the certificate status</Link>
+                </Button>
+                {reviewHref ? (
+                  <Button asChild size="sm" variant="ghost">
+                    <Link href={reviewHref}>Review the course</Link>
+                  </Button>
+                ) : null}
+              </div>
+            </>
+          ) : verificationCode ? (
             <>
               <p className="mt-1 text-sm leading-relaxed text-foreground-2">
                 You finished {courseTitle}

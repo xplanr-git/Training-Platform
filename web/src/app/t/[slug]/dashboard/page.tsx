@@ -19,6 +19,7 @@ import { getTenantContext, currentAdminRole } from '@/lib/tenant';
 import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { landAfterSignIn } from '@/app/login/actions';
 import { deriveProgress, formatMinutes } from '@/lib/progress';
+import { formatDateLong } from '@/lib/format-date';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -61,6 +62,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
       status: enrollments.status,
       completedAt: enrollments.completedAt,
       certCode: certificates.verificationCode,
+      certRevokedAt: certificates.revokedAt,
     })
     .from(enrollments)
     .innerJoin(courses, eq(courses.id, enrollments.courseId))
@@ -140,7 +142,10 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
   const enrolled = withProgress.length;
   const completed = withProgress.filter((r) => r.isComplete).length;
   const inProgress = withProgress.filter((r) => !r.isComplete && r.done > 0).length;
-  const certs = withProgress.filter((r) => r.certCode).length;
+  // Revoked certificates do not count as held. Revocation is the deliberate act of
+  // withdrawing a credential, and this tile counting it kept telling the learner
+  // they had something they no longer have.
+  const certs = withProgress.filter((r) => r.certCode && !r.certRevokedAt).length;
 
   const stats = [
     { label: 'Enrolled', value: enrolled },
@@ -212,14 +217,30 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                           : ''}
                       </span>
                     </div>
-                    {r.certCode && (
-                      <a
-                        href={`/verify/${r.certCode}`}
-                        className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-link hover:text-link-hover"
-                      >
-                        <Award className="h-4 w-4" /> View certificate
-                      </a>
-                    )}
+                    {/*
+                      A revoked certificate still links to /verify — the reader is
+                      entitled to see the withdrawal and its date, and that page
+                      states both. What it must not do is keep offering "View
+                      certificate", which asserts they hold something they do not.
+                      The label carries the state in a word, not by colour alone.
+                    */}
+                    {r.certCode &&
+                      (r.certRevokedAt ? (
+                        <a
+                          href={`/verify/${r.certCode}`}
+                          className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-foreground-2 hover:text-foreground"
+                        >
+                          <Award className="h-4 w-4" /> Certificate revoked —{' '}
+                          {formatDateLong(r.certRevokedAt)}
+                        </a>
+                      ) : (
+                        <a
+                          href={`/verify/${r.certCode}`}
+                          className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-link hover:text-link-hover"
+                        >
+                          <Award className="h-4 w-4" /> View certificate
+                        </a>
+                      ))}
                   </div>
                   <Button asChild variant={isDone ? 'outline' : 'default'}>
                     <Link href={`/learn/${r.slug}`}>{cta}</Link>

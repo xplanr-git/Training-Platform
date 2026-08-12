@@ -78,6 +78,7 @@ export default async function Learn({
           .select({
             verificationCode: certificates.verificationCode,
             issuedAt: certificates.issuedAt,
+            revokedAt: certificates.revokedAt,
           })
           .from(certificates)
           .where(eq(certificates.enrollmentId, view.enrollmentId))
@@ -134,6 +135,7 @@ export default async function Learn({
             courseTitle={course.title}
             verificationCode={certificate?.verificationCode ?? null}
             issuedAt={certificate?.issuedAt ?? null}
+            revokedAt={certificate?.revokedAt ?? null}
             reviewHref={resumeLesson ? `/learn/${courseSlug}/${resumeLesson.id}` : null}
           />
         </div>
