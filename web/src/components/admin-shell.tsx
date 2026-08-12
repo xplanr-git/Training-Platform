@@ -8,6 +8,7 @@ import { ADMIN_NAV } from '@/lib/nav';
 import { BrandMark } from '@/components/brand-mark';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SignOutButton } from '@/components/sign-out-button';
+import { SkipLink } from '@/components/skip-link';
 import { cn } from '@/components/ui/utils';
 
 const ADMIN_BASE = '/admin';
@@ -120,9 +121,7 @@ export function AdminShell({
       browser's collapsing toolbar makes 100vh taller than the visible viewport.
     */
     <div className="flex h-dvh overflow-hidden bg-surface-muted">
-      <a href="#main-content" className="sr-only skip-link">
-        Skip to content
-      </a>
+      <SkipLink />
 
       {/* Desktop sidebar */}
       <aside

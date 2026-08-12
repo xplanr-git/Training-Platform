@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { LessonNav } from '@/components/lesson-nav';
 import { BackLink } from '@/components/back-link';
+import { SkipLink } from '@/components/skip-link';
 import { VideoUnavailable } from '@/components/video-unavailable';
 import { EmptyState } from '@/components/empty-state';
 import { Callout } from '@/components/ui/callout';
@@ -238,6 +239,13 @@ export default async function LessonPlayer({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
+      {/*
+        The entire course outline sits in the <aside> below, before <main>. On a
+        twenty-lesson course that is twenty links between the keyboard learner and
+        the video they just opened — every time they advance a lesson.
+      */}
+      <SkipLink />
+
       {/* Course outline (desktop) */}
       <aside className="hidden w-72 shrink-0 lg:block">
         <BackLink href={`/learn/${courseSlug}`} className="mb-4 max-w-full">
@@ -256,7 +264,7 @@ export default async function LessonPlayer({
       </aside>
 
       {/* Player */}
-      <main className="min-w-0 flex-1">
+      <main id="main-content" className="min-w-0 flex-1">
         {/* Mobile back + progress */}
         <div className="mb-5 lg:hidden">
           <BackLink href={`/learn/${courseSlug}`} className="max-w-full">

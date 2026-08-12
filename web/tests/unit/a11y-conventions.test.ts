@@ -24,6 +24,8 @@ const CSS = read('src/app/globals.css').replace(/\/\*[\s\S]*?\*\//g, '');
  * earlier version of that sweep parsed digits out of the string and silently mangled
  * every `oklch()` colour Tailwind emits, reporting a 1.03:1 failure that did not exist.
  */
+const SKIP_LINK_PLAYER = 'src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx';
+
 describe('the skip link is visible when focused (2.4.7)', () => {
   /*
    * Tailwind v4 changed `.sr-only` from `clip: rect(0,0,0,0)` to
@@ -41,8 +43,23 @@ describe('the skip link is visible when focused (2.4.7)', () => {
   });
 
   it('and still has something to skip to', () => {
-    expect(code('src/components/admin-shell.tsx')).toMatch(/href="#main-content"/);
-    expect(code('src/components/admin-shell.tsx')).toMatch(/id="main-content"/);
+    /*
+     * The anchor moved into components/skip-link.tsx so the admin shell and the
+     * lesson player share one implementation — so the href is asserted there, and
+     * every surface that renders it is required to carry the matching landmark.
+     * Checking only admin-shell would have let the player ship a link to an id that
+     * does not exist on it.
+     */
+    expect(code('src/components/skip-link.tsx')).toMatch(/href=\{`#\$\{targetId\}`\}/);
+    expect(code('src/components/skip-link.tsx')).toMatch(/targetId = 'main-content'/);
+
+    for (const f of ['src/components/admin-shell.tsx', SKIP_LINK_PLAYER]) {
+      const src = code(f);
+      expect(src, `${f} should render <SkipLink />`).toMatch(/<SkipLink\s*\/>/);
+      expect(src, `${f} renders a skip link but has no #main-content to skip to`).toMatch(
+        /id="main-content"/,
+      );
+    }
   });
 });
 
