@@ -70,7 +70,10 @@
      already close: working-page h1 is text-2xl (24) = --text-h1 and body copy is
      text-sm (14) = --text-body; this names those, steps front doors up to
      --text-display, and lifts section heads to --text-h2. Tailwind's text-sm/base/
-     xs still exist for incidental text. */
+     xs still exist for incidental text. Body size is applied BY CLASS (text-sm =
+     14 at body-copy sites, already app-wide), never as an inherited body default:
+     forcing body{font-size:14} shrank everything that relied on the old 16 —
+     CardTitle rendered at 14, a heading the size of its own body. */
   --text-display: 2rem; /* 32 — front-door h1 (storefront, course landing, apex) */
   --text-display--line-height: 1.1;
   --text-display--letter-spacing: -0.02em;
@@ -204,10 +207,6 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  /* Design-system body size (14). Most copy already sets text-sm (= 14); this
-     makes the ramp's body the inherited default too, so untagged text matches
-     rather than sitting at the browser's 16. Explicit text-* utilities still win. */
-  font-size: var(--text-body);
 }
 
 /* ── Type defaults ──────────────────────────────────────────────────────────
