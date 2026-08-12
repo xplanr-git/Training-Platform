@@ -1,7 +1,10 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { db, and, eq, asc, memberships, tenants } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { landAfterSignIn } from '@/app/login/actions';
+import { Button } from '@/components/ui/button';
+import { SignOutButton } from '@/components/sign-out-button';
 
 /**
  * Apex fallback dashboard. Every user belongs to a tenant, so route them to
@@ -48,17 +51,36 @@ export default async function Dashboard() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-3 px-6 text-center">
-      <h1 className="text-xl">You&apos;re signed in</h1>
+      <h1 className="text-h1 font-bold">You&apos;re signed in</h1>
       {waiting ? (
-        <p className="text-foreground-2">
+        <p className="text-body text-foreground-2">
           Your request to join {waiting.academy} is waiting for an administrator to accept it.
           You&apos;ll be able to open the courses as soon as it is.
         </p>
       ) : (
-        <p className="text-foreground-2">
+        <p className="text-body text-foreground-2">
           Your account isn&apos;t linked to an academy yet. Ask an administrator to invite you.
         </p>
       )}
+
+      {/*
+        This page had a heading and one paragraph and nothing else — no link, no
+        sign-out. It is the guaranteed destination for anyone whose join request
+        has not been accepted yet, and they were stranded on it: they could not
+        sign out, could not reach the catalogue, could not get back to sign-in.
+        The only exit was editing the address bar.
+
+        Sign-out matters most and is not a nicety here. SignOutButton's own note
+        says it "needs to be reachable from every signed-in surface" because
+        dealers share site and office machines — so someone signed in on the wrong
+        account, on a shared machine, had no way to correct it.
+      */}
+      <div className="mt-4 flex flex-col items-center gap-3">
+        <Button asChild variant="outline">
+          <Link href="/">Browse courses</Link>
+        </Button>
+        <SignOutButton />
+      </div>
     </main>
   );
 }

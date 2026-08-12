@@ -508,6 +508,32 @@ a browser, which is exactly why mocking the pending promise is the right instrum
 
 ---
 
+### Issue 13 — A pending or unlinked user was stranded ✅
+
+**Severity:** P2 (UX dead end) · **Report §5.5**
+
+The apex `/dashboard` fallback rendered a heading and one paragraph — **no link, no sign-out,
+nothing**. It is the *guaranteed* destination for anyone whose join request has not been accepted
+yet, and for anyone whose account is not linked to an academy. They could not sign out, could not
+reach the catalogue, could not get back to sign-in. The only exit was editing the address bar.
+
+Sign-out is the part that matters, and it is not a nicety here. `SignOutButton`'s own doc comment
+states the requirement: it *"needs to be reachable from every signed-in surface"* because **dealers
+share site and office machines**. Someone signed in on the wrong account, on a shared machine, had
+no way to correct it.
+
+**Fixed** — added "Browse courses" (the one destination that works before a membership is accepted)
+and the sign-out button. Per §7.16 the touched lines also came to system: `text-xl` (20px, off-ramp)
+→ `text-h1`, and the unsized paragraphs → `text-body`.
+
+**Tests** — `web/tests/unit/signed-in-exits.test.ts`, 6 tests. Rather than testing this one page, it
+asserts **every signed-in landing offers sign-out** — apex fallback, learner dashboard, admin shell,
+tenant storefront — so the next such surface is covered too. The list is explicit rather than
+globbed, because "a page a signed-in user can land on" is not something a regex can decide, and a
+glob matching nothing would pass while checking nothing; a sixth test asserts the list is non-empty.
+
+---
+
 ## Open — next up
 
 In report §8 order:
