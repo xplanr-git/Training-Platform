@@ -96,7 +96,9 @@ describe('no heading is smaller than the text it heads', () => {
       const src = read(f);
       for (const m of src.matchAll(/<(h[1-3])\b([^>]*)>/g)) {
         const cls = /className="([^"]*)"/.exec(m[2])?.[1] ?? '';
-        if (!/\btext-(base|lg|xl|2xl|3xl)\b/.test(cls)) {
+        // The design-system named ramp (text-display / text-h1..h3, adoption
+        // decision D3) counts as an explicit size alongside Tailwind's scale.
+        if (!/\btext-(base|lg|xl|2xl|3xl|display|h1|h2|h3)\b/.test(cls)) {
           const line = src.slice(0, m.index ?? 0).split('\n').length;
           offenders.push(`${f}:${line} <${m[1]}> has no explicit size`);
         }

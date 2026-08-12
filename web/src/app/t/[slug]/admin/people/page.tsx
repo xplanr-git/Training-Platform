@@ -124,7 +124,7 @@ export default async function People({
       */}
       {requests.length > 0 && (
         <section className="mt-6 rounded-(--radius-card) bg-surface">
-          <h2 className="border-b-2 border-keyline px-4 py-3 text-base font-bold">
+          <h2 className="border-b-2 border-keyline px-4 py-3 text-h2 font-bold">
             Requests to join
             <span className="ml-2 text-sm font-normal text-muted tabular-nums">
               {requests.length} waiting

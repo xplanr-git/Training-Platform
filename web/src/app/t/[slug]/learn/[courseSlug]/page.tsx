@@ -169,7 +169,7 @@ export default async function Learn({
         )}
         {sectionRows.map((s) => (
           <section key={s.id}>
-            <h2 className="mb-2 text-base">{s.title || 'Section'}</h2>
+            <h2 className="mb-2 text-h2">{s.title || 'Section'}</h2>
             <Card className="overflow-hidden p-0">
               <ul className="divide-y divide-border">
                 {(bySection.get(s.id) ?? []).map((l) => {

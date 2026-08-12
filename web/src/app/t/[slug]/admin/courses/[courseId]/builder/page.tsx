@@ -117,7 +117,7 @@ export default async function CourseBuilder({
         {sectionRows.map((s, i) => (
           <Card key={s.id} className="overflow-hidden p-0">
             <header className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2.5">
-              <h2 className="text-base">{s.title}</h2>
+              <h2 className="text-h2">{s.title}</h2>
               <div className="flex items-center gap-0.5">
                 <ReorderControls
                   label="section"

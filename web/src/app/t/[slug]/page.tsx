@@ -146,7 +146,7 @@ export default async function TenantHome({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt={tenant?.name ?? slug} className="mb-4 h-12 w-auto" />
         )}
-        <h1 className="text-3xl" style={accent ? { color: accent } : undefined}>
+        <h1 className="text-display" style={accent ? { color: accent } : undefined}>
           {tenant?.name ?? slug}
         </h1>
         <p className="mt-2 text-muted">

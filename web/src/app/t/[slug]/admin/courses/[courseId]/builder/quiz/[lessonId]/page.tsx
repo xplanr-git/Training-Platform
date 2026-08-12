@@ -204,7 +204,7 @@ export default async function QuizEditor({
             className="space-y-3"
             quiet
           >
-            <h2 className="text-base">Add question</h2>
+            <h2 className="text-h2">Add question</h2>
             <Input
               name="prompt"
               required

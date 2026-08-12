@@ -179,14 +179,14 @@ export default async function CourseLanding({
             : ''}
         </span>
       </div>
-      <h1 className="mt-2 text-3xl">{course.title}</h1>
+      <h1 className="mt-2 text-display">{course.title}</h1>
       <p className="mt-4 whitespace-pre-line text-foreground-2">
         {course.description || 'No description yet.'}
       </p>
 
       {sectionRows.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-3 text-lg">What&apos;s inside</h2>
+          <h2 className="mb-3 text-h2">What&apos;s inside</h2>
           <Accordion
             type="multiple"
             className="rounded-(--radius-card) border border-border bg-surface px-4"

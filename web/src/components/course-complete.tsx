@@ -55,7 +55,7 @@ export function CourseComplete({
         </span>
 
         <div className="min-w-0 flex-1">
-          <h2 id="course-complete-heading" className="text-base font-bold">
+          <h2 id="course-complete-heading" className="text-h2 font-bold">
             Course complete
           </h2>
 

@@ -150,7 +150,7 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
 
       {watch.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg">Video engagement</h2>
+          <h2 className="text-h2">Video engagement</h2>
           <p className="mt-1 text-sm text-muted">
             Actual time played per video lesson — not just who clicked “complete”.
           </p>
@@ -194,7 +194,7 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
       )}
 
       <section className="mt-10">
-        <h2 className="text-lg">Where learners get stuck</h2>
+        <h2 className="text-h2">Where learners get stuck</h2>
         <p className="mt-1 text-sm text-muted">
           Questions ranked by attempts, with average time spent and how often they&apos;re answered
           wrong — to spot friction points.

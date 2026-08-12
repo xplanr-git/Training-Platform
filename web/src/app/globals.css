@@ -63,6 +63,32 @@
      app would fall back to the browser default serif rather than to system-ui. */
   --font-sans: var(--font-inter, ui-sans-serif), system-ui, -apple-system, 'Segoe UI', sans-serif;
 
+  /* ── Design-system type ramp (adoption decision D3) ──────────────────────────
+     The house system's NAMED roles as first-class utilities, so the ramp — not
+     Tailwind's generic scale — is the reference for the semantic slots. Sizes,
+     line-heights and tracking are the system's (Guidelines §2). The app was
+     already close: working-page h1 is text-2xl (24) = --text-h1 and body copy is
+     text-sm (14) = --text-body; this names those, steps front doors up to
+     --text-display, and lifts section heads to --text-h2. Tailwind's text-sm/base/
+     xs still exist for incidental text. */
+  --text-display: 2rem; /* 32 — front-door h1 (storefront, course landing, apex) */
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: 1.5rem; /* 24 — working-page h1 (already the app's text-2xl) */
+  --text-h1--line-height: 1.15;
+  --text-h1--letter-spacing: -0.015em;
+  --text-h2: 1.1875rem; /* 19 — section heading */
+  --text-h2--line-height: 1.25;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h3: 0.9375rem; /* 15 — sub-heading */
+  --text-h3--line-height: 1.35;
+  --text-h3--letter-spacing: -0.005em;
+  --text-body: 0.875rem; /* 14 — body copy (the app's text-sm) */
+  --text-body--line-height: 1.6;
+  --text-meta: 0.78125rem; /* 12.5 — meta / captions */
+  --text-eyebrow: 0.6875rem; /* 11 — uppercase kicker */
+  --text-eyebrow--letter-spacing: 0.09em;
+
   --radius-card: 4px;
 
   /* --- shadcn/Radix semantic tokens (lifted UI library) ---
@@ -178,6 +204,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* Design-system body size (14). Most copy already sets text-sm (= 14); this
+     makes the ramp's body the inherited default too, so untagged text matches
+     rather than sitting at the browser's 16. Explicit text-* utilities still win. */
+  font-size: var(--text-body);
 }
 
 /* ── Type defaults ──────────────────────────────────────────────────────────
@@ -230,11 +260,11 @@ body {
    Width      grids are wider than prose: storefront 5xl (3 cards), dashboard 4xl
               (4 stat tiles); reading and working columns are 3xl.
    Rhythm     page shells are `px-6 py-12 sm:py-14`; major sections `mt-10`.
-   Headings   front doors (storefront, course landing) h1 text-3xl; working pages
-              (dashboard, outline, player) h1 text-2xl. Section headings text-base
-              or larger — NEVER below it. Two were text-sm, i.e. a heading smaller
-              than the body text beneath it, and on the course landing exactly the
-              same size as the lesson names it was meant to group.
+   Headings   the design-system named ramp (D3): front doors (storefront, course
+              landing, apex) h1 text-display (32); working-page (dashboard, outline,
+              player) h1 text-2xl = --text-h1 (24); section headings text-h2 (19).
+              Never a heading smaller than the body beneath it — two were once
+              text-sm, the same size as the lesson names they were meant to group.
    Rows       interactive rows carry `transition-colors` with their hover, so the
               feedback is a fade rather than a snap.
    Focus      handled globally below; nothing should override it.

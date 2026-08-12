@@ -198,7 +198,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
               <Card key={r.courseId}>
                 <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base">
+                    <h2 className="text-h2">
                       <Link href={`/learn/${r.slug}`} className="hover:underline">
                         {r.title}
                       </Link>
