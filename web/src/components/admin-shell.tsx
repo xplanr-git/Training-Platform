@@ -59,15 +59,34 @@ function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?:
                       // at --text-2 and darken to ink on hover; a transient hover wash
                       // is fine, a persistent one ON the current item is what the rule
                       // forbids. (Was a left-bar + bg-sunken + bold.)
-                      'flex items-center justify-between rounded-md px-2.5 py-2 text-sm transition-colors',
+                      // Square, not rounded: "Navigation hover/selection is square
+                      // (no radius)" (Guidelines §2). rounded-md gave every row a
+                      // 4px pill on hover, which is the block-selection look the
+                      // nav grammar exists to avoid.
+                      //
+                      // px-3 (12) not px-2.5 (10): 10 is not on the spacing scale
+                      // (4·8·12·16·20·24·32·40), and "do not invent intermediate
+                      // values".
+                      //
+                      // text-control (13.5) is the system's named size for nav and
+                      // controls; this was text-sm (14) only because no token
+                      // existed for it.
+                      'flex items-center justify-between px-3 py-2 text-control transition-colors',
                       isActive
                         ? 'font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-4'
-                        : 'font-medium text-foreground-2 hover:bg-surface-muted hover:text-foreground',
+                        : // Hover DARKENS the label; the grey wash belongs on press
+                          // ("Hover = the label darkens to ink (rows may take a
+                          // square grey wash on press)", §6). It was on hover, so
+                          // every row you passed over lit up as though selected.
+                          'font-medium text-foreground-2 hover:text-foreground active:bg-surface-muted',
                     )}
                   >
                     <span className="truncate">{item.label}</span>
                     {item.status === 'gated' && (
-                      <span className="ml-2 rounded-sm bg-surface-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted">
+                      // 11px is the eyebrow, the smallest size the ramp has;
+                      // text-[10px] was off it entirely. px-2 (8) not px-1.5 (6),
+                      // for the same spacing-scale reason as the row above.
+                      <span className="ml-2 rounded-sm bg-surface-muted px-2 py-0.5 text-eyebrow font-semibold text-muted">
                         Soon
                       </span>
                     )}

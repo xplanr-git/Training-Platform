@@ -91,6 +91,13 @@
   --text-meta: 0.78125rem; /* 12.5 — meta / captions */
   --text-eyebrow: 0.6875rem; /* 11 — uppercase kicker */
   --text-eyebrow--letter-spacing: 0.09em;
+  /* 13.5 — the system's standard interactive/label size, deliberately between
+     Body (14) and Meta (12.5): "use it for all controls and navigation"
+     (Guidelines §2). It was the one named size with no token, so controls and
+     nav defaulted to text-sm (14) instead. Applied to the side nav here; buttons
+     and inputs still sit at 14 and are a separate, wider change. */
+  --text-control: 0.84375rem;
+  --text-control--line-height: 1.4;
 
   --radius-card: 4px;
 
@@ -319,6 +326,36 @@ summary:focus-visible,
   background: var(--color-card);
   border: 1px solid var(--color-input);
   border-radius: 4px;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   The design system requires it outright: "All transitions respect
+   prefers-reduced-motion" (Guidelines §7) and "Everything is disabled under
+   prefers-reduced-motion: reduce" (§8). There was no handling anywhere in the
+   app — 0 occurrences of prefers-reduced-motion, motion-safe or motion-reduce
+   across src/ — against 17 `transition-colors`, two `animate-spin` and the
+   `animate-pulse` skeletons.
+
+   The skeletons are the reason this is a real accessibility item rather than a
+   box to tick: every admin page shows a full-screen pulsing block for roughly a
+   second on each navigation, and a repeating pulse across a large area is exactly
+   the pattern that triggers vestibular symptoms. Under reduce they hold still and
+   still read as placeholders.
+
+   Near-zero rather than `none`: a 0s transition can skip transitionend, which
+   some libraries wait on before cleaning up. 0.01ms completes immediately and
+   still fires. Unlayered so it beats Tailwind's utility layer, and `!important`
+   because it must beat per-element utilities too — this is one of the few places
+   where overriding everything is the correct behaviour, not a shortcut. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Print ──────────────────────────────────────────────────────────────────

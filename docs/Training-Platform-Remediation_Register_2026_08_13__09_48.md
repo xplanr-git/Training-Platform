@@ -395,6 +395,91 @@ skips is useless.
 
 ---
 
+### Issue 10 — Every admin page shared one browser title ✅
+
+**Severity:** P2 (polish) · **Report §5.10**
+
+All thirteen admin screens rendered the root layout's static `Outdure Academy`. Tabs, history
+entries and bookmarks were indistinguishable, and an admin with several tabs open could not tell
+which was which.
+
+**Fixed**
+
+- `t/[slug]/admin/layout.tsx` — `generateMetadata` supplying
+  `{ default: '<Academy> admin', template: '%s · <Academy>' }`. The template lives **here rather
+  than in the root layout** so it uses the academy's own name, which is also what makes it correct
+  for a second tenant. It costs nothing: `requireAdminForSlug` has already resolved that row through
+  the request-cached `tenantBySlug` added in Issue 7, so it is a map lookup.
+- All **13** admin pages now set a short title — Dashboard, Courses, New course, Edit course, Course
+  content, Quiz, People, Insights, Certificates, Certificate template, Academy settings, Billing,
+  Coming soon.
+
+**Tests** — `web/tests/unit/page-title-conventions.test.ts`, 4 tests: the layout supplies the
+academy-scoped template; **every** admin page sets a title (so a new page fails until it does); no
+two claim the same title; and a fourth asserting the page glob resolves to **at least 13 files** —
+guarding the guard, since a glob that resolves to nothing would let the other two pass while
+asserting nothing.
+
+**Not included:** the learner tree. `t/[slug]/page.tsx`, `courses/[courseSlug]` and `join` already
+set good titles of their own; the learner dashboard and the two `learn/` routes still inherit the
+root default. Adding a template at the tenant layout would need `title: { absolute }` on the three
+that already have full titles, so it is a separate change rather than a rushed one.
+
+---
+
+### Issue 11 — Design-system pass, part 1: motion + side-nav grammar ✅
+
+**Severity:** P3 (DS conformance) · **Report §6**
+
+**`prefers-reduced-motion` (Guidelines §7 and §8, required outright).** There was **no handling
+anywhere** — zero occurrences of `prefers-reduced-motion`, `motion-safe` or `motion-reduce` across
+`src/` — against 17 `transition-colors`, two `animate-spin` and the `animate-pulse` skeletons. The
+skeletons are what make this a real accessibility item rather than a box to tick: every admin
+navigation shows a large pulsing block for about a second, and a repeating pulse over a large area
+is exactly the pattern that triggers vestibular symptoms. Added an unlayered `@media` block using
+`0.01ms` rather than `none`, because a `0s` transition can skip `transitionend`, which some
+libraries wait on before cleaning up.
+
+**Side-nav grammar.** Three violations of rules the system states explicitly:
+
+| Was | Now | Rule |
+|---|---|---|
+| `rounded-md` (4px pill on every row) | square | §2 "Navigation hover/selection is **square** (no radius)" |
+| grey wash on **hover** | label darkens on hover; wash moved to `active:` (press) | §6 "Hover = the label darkens to ink (rows may take a square grey wash on **press**)" |
+| `px-2.5` (10px), `px-1.5` (6px) | `px-3` (12), `px-2` (8) | §2 spacing scale — "do not invent intermediate values" |
+
+**The missing ramp token.** 13.5px is the system's *named* standard interactive/label size — "use it
+for all controls and navigation" — and it was **the one named size with no token**, so nav and
+controls defaulted to `text-sm` (14). Added `--text-control: 0.84375rem`; the "Soon" badge also went
+from an off-ramp `text-[10px]` to `text-eyebrow` (11).
+
+**Verified in a real browser** — the complete ramp now measures to spec:
+`display 32 · h1 24 · h2 19 · body 14 · **control 13.5** · meta 12.5 · **eyebrow 11**`, all matching
+expected values exactly.
+
+> **A stale dev stylesheet nearly produced a fourth false conclusion.** The first measurement
+> reported `text-control` and `text-eyebrow` at **16px**, which reads as "the token does not work".
+> Fetching the compiled CSS directly showed both utilities present and correct; the dev server had
+> simply served a stylesheet compiled before the edit. Re-measuring gave the right values. **Fetch
+> the compiled artifact before concluding a token is broken** — a computed style from a dev server
+> mid-recompile is not evidence.
+
+**Tests** — `web/tests/unit/nav-grammar-conventions.test.ts`, 7 tests: nav row is square, hover
+darkens rather than fills, press keeps the wash, current item is an underline and **not** a
+`border-l-2` side bar, uses `text-control` with the token defined, spacing is on-scale; plus the
+reduced-motion block with its `0.01ms`-not-`none` detail.
+
+> The class-extraction helper was wrong first: it sliced past the `<Link>` tag and swallowed the
+> "Soon" badge and mobile drawer trigger, which carry a legitimate `rounded-sm`, `py-0.5` and
+> `hover:bg-`. It failed against a nav that was already correct. Now bounded to the opening tag.
+
+**Not yet done in §6** (deliberately, as separate changes): `text-xs` (12px) → `text-meta` (12.5)
+across ~30 sites; page-description `<p>` 16px → `text-body`; Button/Input 14px → `text-control`;
+one table density (52/53px vs 36/37px, spec is ~44); ink keyline 2px → 1.75px; delete icons off
+status red.
+
+---
+
 ## Open — next up
 
 In report §8 order:
