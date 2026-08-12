@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, GraduationCap } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { ADMIN_NAV } from '@/lib/nav';
+import { BrandMark } from '@/components/brand-mark';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SignOutButton } from '@/components/sign-out-button';
 import { cn } from '@/components/ui/utils';
@@ -80,9 +81,7 @@ function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?:
 function Brand({ tenantName }: { tenantName: string }) {
   return (
     <div className="flex items-center gap-2.5 border-b border-border px-4 py-4">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-        <GraduationCap className="h-4 w-4" />
-      </span>
+      <BrandMark size={32} />
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold leading-tight">{tenantName}</p>
         <p className="text-xs text-muted">Academy admin</p>
@@ -161,7 +160,7 @@ export function AdminShell({
             </SheetContent>
           </Sheet>
           <span className="flex items-center gap-2 font-semibold">
-            <GraduationCap className="h-5 w-5 text-foreground" />
+            <BrandMark size={28} />
             {tenantName}
           </span>
         </header>

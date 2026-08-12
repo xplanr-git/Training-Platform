@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { GraduationCap } from 'lucide-react';
+import { BrandMark } from '@/components/brand-mark';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,9 +76,7 @@ export default function SetPasswordPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 px-6 py-10">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <GraduationCap className="h-5 w-5" />
-        </span>
+        <BrandMark size={36} />
         <span className="text-lg font-bold">Outdure Academy</span>
       </div>
 
