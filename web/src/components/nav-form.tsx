@@ -1,8 +1,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { ActionError } from '@/lib/action-errors';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type ActionResult = { redirectTo?: string; error?: string } | void;
 
@@ -52,6 +62,17 @@ function friendly(message: string): string {
 }
 
 /**
+ * Splits a confirm message into a heading and the rest for the dialog: the first
+ * sentence becomes the title, the remainder the description. Confirms already
+ * name the consequence in a second sentence (copy-conventions enforces it), so
+ * both parts are populated; the fallback covers a single-sentence message.
+ */
+function splitConfirm(text: string): { title: string; body: string } {
+  const m = text.match(/^(.*?[?.!])\s+([\s\S]+)$/);
+  return m ? { title: m[1], body: m[2] } : { title: 'Please confirm', body: text };
+}
+
+/**
  * A <form> whose Server Action returns a { redirectTo } target that we navigate
  * to CLIENT-SIDE (router.push). Server Action `redirect()` does not apply the
  * middleware subdomain rewrite (it 404s on rewritten tenant paths), but client
@@ -81,11 +102,13 @@ export function NavForm({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  // The FormData captured at submit, held while the confirm dialog is open. A
+  // ref, not state: it must survive the render the dialog triggers without being
+  // one, and it is read once on confirm.
+  const pendingData = useRef<FormData | null>(null);
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (confirm && !window.confirm(confirm)) return;
-    const formData = new FormData(e.currentTarget);
+  function run(formData: FormData) {
     setError(null);
     setSaved(false);
     startTransition(async () => {
@@ -124,6 +147,32 @@ export function NavForm({
     });
   }
 
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    // Confirm through the in-app AlertDialog, NOT window.confirm — which is
+    // off-brand and not theme-aware, and whose real hazard is that once the
+    // browser offers "prevent this page from creating additional dialogs" and a
+    // busy admin ticks it, EVERY window.confirm silently returns false. The
+    // action then never fired, and on a `quiet` form there was no feedback at
+    // all, so it read as "delete is broken".
+    if (confirm) {
+      pendingData.current = formData;
+      setConfirmOpen(true);
+      return;
+    }
+    run(formData);
+  }
+
+  function onConfirm() {
+    const formData = pendingData.current;
+    pendingData.current = null;
+    setConfirmOpen(false);
+    if (formData) run(formData);
+  }
+
+  const dialog = confirm ? splitConfirm(confirm) : null;
+
   // Auto-clear the confirmation so it reads as "that just happened" rather than
   // becoming permanent furniture that stops being noticed.
   useEffect(() => {
@@ -157,6 +206,26 @@ export function NavForm({
           </p>
         )}
       </div>
+
+      {/*
+        Portaled out of the form by Radix, so it never nests a form or affects the
+        inline layout of a row of icon buttons — the reason `quiet` forms could not
+        have used an inline confirmation before.
+      */}
+      {dialog && (
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{dialog.title}</AlertDialogTitle>
+              <AlertDialogDescription>{dialog.body}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onConfirm}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </form>
   );
 }
