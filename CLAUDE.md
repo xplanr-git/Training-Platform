@@ -309,6 +309,7 @@ Read this before doing anything in this repo.
     One gap `verify` cannot close: it runs the same *commands* as CI, not the same *runtime*. This machine is on Node 18.20.1, CI pins Node 20, so a Node-version-sensitive failure still only shows up on CI. Green locally means "the commands pass", not "CI will pass".
 14. **Never amend git commits.** Always create new commits. The pre-existing memory note covers this.
 15. **Ask before destructive ops.** Anything that touches production data, drops a table, force-pushes, or affects shared state needs explicit user authorisation. The audit covers what's safe to do unattended.
+16. **The Structure Build design system is mandatory — implement it to its full extent.** Every UI surface conforms to the house system: monochrome (ink `#1B1B1E` + greys), Inter, the 1.75px ink keyline for sections/selection and the 1px hairline for structure, blue (`#1F63C0`) on inline **text links only**, and status as a dot + word tag (never colour alone). The org source of truth is the `Structurebuild/design-system` marketplace repo (local working copy `C:\design-system-main`); this app **re-expresses** it as Tailwind v4 `@theme` tokens in [globals.css](web/src/app/globals.css) + Radix components in [web/src/components/ui/](web/src/components/ui), **not** by importing `core.css` (that would fight Tailwind). Before starting any UI work, check that source for updates and reconcile; whenever you touch a component, bring it fully to system rather than matching the drift around it. Full detail, the update-check workflow, and the reconciliation state are in **§13**.
 
 ---
 
@@ -479,3 +480,77 @@ Implementation notes when reintroducing: provider-agnostic abstraction at the AP
 - **Verifiable Credential** — W3C standard for cryptographically signed digital credentials with a public verification URL.
 - **Accreditation body** — organisations that audit course providers (e.g. CPD, IACET, IOSH, NEBOSH, ATD, SHRM). They accredit customers' courses, not the platform.
 - **Audit log** — append-only, hash-chained record of every mutation. Required for SOC 2 / HIPAA / regulated training audits.
+
+---
+
+## 13. Design system (Structure Build / Outdure)
+
+**Rule §7.16 says the house design system is mandatory. This section is how.**
+
+### Source of truth, and how this app consumes it
+
+The design system is owned **outside this repo**, in the `Structurebuild/design-system`
+marketplace repo — local working copy at **`C:\design-system-main`**. That repo is the
+master: `core.css` (the brand-agnostic engine — tokens, components, tables, nav, charts,
+dark mode), thin brand layers (`brand-outdure.css` is ours — pure monochrome; the mark is
+three slashes + the "OUTDURE" wordmark, **not** a colour), `base.css`/`documents.css` (the
+document/print layers), and the written `reference/` guidelines. It ships as a Claude
+plugin/skill scoped to **documents**, but `core.css` and the guidelines explicitly govern
+**product UI** too ("every surface — product UI, website, documents, decks — is built from
+one core").
+
+This app does **not** import `core.css` or use `sb-` classes. It **translates** the system:
+
+- **Tokens** → Tailwind v4 `@theme` custom properties in [web/src/app/globals.css](web/src/app/globals.css).
+- **Components** → shadcn-style Radix primitives in [web/src/components/ui/](web/src/components/ui), re-skinned to the tokens (see [button.tsx](web/src/components/ui/button.tsx), [badge.tsx](web/src/components/ui/badge.tsx), [table.tsx](web/src/components/ui/table.tsx), [tabs.tsx](web/src/components/ui/tabs.tsx)).
+- **Rules** → architectural fitness tests that fail CI on drift: `a11y-conventions`, `status-tone-conventions`, `copy-conventions`, `mobile-conventions` in `web/tests/unit/`.
+
+"Full extent" therefore means **token parity + component-rule parity + green guardrail
+tests** — never a literal `core.css` import.
+
+### The non-negotiable rules (from the system, verbatim intent)
+
+1. **Monochrome.** Ink + greys only. The one sanctioned colour is blue `#1F63C0` on inline **text links** and the focus ring — never on buttons, selected rows, active tabs, progress bars, icons, or fills.
+2. **Status = word + greyscale/tinted tag with a dot**, never colour alone.
+3. **Sections dark, rows light.** 1.75px ink keyline under a section heading / table header and as the selection underline; 1px hairline for row dividers and structure. **Never** a dark keyline between table rows (the single most common tell — [table.tsx](web/src/components/ui/table.tsx) encodes it).
+4. **Selection / current = a 1.75px underline hugging the text**, never a coloured block, wash, or side bar.
+5. **Inter**, tabular figures for numbers, tight heading tracking. No monospace for money/codes.
+6. **Radius is minimal** — 4px structural, 2px tags; fully round only for avatars and status dots. No fluffy pills.
+
+### Version state (2026-08-12)
+
+The app is on the system's **v3.0** vocabulary (its local snapshot is
+[web/docs/design-system/](web/docs/design-system) — `sb-ui.css` v3.0, `GUIDELINES.md`). The
+org master has since moved to **v4.0/v4.1** (multi-brand split, a 12-col grid, a fuller
+component set, Inter-first font stack). Token **values** are already ~parity; the deltas and
+the residual in-app drift are catalogued in the design-system audit under `docs/`
+(`Design-System-*_Audit_*.md`). A few divergences are **deliberate and documented** — the
+input border is darkened to `#858585` and status tints are opaque, both for WCAG AA that the
+raw system tokens (`--border-input #CFCEC9`, alpha tints) fail; do **not** "fix" these back.
+
+### Checking for updates (do this before UI work)
+
+The external source is a git repo. Baseline reconciled commit: **`52edb04`**
+(`Structurebuild/design-system@main`, 2026-08-12). To check for updates:
+
+```bash
+git -C /c/design-system-main fetch --quiet && git -C /c/design-system-main log --oneline 52edb04..origin/main
+```
+
+Any output = the system changed since we last reconciled. Diff `core.css` / `brand-outdure.css`
+/ the guidelines against [globals.css](web/src/app/globals.css) and the `ui/` components,
+apply the delta, run `npm run verify` in `web/`, and update this baseline commit here.
+
+**Owner principle (2026-08-12): use the latest design system, always, as the reference for any
+ambiguity.** When the system ships more than one treatment for something, take the *resolved /
+latest* one (per the Guidelines prose), not a legacy variant that still ships for back-compat.
+
+### Adoption decisions (2026-08-12)
+
+- **Brand:** use the **Structure Build** placeholder identity (ink square + plus mark, "Structure
+  Build" wordmark) until the owner supplies official **Outdure** artwork; the brand slot is built
+  so the swap is one asset change. No generic stand-in icons.
+- **Navigation:** the resolved v4.1 grammar — text-forward, 1.75px ink underline on the current
+  item, **no** block background / side-bar / icons.
+- **Type ramp:** the DS **named ramp** is the reference (display 32 / h1 24 / h2 19 / h3 15 /
+  body 14 / meta 12.5 / eyebrow 11, + 13.5px controls); Tailwind's `--text-*` are remapped to it.
