@@ -83,15 +83,34 @@ export default function SetPasswordPage() {
       <Card className="border border-border">
         <CardHeader>
           <CardTitle as="h1">Choose a password</CardTitle>
+          {/*
+            Optimistic until the check RESOLVES, not until it succeeds.
+
+            hasSession starts false, so this read "This link is no longer valid."
+            for the whole of `checking` — a full JS download plus an auth round
+            trip — directly under the heading "Choose a password". This is every
+            invited user's first screen, and it opened by telling them they were
+            already too late. The predictable response is to close the tab and
+            email whoever invited them.
+
+            The invalid case is the rare one, so it is no longer the default: the
+            failure line appears only once the check has come back and actually
+            failed.
+          */}
           <CardDescription>
-            {hasSession
-              ? 'Set a password so you can sign in from now on.'
-              : 'This link is no longer valid.'}
+            {!checking && !hasSession
+              ? 'This link is no longer valid.'
+              : 'Set a password so you can sign in from now on.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {checking ? (
-            <p className="text-sm text-muted">Checking your link…</p>
+            // role=status so the transition from checking to form (or to the
+            // failure message) is announced rather than silently swapping under a
+            // screen-reader user.
+            <p role="status" className="text-sm text-muted">
+              Checking your link…
+            </p>
           ) : !hasSession ? (
             <div className="flex flex-col gap-3 text-sm">
               <p className="text-muted">
