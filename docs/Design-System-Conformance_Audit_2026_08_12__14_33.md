@@ -140,6 +140,14 @@ These are documented, justified, and correct — a future contributor "restoring
 
 Mirrors the workflow used for the last audit: each batch is independently shippable and CI-gated.
 
+> **Progress log — 2026-08-12**
+> - ✅ **Batch 1** shipped (`a64719c`): `Callout` primitive; 12 surfaces off raw palette → status tokens; amber progress fill, `text-faint`, `text-neutral-600`, verification-code `font-mono` all fixed; `sb-design-conventions` now bans raw numbered palette utilities.
+> - ✅ **Batch 2** shipped (`f44b659`): `RoleSelect` `window.confirm` → `AlertDialog` (+ repo-wide native-popup ban); competing focus rings stripped from `Dialog`/`Sheet` (+ `focus-conventions` tightened to catch the `focus:` variant). **L4 (inert `dark:` cruft across 7 primitives) deferred** to the low-polish sweep.
+> - ✅ **Batch 3** shipped (`cd26b60`): `BrandMark` (Structure Build placeholder — ink square + plus) in the admin masthead, mobile header, and 4 auth pages, replacing the generic graduation-cap. One-file swap when Outdure artwork lands.
+> - ✅ **Batch 4a** shipped (`c858ae5`): admin sidebar current item → text-forward ink underline (no wash, no side-bar), per D2.
+> - ✅ **Batch 4b** shipped (`f800c63` + fix `3d351ec`): the DS named type ramp formalised in `@theme` (`text-display/h1/h2/h3/body/meta/eyebrow`); front-door h1 → `text-display` (32), section heads → `text-h2` (19). Finding: the app was already ~95% on the ramp (working h1 24 = DS h1, body 14 = DS body). **Browser-verified** on `/login` — which caught a regression (a global `body{font-size:14}` shrank inherited titles like `CardTitle` to body size); reverted, DS body stays applied by class.
+> - ⏳ **L4** (inert `dark:` cruft in 7 primitives) + the **Low-polish tier** — remaining, low priority.
+
 - **Batch 1 — Status/warning tokenisation (H1, M2, L1–L3).** One `Banner`/`Callout` primitive on `status-*` tokens; migrate the 11 files; fix the amber progress fill; verification code → tabular; remove `text-faint`/stray neutral. Then tighten `tailwind-token-conventions.test.ts` to forbid raw `amber-*`. *Highest visual payoff, lowest risk.*
 - **Batch 2 — Convention cleanup (M3, M5, L4).** `role-select` → `AlertDialog`; strip competing focus rings from `dialog`/`sheet`; remove `dark:` cruft. Small, mechanical.
 - **Batch 3 — Brand identity (H2 + brand-contract tokens).** Outdure mark/wordmark SVGs; wire into admin masthead, storefront, certificate; add the brand-layer token mapping. **Blocked on decision D1 (artwork).**
