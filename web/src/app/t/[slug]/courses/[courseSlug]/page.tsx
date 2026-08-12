@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { BackLink } from '@/components/back-link';
 import { EmptyRow } from '@/components/empty-state';
+import { Callout } from '@/components/ui/callout';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
@@ -162,10 +163,10 @@ export default async function CourseLanding({
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
       {isPreview && (
-        <div className="mb-6 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <Callout tone="amber" className="mb-6">
           <b>Draft preview.</b> This course is not published, so only administrators of this academy
           can see this page. Learners cannot see it at all.
-        </div>
+        </Callout>
       )}
       <BackLink href="/">All courses</BackLink>
 

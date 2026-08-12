@@ -11,6 +11,7 @@ import { effectiveUserId } from '@/lib/view-as';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
+import { Callout } from '@/components/ui/callout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -113,10 +114,10 @@ export default async function Learn({
       <BackLink href="/dashboard">Your learning</BackLink>
       <h1 className="mt-3 text-2xl">{course.title}</h1>
       {isPreview && (
-        <div className="mt-3 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <Callout tone="amber" className="mt-3">
           <b>Preview.</b> You are not enrolled, so nothing here is recorded — no progress, no watch
           time, no certificate. This is how a learner will see it.
-        </div>
+        </Callout>
       )}
 
       {/*

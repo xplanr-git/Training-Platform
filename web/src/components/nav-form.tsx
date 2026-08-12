@@ -201,7 +201,7 @@ export function NavForm({
         {pending && !quiet && <p className="mt-1 text-sm text-muted">Saving…</p>}
         {saved && !pending && !quiet && <p className="text-status-green mt-1 text-sm">Saved.</p>}
         {error && (
-          <p role="alert" className="mt-1 text-sm text-red-600">
+          <p role="alert" className="mt-1 text-sm text-destructive">
             {error}
           </p>
         )}

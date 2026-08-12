@@ -3,6 +3,7 @@ import { LessonNav } from '@/components/lesson-nav';
 import { BackLink } from '@/components/back-link';
 import { VideoUnavailable } from '@/components/video-unavailable';
 import { EmptyState } from '@/components/empty-state';
+import { Callout } from '@/components/ui/callout';
 import { redirect, notFound } from 'next/navigation';
 import { Video, FileText, HelpCircle, BookOpen, Check, ArrowLeft, ArrowRight } from 'lucide-react';
 import {
@@ -295,9 +296,9 @@ export default async function LessonPlayer({
           </span>
           <h1 className="text-2xl">{lesson.title}</h1>
           {(isPreview || readOnly) && (
-            <p className="mt-2 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <Callout tone="amber" className="mt-2 px-3 py-2 text-xs">
               Read-only — nothing on this page is recorded.
-            </p>
+            </Callout>
           )}
         </div>
 
@@ -377,8 +378,8 @@ export default async function LessonPlayer({
                   className={cn(
                     'mb-5 rounded-(--radius-card) border px-4 py-3 text-sm',
                     lastAttempt.passed
-                      ? 'border-green-200 bg-green-50 text-green-800'
-                      : 'border-amber-200 bg-amber-50 text-amber-800',
+                      ? 'border-status-green/30 bg-status-green-bg text-status-green'
+                      : 'border-status-amber/30 bg-status-amber-bg text-status-amber',
                   )}
                 >
                   You scored {Math.round(Number(lastAttempt.score ?? 0))}%.{' '}

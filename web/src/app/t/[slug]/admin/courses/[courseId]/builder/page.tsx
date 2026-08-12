@@ -268,7 +268,7 @@ export default async function CourseBuilder({
                                   />
                                 )}
                                 {attachedId && !details && (
-                                  <p className="mb-3 text-xs text-amber-700">
+                                  <p className="mb-3 text-xs text-status-amber">
                                     A video is attached ({attachedId}) but its details could not be
                                     read from Bunny just now. Reload the page to try again — the
                                     lesson itself is fine.

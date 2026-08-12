@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { VideoOff, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Callout } from '@/components/ui/callout';
 import type { VideoUnavailable as Reason } from '@/lib/video-availability';
 
 /**
@@ -44,7 +45,7 @@ export function VideoUnavailable({
       </div>
 
       {isPreview && (
-        <div className="mt-3 rounded-(--radius-card) border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <Callout tone="amber" className="mt-3">
           <p className="flex items-center gap-1.5 font-medium">
             <Wrench aria-hidden="true" className="h-4 w-4" />
             Admin view
@@ -55,7 +56,7 @@ export function VideoUnavailable({
               <Link href={builderHref}>Open the builder</Link>
             </Button>
           )}
-        </div>
+        </Callout>
       )}
     </div>
   );

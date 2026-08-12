@@ -37,8 +37,11 @@ describe('finishing a course is acknowledged', () => {
   it('surfaces the verification code, not just a link', () => {
     // The code is the point: a contractor showing a client needs something the
     // client can check without an account, and the only other copy is in an email.
+    // Set in the system face with tabular figures, NOT font-mono: the design system
+    // rejects monospace for codes, and the /verify page this mirrors already renders
+    // the same code in sans + tabular.
     expect(PANEL).toContain('verificationCode');
-    expect(PANEL).toMatch(/font-mono/);
+    expect(PANEL).toMatch(/tabular-nums/);
     expect(PANEL).toMatch(/\/verify\/\$\{verificationCode\}/);
   });
 

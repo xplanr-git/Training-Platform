@@ -92,7 +92,7 @@ export function CourseComplete({
                   <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />
                   Verification code
                 </p>
-                <p className="mt-1 select-all break-all font-mono text-xs text-foreground-2">
+                <p className="mt-1 select-all break-all text-xs text-foreground-2 tabular-nums">
                   {verificationCode}
                 </p>
                 <p className="mt-1.5 text-xs leading-relaxed text-foreground-2">

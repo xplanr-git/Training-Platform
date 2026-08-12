@@ -331,3 +331,36 @@ describe('selection and hover are neutral, never a pastel wash', () => {
     ).toEqual([]);
   });
 });
+
+describe('state colour comes from the status tokens, not raw palette utilities', () => {
+  /*
+   * The monochrome system has exactly one set of state colours — the status
+   * tokens (green/amber/red/blue/grey), opaque and AA-verified on their tints
+   * (status-tone-conventions.test.ts). A raw Tailwind palette utility
+   * (`bg-amber-50`, `text-red-600`, `text-neutral-600`) bypasses them: the same
+   * warning drifts to three different ambers, none matched to the tint its text is
+   * AA against, and each disappears in a greyscale print unless it also carries a
+   * word. Use <Callout>, <StatusBadge>, or the text-status-* / text-destructive
+   * tokens. `bg-black` / `bg-white` (no number — the video letterbox) are a
+   * different thing and are deliberately left alone.
+   */
+  const HUES =
+    'red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|gray|slate|zinc|neutral|stone';
+  const PALETTE = new RegExp(
+    `\\b(?:bg|text|border|ring|from|to|via|fill|stroke|decoration|outline|divide|accent|caret)-(?:${HUES})-\\d{2,3}\\b`,
+    'g',
+  );
+
+  it('no component paints with a numbered Tailwind palette colour', () => {
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      for (const m of f.src.matchAll(PALETTE)) {
+        offenders.push(`${f.rel} — ${m[0]}`);
+      }
+    }
+    expect(
+      offenders,
+      `use the status tokens (Callout / StatusBadge / text-status-* / text-destructive):\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+});

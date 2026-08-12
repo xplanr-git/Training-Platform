@@ -20,14 +20,14 @@ export function ViewAsBanner({ name, role }: { name: string; role: string }) {
   return (
     <div
       role="status"
-      className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-amber-300 bg-amber-100 px-4 py-2 text-center text-sm text-amber-900"
+      className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-status-amber/30 bg-status-amber-bg px-4 py-2 text-center text-sm text-status-amber"
     >
       <span>
         Viewing as <strong>{name}</strong> ({ROLE_LABEL[role] ?? role}) — read-only. Nothing you do
         is recorded as them.
       </span>
       <NavForm action={stopViewAs} quiet className="inline">
-        <Button type="submit" size="sm" variant="outline" className="h-7 border-amber-400">
+        <Button type="submit" size="sm" variant="outline" className="h-7 border-status-amber/50">
           Exit
         </Button>
       </NavForm>

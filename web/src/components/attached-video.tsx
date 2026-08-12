@@ -72,7 +72,7 @@ export function AttachedVideo({
             aria-valuemax={100}
             aria-label="Encoding progress"
           >
-            <div className="h-full bg-amber-500" style={{ width: `${encodeProgress}%` }} />
+            <div className="h-full bg-status-amber" style={{ width: `${encodeProgress}%` }} />
           </div>
         )}
         {!playable && (
@@ -81,7 +81,7 @@ export function AttachedVideo({
             or not.
           </p>
         )}
-        <p className="mt-1 truncate font-mono text-[11px] text-faint">{videoId}</p>
+        <p className="mt-1 truncate font-mono text-[11px] text-muted">{videoId}</p>
       </div>
     </div>
   );

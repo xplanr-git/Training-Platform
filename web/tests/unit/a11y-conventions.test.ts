@@ -215,10 +215,14 @@ describe('text contrast (1.4.3)', () => {
   });
 
   it('a destructive text button stays red AND readable while hovered', () => {
-    // #dc2626 on the ghost hover fill #f1f5f9 is 4.41:1 — just under. The audit's fix
-    // was to surrender the red; darkening it instead keeps the cue at 5.91:1.
+    // The ghost hover fill is --color-accent #f1f1f0. The destructive token #b4302a
+    // sits on it at 5.47:1 — well clear of AA — so the button keeps its red on hover
+    // via hover:text-destructive, rather than surrendering it to ink (ghost's default
+    // hover:text-accent-foreground) OR reaching for a raw red-700 that the monochrome
+    // guard now bans. The earlier fix darkened #dc2626 to red-700; the darker token
+    // means the semantic colour alone now clears the bar. See sb-design-conventions.
     const src = code('src/app/platform/page.tsx');
-    expect(src).toMatch(/text-destructive hover:text-red-700/);
+    expect(src).toMatch(/text-destructive hover:text-destructive/);
   });
 
   it('the muted token still clears AA on both surfaces it is used on', () => {

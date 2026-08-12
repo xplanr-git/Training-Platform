@@ -30,7 +30,7 @@ export default async function TenantLayout({
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
         <h1 className="text-2xl">Academy unavailable</h1>
-        <p className="text-neutral-600">
+        <p className="text-muted">
           {tenant.name} is switched off at the moment. Nothing is wrong at your end — tell whoever
           runs your academy.
         </p>
