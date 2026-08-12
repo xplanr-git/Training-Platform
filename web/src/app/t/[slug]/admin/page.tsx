@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { db, eq, and, count, countDistinct, courses, enrollments } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 
+export const metadata = { title: 'Dashboard' };
+
 /**
  * Tenant admin dashboard overview. The layout guards the UI; this re-checks the
  * caller against the academy in the URL so the page can't render another

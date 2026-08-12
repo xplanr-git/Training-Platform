@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 
+export const metadata = { title: 'New course' };
+
 export default async function NewCourse({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const action = createCourse.bind(null, slug);

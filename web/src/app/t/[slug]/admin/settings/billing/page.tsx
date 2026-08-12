@@ -6,6 +6,8 @@ import { formatCount } from '@/lib/format-date';
 import { startSubscriptionCheckout, openBillingPortal } from './actions';
 import { NavForm } from '@/components/nav-form';
 
+export const metadata = { title: 'Billing' };
+
 /**
  * Stripe's own status vocabulary, which the webhook writes through verbatim. It was
  * rendered with a bare `capitalize`, and that does not split on an underscore — so an

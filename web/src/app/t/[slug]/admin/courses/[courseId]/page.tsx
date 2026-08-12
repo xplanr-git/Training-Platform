@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { CONFERRABLE_TIERS } from '@/lib/connect-roles';
 
+export const metadata = { title: 'Edit course' };
+
 const SELECT_CLS = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 export default async function EditCourse({

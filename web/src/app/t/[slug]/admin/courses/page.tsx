@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/table';
 import { NavForm } from '@/components/nav-form';
 
+export const metadata = { title: 'Courses' };
+
 export default async function CoursesList({
   params,
   searchParams,

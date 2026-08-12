@@ -27,6 +27,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { NavForm } from '@/components/nav-form';
 
+export const metadata = { title: 'Course content' };
+
 const LESSON_ICON: Record<string, typeof Video> = {
   text: BookOpen,
   video: Video,

@@ -1,5 +1,7 @@
 import { FeatureGate } from '@/components/feature-gate';
 
+export const metadata = { title: 'Coming soon' };
+
 export default async function ComingSoon({
   searchParams,
 }: {

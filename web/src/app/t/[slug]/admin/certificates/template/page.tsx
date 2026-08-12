@@ -7,6 +7,8 @@ import { requireAdminForSlug } from '@/lib/tenant';
 import { saveCertificateTemplate } from './actions';
 import { NavForm } from '@/components/nav-form';
 
+export const metadata = { title: 'Certificate template' };
+
 export default async function CertificateTemplate({
   params,
 }: {

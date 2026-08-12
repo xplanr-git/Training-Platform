@@ -15,6 +15,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { NavForm } from '@/components/nav-form';
 import { QuizAnswerFields } from '@/components/quiz-answer-fields';
 
+export const metadata = { title: 'Quiz' };
+
 /** Mirrors the options in the add-question type select. */
 const QUESTION_TYPE_LABEL: Record<string, string> = {
   mcq: 'Multiple choice — one answer',

@@ -35,6 +35,8 @@ import {
 import { connectRoleLabel } from '@/lib/connect-roles';
 import { NavForm } from '@/components/nav-form';
 
+export const metadata = { title: 'People' };
+
 export default async function People({
   params,
   searchParams,

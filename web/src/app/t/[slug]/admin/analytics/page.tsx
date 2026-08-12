@@ -25,6 +25,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+export const metadata = { title: 'Insights' };
+
 function pct(n: number, d: number) {
   return d === 0 ? 0 : Math.round((n / d) * 100);
 }
