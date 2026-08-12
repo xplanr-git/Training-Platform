@@ -49,16 +49,19 @@ function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?:
                     onClick={onNavigate}
                     aria-current={isActive ? 'page' : undefined}
                     className={cn(
-                      // Active = sunken fill + a 2px inset INK marker, per sb's
-                      // side-nav rule. The marker is a left border kept
-                      // transparent when inactive rather than absent, so moving
-                      // between items does not shuffle every label 2px sideways.
-                      // It was a pale-blue wash (bg-brand-50/text-brand-700),
-                      // which in a monochrome system reads as "these are links".
-                      'flex items-center justify-between rounded-md border-l-2 px-2.5 py-2 text-sm transition-colors',
+                      // Current item = ink label + a 2px ink underline hugging the
+                      // text, per the design system's RESOLVED side-nav grammar
+                      // (Guidelines §6.2 / §14, adoption decision D2): text-forward,
+                      // with NO block-background wash and NO side-bar marking the
+                      // current item — either of those reads as "selected surface"
+                      // where the underline reads as "you are here". Resting rows sit
+                      // at --text-2 and darken to ink on hover; a transient hover wash
+                      // is fine, a persistent one ON the current item is what the rule
+                      // forbids. (Was a left-bar + bg-sunken + bold.)
+                      'flex items-center justify-between rounded-md px-2.5 py-2 text-sm transition-colors',
                       isActive
-                        ? 'border-primary bg-sunken font-bold'
-                        : 'border-transparent text-foreground hover:bg-surface-muted',
+                        ? 'font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-4'
+                        : 'font-medium text-foreground-2 hover:bg-surface-muted hover:text-foreground',
                     )}
                   >
                     <span className="truncate">{item.label}</span>
