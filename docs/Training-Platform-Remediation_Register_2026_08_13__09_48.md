@@ -534,6 +534,38 @@ glob matching nothing would pass while checking nothing; a sixth test asserts th
 
 ---
 
+### Issue 14 — Accepting a join request emailed "You've been invited" ✅
+
+**Severity:** P3 (copy) · **Report §5.9**
+
+`acceptJoinRequest` sent `sendInviteEmail` — subject *"You've been invited to X"*, body *"Accept your
+invitation →"* — to someone who **already had an account**, had **already chosen a password** at
+`/join`, and had **already asked**. It told them to accept something they initiated and pointed at a
+step they had completed. The likeliest reading is that their first attempt failed and this is a retry.
+
+Accepting a request is the opposite direction of travel from issuing an invitation. The code already
+half-knew: the comment beside the call says *"they already chose a password at /join, so this is a
+plain sign-in link, not a set-password token"* — the link had been corrected, the wording had not.
+
+**Fixed** — new `sendJoinAcceptedEmail` in `web/src/lib/email.ts`: *"You're in — X"* / *"Your request
+was accepted… Sign in with the password you chose and your courses will be waiting."*
+
+**Tests** — `web/tests/unit/join-accepted-email.test.ts`, 4 tests: `acceptJoinRequest` sends the
+acceptance email and **not** the invite; the **genuine invite path still sends the invite** (the fix
+must not blur the two — an admin inviting someone unprompted really is an invitation); the acceptance
+copy never says "invited" or "accept your"; and the invite copy is untouched.
+
+> **A name-coupled guard broke, and the near-miss is the lesson.** `join-conventions.test.ts` proves
+> "a mail failure cannot undo an acceptance" by finding `sendInviteEmail` and checking it sits after
+> the commit and inside a `try`. Renaming the call made `indexOf` return **-1**, and the guard failed.
+> The failure was correct here — but only by luck of the comparison direction: `-1 > commit` is
+> false, so it failed loudly. Had the assertion been written the other way round, a missing call
+> would have compared as "before the commit" and reported a defect that was not the real one. The
+> rule being protected is the **order and the try**, not which template is used, so it now matches by
+> shape (`/send\w*Email\(/`) and asserts the locator found something before comparing positions.
+
+---
+
 ## Open — next up
 
 In report §8 order:

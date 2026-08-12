@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { db, audited, eq, and, users, memberships, tenants } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { sendInviteEmail } from '@/lib/email';
+import { sendInviteEmail, sendJoinAcceptedEmail } from '@/lib/email';
 import { absoluteUrl } from '@/lib/absolute-url';
 import {
   parseAssignableRole,
@@ -332,7 +332,7 @@ export async function acceptJoinRequest(tenantSlug: string, membershipId: string
       .where(eq(tenants.id, ctx.tenantId))
       .limit(1);
     if (row)
-      await sendInviteEmail(row.email, tenant?.name ?? 'your academy', absoluteUrl('/login'));
+      await sendJoinAcceptedEmail(row.email, tenant?.name ?? 'your academy', absoluteUrl('/login'));
   } catch (err) {
     console.error('[join] acceptance email failed', err);
   }

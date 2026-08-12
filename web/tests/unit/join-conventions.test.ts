@@ -199,10 +199,24 @@ describe('accepting and declining', () => {
   });
 
   it('a mail failure cannot undo an acceptance', () => {
-    const mail = accept.indexOf('sendInviteEmail');
+    /*
+     * Matched by SHAPE (any send*Email call), not by the name of one.
+     *
+     * This was pinned to the literal 'sendInviteEmail'. When acceptJoinRequest
+     * switched to sendJoinAcceptedEmail — because the invite wording was wrong for
+     * a request the user had made — indexOf returned -1 and the guard failed. That
+     * failure was useful, but the alternative was worse: had the call simply been
+     * renamed with the ordering also broken, a -1 would have compared as "before
+     * the commit" and this could have reported a problem that was not the real one.
+     * The rule being protected is the ORDER and the try, not which template is used.
+     */
+    const mailMatch = /send\w*Email\(/.exec(accept);
+    expect(mailMatch, 'acceptJoinRequest sends no email at all').not.toBeNull();
+    const mail = mailMatch!.index;
     const commit = accept.indexOf('if (!updated) throw');
-    expect(mail).toBeGreaterThan(commit);
-    expect(accept.slice(commit, mail)).toMatch(/try \{/);
+    expect(commit, 'could not find the post-transaction check').toBeGreaterThan(-1);
+    expect(mail, 'mail must be sent AFTER the transaction commits').toBeGreaterThan(commit);
+    expect(accept.slice(commit, mail), 'the send must be inside a try').toMatch(/try \{/);
   });
 });
 

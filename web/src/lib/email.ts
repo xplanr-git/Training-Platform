@@ -98,6 +98,31 @@ export async function sendInviteEmail(to: string, tenantName: string, inviteUrl:
   );
 }
 
+/**
+ * Sent when an admin ACCEPTS a request someone made at /join.
+ *
+ * Distinct from sendInviteEmail on purpose. An accepted request is the opposite
+ * direction of travel from an invitation: this person already has an account,
+ * already chose a password at /join, and already asked. Sending them "You've been
+ * invited to X — Accept your invitation →" told them to accept something they had
+ * initiated, and pointed at a step they had already completed. The most likely
+ * reading is that the first attempt failed and this is a second one.
+ *
+ * The link is a plain sign-in, not a set-password token, which is exactly why the
+ * invitation wording did not fit it.
+ */
+export async function sendJoinAcceptedEmail(to: string, tenantName: string, signInUrl: string) {
+  const tenant = escapeHtml(tenantName);
+  await send(
+    to,
+    `You're in — ${tenantName}`,
+    layout(`<h2>Your request was accepted</h2>
+      <p>An administrator has accepted your request to join <strong>${tenant}</strong>.
+      Sign in with the password you chose and your courses will be waiting.</p>
+      <p><a href="${escapeHtml(signInUrl)}">Sign in →</a></p>`),
+  );
+}
+
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   await send(
     to,
