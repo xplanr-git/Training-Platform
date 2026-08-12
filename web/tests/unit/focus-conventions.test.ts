@@ -65,10 +65,12 @@ describe('one focus treatment, not two', () => {
   });
 
   it('nothing declares a competing focus ring', () => {
+    // Both variants: focus-visible:ring (the kit's Button/field rings) AND plain
+    // focus:ring (the Dialog/Sheet close buttons, which fire on mouse focus too).
     const offenders: string[] = [];
     for (const f of FILES) {
       const src = stripComments(read(f));
-      for (const m of src.matchAll(/focus-visible:ring[^\s"']*/g)) {
+      for (const m of src.matchAll(/focus(?:-visible)?:ring[^\s"']*/g)) {
         offenders.push(`${rel(f)} — ${m[0]}`);
       }
     }
@@ -79,11 +81,13 @@ describe('one focus treatment, not two', () => {
   });
 
   it('and nothing suppresses the global outline to make room for one', () => {
-    // `focus-visible:outline-none` existed only to clear the way for the kit's rings.
-    // With the rings gone it can only subtract.
+    // `focus-visible:outline-none` (fields) and `focus:outline-hidden` (the Dialog/
+    // Sheet close buttons) both existed only to clear the way for the kit's rings.
+    // With the rings gone they can only subtract.
     const offenders: string[] = [];
     for (const f of FILES) {
-      if (/focus-visible:outline-none/.test(stripComments(read(f)))) offenders.push(rel(f));
+      if (/focus(?:-visible)?:outline-(?:none|hidden)/.test(stripComments(read(f))))
+        offenders.push(rel(f));
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
   });

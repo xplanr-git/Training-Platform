@@ -55,7 +55,13 @@ function DialogContent({
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className=" focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+        {/*
+          No focus ring of its own: the global :focus-visible outline in
+          globals.css is the app's single focus treatment (focus-conventions.test.ts).
+          The kit shipped focus:ring + focus:outline-hidden here, which both added a
+          second ring and suppressed the global one.
+        */}
+        <DialogPrimitive.Close className="data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
           <XIcon />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>

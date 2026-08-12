@@ -364,3 +364,23 @@ describe('state colour comes from the status tokens, not raw palette utilities',
     ).toEqual([]);
   });
 });
+
+describe('confirmation is the in-app dialog, never a native popup', () => {
+  /*
+   * window.confirm / alert / prompt are off-brand, not theme-aware, and
+   * window.confirm silently returns false once a browser blocks repeat dialogs —
+   * after which the guarded action just never happens, with no feedback. Every
+   * confirm goes through the accessible AlertDialog: NavForm for the admin forms,
+   * or a component's own AlertDialog as RoleSelect does for the admin-boundary
+   * role change.
+   */
+  it('no component calls a native confirm/alert/prompt', () => {
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      for (const m of f.src.matchAll(/\bwindow\.(confirm|alert|prompt)\s*\(/g)) {
+        offenders.push(`${f.rel} — window.${m[1]}()`);
+      }
+    }
+    expect(offenders, `use the AlertDialog:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});

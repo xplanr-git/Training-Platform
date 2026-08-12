@@ -66,7 +66,10 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className=" focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+        {/* No focus ring of its own — the global :focus-visible outline is the one
+            focus treatment (focus-conventions.test.ts); the kit's focus:ring here both
+            doubled it and suppressed the global one with focus:outline-hidden. */}
+        <SheetPrimitive.Close className="data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
