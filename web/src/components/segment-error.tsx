@@ -43,10 +43,15 @@ export function SegmentError({
 
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center gap-3 px-6 py-16 text-center">
-      <h1 className="text-xl">{title}</h1>
-      <p className="text-muted">{description}</p>
+      <h1 className="text-h1 font-bold">{title}</h1>
+      <p className="text-body text-muted">{description}</p>
       {error.digest && (
-        <p className="select-all font-mono text-xs text-muted">Reference: {error.digest}</p>
+        // Sans + tabular rather than font-mono, matching the verification code on
+        // /verify and the video id in attached-video: the system rejects
+        // robot-monospace for codes, and a support reference is one.
+        <p className="select-all text-meta tabular-nums tracking-wide text-muted">
+          Reference: {error.digest}
+        </p>
       )}
       <div className="mt-2 flex flex-wrap justify-center gap-3">
         <Button onClick={reset}>Try again</Button>

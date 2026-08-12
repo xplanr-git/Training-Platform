@@ -111,7 +111,7 @@ export default async function Certificates({
               <TableRow key={c.id}>
                 <TableCell>
                   <span className="font-medium">{c.learnerName || '—'}</span>
-                  <span className="ml-2 text-xs text-muted">{c.learnerEmail}</span>
+                  <span className="ml-2 text-meta text-muted">{c.learnerEmail}</span>
                 </TableCell>
                 <TableCell>{c.courseTitle}</TableCell>
                 <TableCell className="tabular-nums text-muted">

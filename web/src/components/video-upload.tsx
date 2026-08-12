@@ -136,7 +136,7 @@ export function VideoUpload({
           announced its role and nothing else. One VideoUpload renders per video
           lesson in the builder, so the id has to be unique per instance.
         */}
-        <label htmlFor={`${uid}-file`} className="text-xs font-medium">
+        <label htmlFor={`${uid}-file`} className="text-meta font-medium">
           {done ? 'Replace this video' : 'Upload a video'}
         </label>
         <div className="flex flex-wrap items-center gap-2">
@@ -170,7 +170,7 @@ export function VideoUpload({
           </Button>
         </div>
         {file && !uploading && (
-          <span className="text-xs text-muted">
+          <span className="text-meta text-muted">
             {file.name} · {humanSize(file.size)}
           </span>
         )}
@@ -189,14 +189,14 @@ export function VideoUpload({
                 style={{ width: `${percent}%` }}
               />
             </div>
-            <span className="w-10 text-right text-xs tabular-nums text-muted">{percent}%</span>
+            <span className="w-10 text-right text-meta tabular-nums text-muted">{percent}%</span>
           </div>
         )}
       </div>
 
       {/* 2. Pull from a URL. */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2.5">
-        <span className="text-xs text-muted">or import from a link</span>
+        <span className="text-meta text-muted">or import from a link</span>
         <Input
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}
@@ -223,7 +223,7 @@ export function VideoUpload({
 
       {/* 3. Attach an existing library id. */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted">or attach a video already in Bunny</span>
+        <span className="text-meta text-muted">or attach a video already in Bunny</span>
         <Input
           value={videoId}
           onChange={(e) => setVideoId(e.target.value)}
@@ -254,7 +254,7 @@ export function VideoUpload({
         </p>
       )}
       {done && !error && (
-        <p className="text-xs text-muted">
+        <p className="text-meta text-muted">
           Uploading again replaces the attached video for this lesson.
         </p>
       )}

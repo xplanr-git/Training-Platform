@@ -125,14 +125,14 @@ export function CourseComplete({
               </div>
 
               <div className="mt-4 border-t border-keyline pt-3">
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <p className="flex items-center gap-1.5 text-meta font-semibold text-foreground">
                   <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />
                   Verification code
                 </p>
-                <p className="mt-1 select-all break-all text-xs text-foreground-2 tabular-nums">
+                <p className="mt-1 select-all break-all text-meta text-foreground-2 tabular-nums">
                   {verificationCode}
                 </p>
-                <p className="mt-1.5 text-xs leading-relaxed text-foreground-2">
+                <p className="mt-1.5 text-meta leading-relaxed text-foreground-2">
                   Anyone you share this with can check the certificate without signing in.
                 </p>
               </div>

@@ -43,7 +43,7 @@ export function LessonNav({
     <nav className="space-y-4">
       {sections.map((g) => (
         <div key={g.id}>
-          <p className="mb-1 px-1 text-[11px] font-bold uppercase tracking-wider text-muted">
+          <p className="mb-1 px-1 text-eyebrow font-bold uppercase text-muted">
             {g.title || 'Section'}
           </p>
           <ul className="space-y-0.5">

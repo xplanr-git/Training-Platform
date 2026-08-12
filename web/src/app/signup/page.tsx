@@ -91,7 +91,7 @@ export default function SignupPage() {
             autoComplete="new-password"
             aria-describedby="su-password-hint"
           />
-          <p id="su-password-hint" className="text-xs text-muted">
+          <p id="su-password-hint" className="text-meta text-muted">
             At least 8 characters.
           </p>
         </div>

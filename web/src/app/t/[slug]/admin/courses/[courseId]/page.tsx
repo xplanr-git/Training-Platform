@@ -120,7 +120,7 @@ export default async function EditCourse({
                   </option>
                 ))}
               </select>
-              <p id="confersRoleCode-help" className="text-xs text-muted">
+              <p id="confersRoleCode-help" className="text-meta text-muted">
                 Completing this course advances the learner to this Connect tier.
               </p>
             </div>
@@ -135,7 +135,7 @@ export default async function EditCourse({
                 />
                 <Label htmlFor="certificateEnabled">Issue a certificate on completion</Label>
               </div>
-              <p className="text-xs text-muted">
+              <p className="text-meta text-muted">
                 Learners who finish this course receive a verifiable certificate. Turn off for
                 courses that don&apos;t award one.
               </p>

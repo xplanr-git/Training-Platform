@@ -252,7 +252,7 @@ export default async function LessonPlayer({
           {course.title}
         </BackLink>
         <div className="mb-5">
-          <div className="mb-1.5 text-xs text-muted">{progress.percent}% complete</div>
+          <div className="mb-1.5 text-meta text-muted">{progress.percent}% complete</div>
           <Progress value={progress.percent} className="h-2" />
         </div>
         <LessonNav
@@ -272,7 +272,7 @@ export default async function LessonPlayer({
           </BackLink>
           <div className="mt-2 flex items-center gap-3">
             <Progress value={progress.percent} className="h-2 flex-1" />
-            <span className="shrink-0 text-xs text-muted">{progress.percent}%</span>
+            <span className="shrink-0 text-meta text-muted">{progress.percent}%</span>
           </div>
           {/*
             On a phone the sidebar is hidden, and until now nothing replaced it — no
@@ -283,7 +283,7 @@ export default async function LessonPlayer({
           <details className="mt-3 rounded-(--radius-card) border border-border bg-surface">
             <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-3 text-sm font-medium">
               All lessons
-              <span className="text-xs font-normal text-muted tabular-nums">
+              <span className="text-meta font-normal text-muted tabular-nums">
                 {progress.done} of {progress.total}
               </span>
             </summary>
@@ -304,7 +304,7 @@ export default async function LessonPlayer({
           </span>
           <h1 className="text-2xl">{lesson.title}</h1>
           {(isPreview || readOnly) && (
-            <Callout tone="amber" className="mt-2 px-3 py-2 text-xs">
+            <Callout tone="amber" className="mt-2 px-3 py-2 text-meta">
               Read-only — nothing on this page is recorded.
             </Callout>
           )}

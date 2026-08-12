@@ -111,7 +111,7 @@ export default async function QuizEditor({
         <Button type="submit" variant="outline">
           Save
         </Button>
-        <p id="maxAttempts-hint" className="w-full text-xs text-muted">
+        <p id="maxAttempts-hint" className="w-full text-meta text-muted">
           A learner who uses every attempt cannot submit again. Unlimited attempts would let someone
           guess their way to a pass, and a pass issues a certificate.
         </p>
@@ -129,14 +129,14 @@ export default async function QuizEditor({
                     <div className="min-w-0">
                       <p className="font-medium">
                         {i + 1}. {q.prompt}{' '}
-                        <span className="text-xs font-normal text-muted">({q.points} pt)</span>
+                        <span className="text-meta font-normal text-muted">({q.points} pt)</span>
                       </p>
                       {/*
                         The type was never shown, so a multi-answer question and a
                         single-answer one with two ticks looked identical — and which
                         it is decides how the answer key was read.
                       */}
-                      <p className="mt-0.5 text-xs text-muted">
+                      <p className="mt-0.5 text-meta text-muted">
                         {QUESTION_TYPE_LABEL[q.type] ?? q.type}
                       </p>
                     </div>
@@ -179,7 +179,7 @@ export default async function QuizEditor({
                           the state is now also stated in words.
                         */}
                         {correct.includes(oi) && (
-                          <span className="text-xs font-medium">(correct)</span>
+                          <span className="text-meta font-medium">(correct)</span>
                         )}
                       </li>
                     ))}

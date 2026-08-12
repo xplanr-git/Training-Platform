@@ -87,7 +87,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
         // font constant across every density, and the tracked-out uppercase
         // "category" header is the other half of the heavy-table look the
         // keyline rule is guarding against.
-        'text-muted h-10 px-2 text-left align-middle text-[12.5px] font-semibold whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'text-muted h-10 px-2 text-left align-middle text-meta font-semibold whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       {...props}

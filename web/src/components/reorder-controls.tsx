@@ -108,7 +108,7 @@ export function ReorderControls({
       </span>
 
       {error && (
-        <p role="alert" className="mt-1 text-xs text-destructive">
+        <p role="alert" className="mt-1 text-meta text-destructive">
           {error}
         </p>
       )}

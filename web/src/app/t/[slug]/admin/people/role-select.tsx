@@ -133,7 +133,7 @@ export function RoleSelect({
         ))}
       </select>
       {error && (
-        <span role="alert" className="text-xs text-destructive">
+        <span role="alert" className="text-meta text-destructive">
           {error}
         </span>
       )}

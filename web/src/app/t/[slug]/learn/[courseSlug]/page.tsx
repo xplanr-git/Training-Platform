@@ -195,11 +195,11 @@ export default async function Learn({
                         )}
                         <span className="flex-1 truncate">{l.title || 'Untitled lesson'}</span>
                         {l.estimatedMinutes != null && (
-                          <span className="shrink-0 text-xs text-muted tabular-nums">
+                          <span className="shrink-0 text-meta text-muted tabular-nums">
                             {l.estimatedMinutes} min
                           </span>
                         )}
-                        {lDone && <span className="text-xs text-status-green">Done</span>}
+                        {lDone && <span className="text-meta text-status-green">Done</span>}
                       </Link>
                     </li>
                   );

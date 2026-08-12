@@ -157,7 +157,7 @@ export default async function CourseBuilder({
                         <Icon className="h-4 w-4 shrink-0 text-muted" />
                         <span className="truncate">{l.title}</span>
                         {l.estimatedMinutes != null && (
-                          <span className="shrink-0 text-xs text-muted tabular-nums">
+                          <span className="shrink-0 text-meta text-muted tabular-nums">
                             {l.estimatedMinutes} min
                           </span>
                         )}
@@ -270,7 +270,7 @@ export default async function CourseBuilder({
                                   />
                                 )}
                                 {attachedId && !details && (
-                                  <p className="mb-3 text-xs text-status-amber">
+                                  <p className="mb-3 text-meta text-status-amber">
                                     A video is attached ({attachedId}) but its details could not be
                                     read from Bunny just now. Reload the page to try again — the
                                     lesson itself is fine.
@@ -291,7 +291,7 @@ export default async function CourseBuilder({
                               </>
                             );
                           })()}
-                          <p className="mt-1.5 text-xs text-muted">
+                          <p className="mt-1.5 text-meta text-muted">
                             Attach a Bunny video to enable watch-time tracking and cross-device
                             resume. Video lessons are Bunny-only.
                           </p>

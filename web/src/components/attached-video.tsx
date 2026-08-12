@@ -56,7 +56,7 @@ export function AttachedVideo({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{title || 'Untitled video'}</p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-meta text-muted">
           {duration && <span className="tabular-nums">{duration}</span>}
           {duration && <span aria-hidden>·</span>}
           <span className={playable ? 'text-status-green' : 'text-status-amber'}>
@@ -76,12 +76,21 @@ export function AttachedVideo({
           </div>
         )}
         {!playable && (
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-meta text-muted">
             Reload this page to check again — the video keeps processing whether this page is open
             or not.
           </p>
         )}
-        <p className="mt-1 truncate font-mono text-[11px] text-muted">{videoId}</p>
+        {/*
+          Sans + tabular, not font-mono. The design system rejects
+          robot-monospace for codes, and /verify/[code] already renders the
+          verification code this way with a comment saying so — this was the one
+          place that still used it, so the same class of value was set two
+          different ways in the same product.
+        */}
+        <p className="mt-1 truncate text-eyebrow tabular-nums tracking-wide text-muted">
+          {videoId}
+        </p>
       </div>
     </div>
   );

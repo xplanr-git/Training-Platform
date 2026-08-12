@@ -69,7 +69,7 @@ export function JoinForm({ tenantSlug, academyName }: { tenantSlug: string; acad
           minLength={8}
           autoComplete="new-password"
         />
-        <p className="text-xs text-muted">At least 8 characters.</p>
+        <p className="text-meta text-muted">At least 8 characters.</p>
       </div>
 
       <Button type="submit" disabled={pending}>

@@ -125,9 +125,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
       >
         {/* A kicker above the real heading — the sanctioned use of an eyebrow,
             and the size/weight sb specifies for one (11/700). This is the issuer. */}
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted">
-          {cert.tenantName}
-        </p>
+        <p className="text-eyebrow font-bold uppercase text-muted">{cert.tenantName}</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight" style={{ color: accent }}>
           {heading}
         </h1>
@@ -170,7 +168,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
             <p className="border-t border-keyline pt-2 text-sm font-medium text-foreground">
               {design.signatory}
             </p>
-            <p className="mt-0.5 text-xs text-muted">Signatory</p>
+            <p className="mt-0.5 text-meta text-muted">Signatory</p>
           </div>
         )}
 
@@ -186,13 +184,11 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
           code is not transformed (case included) because /verify matches it verbatim.
         */}
         <div className="mt-12 border-t border-border pt-5 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-muted">
-            Verification code
-          </p>
+          <p className="text-eyebrow font-bold uppercase text-muted">Verification code</p>
           <p className="mt-1.5 select-all break-all text-sm tabular-nums tracking-wide text-foreground">
             {code}
           </p>
-          <p className="mt-2 text-xs text-muted">Verify at {verifyHost}/verify</p>
+          <p className="mt-2 text-meta text-muted">Verify at {verifyHost}/verify</p>
         </div>
       </article>
     </main>

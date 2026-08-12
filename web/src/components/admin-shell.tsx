@@ -24,9 +24,7 @@ function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?:
     <nav className="flex-1 overflow-y-auto px-3 py-4">
       {ADMIN_NAV.map((group) => (
         <div key={group.id} className="mb-5">
-          <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-muted">
-            {group.label}
-          </p>
+          <p className="px-2 pb-1 text-eyebrow font-bold uppercase text-muted">{group.label}</p>
           <ul className="space-y-0.5">
             {group.items.map((item) => {
               const href = `${ADMIN_BASE}${item.href}`;
@@ -107,7 +105,7 @@ function Brand({ tenantName }: { tenantName: string }) {
       <BrandMark size={32} />
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold leading-tight">{tenantName}</p>
-        <p className="text-xs text-muted">Academy admin</p>
+        <p className="text-meta text-muted">Academy admin</p>
       </div>
     </div>
   );
@@ -150,7 +148,7 @@ export function AdminShell({
         <Brand tenantName={tenantName} />
         <NavLinks activePath={activePath} />
         <div className="border-t border-border px-4 py-3">
-          {userEmail && <p className="truncate text-xs text-muted">{userEmail}</p>}
+          {userEmail && <p className="truncate text-meta text-muted">{userEmail}</p>}
           <SignOutButton className="mt-1.5" />
         </div>
       </aside>
@@ -175,7 +173,7 @@ export function AdminShell({
                 the drawer is the only navigation a mobile admin has.
               */}
               <div className="mt-auto border-t border-border px-4 py-3">
-                {userEmail && <p className="truncate text-xs text-muted">{userEmail}</p>}
+                {userEmail && <p className="truncate text-meta text-muted">{userEmail}</p>}
                 <SignOutButton className="mt-1.5" />
               </div>
             </SheetContent>

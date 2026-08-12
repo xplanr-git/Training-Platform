@@ -566,6 +566,56 @@ copy never says "invited" or "accept your"; and the invite copy is untouched.
 
 ---
 
+### Issue 15 — Type ramp: `text-xs`, arbitrary pixel sizes, and monospace codes ✅
+
+**Severity:** P3 (DS conformance) · **Report §6**
+
+> **I nearly skipped this, and the reasoning was wrong.** I argued the remaining ramp items were
+> "sub-pixel, nobody can see it, not worth churning ~30 files". That is an argument for overriding a
+> decision the owner had already made: CLAUDE.md §7.16 says the design system is mandatory and to
+> implement it **to its full extent**. Whether a half-pixel is visible is not the test — the sizes
+> are named values in the system and they were wrong. Recorded because the failure mode (quietly
+> re-scoping a stated requirement on my own taste) is worth more than the fix.
+
+**53 sites swept:**
+
+- **`text-xs` → `text-meta` (47 sites).** The specific trap: Tailwind's default `text-xs` is **12px**,
+  the system's meta is **12.5px**. It looks right, is off by half a pixel, and had spread everywhere.
+- **`text-[11px] … tracking-widest/wider` → `text-eyebrow` (5 sites).** The eyebrow written out
+  longhand. The token also carries the system's `0.09em`, so the ad-hoc `tracking-*` went with it —
+  `tracking-widest` is `0.1em` and was quietly overriding it.
+- **`text-[12.5px]` → `text-meta`** in `ui/table.tsx` — right value, no token.
+
+**And a violation the review missed.** §13 rule 5 says *no monospace for money or codes*. I checked
+`/verify` (which is correct, and says so in a comment) and concluded the rule was honoured — but
+**`attached-video.tsx` rendered a Bunny video id in `font-mono`, and `segment-error.tsx` rendered the
+error digest in `font-mono`**. The same class of value was set two different ways in one product.
+Both now match `/verify`: sans + `tabular-nums` + `tracking-wide`. Checking one instance of a rule and
+generalising was the mistake.
+
+**Tests** — `web/tests/unit/type-ramp-conventions.test.ts`, 4 tests: no `text-xs` anywhere; no
+arbitrary `text-[Npx]`; **no `font-mono` anywhere**; plus a fourth asserting the file walk found more
+than 50 files, since a walk resolving to nothing would let the others pass silently.
+
+> **A second literal-coupled guard, and this one is the sharper lesson.**
+> `sb-design-conventions.test.ts` enforces "every uppercase run is an 11px/700 label" by requiring
+> the **literal** `text-[11px]` in the class list. Moving those sites onto `text-eyebrow` — which
+> *is* 11px by definition, and additionally carries the system's `0.09em` that the ad-hoc
+> `tracking-widest` had been overriding — made a **strictly more correct** expression of the rule
+> fail its own guard. A guard that recognises only one spelling of the value it enforces will block
+> the move to the token every time. It now accepts either.
+>
+> That is twice in two issues (the other being the `sendInviteEmail` locator). The pattern is worth
+> naming: **guards should assert the property, not the spelling.** Any guard pinned to a literal
+> string is really testing that nobody renames anything.
+
+**Still open in §6** (each needs a per-site judgement about which ramp step is intended, so not a
+sweep): `text-lg` ×8, `text-base` ×7, `text-xl` ×4, `text-3xl`/`text-4xl` ×1 each on the certificate;
+Button/Input at 14px rather than `text-control`; one table density (52/53 vs 36/37, spec ~44); ink
+keyline 2px → 1.75px; delete icons off status red.
+
+---
+
 ## Open — next up
 
 In report §8 order:

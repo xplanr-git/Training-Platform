@@ -7,7 +7,7 @@ export default function NotFound() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
       {/* A kicker above the heading, which is what it always was — it just
           happened to be brand blue, so it read as a link to nowhere. */}
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted">404</p>
+      <p className="text-eyebrow font-bold uppercase text-muted">404</p>
       <h1 className="text-2xl">Page not found</h1>
       <p className="text-muted">
         The page you&apos;re looking for doesn&apos;t exist or may have moved.

@@ -237,11 +237,22 @@ describe('the eyebrow is a kicker, never the heading', () => {
      * heading, which leaves the page with no heading at the size the ramp
      * expects and (where it replaces an <h*>) no heading in the outline either.
      */
+    /*
+     * Accepts the `text-eyebrow` TOKEN as well as the literal `text-[11px]`.
+     *
+     * This guard was pinned to the literal, so moving these sites onto the token —
+     * which is 11px by definition, and also carries the system's 0.09em tracking
+     * that the ad-hoc `tracking-widest` (0.1em) had been overriding — made a
+     * strictly more correct expression of the rule fail its own check. A guard that
+     * only recognises one spelling of the value it enforces will block the move to
+     * the token every time.
+     */
+    const IS_EYEBROW_SIZE = /\btext-eyebrow\b|text-\[11px\]/;
     const offenders: string[] = [];
     for (const f of TSX) {
       for (const m of f.src.matchAll(/className="([^"]*\buppercase\b[^"]*)"/g)) {
         const cls = m[1];
-        if (!/text-\[11px\]/.test(cls) || !/font-bold/.test(cls)) {
+        if (!IS_EYEBROW_SIZE.test(cls) || !/font-bold/.test(cls)) {
           offenders.push(`${f.rel} — "${cls.slice(0, 70)}"`);
         }
       }

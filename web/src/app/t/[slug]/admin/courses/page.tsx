@@ -132,7 +132,7 @@ export default async function CoursesList({
                     <Link href={`/admin/courses/${c.id}`} className="font-medium hover:underline">
                       {c.title}
                     </Link>
-                    <span className="ml-2 text-xs text-muted">/{c.slug}</span>
+                    <span className="ml-2 text-meta text-muted">/{c.slug}</span>
                   </TableCell>
                   <TableCell>
                     <StatusBadge

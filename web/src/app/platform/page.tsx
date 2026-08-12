@@ -85,7 +85,7 @@ export default async function PlatformHome() {
               <TableRow key={t.id}>
                 <TableCell>
                   <span className="font-medium">{t.name}</span>
-                  <span className="ml-2 text-xs text-muted">{t.slug}</span>
+                  <span className="ml-2 text-meta text-muted">{t.slug}</span>
                 </TableCell>
                 <TableCell className="capitalize">{t.plan}</TableCell>
                 <TableCell className="text-right tabular-nums">

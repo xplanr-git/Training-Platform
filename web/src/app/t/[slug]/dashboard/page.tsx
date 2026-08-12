@@ -177,7 +177,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
             <Card key={s.label}>
               <CardContent className="py-4">
                 <div className="text-2xl font-semibold tabular-nums">{s.value}</div>
-                <div className="text-xs text-muted">{s.label}</div>
+                <div className="text-meta text-muted">{s.label}</div>
               </CardContent>
             </Card>
           ))}
@@ -210,7 +210,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                     </h2>
                     <div className="mt-2 flex items-center gap-3">
                       <Progress value={r.percent} className="h-2 max-w-xs flex-1" />
-                      <span className="shrink-0 text-xs text-muted tabular-nums">
+                      <span className="shrink-0 text-meta text-muted tabular-nums">
                         {r.done}/{r.total} lessons
                         {!isDone && r.minutesLeft != null
                           ? ` · ${r.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(r.minutesLeft)} left`

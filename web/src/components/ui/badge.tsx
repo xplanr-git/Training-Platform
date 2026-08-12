@@ -6,7 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/components/ui/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-xs font-semibold w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring aria-invalid:border-destructive transition-colors overflow-hidden',
+  'inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-meta font-semibold w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring aria-invalid:border-destructive transition-colors overflow-hidden',
   {
     variants: {
       variant: {
@@ -76,7 +76,7 @@ function StatusBadge({
     <span
       data-slot="status-badge"
       className={cn(
-        'inline-flex h-6 w-fit shrink-0 items-center gap-1.5 rounded-sm px-2 text-xs font-semibold whitespace-nowrap',
+        'inline-flex h-6 w-fit shrink-0 items-center gap-1.5 rounded-sm px-2 text-meta font-semibold whitespace-nowrap',
         TONES[tone],
         className,
       )}
