@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { db, eq, subscriptions } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { PLANS } from '@/lib/stripe';
+import { formatCount } from '@/lib/format-date';
 import { startSubscriptionCheckout, openBillingPortal } from './actions';
 import { NavForm } from '@/components/nav-form';
 
@@ -63,7 +64,7 @@ export default async function Billing({ params }: { params: Promise<{ slug: stri
           <div key={p.id} className="rounded-(--radius-card) border border-border bg-surface p-5">
             <h2 className="text-base">{p.name}</h2>
             <p className="mt-1 text-sm text-muted">
-              Up to {p.activeLearnerLimit.toLocaleString()} active learners
+              Up to {formatCount(p.activeLearnerLimit)} active learners
             </p>
             <NavForm action={startSubscriptionCheckout.bind(null, slug, p.id)} className="mt-4">
               {/*

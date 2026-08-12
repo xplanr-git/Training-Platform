@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatDateLong } from '@/lib/format-date';
 
 /**
  * What the learner sees the moment they finish a course.
@@ -64,14 +65,7 @@ export function CourseComplete({
               <p className="mt-1 text-sm leading-relaxed text-foreground-2">
                 You finished {courseTitle}
                 {issuedAt ? (
-                  <>
-                    , and your certificate was issued on{' '}
-                    {issuedAt.toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </>
+                  <>, and your certificate was issued on {formatDateLong(issuedAt)}</>
                 ) : null}
                 . A copy is in your email too.
               </p>

@@ -11,6 +11,7 @@ import {
 } from '@training-platform/db';
 import { PrintButton } from '@/components/print-button';
 import { env } from '@/lib/env';
+import { formatDateLong } from '@/lib/format-date';
 
 /**
  * Public certificate verification. Shared route (not rewritten per host).
@@ -134,7 +135,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
         {cert.revokedAt && (
           <p className="mt-10 text-sm font-semibold text-destructive">
             This certificate was revoked on{' '}
-            <span className="tabular-nums">{new Date(cert.revokedAt).toLocaleDateString()}</span>.
+            <span className="tabular-nums">{formatDateLong(cert.revokedAt)}</span>.
           </p>
         )}
 
@@ -142,9 +143,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
             a line above a printed date reads as somewhere to sign, which it is not. */}
         <p className="mt-12 text-sm text-muted">
           Issued{' '}
-          <span className="tabular-nums text-foreground">
-            {new Date(cert.issuedAt).toLocaleDateString()}
-          </span>
+          <span className="tabular-nums text-foreground">{formatDateLong(cert.issuedAt)}</span>
         </p>
 
         {/* A signatory DOES sign, so it keeps the ruled line — centred, so the

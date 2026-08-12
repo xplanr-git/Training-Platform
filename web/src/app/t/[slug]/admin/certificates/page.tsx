@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { EmptyRow } from '@/components/empty-state';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { parsePage, pageMeta } from '@/lib/pagination';
+import { formatDateShort } from '@/lib/format-date';
 import { Pagination } from '@/components/pagination';
 import { setCertificateRevoked } from './actions';
 import { Button } from '@/components/ui/button';
@@ -96,7 +97,7 @@ export default async function Certificates({
                 </TableCell>
                 <TableCell>{c.courseTitle}</TableCell>
                 <TableCell className="tabular-nums text-muted">
-                  {new Date(c.issuedAt).toLocaleDateString()}
+                  {formatDateShort(c.issuedAt)}
                 </TableCell>
                 <TableCell>
                   <StatusBadge tone={c.revokedAt ? 'red' : 'green'}>
