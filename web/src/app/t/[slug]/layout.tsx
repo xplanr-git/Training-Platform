@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { db, tenants, eq } from '@training-platform/db';
+import { tenantBySlug } from '@/lib/tenant';
 import { getViewAs } from '@/lib/view-as';
 import { ViewAsBanner } from '@/components/view-as-banner';
 
@@ -18,11 +18,7 @@ export default async function TenantLayout({
 }) {
   const { slug } = await params;
 
-  const [tenant] = await db
-    .select({ status: tenants.status, name: tenants.name })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  const tenant = await tenantBySlug(slug);
 
   if (!tenant) notFound();
 

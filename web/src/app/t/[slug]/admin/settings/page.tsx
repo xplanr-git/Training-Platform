@@ -1,5 +1,4 @@
-import { db, eq, tenants } from '@training-platform/db';
-import { requireAdminForSlug } from '@/lib/tenant';
+import { requireAdminForSlug, tenantBySlug } from '@/lib/tenant';
 import type { Branding } from '@/lib/content-types';
 import { updateSchoolSettings } from './actions';
 import { Button } from '@/components/ui/button';
@@ -12,13 +11,10 @@ export default async function Settings({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const ctx = await requireAdminForSlug(slug);
 
-  const [tenant] = ctx.tenantId
-    ? await db
-        .select({ name: tenants.name, branding: tenants.branding })
-        .from(tenants)
-        .where(eq(tenants.id, ctx.tenantId))
-        .limit(1)
-    : [];
+  // requireAdminForSlug above already resolved this exact row through
+  // tenantBySlug, which is request-cached — so this reads it rather than
+  // re-querying by id.
+  const tenant = ctx.tenantId ? await tenantBySlug(slug) : null;
 
   const branding = (tenant?.branding ?? {}) as Branding;
 

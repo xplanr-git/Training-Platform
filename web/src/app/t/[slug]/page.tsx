@@ -4,7 +4,8 @@ import { EmptyState, NoMatches } from '@/components/empty-state';
 import { SignOutButton } from '@/components/sign-out-button';
 import { createClient as supabase } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { db, and, eq, ilike, desc, count, tenants, courses } from '@training-platform/db';
+import { db, and, eq, ilike, desc, count, courses } from '@training-platform/db';
+import { tenantBySlug } from '@/lib/tenant';
 import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
 import { safeHttpUrl } from '@/lib/validation';
 import type { Branding } from '@/lib/content-types';
@@ -20,11 +21,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [t] = await db
-    .select({ name: tenants.name, branding: tenants.branding })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  const t = await tenantBySlug(slug);
   if (!t) return { title: 'Academy' };
   const tagline = (t.branding as Branding | null)?.tagline;
   const description = (tagline || `Browse courses from ${t.name}.`).slice(0, 160);
@@ -50,11 +47,8 @@ export default async function TenantHome({
   const [{ slug }, { q, page: pageParam }] = await Promise.all([params, searchParams]);
   const query = (q ?? '').trim();
 
-  const [tenant] = await db
-    .select({ id: tenants.id, name: tenants.name, branding: tenants.branding })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  // Same row generateMetadata just resolved — request-cached, so this is free.
+  const tenant = await tenantBySlug(slug);
 
   const branding = (tenant?.branding ?? {}) as Branding;
   const accent = branding.primaryColor || undefined;

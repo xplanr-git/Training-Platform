@@ -175,6 +175,43 @@ export async function requireAdmin(): Promise<AdminContext> {
  * comment on the mismatch check for why a platform_admin bypass is actively
  * harmful here.
  */
+/**
+ * The tenant row for a slug, deduplicated for the lifetime of one request.
+ *
+ * This row was being fetched three or four times per admin navigation: once by
+ * `requireAdminForSlug` (called from the admin layout AND again by the page
+ * beneath it, since the guard itself was not cached while its siblings
+ * `getTenantContext` / `currentMembershipRole` / `isPlatformAdmin` were), once by
+ * the tenant shell for `status` and `name`, and once by the admin layout for
+ * `name`. The storefront had the same shape across `generateMetadata` and the page
+ * body, and `/join` did it twice in one file.
+ *
+ * That is pure duplicated latency for a row that cannot change mid-request, and it
+ * is worse than it looks: `db/client.ts` configures a 5-connection pool, so under
+ * any concurrency the copies stop overlapping and serialise into extra waves.
+ *
+ * Selects the union of what every caller needs (`branding` included, so the
+ * storefront and its metadata share one read) — one slightly wider row beats four
+ * narrow ones.
+ *
+ * NOT for write paths. `signup/actions.ts` checks slug availability and
+ * `join/actions.ts` resolves inside a mutation; both must see the live row rather
+ * than a value cached earlier in the same request.
+ */
+export const tenantBySlug = cache(async (slug: string) => {
+  const [row] = await db
+    .select({
+      id: tenants.id,
+      status: tenants.status,
+      name: tenants.name,
+      branding: tenants.branding,
+    })
+    .from(tenants)
+    .where(eq(tenants.slug, slug))
+    .limit(1);
+  return row ?? null;
+});
+
 export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
   const ctx = await getTenantContext();
   // Pages navigate rather than throw: a bare throw here renders a 500, which is
@@ -182,11 +219,7 @@ export async function requireAdminForSlug(slug: string): Promise<AdminContext> {
   // someone else's academy, is a routing outcome, not a server fault.
   if (!ctx) redirect('/login');
 
-  const [tenant] = await db
-    .select({ id: tenants.id, status: tenants.status })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  const tenant = await tenantBySlug(slug);
   if (!tenant) notFound();
 
   // Nobody administers an academy other than their own — platform admins

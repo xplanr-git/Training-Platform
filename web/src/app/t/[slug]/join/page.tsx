@@ -1,14 +1,10 @@
 import { notFound } from 'next/navigation';
-import { db, eq, tenants } from '@training-platform/db';
+import { tenantBySlug } from '@/lib/tenant';
 import { JoinForm } from './join-form';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [t] = await db
-    .select({ name: tenants.name })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  const t = await tenantBySlug(slug);
   return { title: t ? `Request access — ${t.name}` : 'Request access' };
 }
 
@@ -21,11 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
  */
 export default async function JoinPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [tenant] = await db
-    .select({ name: tenants.name })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  // generateMetadata resolved this a moment ago; request-cached, so no second read.
+  const tenant = await tenantBySlug(slug);
   if (!tenant) notFound();
 
   return (

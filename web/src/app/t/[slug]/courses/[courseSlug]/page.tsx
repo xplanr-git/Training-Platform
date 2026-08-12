@@ -17,7 +17,7 @@ import {
   lessons,
   enrollments,
 } from '@training-platform/db';
-import { getTenantContext } from '@/lib/tenant';
+import { getTenantContext, tenantBySlug } from '@/lib/tenant';
 import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { isTenantAdmin, ENROLLED_STATUSES } from '@/lib/course-access';
 import { formatMinutes } from '@/lib/progress-derive';
@@ -74,11 +74,7 @@ export default async function CourseLanding({
 }) {
   const { slug, courseSlug } = await params;
 
-  const [tenant] = await db
-    .select({ id: tenants.id })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  const tenant = await tenantBySlug(slug);
   if (!tenant) notFound();
 
   // Fetched WITHOUT the status filter so an admin of this academy can preview a

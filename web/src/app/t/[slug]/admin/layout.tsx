@@ -1,6 +1,4 @@
-import { eq } from '@training-platform/db';
-import { db, tenants } from '@training-platform/db';
-import { requireAdminForSlug } from '@/lib/tenant';
+import { requireAdminForSlug, tenantBySlug } from '@/lib/tenant';
 import { AdminShell } from '@/components/admin-shell';
 
 /**
@@ -22,11 +20,9 @@ export default async function AdminLayout({
   const { slug } = await params;
   const ctx = await requireAdminForSlug(slug);
 
-  const [tenant] = await db
-    .select({ name: tenants.name })
-    .from(tenants)
-    .where(eq(tenants.slug, slug))
-    .limit(1);
+  // Already resolved by requireAdminForSlug above; tenantBySlug is request-cached,
+  // so this is a map lookup rather than a second round trip for the same row.
+  const tenant = await tenantBySlug(slug);
 
   return (
     <AdminShell tenantName={tenant?.name ?? slug} userEmail={ctx.email}>
