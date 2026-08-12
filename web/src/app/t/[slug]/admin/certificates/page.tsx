@@ -11,7 +11,7 @@ import {
 import Link from 'next/link';
 import { EmptyRow } from '@/components/empty-state';
 import { requireAdminForSlug } from '@/lib/tenant';
-import { parsePage, pageMeta } from '@/lib/pagination';
+import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
 import { formatDateShort } from '@/lib/format-date';
 import { Pagination } from '@/components/pagination';
 import { setCertificateRevoked } from './actions';
@@ -38,34 +38,50 @@ export default async function Certificates({
   const { page: pageParam } = await searchParams;
   const ctx = await requireAdminForSlug(slug);
 
-  const [{ total } = { total: 0 }] = ctx.tenantId
-    ? await db
-        .select({ total: count() })
-        .from(certificates)
-        .where(eq(certificates.tenantId, ctx.tenantId))
-    : [];
-  const meta = pageMeta(parsePage(pageParam), total);
+  /*
+    Count and rows are independent, so they run together rather than as two
+    sequential round trips. The offset comes DIRECTLY from ?page= — pageMeta clamps
+    against a pageCount derived from the total, so a provisional total of 0 would
+    pin every request to page 1. Same shape as t/[slug]/page.tsx.
+  */
+  const requestedPage = parsePage(pageParam);
+  const requestedOffset = (requestedPage - 1) * PAGE_SIZE;
+  const rowsAt = (offset: number) =>
+    db
+      .select({
+        id: certificates.id,
+        code: certificates.verificationCode,
+        issuedAt: certificates.issuedAt,
+        revokedAt: certificates.revokedAt,
+        courseTitle: courses.title,
+        learnerName: users.name,
+        learnerEmail: users.email,
+      })
+      .from(certificates)
+      .innerJoin(enrollments, eq(enrollments.id, certificates.enrollmentId))
+      .innerJoin(courses, eq(courses.id, enrollments.courseId))
+      .innerJoin(users, eq(users.id, enrollments.userId))
+      .where(eq(certificates.tenantId, ctx.tenantId!))
+      .orderBy(desc(certificates.issuedAt))
+      .limit(PAGE_SIZE)
+      .offset(offset);
 
-  const rows = ctx.tenantId
-    ? await db
-        .select({
-          id: certificates.id,
-          code: certificates.verificationCode,
-          issuedAt: certificates.issuedAt,
-          revokedAt: certificates.revokedAt,
-          courseTitle: courses.title,
-          learnerName: users.name,
-          learnerEmail: users.email,
-        })
-        .from(certificates)
-        .innerJoin(enrollments, eq(enrollments.id, certificates.enrollmentId))
-        .innerJoin(courses, eq(courses.id, enrollments.courseId))
-        .innerJoin(users, eq(users.id, enrollments.userId))
-        .where(eq(certificates.tenantId, ctx.tenantId))
-        .orderBy(desc(certificates.issuedAt))
-        .limit(meta.limit)
-        .offset(meta.offset)
-    : [];
+  const [countRows, requestedRows] = await Promise.all([
+    ctx.tenantId
+      ? db
+          .select({ total: count() })
+          .from(certificates)
+          .where(eq(certificates.tenantId, ctx.tenantId))
+      : Promise.resolve([] as Array<{ total: number }>),
+    ctx.tenantId
+      ? rowsAt(requestedOffset)
+      : Promise.resolve([] as Awaited<ReturnType<typeof rowsAt>>),
+  ]);
+  const total = countRows[0]?.total ?? 0;
+  const meta = pageMeta(requestedPage, total);
+
+  const rows =
+    !ctx.tenantId || meta.offset === requestedOffset ? requestedRows : await rowsAt(meta.offset);
 
   return (
     <div>

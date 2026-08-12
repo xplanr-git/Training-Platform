@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { EmptyRow } from '@/components/empty-state';
 import { requireAdminForSlug } from '@/lib/tenant';
-import { parsePage, pageMeta } from '@/lib/pagination';
+import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { InviteForm } from './invite-form';
 import { RoleSelect } from './role-select';
@@ -57,48 +57,67 @@ export default async function People({
     filters.push(or(ilike(users.name, `%${query}%`), ilike(users.email, `%${query}%`))!);
   }
 
-  const [{ total } = { total: 0 }] = ctx.tenantId
-    ? await db
-        .select({ total: count() })
-        .from(memberships)
-        .innerJoin(users, eq(users.id, memberships.userId))
-        .where(and(...filters))
-    : [];
-  const meta = pageMeta(parsePage(pageParam), total);
+  /*
+    Count and rows are independent, so they run together rather than as two
+    sequential round trips. The offset comes DIRECTLY from ?page= — pageMeta clamps
+    against a pageCount derived from the total, so a provisional total of 0 would
+    pin every request to page 1. Same shape as t/[slug]/page.tsx.
+  */
+  const requestedPage = parsePage(pageParam);
+  const requestedOffset = (requestedPage - 1) * PAGE_SIZE;
+  const rowsAt = (offset: number) =>
+    db
+      .select({
+        id: memberships.id,
+        userId: memberships.userId,
+        role: memberships.role,
+        connectRoleCode: memberships.connectRoleCode,
+        status: memberships.status,
+        name: users.name,
+        email: users.email,
+      })
+      .from(memberships)
+      .innerJoin(users, eq(users.id, memberships.userId))
+      .where(and(...filters))
+      .orderBy(desc(memberships.createdAt))
+      .limit(PAGE_SIZE)
+      .offset(offset);
 
-  const rows = ctx.tenantId
-    ? await db
-        .select({
-          id: memberships.id,
-          userId: memberships.userId,
-          role: memberships.role,
-          connectRoleCode: memberships.connectRoleCode,
-          status: memberships.status,
-          name: users.name,
-          email: users.email,
-        })
-        .from(memberships)
-        .innerJoin(users, eq(users.id, memberships.userId))
-        .where(and(...filters))
-        .orderBy(desc(memberships.createdAt))
-        .limit(meta.limit)
-        .offset(meta.offset)
-    : [];
+  // The pending-requests list is independent of both, so it joins the same batch
+  // rather than adding a third wave. Oldest first: a request that has waited
+  // longest should be decided first.
+  const [countRows, requestedRows, requests] = await Promise.all([
+    ctx.tenantId
+      ? db
+          .select({ total: count() })
+          .from(memberships)
+          .innerJoin(users, eq(users.id, memberships.userId))
+          .where(and(...filters))
+      : Promise.resolve([] as Array<{ total: number }>),
+    ctx.tenantId
+      ? rowsAt(requestedOffset)
+      : Promise.resolve([] as Awaited<ReturnType<typeof rowsAt>>),
+    ctx.tenantId
+      ? db
+          .select({
+            id: memberships.id,
+            name: users.name,
+            email: users.email,
+            createdAt: memberships.createdAt,
+          })
+          .from(memberships)
+          .innerJoin(users, eq(users.id, memberships.userId))
+          .where(and(eq(memberships.tenantId, ctx.tenantId), eq(memberships.status, 'pending')))
+          .orderBy(asc(memberships.createdAt))
+      : Promise.resolve(
+          [] as Array<{ id: string; name: string | null; email: string; createdAt: Date }>,
+        ),
+  ]);
+  const total = countRows[0]?.total ?? 0;
+  const meta = pageMeta(requestedPage, total);
 
-  // Oldest first: a request that has waited longest should be decided first.
-  const requests = ctx.tenantId
-    ? await db
-        .select({
-          id: memberships.id,
-          name: users.name,
-          email: users.email,
-          createdAt: memberships.createdAt,
-        })
-        .from(memberships)
-        .innerJoin(users, eq(users.id, memberships.userId))
-        .where(and(eq(memberships.tenantId, ctx.tenantId), eq(memberships.status, 'pending')))
-        .orderBy(asc(memberships.createdAt))
-    : [];
+  const rows =
+    !ctx.tenantId || meta.offset === requestedOffset ? requestedRows : await rowsAt(meta.offset);
 
   return (
     <div>
