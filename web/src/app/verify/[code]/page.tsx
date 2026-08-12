@@ -9,9 +9,18 @@ import {
   tenants,
   users,
 } from '@training-platform/db';
+import Link from 'next/link';
 import { PrintButton } from '@/components/print-button';
+import { Button } from '@/components/ui/button';
 import { env } from '@/lib/env';
 import { formatDateLong } from '@/lib/format-date';
+
+/**
+ * Static, and deliberately not the learner's name: this page is public, and a
+ * name in the tab title follows the reader into their history and any screen
+ * share. The page body already names the holder, which is the point of it.
+ */
+export const metadata = { title: 'Certificate verification' };
 
 /**
  * Public certificate verification. Shared route (not rewritten per host).
@@ -46,11 +55,19 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
     return (
       <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-14">
         <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center">
-          <h1 className="text-xl">Certificate not found</h1>
-          <p className="mt-2 text-muted">
+          <h1 className="text-h1 font-bold">Certificate not found</h1>
+          <p className="mt-2 text-body text-foreground-2">
             No certificate matches this code. Check it against the certificate — copying and pasting
             the whole link is surest.
           </p>
+          {/*
+            Without this the page was terminal: someone checking a credential
+            mistyped a character and had nowhere to go but the address bar. The
+            lookup form pre-fills nothing, so it is a clean second attempt.
+          */}
+          <Button asChild variant="outline" className="mt-5">
+            <Link href="/verify">Try another code</Link>
+          </Button>
         </div>
       </main>
     );
