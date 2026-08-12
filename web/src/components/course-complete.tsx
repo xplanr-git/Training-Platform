@@ -35,6 +35,7 @@ export function CourseComplete({
   verificationCode,
   issuedAt,
   revokedAt,
+  certificateEnabled,
   reviewHref,
 }: {
   courseTitle: string;
@@ -43,9 +44,16 @@ export function CourseComplete({
   issuedAt: Date | null;
   /** Set once an admin withdraws the credential. Reversible — see setCertificateRevoked. */
   revokedAt?: Date | null;
+  /**
+   * The course's `certificateEnabled` column. False means no certificate was ever
+   * meant to exist, so a missing one is the configured outcome, not a failure.
+   * Defaults true to match the column default.
+   */
+  certificateEnabled?: boolean;
   reviewHref: string | null;
 }) {
   const revoked = Boolean(verificationCode && revokedAt);
+  const awardsCertificate = certificateEnabled !== false;
 
   return (
     <section
@@ -129,11 +137,38 @@ export function CourseComplete({
                 </p>
               </div>
             </>
+          ) : !awardsCertificate ? (
+            /*
+              The course opted out of certificates (courses.certificateEnabled =
+              false, "Turn off for courses that don't award one"), and
+              finalizeCourseCompletion honours that by creating no certificate row.
+
+              This panel used to read the missing row as a failure and tell the
+              learner to contact an administrator — who then had nothing to fix.
+              A working configuration was generating guaranteed support load, and
+              telling every learner of such a course that the platform had failed
+              them. Say the course is finished, name why there is no certificate so
+              the absence is not a mystery, and stop.
+            */
+            <>
+              <p className="mt-1 text-sm leading-relaxed text-foreground-2">
+                You finished {courseTitle}. This course does not award a certificate, so there is
+                nothing further to collect.
+              </p>
+              {reviewHref ? (
+                <div className="mt-4">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={reviewHref}>Review the course</Link>
+                  </Button>
+                </div>
+              ) : null}
+            </>
           ) : (
             /*
-              Complete, but no certificate row. Reachable if issuance failed after
-              the enrolment was already marked completed. Saying "here is your
-              certificate" and linking nowhere would be worse than admitting it.
+              Complete, the course DOES award a certificate, but no row exists.
+              Reachable if issuance failed after the enrolment was already marked
+              completed. Saying "here is your certificate" and linking nowhere would
+              be worse than admitting it.
             */
             <>
               <p className="mt-1 text-sm leading-relaxed text-foreground-2">

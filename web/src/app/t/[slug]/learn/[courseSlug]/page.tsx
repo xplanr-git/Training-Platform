@@ -34,7 +34,11 @@ export default async function Learn({
   if (!ctx.tenantId) redirect('/');
 
   const [course] = await db
-    .select({ id: courses.id, title: courses.title })
+    .select({
+      id: courses.id,
+      title: courses.title,
+      certificateEnabled: courses.certificateEnabled,
+    })
     .from(courses)
     .where(and(eq(courses.tenantId, ctx.tenantId), eq(courses.slug, courseSlug)))
     .limit(1);
@@ -136,6 +140,7 @@ export default async function Learn({
             verificationCode={certificate?.verificationCode ?? null}
             issuedAt={certificate?.issuedAt ?? null}
             revokedAt={certificate?.revokedAt ?? null}
+            certificateEnabled={course.certificateEnabled}
             reviewHref={resumeLesson ? `/learn/${courseSlug}/${resumeLesson.id}` : null}
           />
         </div>

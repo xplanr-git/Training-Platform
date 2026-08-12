@@ -69,6 +69,46 @@ describe('CourseComplete tells the truth about the credential', () => {
     expect(screen.queryByRole('link', { name: /view your certificate/i })).toBeNull();
   });
 
+  it('does not report a failure for a course that awards no certificate', () => {
+    /*
+     * The defect: certificateEnabled is a first-class toggle ("Turn off for courses
+     * that don't award one") and finalizeCourseCompletion honours it by creating no
+     * certificate row — but this panel never read the column, so it read the absence
+     * as a failed issuance and told the learner to contact an administrator who then
+     * had nothing to fix. A working configuration generated guaranteed support load.
+     */
+    render(
+      <CourseComplete
+        courseTitle="Toolbox Talk"
+        verificationCode={null}
+        issuedAt={null}
+        revokedAt={null}
+        certificateEnabled={false}
+        reviewHref="/learn/x/1"
+      />,
+    );
+
+    expect(screen.queryByText(/has not been issued yet/i)).toBeNull();
+    expect(screen.queryByText(/administrator/i)).toBeNull();
+    expect(screen.getByText(/does not award a certificate/i)).toBeTruthy();
+  });
+
+  it('still reports a genuine issuance failure when the course does award one', () => {
+    // The opt-out must not swallow the real error case it sits next to.
+    render(
+      <CourseComplete
+        courseTitle="Outdure Deck Frame Installation"
+        verificationCode={null}
+        issuedAt={null}
+        revokedAt={null}
+        certificateEnabled={true}
+        reviewHref={null}
+      />,
+    );
+
+    expect(screen.getByText(/has not been issued yet/i)).toBeTruthy();
+  });
+
   it('treats a revoked flag with no code as no certificate at all', () => {
     // Defensive: revokedAt without a verificationCode is not a real state, and must
     // not render a link to /verify/null.
