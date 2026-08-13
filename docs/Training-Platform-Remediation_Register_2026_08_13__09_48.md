@@ -616,6 +616,65 @@ keyline 2px → 1.75px; delete icons off status red.
 
 ---
 
+### Issue 16 — Side menu measured against `core.css`, not inferred from prose ✅
+
+**Severity:** P3 (DS conformance) · raised by the owner: *"the menu is messed up, compare it to what
+we have in our design system"*
+
+Everything before this compared the nav to the **written guidelines**. This compared it to
+`core.css` — the shipped implementation — and the two disagree.
+
+| Property | `core.css` | Was (live) | Now |
+|---|---|---|---|
+| Row height | `42px` | **36px** | 42px |
+| Row padding | `0 var(--s5)` = 20px | **10px** | 20px |
+| Row radius | square | **4px** | 0 |
+| Row font | 13.5 / 500 | 14 / 500 | 13.5 / 500 |
+| Active underline | 1.75px, offset 5px | **2px, offset 4px** | 1.75px / 5px |
+| Group header | 10.5px / 700 / .07em, pad 16·16·8 | 11px / 700 / .05em, pad 8·4 | exact |
+| Sidebar width | 248px | 256px | 248px |
+| Row inset | full-bleed (`.sb-side` pads 0 horizontally) | inset by `px-3` | full-bleed |
+
+**The cramped look was the first two rows**: 36px rows with half the horizontal padding, and every
+row inset by a container `px-3` so the hover wash rendered as a floating rounded pill instead of a
+full-width band.
+
+> ### ⚠️ Correcting my own change from Issue 11
+>
+> In Issue 11 I moved the hover wash to `active:` (press), citing Guidelines §6 — *"Hover = the label
+> darkens to ink (rows may take a square grey wash on press)"*. **`core.css:542` says otherwise:**
+>
+> ```css
+> .sb-nav a:hover,.sb-nav a.is-hover{background:var(--sunken);color:var(--text);}
+> ```
+>
+> It sits in the same block as the accordion's row-wash rule, and **`.sb-nav` has no `:active` rule
+> at all** — confirmed by grep. So my reading deleted a treatment the system specifies. The original
+> app was right about the wash and wrong only about the **radius**.
+>
+> **Prose lost to implementation.** Where the guidelines describe and `core.css` specifies a concrete
+> value, the CSS is the artifact that ships. The guard that encoded my mistake has been inverted with
+> the reasoning recorded in it.
+
+**Verified by measurement**, not assertion: a replica row injected on a live page reports 248px /
+42px / 20px / 13.5px / 0 radius / 1.75px / 5px / 10.5px / 0.735px tracking — every value matching
+`core.css` exactly.
+
+> **Third literal-coupled locator, and the first one was mine.** My own `navLinkClasses()` helper was
+> pinned to the literal `"'flex items-center justify-between"`, so adding the `h-[42px]` the system
+> requires broke it — the guard failed for a change that made the nav *more* correct. Written one
+> issue after I named the lesson. It now anchors on `aria-current`, which is semantic. Assert the
+> property, never the spelling.
+
+**Still divergent, and needing a decision rather than a value:** the system's side menu is built
+around **collapsible sections** (`.sb-navsec` + chevron, sub-items bracketed by hairline dividers,
+37px/12.5px). Ours is a flat list of 41 items under static `.grp` headers. Guidelines §6.2 permits
+static headers *"unless a nav is genuinely long enough to need sectioning"* — 41 items qualifies — so
+this is defensible, but it is not the system's preferred grammar. It also interacts directly with the
+**nav-prune** decision: if the 35 gated items go, the sectioning may not be needed at all.
+
+---
+
 ## Open — next up
 
 In report §8 order:

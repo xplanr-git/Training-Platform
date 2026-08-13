@@ -21,11 +21,21 @@ const ADMIN_BASE = '/admin';
  */
 function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?: () => void }) {
   return (
-    <nav className="flex-1 overflow-y-auto px-3 py-4">
+    /*
+      Full-bleed rows, per core.css. `.sb-side` pads 12px vertically and ZERO
+      horizontally, and `.sb-nav a` carries its own 20px inset — so the hover wash
+      spans the whole sidebar as a band. The px-3 that used to sit here inset every
+      row, which is what turned the wash into a floating pill.
+    */
+    <nav className="flex-1 overflow-y-auto py-3">
       {ADMIN_NAV.map((group) => (
-        <div key={group.id} className="mb-5">
-          <p className="px-2 pb-1 text-eyebrow font-bold uppercase text-muted">{group.label}</p>
-          <ul className="space-y-0.5">
+        <div key={group.id}>
+          {/* core.css `.sb-side .grp`: 10.5px/700/.07em, padding 16px 16px 8px. */}
+          <p className="px-4 pb-2 pt-4 text-nav-group font-bold uppercase text-muted">
+            {group.label}
+          </p>
+          {/* `.sb-nav { gap: 0 }` — the 42px rows do the separating. */}
+          <ul>
             {group.items.map((item) => {
               const href = `${ADMIN_BASE}${item.href}`;
               const base = href.split('?')[0];
@@ -69,14 +79,27 @@ function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?:
                       // text-control (13.5) is the system's named size for nav and
                       // controls; this was text-sm (14) only because no token
                       // existed for it.
-                      'flex items-center justify-between px-3 py-2 text-control transition-colors',
+                      // Measured against core.css `.sb-nav a`, not inferred:
+                      //   height:42px; padding:0 var(--s5) /* 20 */;
+                      //   font-size:13.5px; font-weight:500; color:var(--text-2);
+                      // The row was 36px tall with 10px of padding, which is what
+                      // made the menu read cramped next to the system's specimen.
+                      'flex h-[42px] items-center justify-between px-5 text-control transition-colors',
                       isActive
-                        ? 'font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-4'
-                        : // Hover DARKENS the label; the grey wash belongs on press
-                          // ("Hover = the label darkens to ink (rows may take a
-                          // square grey wash on press)", §6). It was on hover, so
-                          // every row you passed over lit up as though selected.
-                          'font-medium text-foreground-2 hover:text-foreground active:bg-surface-muted',
+                        ? // `.sb-nav a.is-active`: ink, 600, underline
+                          // text-decoration-thickness:1.75px; text-underline-offset:5px.
+                          'font-semibold text-foreground underline decoration-primary decoration-[1.75px] underline-offset-[5px]'
+                        : // `.sb-nav a:hover { background:var(--sunken); color:var(--text) }`
+                          // (core.css:542, in the same block as the accordion row
+                          // wash). The wash belongs on HOVER.
+                          //
+                          // I previously moved it to active: on the strength of the
+                          // Guidelines line "Hover = the label darkens to ink (rows
+                          // may take a square grey wash on press)". The shipped CSS
+                          // is unambiguous and `.sb-nav` has no :active rule at all,
+                          // so that reading removed a treatment the system specifies.
+                          // Prose lost to implementation here.
+                          'font-medium text-foreground-2 hover:bg-surface-muted hover:text-foreground',
                     )}
                   >
                     <span className="truncate">{item.label}</span>
@@ -143,7 +166,8 @@ export function AdminShell({
       {/* Desktop sidebar */}
       <aside
         aria-label="Admin navigation"
-        className="hidden w-64 flex-col border-r border-border bg-surface lg:flex"
+        // 248px, per core.css `.sb-side { width: 248px }`. w-64 is 256.
+        className="hidden w-62 flex-col border-r border-border bg-surface lg:flex"
       >
         <Brand tenantName={tenantName} />
         <NavLinks activePath={activePath} />

@@ -247,7 +247,13 @@ describe('the eyebrow is a kicker, never the heading', () => {
      * only recognises one spelling of the value it enforces will block the move to
      * the token every time.
      */
-    const IS_EYEBROW_SIZE = /\btext-eyebrow\b|text-\[11px\]/;
+    /*
+     * `text-nav-group` is the side menu's own group label — core.css gives
+     * `.sb-side .grp` 10.5px/.07em rather than the 11px/.09em eyebrow, so that a
+     * long nav's section labels recede behind the items they group. It is a
+     * sanctioned uppercase label, just not the eyebrow.
+     */
+    const IS_EYEBROW_SIZE = /\btext-eyebrow\b|\btext-nav-group\b|text-\[11px\]/;
     const offenders: string[] = [];
     for (const f of TSX) {
       for (const m of f.src.matchAll(/className="([^"]*\buppercase\b[^"]*)"/g)) {

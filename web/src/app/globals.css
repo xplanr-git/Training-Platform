@@ -98,6 +98,13 @@
      and inputs still sit at 14 and are a separate, wider change. */
   --text-control: 0.84375rem;
   --text-control--line-height: 1.4;
+  /* 10.5 — the side menu's group label, and deliberately NOT the eyebrow.
+     core.css gives `.sb-side .grp` its own smaller, tighter setting
+     (10.5px / .07em) rather than the 11px / .09em eyebrow, so that a long nav's
+     section labels recede behind the items they group instead of competing with
+     them. Sanctioned by the system; it is simply not part of the prose ramp. */
+  --text-nav-group: 0.65625rem;
+  --text-nav-group--letter-spacing: 0.07em;
 
   --radius-card: 4px;
 

@@ -16,7 +16,19 @@ const SHELL = read('src/components/admin-shell.tsx');
  */
 function navLinkClasses(): string {
   const src = SHELL.replace(/\/\/.*$/gm, '');
-  const start = src.indexOf("'flex items-center justify-between");
+  /*
+   * Anchored on `aria-current`, which is semantic and stable, NOT on the class
+   * string this test exists to check.
+   *
+   * It was pinned to the literal "'flex items-center justify-between", and adding
+   * the h-[42px] the system specifies broke the locator — so the guard failed for
+   * a change that made the nav MORE correct. That is the third literal-coupled
+   * locator to break in this branch, and the first one I wrote myself after
+   * naming the lesson: assert the property, never the spelling.
+   */
+  const anchor = src.indexOf('aria-current={isActive');
+  expect(anchor, 'could not find the nav row (aria-current anchor)').toBeGreaterThan(-1);
+  const start = src.indexOf('className={cn(', anchor);
   expect(start, 'could not find the nav row className').toBeGreaterThan(-1);
   const end = src.indexOf('>', start);
   expect(end, 'could not find the end of the Link tag').toBeGreaterThan(start);
@@ -39,15 +51,36 @@ describe('side-nav follows the resolved navigation grammar', () => {
     expect(classes).not.toMatch(/\brounded-/);
   });
 
-  it('darkens the label on hover rather than filling the row', () => {
-    expect(classes, 'hover should change the text colour').toMatch(/hover:text-foreground/);
-    expect(classes, 'a background wash on hover reads as "selected", not "hovered"').not.toMatch(
-      /hover:bg-/,
-    );
+  it('washes the row on hover and darkens the label, per core.css', () => {
+    /*
+     * `.sb-nav a:hover { background: var(--sunken); color: var(--text) }`
+     * — core.css:542, in the same block as the accordion's row wash.
+     *
+     * An earlier version of this test asserted the OPPOSITE: no `hover:bg-`, with
+     * the wash moved to `active:`. That came from the Guidelines line "Hover = the
+     * label darkens to ink (rows may take a square grey wash on press)". The
+     * shipped CSS is unambiguous, and `.sb-nav` has no `:active` rule at all, so
+     * that reading deleted a treatment the system specifies — and the guard then
+     * locked the mistake in. Where the prose and core.css disagree about a
+     * concrete value, core.css is the implementation.
+     */
+    expect(classes, 'hover should wash the row').toMatch(/hover:bg-/);
+    expect(classes, 'hover should also darken the label to ink').toMatch(/hover:text-foreground/);
   });
 
-  it('keeps the wash for press, where the system allows it', () => {
-    expect(classes).toMatch(/active:bg-/);
+  it('sizes the row like the system specimen', () => {
+    // `.sb-nav a { height: 42px; padding: 0 var(--s5) }`. It was 36px with 10px
+    // of padding, which is what made the menu read cramped.
+    expect(classes).toMatch(/h-\[42px\]/);
+    expect(classes).toMatch(/\bpx-5\b/);
+  });
+
+  it('marks the current item with the system underline metrics', () => {
+    // `.sb-nav a.is-active`: thickness 1.75px, offset 5px — not Tailwind's
+    // decoration-2 / underline-offset-4, which were 2px and 4px.
+    const src = SHELL.replace(/\/\/.*$/gm, '');
+    expect(src).toMatch(/decoration-\[1\.75px\]/);
+    expect(src).toMatch(/underline-offset-\[5px\]/);
   });
 
   it('marks the current item with an underline, not a block or a side bar', () => {
