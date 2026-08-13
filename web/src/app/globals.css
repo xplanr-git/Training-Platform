@@ -262,6 +262,108 @@
   --foreground: var(--color-foreground);
 }
 
+/* ── Dark theme (core.css §15 `.sb-dark`, translated) ───────────────────────
+   Tokens only — every component inherits, exactly as the system intends.
+   `.dark` is applied to <html> by the boot script in layout.tsx (before first
+   paint, so no flash) and driven by ThemeToggle: 'dark' forces it, 'light'
+   removes it, 'auto'/absent follows prefers-color-scheme. The @custom-variant
+   at the top of this file already made every `dark:` utility class-based, so
+   this block is the single switch.
+
+   Placed AFTER @theme deliberately: :root and .dark tie on specificity
+   (0,1,0), so source order is what lets these win on the <html> element
+   itself. tests/unit/helpers/contrast.ts reads light values as the FIRST
+   match of each token and dark values from inside this block — do not move it
+   above @theme.
+
+   The same two divergences as light, for the same reasons (do not "fix"):
+   - --color-input stays #858585: the system's dark --border-input (#3B3B42)
+     is ~1.5:1 against the dark shell and fails WCAG 1.4.11; #858585 measures
+     ≥3:1 against both the shell and the field's own fill in BOTH themes.
+   - Status tints are opaque composites (the system ships 16% alpha) — each is
+     the alpha composited over the dark surface, so contrast holds on every
+     plane a tag can land on. Asserted in status-tone-conventions.test.ts. */
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces — near-black shell, elevated panels one step lighter */
+  --color-surface: #141416;
+  --color-background: #141416;
+  --color-card: #1c1c20;
+  --color-card-foreground: #ededf0;
+  --color-popover: #1c1c20;
+  --color-popover-foreground: #ededf0;
+  --color-surface-muted: #26262b;
+  --color-sunken: #26262b;
+  --color-input-background: #1c1c20;
+
+  /* Structure. --color-input is DECLARED here even though the value does not
+     change, because it is a decision, not an omission — see the divergence
+     note above. */
+  --color-border: #242429;
+  --color-border-strong: #3b3b42;
+  --color-keyline: #ededf0;
+  --color-input: #858585;
+
+  /* Text. Muted is #8e8f95, NOT the system's dark --text-3 (#86878d): that
+     value measures 4.20:1 on the sunken plane — under AA — while passing on
+     the shell and cards, which is precisely the fails-where-nobody-checks
+     shape the opaque-tint rule exists for. One step lighter clears 4.5 on all
+     three surfaces. Asserted in status-tone-conventions.test.ts. */
+  --color-foreground: #ededf0;
+  --color-foreground-2: #b6b7bd;
+  --color-muted: #8e8f95;
+  --color-muted-foreground: #8e8f95;
+
+  /* Ink flips to light: the primary action and every selected state */
+  --color-primary: #f2f2f5;
+  --color-primary-hover: #ffffff;
+  --color-primary-foreground: #151517;
+  --color-secondary: #26262b;
+  --color-secondary-foreground: #ededf0;
+  --color-accent: #26262b;
+  --color-accent-foreground: #ededf0;
+
+  /* The one functional colour, brightened for dark surfaces; hover brightens
+     further (on light it deepens — either way it moves AWAY from the text). */
+  --color-link: #7fb0ff;
+  --color-link-hover: #a3c7ff;
+  --color-focus: #7fb0ff;
+  --color-ring: #7fb0ff;
+
+  --color-destructive: #f0736b;
+  --color-destructive-foreground: #151517;
+
+  /* Status — dark text colours from the system; tints composited over the
+     dark surface (#1c1c20) at the system's 16% weight. All ≥4.5:1. */
+  --color-status-green: #46c77e;
+  --color-status-green-bg: #23372f;
+  --color-status-amber: #e3ab45;
+  --color-status-amber-bg: #3c3326;
+  --color-status-red: #f0736b;
+  --color-status-red-bg: #3e2a2c;
+  --color-status-blue: #7fb0ff;
+  --color-status-blue-bg: #2c3444;
+  --color-status-grey: #a2a2a8;
+  --color-status-grey-bg: #313136;
+
+  /* Categorical charts — the system's dark, CVD-validated set */
+  --color-cat-1: #6fa8ff;
+  --color-cat-2: #e6a85c;
+  --color-cat-3: #4fc98a;
+  --color-cat-4: #b79bff;
+  --color-cat-5: #f0736b;
+
+  /* Data marks stay greyscale; the default fill lightens, the track darkens */
+  --color-data: #8c8d92;
+  --color-data-strong: #b6b7bd;
+  --color-data-soft: #54555a;
+  --color-data-track: #2a2a2f;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-pop: 0 12px 34px rgb(0 0 0 / 0.55);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

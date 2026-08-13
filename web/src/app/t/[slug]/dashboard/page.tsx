@@ -24,6 +24,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SignOutButton } from '@/components/sign-out-button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 /** Learner dashboard: the courses this user is enrolled in for this tenant. */
 export default async function LearnerDashboard({ params }: { params: Promise<{ slug: string }> }) {
@@ -162,6 +163,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
           <p className="mt-1 text-muted">Pick up where you left off.</p>
         </div>
         <div className="flex shrink-0 items-center gap-4">
+          <ThemeToggle />
           {isAdmin && (
             <Button asChild variant="outline">
               <Link href="/admin">Admin</Link>

@@ -8,10 +8,23 @@ import { join } from 'node:path';
  */
 const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
 
-/** A `--color-*` hex value from globals.css. Throws if the token is gone. */
+/**
+ * A `--color-*` hex value from globals.css — the LIGHT value, by construction:
+ * the `.dark` override block sits after `@theme`, so the first match is always
+ * the light one. Throws if the token is gone.
+ */
 export function token(name: string): string {
   const m = new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`).exec(css);
   if (!m) throw new Error(`token ${name} not found in globals.css`);
+  return m[1];
+}
+
+/** The same token's DARK value, read from inside the `.dark { … }` block. */
+export function darkToken(name: string): string {
+  const block = /\.dark\s*\{([\s\S]*?)\n\}/.exec(css)?.[1];
+  if (!block) throw new Error('the .dark theme block is missing from globals.css');
+  const m = new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`).exec(block);
+  if (!m) throw new Error(`token ${name} not found in the .dark block`);
   return m[1];
 }
 

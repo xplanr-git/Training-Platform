@@ -8,6 +8,7 @@ import { ADMIN_NAV } from '@/lib/nav';
 import { BrandMark } from '@/components/brand-mark';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SignOutButton } from '@/components/sign-out-button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { SkipLink } from '@/components/skip-link';
 import { cn } from '@/components/ui/utils';
 
@@ -172,6 +173,7 @@ export function AdminShell({
         <Brand tenantName={tenantName} />
         <NavLinks activePath={activePath} />
         <div className="border-t border-border px-4 py-3">
+          <ThemeToggle className="mb-2.5" />
           {userEmail && <p className="truncate text-meta text-muted">{userEmail}</p>}
           <SignOutButton className="mt-1.5" />
         </div>
@@ -197,6 +199,7 @@ export function AdminShell({
                 the drawer is the only navigation a mobile admin has.
               */}
               <div className="mt-auto border-t border-border px-4 py-3">
+                <ThemeToggle className="mb-2.5" />
                 {userEmail && <p className="truncate text-meta text-muted">{userEmail}</p>}
                 <SignOutButton className="mt-1.5" />
               </div>

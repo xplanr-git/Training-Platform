@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { GraduationCap } from 'lucide-react';
 import { EmptyState, NoMatches } from '@/components/empty-state';
 import { SignOutButton } from '@/components/sign-out-button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { createClient as supabase } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { db, and, eq, ilike, desc, count, courses } from '@training-platform/db';
@@ -116,6 +117,7 @@ export default async function TenantHome({
     <main className="mx-auto max-w-5xl px-6 py-12 sm:py-14">
       <header className="mb-10">
         <nav className="mb-6 flex flex-wrap items-center justify-end gap-3 text-sm">
+          <ThemeToggle className="mr-auto" />
           {signedIn ? (
             <>
               <Link href="/dashboard" className="text-link hover:text-link-hover hover:underline">

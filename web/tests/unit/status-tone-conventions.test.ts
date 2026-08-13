@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { token, ratio, AA_NORMAL_TEXT } from './helpers/contrast';
+import { token, darkToken, ratio, AA_NORMAL_TEXT } from './helpers/contrast';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8').replace(/\r\n/g, '\n');
 const BADGE = read('src/components/ui/badge.tsx');
@@ -55,6 +55,42 @@ describe('the tints are opaque, and that is load-bearing', () => {
           `status-${tone} tint is invisible on ${surface} (${r.toFixed(2)}:1)`,
         ).toBeLessThan(1.9);
       }
+    }
+  });
+});
+
+describe('the dark theme holds the same bars', () => {
+  /*
+   * The dark palette is not exempt from anything the light one is held to:
+   * tones AA on their tints, tints opaque (the same 16%-alpha-composited-once
+   * reasoning — a translucent tint on dark surfaces fails on whichever plane
+   * nobody checked), and the core text/link pairings readable on every dark
+   * surface they sit on.
+   */
+  it.each(TONES)('dark status-%s clears AA on its dark tint', (tone) => {
+    const r = ratio(darkToken(`--color-status-${tone}`), darkToken(`--color-status-${tone}-bg`));
+    expect(r, `dark status-${tone} on its tint is ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(
+      AA_NORMAL_TEXT,
+    );
+  });
+
+  it('dark text, muted text and the link clear AA on every dark surface', () => {
+    for (const fg of ['--color-foreground', '--color-muted', '--color-link']) {
+      for (const bg of ['--color-surface', '--color-card', '--color-sunken']) {
+        const r = ratio(darkToken(fg), darkToken(bg));
+        expect(r, `${fg} on ${bg} is ${r.toFixed(2)}:1 in dark`).toBeGreaterThanOrEqual(
+          AA_NORMAL_TEXT,
+        );
+      }
+    }
+  });
+
+  it('the dark input border still clears WCAG 1.4.11 (the documented divergence)', () => {
+    // #858585 is kept in BOTH themes for the same reason: the system's own
+    // border-input fails 3:1 against the shell and the field fill alike.
+    for (const bg of ['--color-surface', '--color-input-background']) {
+      const r = ratio(darkToken('--color-input'), darkToken(bg));
+      expect(r, `dark input border on ${bg} is ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(3);
     }
   });
 });
