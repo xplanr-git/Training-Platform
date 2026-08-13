@@ -28,7 +28,8 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        // `.sb-modal-overlay`: an ink-tinted scrim (~42%), not pure black.
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 bg-foreground/40 fixed inset-0 z-50',
         className,
       )}
       {...props}
@@ -43,10 +44,18 @@ function AlertDialogContent({
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
+      {/*
+        core.css `.sb-modal`: the elevated white surface (bg-card, not the shell
+        tint), 460px, radius 4, shadow-pop and NO border — the pop shadow is
+        what says "floating"; a border on top of it is the bordered-box look
+        §4b rules out. p-0/gap-0 because the modal's sections carry their own
+        padding and separators: the title is the keylined masthead, the
+        description is the body, the footer sits above its own hairline.
+      */}
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-pop duration-200 sm:max-w-lg',
+          'bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-0 overflow-hidden rounded-md p-0 shadow-pop duration-200 sm:max-w-[460px]',
           className,
         )}
         {...props}
@@ -55,11 +64,16 @@ function AlertDialogContent({
   );
 }
 
+/**
+ * Header is a transparent column: the DS structure lives on Title (the keylined
+ * masthead) and Description (the body), so existing Header(Title, Description)
+ * compositions land on the sb-modal layout with no call-site change.
+ */
 function AlertDialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn('flex flex-col gap-2 text-center sm:text-left', className)}
+      className={cn('flex flex-col text-left', className)}
       {...props}
     />
   );
@@ -69,7 +83,13 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       data-slot="alert-dialog-footer"
-      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      // `.sb-modal .mf`: the footer sits above the LIGHT hairline (--border),
+      // not the keyline — "sections dark, rows light" applies inside a modal
+      // too: one dark line under the masthead, quiet structure everywhere else.
+      className={cn(
+        'border-border flex flex-col-reverse gap-3 border-t px-5 py-4 sm:flex-row sm:justify-end',
+        className,
+      )}
       {...props}
     />
   );
@@ -82,7 +102,9 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn('text-base font-extrabold', className)}
+      // `.sb-modal .mh`: 16/800 in a padded masthead with the 1px dark keyline
+      // under it — the one dark line in the modal.
+      className={cn('border-keyline border-b px-5 py-5 text-base font-extrabold', className)}
       {...props}
     />
   );
@@ -95,7 +117,8 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn('text-muted-foreground text-sm', className)}
+      // `.sb-modal .mb`: body copy at the 13.5 control size, text-2, 1.6 line.
+      className={cn('text-foreground-2 text-control px-5 py-5 leading-relaxed', className)}
       {...props}
     />
   );

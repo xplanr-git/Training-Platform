@@ -129,9 +129,16 @@ grammar, and the vertical rhythm.
 
 ## 5. Still open / not adopted (with reasons)
 
-- **Modal header keyline** (`.sb-modal .mh` 1px dark keyline + footer hairline) — needs the
-  Dialog padding restructure (p-0 + per-section padding) and a sweep of every call site; titles
-  are on spec now. Do when a dialog next gets real design attention.
+> **Progress log — 2026-08-13 (later the same day)**
+> - ✅ **Modal structure shipped.** Dialog + AlertDialog now carry the full `.sb-modal` layout:
+>   460px, radius 4, borderless white on shadow-pop, title = 16/800 masthead with the 1px ink
+>   keyline, description = 13.5/text-2/1.6 body, footer above the light hairline (gap 12), and an
+>   ink-tinted scrim (was pure black). Encoded on Title/Footer rather than Header, so both call
+>   sites (`nav-form.tsx`, `role-select.tsx`) needed no change. Guarded in
+>   `sb-design-conventions.test.ts` ("the modal masthead carries the keyline"); browser-measured
+>   via a throwaway probe (all values on spec).
+
+- ~~**Modal header keyline**~~ — **DONE**, see progress log above.
 - **Segmented control, toast, mega-menu, board, gantt, tree** — no consumer exists yet; pull in
   per feature (the courses/people list *status filter* is the natural first segmented-control
   slot).

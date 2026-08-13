@@ -444,6 +444,27 @@ describe('data marks are greyscale, never ink and never a status colour', () => 
   });
 });
 
+describe('the modal masthead carries the keyline (core.css .sb-modal)', () => {
+  /*
+   * One dark line in a modal: 1px keyline under the title masthead. The footer
+   * sits above the LIGHT hairline — "sections dark, rows light" holds inside a
+   * modal too, and a dark line in both places is the same heaviness the table
+   * keyline rule guards against. Encoded on Title/Footer rather than Header so
+   * every existing Header(Title, Description) composition lands on the layout
+   * without call-site changes.
+   */
+  for (const file of ['components/ui/dialog.tsx', 'components/ui/alert-dialog.tsx']) {
+    it(`${file} keylines the title and hairlines the footer`, () => {
+      const src = FILES.find((f) => f.rel === file)!.src;
+      const title = src.slice(src.indexOf('Title({'), src.indexOf('Description({'));
+      expect(title).toMatch(/border-keyline/);
+      const footer = src.slice(src.indexOf('Footer({'), src.indexOf('Title({'));
+      expect(footer, 'footer separator is the light hairline').toMatch(/border-border/);
+      expect(footer).not.toMatch(/border-keyline/);
+    });
+  }
+});
+
 describe('confirmation is the in-app dialog, never a native popup', () => {
   /*
    * window.confirm / alert / prompt are off-brand, not theme-aware, and
