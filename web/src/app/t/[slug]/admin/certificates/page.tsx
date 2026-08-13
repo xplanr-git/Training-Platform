@@ -146,12 +146,7 @@ export default async function Certificates({
                         quiet
                         confirm="Revoke this certificate? Its public verification page will show it as revoked. You can reinstate it from this page."
                       >
-                        <Button
-                          type="submit"
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                        >
+                        <Button type="submit" variant="destructive-ghost">
                           Revoke
                         </Button>
                       </NavForm>

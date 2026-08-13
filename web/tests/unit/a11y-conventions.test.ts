@@ -235,11 +235,15 @@ describe('text contrast (1.4.3)', () => {
     // The ghost hover fill is --color-accent #f1f1f0. The destructive token #b4302a
     // sits on it at 5.47:1 — well clear of AA — so the button keeps its red on hover
     // via hover:text-destructive, rather than surrendering it to ink (ghost's default
-    // hover:text-accent-foreground) OR reaching for a raw red-700 that the monochrome
-    // guard now bans. The earlier fix darkened #dc2626 to red-700; the darker token
-    // means the semantic colour alone now clears the bar. See sb-design-conventions.
+    // hover:text-accent-foreground). The recipe used to be pinned at one call site;
+    // it now lives ONCE, in the destructive-ghost Button variant, and
+    // sb-design-conventions bans any call site hand-rolling it again.
+    const btn = code('src/components/ui/button.tsx');
+    expect(btn).toMatch(
+      /'destructive-ghost':\s*\n?\s*'text-destructive[^']*hover:text-destructive/,
+    );
     const src = code('src/app/platform/page.tsx');
-    expect(src).toMatch(/text-destructive hover:text-destructive/);
+    expect(src).toMatch(/variant="destructive-ghost"/);
   });
 
   it('the muted token still clears AA on both surfaces it is used on', () => {

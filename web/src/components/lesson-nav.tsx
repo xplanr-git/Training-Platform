@@ -57,14 +57,17 @@ export function LessonNav({
                     href={`/learn/${courseSlug}/${l.id}`}
                     aria-current={isCurrent ? 'page' : undefined}
                     className={cn(
-                      // The 2px inset ink marker is carried by a left border that
-                      // is TRANSPARENT when inactive rather than absent, so
-                      // selecting a lesson does not shift the whole list 2px to
-                      // the right.
-                      'flex items-center gap-2 rounded-md border-l-2 px-2 py-3 text-sm transition-colors lg:py-1.5',
+                      // The RESOLVED side-menu grammar, same as the admin shell:
+                      // current = ink label + the 1.75px ink underline hugging
+                      // the text — NO side bar, NO block wash, NO radius (all
+                      // three are the forbidden selection treatments; this row
+                      // carried all three at once). Resting rows sit a step
+                      // down and take the square wash on hover only. 13.5 is
+                      // the system's named nav/control size.
+                      'flex items-center gap-2 px-2 py-3 text-control transition-colors lg:py-1.5',
                       isCurrent
-                        ? 'border-primary bg-sunken font-bold'
-                        : 'border-transparent text-foreground hover:bg-surface-muted',
+                        ? 'font-semibold text-foreground underline decoration-primary decoration-[1.75px] underline-offset-[5px]'
+                        : 'text-foreground-2 hover:bg-surface-muted hover:text-foreground',
                     )}
                   >
                     {lDone ? (

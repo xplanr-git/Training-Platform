@@ -136,8 +136,10 @@ describe('state is never conveyed by colour alone (WCAG 1.4.1)', () => {
     // icon nor the colour, and colour alone fails 1.4.1 regardless.
     const src = read('src/app/t/[slug]/admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx');
     expect(src).toMatch(/\(correct\)/);
+    // \s+ not a literal space: prettier wraps the attributes once the icon
+    // carries a colour class, and a formatting pass must not fail the guard.
     expect(src, 'the tick is decorative once the word is there').toMatch(
-      /<Check aria-hidden="true"/,
+      /<Check\s+aria-hidden="true"/,
     );
   });
 

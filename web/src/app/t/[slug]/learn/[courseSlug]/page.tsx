@@ -11,6 +11,7 @@ import { effectiveUserId } from '@/lib/view-as';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { getCourseProgress, formatMinutes } from '@/lib/progress';
 import { Progress } from '@/components/ui/progress';
+import { StatusBadge } from '@/components/ui/badge';
 import { Callout } from '@/components/ui/callout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -189,7 +190,10 @@ export default async function Learn({
                         className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-muted"
                       >
                         {lDone ? (
-                          <Check className="h-4 w-4 shrink-0 text-status-green" />
+                          <Check
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0 text-status-green"
+                          />
                         ) : (
                           <Icon className="h-4 w-4 shrink-0 text-muted" />
                         )}
@@ -199,7 +203,7 @@ export default async function Learn({
                             {l.estimatedMinutes} min
                           </span>
                         )}
-                        {lDone && <span className="text-meta text-status-green">Done</span>}
+                        {lDone && <StatusBadge tone="green">Done</StatusBadge>}
                       </Link>
                     </li>
                   );

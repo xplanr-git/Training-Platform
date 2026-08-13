@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react';
 
 import { cn } from '@/components/ui/utils';
+import {
+  segmentedItem,
+  segmentedItemActive,
+  segmentedItemResting,
+  segmentedTray,
+} from '@/components/ui/segmented';
 
 /**
  * The theme switch, as the design system's segmented control — the Reference
@@ -55,11 +61,7 @@ function ThemeToggle({ className }: { className?: string }) {
   }
 
   return (
-    <div
-      role="group"
-      aria-label="Colour theme"
-      className={cn('inline-flex w-fit gap-[3px] rounded-md bg-sunken p-[3px]', className)}
-    >
+    <div role="group" aria-label="Colour theme" className={cn(segmentedTray, className)}>
       {MODES.map((m) => (
         <button
           key={m}
@@ -67,8 +69,9 @@ function ThemeToggle({ className }: { className?: string }) {
           aria-pressed={mode === m}
           onClick={() => choose(m)}
           className={cn(
-            'rounded-sm px-3 py-1 text-meta font-semibold capitalize whitespace-nowrap transition-colors',
-            mode === m ? 'bg-card text-foreground shadow-card' : 'text-muted hover:text-foreground',
+            segmentedItem,
+            'py-1 capitalize',
+            mode === m ? segmentedItemActive : segmentedItemResting,
           )}
         >
           {m}

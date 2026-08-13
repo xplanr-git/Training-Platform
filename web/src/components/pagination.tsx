@@ -35,9 +35,9 @@ export function Pagination({
    * filling it, matching Button's outline variant so the two read as one family.
    */
   const linkClass =
-    'rounded-md border border-input px-3 py-1.5 text-sm font-semibold text-foreground-2 transition-colors hover:border-foreground hover:text-foreground';
+    'inline-flex h-9 items-center rounded-md border border-input px-3 text-control font-semibold text-foreground-2 transition-colors hover:border-foreground hover:text-foreground';
   const disabledClass =
-    'rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-muted opacity-50';
+    'inline-flex h-9 items-center rounded-md border border-border px-3 text-control font-semibold text-muted opacity-50';
 
   return (
     <nav className="mt-4 flex items-center justify-between" aria-label="Pagination">

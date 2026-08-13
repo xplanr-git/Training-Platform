@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-
-const SELECT_CLS = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 type QuestionType = 'mcq' | 'multi_select' | 'true_false';
 
@@ -41,17 +40,17 @@ export function QuizAnswerFields() {
   return (
     <>
       <div className="flex gap-2">
-        <select
+        <NativeSelect
           name="type"
           aria-label="Question type"
-          className={SELECT_CLS}
+          wrapperClassName="flex-1"
           value={type}
           onChange={(e) => setType(e.target.value as QuestionType)}
         >
           <option value="mcq">Multiple choice (one answer)</option>
           <option value="multi_select">Multiple choice (many answers)</option>
           <option value="true_false">True / False</option>
-        </select>
+        </NativeSelect>
         <Input
           name="points"
           type="number"
@@ -76,10 +75,10 @@ export function QuizAnswerFields() {
       {type === 'true_false' ? (
         <label className="flex items-center gap-2 text-sm">
           <span className="text-muted">Correct answer</span>
-          <select name="correct_tf" className={SELECT_CLS}>
+          <NativeSelect name="correct_tf" wrapperClassName="w-32">
             <option value="0">True</option>
             <option value="1">False</option>
-          </select>
+          </NativeSelect>
         </label>
       ) : options.length === 0 ? (
         // Not an error: it is the ordinary state before any option is typed. The

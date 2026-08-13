@@ -26,6 +26,17 @@ type Segment = {
   active: boolean;
 };
 
+/**
+ * The `.sb-seg` class strings, exported so every segmented control — link-based
+ * (this file) or button-based (ThemeToggle) — is one recipe. Two hand-copies of
+ * a tray is how the admin nav ended up with three destructive-button recipes.
+ */
+export const segmentedTray = 'inline-flex w-fit gap-[3px] rounded-md bg-sunken p-[3px]';
+export const segmentedItem =
+  'rounded-sm px-3 text-meta font-semibold whitespace-nowrap transition-colors';
+export const segmentedItemActive = 'bg-card text-foreground shadow-card';
+export const segmentedItemResting = 'text-muted hover:text-foreground';
+
 function SegmentedNav({
   label,
   items,
@@ -37,20 +48,17 @@ function SegmentedNav({
   className?: string;
 }) {
   return (
-    <nav
-      aria-label={label}
-      className={cn('inline-flex w-fit gap-[3px] rounded-md bg-sunken p-[3px]', className)}
-    >
+    <nav aria-label={label} className={cn(segmentedTray, className)}>
       {items.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           aria-current={item.active ? 'page' : undefined}
           className={cn(
-            'rounded-sm px-3 py-2.5 text-meta font-semibold whitespace-nowrap transition-colors sm:py-[5px]',
-            item.active
-              ? 'bg-card text-foreground shadow-card'
-              : 'text-muted hover:text-foreground',
+            segmentedItem,
+            // 44px-adjacent target on a phone, the system's 30px from sm: up.
+            'py-2.5 sm:py-[5px]',
+            item.active ? segmentedItemActive : segmentedItemResting,
           )}
         >
           {item.label}

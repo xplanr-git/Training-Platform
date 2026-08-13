@@ -173,7 +173,7 @@ export default async function People({
       */}
       {requests.length > 0 && (
         <section className="mt-6 rounded-(--radius-card) bg-surface">
-          <h2 className="border-b-2 border-keyline px-4 py-3 text-h2 font-bold">
+          <h2 className="border-b-[1.75px] border-keyline px-4 py-3 text-h2 font-bold">
             Requests to join
             <span className="ml-2 text-sm font-normal text-muted tabular-nums">
               {requests.length} waiting
@@ -200,12 +200,7 @@ export default async function People({
                     quiet
                     confirm={`Decline the request from ${r.email}? They are not told, and they can ask again.`}
                   >
-                    <Button
-                      type="submit"
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
+                    <Button type="submit" size="sm" variant="destructive-ghost">
                       Decline
                     </Button>
                   </NavForm>

@@ -465,6 +465,77 @@ describe('the modal masthead carries the keyline (core.css .sb-modal)', () => {
   }
 });
 
+describe('form controls come from the kit, not the browser', () => {
+  /*
+   * The course-edit page shipped nine hand-rolled native <select>s (browser
+   * chevron, 36px, transparent fill, off-system shadow) and a checkbox that
+   * rendered the browser-default BLUE when checked — caught by the owner from
+   * a screenshot, not by any test, because every guard looked at the
+   * primitives. These are the page-level guards.
+   */
+  it('no page renders a bare <select> — use NativeSelect (or ui/select)', () => {
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      if (f.rel === 'components/ui/native-select.tsx') continue;
+      if (/<select[\s>]/.test(f.src)) offenders.push(f.rel);
+    }
+    expect(
+      offenders,
+      `NativeSelect owns the chevron and metrics:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  it('every native checkbox/radio sets accent-, or is the kit Checkbox', () => {
+    // A native tick without accent-color paints the OS default blue — the one
+    // colour this system reserves for text links.
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      if (f.rel.startsWith('components/ui/')) continue;
+      for (const m of f.src.matchAll(/<input[^>]*type="(?:checkbox|radio)"[^>]*>/gs)) {
+        if (!/accent-/.test(m[0])) offenders.push(`${f.rel} — ${m[0].slice(0, 70)}`);
+      }
+    }
+    expect(offenders, `add accent-primary or use <Checkbox>:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('destructive is a variant, not a recipe', () => {
+  /*
+   * Seven destructive buttons once hand-rolled red in three different ways —
+   * one lost its red on hover because ghost's hover rule outranked a lone
+   * text-destructive. Red on a button now comes only from variant="destructive"
+   * or variant="destructive-ghost".
+   */
+  it('no Button paints itself red via className', () => {
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      if (f.rel.startsWith('components/ui/')) continue;
+      for (const m of f.src.matchAll(
+        /<Button[^>]*className="[^"]*(?:text|border|bg)-destructive[^"]*"[^>]*>/gs,
+      )) {
+        offenders.push(`${f.rel} — ${m[0].slice(0, 80)}`);
+      }
+    }
+    expect(offenders, `use variant="destructive(-ghost)":\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('no heading is painted a colour', () => {
+    // "Danger zone" was a red 14px h2 — the only coloured heading in the tree.
+    // A heading's authority comes from the ramp, never from a hue; colour on
+    // this system means state (status tokens) or a link (blue), and a heading
+    // is neither.
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      for (const m of f.src.matchAll(
+        /<h[1-6][^>]*className="[^"]*(?:text-destructive|text-status-[a-z]+|text-link)[^"]*"/g,
+      )) {
+        offenders.push(`${f.rel} — ${m[0].slice(0, 80)}`);
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+});
+
 describe('confirmation is the in-app dialog, never a native popup', () => {
   /*
    * window.confirm / alert / prompt are off-brand, not theme-aware, and

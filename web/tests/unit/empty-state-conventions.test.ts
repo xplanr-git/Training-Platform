@@ -121,13 +121,15 @@ describe('an empty state does not look disabled', () => {
   it('the title is foreground text, not muted', () => {
     // The substantive fix. Muted grey is what this app uses for disabled and
     // secondary text, so a fully-muted empty state reads as "broken", not "new".
-    const title = /<p className="([^"]*font-semibold[^"]*)">\{title\}<\/p>/.exec(src);
-    expect(title, 'EmptyState should render a semibold title').not.toBeNull();
+    // 15/800 per core.css `.sb-empty h3`.
+    const title = /<p className="([^"]*font-extrabold[^"]*)">\{title\}<\/p>/.exec(src);
+    expect(title, 'EmptyState should render the 15/800 title').not.toBeNull();
+    expect(title?.[1] ?? '').toContain('text-h3');
     expect(title?.[1] ?? '').not.toContain('text-muted');
   });
 
   it('the explanation underneath stays muted, so there is a hierarchy', () => {
-    expect(src).toMatch(/text-sm leading-relaxed text-muted/);
+    expect(src).toMatch(/text-control leading-relaxed text-muted/);
   });
 
   it('decorative icons are hidden from screen readers', () => {

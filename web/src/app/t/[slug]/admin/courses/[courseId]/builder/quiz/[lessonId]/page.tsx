@@ -147,10 +147,9 @@ export default async function QuizEditor({
                     >
                       <Button
                         type="submit"
-                        variant="ghost"
+                        variant="destructive-ghost"
                         size="icon"
                         aria-label="Delete question"
-                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -158,14 +157,12 @@ export default async function QuizEditor({
                   </div>
                   <ul className="mt-3 space-y-1.5 text-sm">
                     {opts.map((o, oi) => (
-                      <li
-                        key={oi}
-                        className={`flex items-center gap-2 ${
-                          correct.includes(oi) ? 'text-status-green' : 'text-muted'
-                        }`}
-                      >
+                      <li key={oi} className="flex items-center gap-2 text-foreground-2">
                         {correct.includes(oi) ? (
-                          <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
+                          <Check
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0 text-status-green"
+                          />
                         ) : (
                           <span
                             aria-hidden="true"
@@ -179,7 +176,9 @@ export default async function QuizEditor({
                           the state is now also stated in words.
                         */}
                         {correct.includes(oi) && (
-                          <span className="text-meta font-medium">(correct)</span>
+                          <span className="text-meta font-semibold text-status-green">
+                            (correct)
+                          </span>
                         )}
                       </li>
                     ))}

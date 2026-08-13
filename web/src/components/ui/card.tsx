@@ -14,7 +14,7 @@ import { cn } from '@/components/ui/utils';
  *
  * Where a card genuinely needs a frame — white nesting inside white, or a form
  * that must read as one object — the call site adds `border border-border` for
- * a hairline, or a `border-b-2 border-keyline` under its header for the heavier
+ * a hairline, or a `border-b-[1.75px] border-keyline` under its header for the heavier
  * document treatment. Both are deliberate acts at the call site rather than a
  * default nobody chose.
  */
@@ -61,7 +61,14 @@ function CardTitle({
   as: Heading,
   ...props
 }: React.ComponentProps<'div'> & { as: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' }) {
-  return <Heading data-slot="card-title" className={cn('leading-none', className)} {...props} />;
+  // text-h3 default, NOT no size: Tailwind preflight gives headings
+  // `font-size: inherit`, so a CardTitle with no class rendered at the 16px
+  // root default — on the four auth pages that made the page <h1> visibly
+  // SMALLER than the brand wordmark above it. 15/700 is the ramp's card-scale
+  // heading; a page whose card title is its h1 overrides to text-h1.
+  return (
+    <Heading data-slot="card-title" className={cn('text-h3 leading-none', className)} {...props} />
+  );
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {

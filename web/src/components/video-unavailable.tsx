@@ -40,7 +40,7 @@ export function VideoUnavailable({
     <div className="w-full">
       <div className="flex aspect-video w-full flex-col items-center justify-center rounded-(--radius-card) border border-dashed border-border bg-surface-muted px-6 text-center">
         <VideoOff aria-hidden="true" className="h-6 w-6 text-muted" />
-        <p className="mt-3 text-base font-semibold">{learner.title}</p>
+        <p className="text-h3 mt-3 font-bold">{learner.title}</p>
         <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-muted">{learner.body}</p>
       </div>
 

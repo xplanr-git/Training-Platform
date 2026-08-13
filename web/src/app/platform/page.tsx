@@ -114,12 +114,7 @@ export default async function PlatformHome() {
                       quiet
                       confirm="Suspend this academy? Its learners and admins lose access immediately."
                     >
-                      <Button
-                        type="submit"
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                      >
+                      <Button type="submit" variant="destructive-ghost">
                         Suspend
                       </Button>
                     </NavForm>

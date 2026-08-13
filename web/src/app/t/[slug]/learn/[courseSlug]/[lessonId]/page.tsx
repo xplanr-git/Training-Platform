@@ -364,14 +364,11 @@ export default async function LessonPlayer({
                 <div className="h-[70vh] w-full overflow-hidden rounded-(--radius-card) border border-border">
                   <iframe src={pdfUrl} className="h-full w-full" title={lesson.title} />
                 </div>
-                <a
-                  href={pdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex min-h-11 items-center rounded-md border border-input px-3 text-sm font-semibold text-foreground-2 transition-colors hover:border-foreground hover:text-foreground"
-                >
-                  Open PDF in new tab
-                </a>
+                <Button asChild variant="outline" className="mt-3 min-h-11">
+                  <a href={pdfUrl} target="_blank" rel="noreferrer">
+                    Open PDF in new tab
+                  </a>
+                </Button>
               </div>
             ) : (
               <p className="text-muted">
@@ -382,17 +379,10 @@ export default async function LessonPlayer({
           {isQuiz && (
             <div>
               {lastAttempt && (
-                <p
-                  className={cn(
-                    'mb-5 rounded-(--radius-card) border px-4 py-3 text-sm',
-                    lastAttempt.passed
-                      ? 'border-status-green/30 bg-status-green-bg text-status-green'
-                      : 'border-status-amber/30 bg-status-amber-bg text-status-amber',
-                  )}
-                >
+                <Callout tone={lastAttempt.passed ? 'green' : 'amber'} className="mb-5">
                   You scored {Math.round(Number(lastAttempt.score ?? 0))}%.{' '}
                   {lastAttempt.passed ? 'Passed.' : 'Not passed — try again.'}
-                </p>
+                </Callout>
               )}
               {done ? (
                 <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">

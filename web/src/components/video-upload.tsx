@@ -140,7 +140,7 @@ export function VideoUpload({
           {done ? 'Replace this video' : 'Upload a video'}
         </label>
         <div className="flex flex-wrap items-center gap-2">
-          <input
+          <Input
             id={`${uid}-file`}
             ref={fileRef}
             type="file"
@@ -156,9 +156,7 @@ export function VideoUpload({
               }
               setFile(picked);
             }}
-            className="text-sm file:mr-3 file:rounded-md file:border file:border-border
-                       file:bg-surface file:px-2.5 file:py-1 file:text-sm file:font-medium
-                       hover:file:bg-surface-muted"
+            className="w-auto flex-1"
           />
           <Button
             type="button"

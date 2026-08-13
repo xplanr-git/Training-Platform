@@ -13,9 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-const SELECT_CLS =
-  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm disabled:opacity-60';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const ROLE_OPTIONS: Array<{ value: AssignableRole; label: string }> = [
   { value: 'learner', label: 'Learner' },
@@ -119,9 +117,8 @@ export function RoleSelect({
 
   return (
     <div className="flex flex-col gap-1">
-      <select
+      <NativeSelect
         aria-label={`Role for ${personLabel}`}
-        className={SELECT_CLS}
         value={current}
         onChange={onChange}
         disabled={pending}
@@ -131,7 +128,7 @@ export function RoleSelect({
             {o.label}
           </option>
         ))}
-      </select>
+      </NativeSelect>
       {error && (
         <span role="alert" className="text-meta text-destructive">
           {error}

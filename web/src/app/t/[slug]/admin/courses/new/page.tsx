@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = { title: 'New course' };
@@ -37,15 +38,11 @@ export default async function NewCourse({ params }: { params: Promise<{ slug: st
             </div>
             <div className="flex max-w-xs flex-col gap-1.5">
               <Label htmlFor="level">Level</Label>
-              <select
-                id="level"
-                name="level"
-                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
-              >
+              <NativeSelect id="level" name="level">
                 <option>Beginner</option>
                 <option>Intermediate</option>
                 <option>Advanced</option>
-              </select>
+              </NativeSelect>
             </div>
             <Button type="submit" className="self-start">
               Create course

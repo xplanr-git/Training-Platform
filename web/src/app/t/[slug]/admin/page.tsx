@@ -54,8 +54,8 @@ export default async function TenantAdminOverview({
             href={s.href}
             className="rounded-(--radius-card) border border-transparent bg-card p-5 transition-colors hover:border-keyline"
           >
-            <p className="text-sm text-muted">{s.label}</p>
-            <p className="mt-1 text-2xl font-semibold">{s.value}</p>
+            <p className="text-control font-medium text-foreground-2">{s.label}</p>
+            <p className="text-kpi mt-1 font-extrabold tabular-nums">{s.value}</p>
           </Link>
         ))}
       </div>

@@ -11,7 +11,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   return (
     <div className="min-h-screen bg-surface-muted">
       <header className="border-b border-border bg-surface px-6 py-4">
-        <h1 className="text-lg">Platform admin</h1>
+        <h1 className="text-sm font-extrabold">Platform admin</h1>
       </header>
       <div className="mx-auto max-w-5xl px-6 py-8">{children}</div>
     </div>

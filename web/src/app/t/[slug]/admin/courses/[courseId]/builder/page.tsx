@@ -135,10 +135,9 @@ export default async function CourseBuilder({
                 >
                   <Button
                     type="submit"
-                    variant="ghost"
+                    variant="destructive-ghost"
                     size="icon"
                     aria-label="Delete section"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -184,10 +183,9 @@ export default async function CourseBuilder({
                         >
                           <Button
                             type="submit"
-                            variant="ghost"
+                            variant="destructive-ghost"
                             size="icon"
                             aria-label="Delete lesson"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

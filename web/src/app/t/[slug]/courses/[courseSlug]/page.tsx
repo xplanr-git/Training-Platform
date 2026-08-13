@@ -191,9 +191,7 @@ export default async function CourseLanding({
               const items = lessonsBySection.get(s.id) ?? [];
               return (
                 <AccordionItem key={s.id} value={s.id}>
-                  <AccordionTrigger className="text-base font-semibold">
-                    {s.title || 'Section'}
-                  </AccordionTrigger>
+                  <AccordionTrigger>{s.title || 'Section'}</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 pb-2">
                       {items.length === 0 && (

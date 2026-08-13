@@ -35,6 +35,13 @@ const buttonVariants = cva(
         default:
           'bg-primary text-primary-foreground hover:bg-primary-hover hover:shadow-[0_5px_16px_rgba(20,20,22,0.32)] hover:-translate-y-px active:translate-y-px active:shadow-none',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        // The quiet destructive action (row-level Delete/Revoke/Decline): red
+        // label, red-tinted wash on hover. ONE recipe — before this variant,
+        // six buttons hand-rolled it three different ways, and one lost its
+        // red on hover because the ghost hover rule outranked a lone
+        // text-destructive. sb-design-conventions bans the hand-rolled form.
+        'destructive-ghost':
+          'text-destructive hover:bg-destructive/10 hover:text-destructive hover:shadow-[inset_0_0_0_1px_var(--color-border-strong)]',
         outline:
           'border border-input bg-card text-foreground-2 hover:border-foreground hover:bg-sunken hover:text-foreground hover:shadow-[0_2px_8px_rgba(20,20,22,0.12)] active:translate-y-px active:shadow-none',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',

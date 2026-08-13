@@ -83,10 +83,11 @@ describe('text links that act as controls have a real hit area', () => {
      * admin-table suite records the same lesson after pinning a shell's height.
      */
     const cases: [string, RegExp][] = [
-      // The PDF opener on a PDF lesson.
+      // The PDF opener on a PDF lesson. Either order: the target size now
+      // rides on the Button wrapper, which precedes the <a> in source.
       [
         'src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx',
-        /href=\{pdfUrl\}[\s\S]{0,240}?min-h-11/,
+        /href=\{pdfUrl\}[\s\S]{0,240}?min-h-11|min-h-11[\s\S]{0,240}?href=\{pdfUrl\}/,
       ],
       // The certificate link on a dashboard row.
       [
@@ -105,9 +106,11 @@ describe('text links that act as controls have a real hit area', () => {
 describe('the most-tapped learner control clears the bar', () => {
   it('a quiz answer row is 44px+', () => {
     // Measured 38px: the label wraps the input, so the row IS the target, and it was
-    // 6px short on the highest-frequency deliberate tap in the product.
+    // 6px short on the highest-frequency deliberate tap in the product. The edge is
+    // border-input (the control tone — an option card is pressable) and py-3 is the
+    // half that buys the 44px.
     const src = code('src/components/quiz-form.tsx');
-    expect(src).toMatch(/rounded-md border border-border px-3 py-3 text-sm/);
+    expect(src).toMatch(/rounded-md border border-input px-3 py-3 text-sm/);
   });
 });
 

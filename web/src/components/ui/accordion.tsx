@@ -39,7 +39,13 @@ function AccordionTrigger({
         className={cn(
           // No hover:underline. An underline means "this is a text link"; on a
           // section heading that opens a panel it is a false signal.
-          'focus-visible:border-ring flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-bold transition-all outline-none disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-90',
+          //
+          // The RESOLVED accordion hover is "A · Row wash": a full-width sunken
+          // wash bounded by the item keylines — no radius (rounded-md would
+          // give the wash a pill edge the keylines then cut through), no
+          // shadow spill. Metrics per `.sb-acc .q`: 15/700 (text-h3), 20px
+          // vertical and 12px horizontal padding.
+          'focus-visible:border-ring hover:bg-surface-muted flex flex-1 items-start justify-between gap-4 px-3 py-5 text-left text-h3 font-bold transition-colors outline-none disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-90',
           className,
         )}
         {...props}
@@ -68,7 +74,8 @@ function AccordionContent({
       className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
       {...props}
     >
-      <div className={cn('pt-0 pb-4', className)}>{children}</div>
+      {/* `.sb-acc .a`: body copy inset to the trigger's text, text-2. */}
+      <div className={cn('text-foreground-2 px-3 pt-0 pb-5', className)}>{children}</div>
     </AccordionPrimitive.Content>
   );
 }

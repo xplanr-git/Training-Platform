@@ -50,9 +50,9 @@ export default async function Billing({ params }: { params: Promise<{ slug: stri
             </p>
           </div>
           <NavForm action={openBillingPortal.bind(null, slug)}>
-            <button className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-muted">
+            <Button type="submit" variant="outline">
               Manage billing
-            </button>
+            </Button>
           </NavForm>
         </div>
       ) : (
@@ -64,7 +64,7 @@ export default async function Billing({ params }: { params: Promise<{ slug: stri
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {PLANS.map((p) => (
           <div key={p.id} className="rounded-(--radius-card) border border-border bg-surface p-5">
-            <h2 className="text-base">{p.name}</h2>
+            <h2 className="text-h3">{p.name}</h2>
             <p className="mt-1 text-sm text-muted">
               Up to {formatCount(p.activeLearnerLimit)} active learners
             </p>

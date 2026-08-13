@@ -5,9 +5,8 @@ import { inviteMember } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Card, CardContent } from '@/components/ui/card';
-
-const SELECT_CLS = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
   const [pending, startTransition] = useTransition();
@@ -49,11 +48,11 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="inv-role">Role</Label>
-            <select id="inv-role" name="role" className={SELECT_CLS}>
+            <NativeSelect id="inv-role" name="role" wrapperClassName="w-40">
               <option value="learner">Learner</option>
               <option value="instructor">Instructor</option>
               <option value="company_admin">Admin</option>
-            </select>
+            </NativeSelect>
           </div>
           <Button type="submit" disabled={pending}>
             {pending ? 'Inviting…' : 'Invite'}

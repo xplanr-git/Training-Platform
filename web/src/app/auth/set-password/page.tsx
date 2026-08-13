@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BrandMark } from '@/components/brand-mark';
+import { AuthMasthead } from '@/components/auth-masthead';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,14 +75,13 @@ export default function SetPasswordPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 px-6 py-10">
-      <div className="flex items-center gap-2.5">
-        <BrandMark size={36} />
-        <span className="text-lg font-bold">Outdure Academy</span>
-      </div>
+      <AuthMasthead />
 
       <Card className="border border-border">
         <CardHeader>
-          <CardTitle as="h1">Choose a password</CardTitle>
+          <CardTitle as="h1" className="text-h1">
+            Choose a password
+          </CardTitle>
           {/*
             Optimistic until the check RESOLVES, not until it succeeds.
 

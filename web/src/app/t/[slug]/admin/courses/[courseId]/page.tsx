@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { CONFERRABLE_TIERS } from '@/lib/connect-roles';
 
 export const metadata = { title: 'Edit course' };
-
-const SELECT_CLS = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
 
 export default async function EditCourse({
   params,
@@ -84,34 +84,28 @@ export default async function EditCourse({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="level">Level</Label>
-                <select id="level" name="level" defaultValue={course.level} className={SELECT_CLS}>
+                <NativeSelect id="level" name="level" defaultValue={course.level}>
                   <option>Beginner</option>
                   <option>Intermediate</option>
                   <option>Advanced</option>
-                </select>
+                </NativeSelect>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="status">Status</Label>
-                <select
-                  id="status"
-                  name="status"
-                  defaultValue={course.status}
-                  className={SELECT_CLS}
-                >
+                <NativeSelect id="status" name="status" defaultValue={course.status}>
                   <option value="draft">Draft</option>
                   <option value="published">Published</option>
                   <option value="archived">Archived</option>
-                </select>
+                </NativeSelect>
               </div>
             </div>
             <div className="flex max-w-sm flex-col gap-1.5">
               <Label htmlFor="confersRoleCode">Confers tier on completion</Label>
-              <select
+              <NativeSelect
                 id="confersRoleCode"
                 name="confersRoleCode"
                 aria-describedby="confersRoleCode-help"
                 defaultValue={course.confersRoleCode ?? ''}
-                className={SELECT_CLS}
               >
                 <option value="">— None —</option>
                 {CONFERRABLE_TIERS.map((t) => (
@@ -119,19 +113,17 @@ export default async function EditCourse({
                     {t.group}: {t.label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
               <p id="confersRoleCode-help" className="text-meta text-muted">
                 Completing this course advances the learner to this Connect tier.
               </p>
             </div>
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
-                <input
+                <Checkbox
                   id="certificateEnabled"
                   name="certificateEnabled"
-                  type="checkbox"
                   defaultChecked={course.certificateEnabled}
-                  className="h-4 w-4 rounded border-input"
                 />
                 <Label htmlFor="certificateEnabled">Issue a certificate on completion</Label>
               </div>
@@ -148,7 +140,7 @@ export default async function EditCourse({
       </Card>
 
       <div className="mt-10 border-t border-border pt-6">
-        <h2 className="text-sm text-destructive">Danger zone</h2>
+        <h2 className="text-h3">Danger zone</h2>
         <p className="mt-1 text-sm text-muted">
           Permanently delete this course and all its sections, lessons, quizzes, and enrolments.
           This cannot be undone.
@@ -179,11 +171,7 @@ export default async function EditCourse({
           className="mt-3"
           confirm="Delete this course and everything in it? This also destroys every certificate the course has issued, so their public verification links stop working, and none of it can be undone."
         >
-          <Button
-            type="submit"
-            variant="outline"
-            className="border-destructive text-destructive hover:bg-destructive/10"
-          >
+          <Button type="submit" variant="destructive">
             Delete course
           </Button>
         </NavForm>

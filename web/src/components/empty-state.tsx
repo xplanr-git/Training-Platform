@@ -40,23 +40,27 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        'rounded-(--radius-card) border border-dashed border-border bg-surface-muted px-6 py-10 text-center',
-        className,
-      )}
-    >
+    /*
+      An OPEN composition, per core.css `.sb-empty`: generous padding (--s16),
+      a 44px sunken icon tile, a 15/800 title over 13ish muted body — and no
+      container at all. The previous dashed-border box was off-system twice
+      over (dashed appears nowhere in core.css, and a box on the shell is the
+      bordered-box look §4b rules out); whitespace does the separating.
+    */
+    <div className={cn('px-6 py-16 text-center', className)}>
       {icon ? (
         <div
           aria-hidden="true"
-          className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-(--radius-card) border border-border bg-surface text-muted [&>svg]:h-5 [&>svg]:w-5"
+          className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-(--radius-card) bg-surface-muted text-muted [&>svg]:h-5 [&>svg]:w-5"
         >
           {icon}
         </div>
       ) : null}
-      <p className="text-base font-semibold">{title}</p>
+      <p className="text-h3 font-extrabold">{title}</p>
       {children ? (
-        <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-muted">{children}</p>
+        <p className="mx-auto mt-1.5 max-w-md text-control leading-relaxed text-muted">
+          {children}
+        </p>
       ) : null}
       {action || secondary ? (
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">

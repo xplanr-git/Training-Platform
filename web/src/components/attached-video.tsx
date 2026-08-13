@@ -92,9 +92,7 @@ export function AttachedVideo({
           place that still used it, so the same class of value was set two
           different ways in the same product.
         */}
-        <p className="mt-1 truncate text-eyebrow tabular-nums tracking-wide text-muted">
-          {videoId}
-        </p>
+        <p className="mt-1 truncate text-eyebrow tabular-nums text-muted">{videoId}</p>
       </div>
     </div>
   );

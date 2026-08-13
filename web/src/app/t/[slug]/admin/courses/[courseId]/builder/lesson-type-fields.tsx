@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
-
-const SELECT_BASE = 'rounded-md border border-input bg-transparent px-3 text-sm shadow-sm';
+import { NativeSelect } from '@/components/ui/native-select';
 
 /**
  * Lesson type picker that reveals ONLY the field the chosen type uses: a "Text
@@ -29,23 +28,25 @@ export function LessonTypeFields({
   compact?: boolean;
 }) {
   const [type, setType] = useState(defaultType);
-  const h = compact ? 'h-8' : 'h-9';
-  const field = `${h} w-40`;
+  // Compact keeps the existing-lesson rows dense; both breakpoints must be
+  // overridden or the primitive's sm:h-10 wins from sm: up.
+  const h = compact ? 'h-8 sm:h-8' : '';
+  const field = compact ? 'h-8 sm:h-8 w-40' : 'w-40';
 
   return (
     <>
-      <select
+      <NativeSelect
         name="type"
         aria-label="Lesson type"
         value={type}
         onChange={(e) => setType(e.target.value)}
-        className={`${SELECT_BASE} ${h}`}
+        className={h}
       >
         <option value="text">Text</option>
         <option value="video">Video</option>
         <option value="pdf">PDF</option>
         {allowQuiz && <option value="quiz">Quiz</option>}
-      </select>
+      </NativeSelect>
       {type === 'text' && (
         <Input
           name="body"
