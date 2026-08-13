@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { ActionError } from '@/lib/action-errors';
+import { cn } from '@/components/ui/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -182,18 +183,26 @@ export function NavForm({
   }, [saved]);
 
   return (
-    <form onSubmit={onSubmit} className={className} data-pending={pending || undefined}>
+    <form
+      onSubmit={onSubmit}
+      className={cn(className, 'data-[pending]:opacity-60')}
+      data-pending={pending || undefined}
+    >
       {/*
         A disabled fieldset is the one reliable way to make every control inside
         an arbitrary `children` tree go inert while the action is in flight —
-        including the submit button, whose markup this component never sees. The
-        reset classes stop the fieldset affecting layout.
+        including the submit button, whose markup this component never sees.
+
+        display: contents, and this is load-bearing: the caller's layout classes
+        (`flex flex-col gap-5`) land on the <form>, whose only child is this
+        fieldset — so with a normal box the fields inside received NO gap and
+        every NavForm-based admin form rendered with its fields jammed together.
+        With `contents` the children participate in the form's layout directly
+        (and the status notes below join the same flow). A contents box paints
+        nothing, so the in-flight dim rides on the form via data-pending instead
+        of fieldset:disabled.
       */}
-      <fieldset
-        disabled={pending}
-        aria-busy={pending || undefined}
-        className="m-0 min-w-0 border-0 p-0 disabled:opacity-60"
-      >
+      <fieldset disabled={pending} aria-busy={pending || undefined} className="contents">
         {children}
       </fieldset>
 

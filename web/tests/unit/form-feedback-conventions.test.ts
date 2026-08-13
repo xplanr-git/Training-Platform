@@ -89,6 +89,18 @@ describe('NavForm feedback contract', () => {
     expect(src).toMatch(/<fieldset[\s\S]{0,120}disabled=\{pending\}/);
   });
 
+  it('the fieldset is layout-transparent, so the caller’s gap reaches the fields', () => {
+    // The caller's layout classes (`flex flex-col gap-5`) land on the <form>,
+    // whose only child is the disabling fieldset — as a normal box it swallowed
+    // the gap, and every NavForm-based admin form rendered with its fields
+    // jammed together (caught by the owner from a screenshot). `contents` makes
+    // the children participate in the form's layout; the in-flight dim rides on
+    // the form via data-pending because a contents box paints nothing.
+    const fieldset = /<fieldset[\s\S]{0,200}?className="([^"]*)"/.exec(src);
+    expect(fieldset?.[1], 'the disabling fieldset must stay display: contents').toBe('contents');
+    expect(src).toMatch(/data-\[pending\]:opacity-60/);
+  });
+
   it('never suppresses errors, even when quiet', () => {
     // `quiet` hides the success line for self-evident actions (reorder, delete).
     // Hiding an error would recreate the original bug.
