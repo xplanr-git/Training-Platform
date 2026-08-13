@@ -114,13 +114,11 @@
   --text-label: 0.6875rem;
   --text-label--line-height: 1.3;
 
-  /* 10.5 — the side menu's group label, and deliberately NOT the eyebrow.
-     core.css gives `.sb-side .grp` its own smaller, tighter setting
-     (10.5px / .07em) rather than the 11px / .09em eyebrow, so that a long nav's
-     section labels recede behind the items they group instead of competing with
-     them. Sanctioned by the system; it is simply not part of the prose ramp. */
-  --text-nav-group: 0.65625rem;
-  --text-nav-group--letter-spacing: 0.07em;
+  /* (--text-nav-group, the 10.5px uppercase group label, was removed when the
+     side menu moved to the RESOLVED grammar — collapsible `.sb-navsec`
+     sections instead of `.sb-side .grp` micro-labels. The legacy variant
+     still ships in core.css for back-compat; the resolved Navigation page is
+     the reference.) */
 
   --radius-card: 4px;
 

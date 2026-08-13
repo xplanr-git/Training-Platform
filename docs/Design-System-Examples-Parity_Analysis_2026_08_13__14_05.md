@@ -121,8 +121,8 @@ grammar, and the vertical rhythm.
 
 1. Input border `#858585` and the switch's unchecked track (WCAG 1.4.11; system tokens fail 3:1).
 2. Opaque status tints (system ships alpha tints; contrast must hold on any surface).
-3. Light-only — v4.1 is dark-capable (`.sb-dark` token set); adoption stays deferred until a real
-   theme toggle ships. `dark:` remains neutralised class-based.
+3. ~~Light-only~~ — superseded later the same day: dark mode SHIPPED (owner decision; see the §5
+   progress log). The class-based `dark:` neutralisation is now the mechanism, not a guard.
 4. 44px phone tap targets above the system's one-height-38 (stricter, phone-first product).
 5. Icons stay lucide (24-grid/stroke-2 ≈ the DS 16-grid/1.4 proportionally; always `currentColor`,
    never in navigation) — swapping icon sets buys nothing the rules don't already enforce.
@@ -137,13 +137,28 @@ grammar, and the vertical rhythm.
 >   sites (`nav-form.tsx`, `role-select.tsx`) needed no change. Guarded in
 >   `sb-design-conventions.test.ts` ("the modal masthead carries the keyline"); browser-measured
 >   via a throwaway probe (all values on spec).
+> - ✅ **accentColor: certificate only** (owner decision 2026-08-13). Storefront h1 + card link no
+>   longer take `branding.primaryColor`; the settings field is removed (a colour that paints
+>   nothing is a trap) and the settings action merges over stored branding so saved values survive.
+> - ✅ **Segmented control shipped** with its first consumer: status filters on admin Courses and
+>   People (`SegmentedNav` — link-based, `.sb-seg` metrics, `?status=` validated against a closed
+>   set, composes with search + paging, filtered-empty states distinct from first-run).
+> - ✅ **Dark mode shipped.** Full `.sb-dark` token set under `.dark`, pre-paint boot script,
+>   Light/Dark/Auto `ThemeToggle` (admin shell, storefront, dashboard). Two dark divergences,
+>   both WCAG-driven and test-asserted: input border keeps #858585 (system dark border-input is
+>   ~1.5:1) and dark muted is #8e8f95 (system --text-3 measures 4.20:1 on the sunken plane — caught
+>   by the new dark contrast assertions on their first run).
+> - ✅ **Side menu to the resolved grammar** (user-flagged against the Navigation example). The
+>   legacy `.sb-side .grp` uppercase micro-labels are retired for `.sb-navsec` collapsible
+>   sections (42px rows, right chevron rotating open, ink+600 when open) with `.sb-subnav`
+>   children (37px, 12.5, 32px indent, light-hairline brackets). All-gated sections default
+>   collapsed; live sections and the active trail default open. `--text-nav-group` token removed.
+>   Guarded in `nav-grammar-conventions.test.ts`; browser-measured via an AdminShell probe.
 
 - ~~**Modal header keyline**~~ — **DONE**, see progress log above.
-- **Segmented control, toast, mega-menu, board, gantt, tree** — no consumer exists yet; pull in
-  per feature (the courses/people list *status filter* is the natural first segmented-control
-  slot).
-- **Tenant `accentColor` escape hatch** (storefront + certificate) can override link blue with
-  arbitrary tenant colour — sanctioned branding feature; flag for a policy decision, not a fix.
+- ~~**Segmented control**~~ — **DONE** (status filters, see progress log). **Toast, mega-menu,
+  board, gantt, tree** — still no consumer; pull in per feature.
+- ~~**Tenant `accentColor` escape hatch**~~ — **DECIDED + DONE**: certificate only (progress log).
 - **Charts** — none exist in the app; the `--color-cat-*` palette and the mono `--color-data-1…5`
   ramp are ready for the first real chart.
 - **Outdure artwork** (D1) — still on the Structure Build placeholder; one-asset swap when the

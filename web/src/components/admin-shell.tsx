@@ -20,105 +20,179 @@ const ADMIN_BASE = '/admin';
  * routes; gated items route to the coming-soon panel with a "Soon" badge.
  * Subdomain middleware maps `/admin/*` to the internal `/t/[slug]/admin/*` tree.
  */
+/** Whole-path-segment match, so '/admin/courses' never lights '/admin/courses-archive'. */
+function itemIsActive(item: { href: string; status: string }, activePath: string): boolean {
+  const href = `${ADMIN_BASE}${item.href}`;
+  const base = href.split('?')[0];
+  const target = item.href.split('?')[0];
+  return (
+    item.status === 'live' &&
+    (target === ''
+      ? activePath === ADMIN_BASE
+      : base !== ADMIN_BASE && (activePath === base || activePath.startsWith(`${base}/`)))
+  );
+}
+
+function NavRow({
+  item,
+  activePath,
+  onNavigate,
+  sub = false,
+}: {
+  item: (typeof ADMIN_NAV)[number]['items'][number];
+  activePath: string;
+  onNavigate?: () => void;
+  sub?: boolean;
+}) {
+  const isActive = itemIsActive(item, activePath);
+  return (
+    <li>
+      <Link
+        href={`${ADMIN_BASE}${item.href}`}
+        onClick={onNavigate}
+        aria-current={isActive ? 'page' : undefined}
+        className={cn(
+          // Current item = ink label + a 1.75px ink underline hugging the
+          // text, per the RESOLVED side-nav grammar: text-forward, NO
+          // block-background wash and NO side-bar on the current item.
+          // Square, not rounded — "Navigation hover/selection is square".
+          //
+          // Measured against core.css, not inferred:
+          //   `.sb-nav a`    height:42px; padding:0 20px; 13.5/500; text-2
+          //   `.sb-subnav a` height:37px; padding-left:32px; 12.5/500; text-3
+          // Sub rows sit inside a section (see NavSection) and recede a step
+          // in both size and tone so the section rows read as the structure.
+          'flex items-center justify-between transition-colors',
+          sub
+            ? 'h-[37px] pl-8 pr-5 text-meta'
+            : // text-control (13.5) is the system's named size for nav/controls.
+              'h-[42px] px-5 text-control',
+          isActive
+            ? // `.sb-nav a.is-active`: ink, 600, underline
+              // text-decoration-thickness:1.75px; text-underline-offset:5px.
+              'font-semibold text-foreground underline decoration-primary decoration-[1.75px] underline-offset-[5px]'
+            : // `.sb-nav a:hover { background:var(--sunken); color:var(--text) }`
+              // — the wash belongs on HOVER; core.css is unambiguous here and
+              // `.sb-nav` has no :active rule at all.
+              cn(
+                'font-medium hover:bg-surface-muted hover:text-foreground',
+                sub ? 'text-muted' : 'text-foreground-2',
+              ),
+        )}
+      >
+        <span className="truncate">{item.label}</span>
+        {item.status === 'gated' && (
+          // 11px is the eyebrow, the smallest size the ramp has.
+          <span className="ml-2 rounded-sm bg-surface-muted px-2 py-0.5 text-eyebrow font-semibold text-muted">
+            Soon
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * The RESOLVED side-menu grammar (the design system's Navigation page): plain
+ * rows for top-level items, and collapsible SECTIONS — `.sb-navsec` rows with
+ * a right chevron that rotates open, their children bracketed by hairlines
+ * (`.sb-subnav`) — instead of the legacy uppercase `.grp` micro-labels. The
+ * section row is a real button (aria-expanded), not a label.
+ *
+ * Default state: sections with a live item open, all-gated sections collapsed
+ * — the menu's breadth stays discoverable (it is a sales asset, per nav.ts)
+ * without 42 rows of "Soon" burying the six screens that exist. A section
+ * containing the current page always starts open.
+ */
+function NavSection({
+  group,
+  activePath,
+  onNavigate,
+}: {
+  group: (typeof ADMIN_NAV)[number];
+  activePath: string;
+  onNavigate?: () => void;
+}) {
+  const hasLive = group.items.some((i) => i.status === 'live');
+  const hasActive = group.items.some((i) => itemIsActive(i, activePath));
+  const [open, setOpen] = useState(hasLive || hasActive);
+
+  return (
+    <li>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          // `.sb-navsec`: same 42px row as a nav item; open = ink + 600 with
+          // the chevron turned down; hover darkens label and chevron. No wash
+          // — core.css gives the section row a colour transition only.
+          'flex h-[42px] w-full items-center justify-between px-5 text-control transition-colors',
+          open
+            ? 'font-semibold text-foreground'
+            : 'font-medium text-foreground-2 hover:text-foreground',
+        )}
+      >
+        <span className="truncate">{group.label}</span>
+        {/* Collapsed points RIGHT; open rotates to point down (core.css). */}
+        <svg
+          aria-hidden="true"
+          width="13"
+          height="13"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          className={cn('shrink-0 text-muted transition-transform', open && 'rotate-90')}
+        >
+          <path d="M6 4l4 4-4 4" />
+        </svg>
+      </button>
+      {open && (
+        // `.sb-subnav`: hairline rules top and bottom bracket the expanded
+        // children — the light --border-2 divider, never the keyline.
+        <ul className="my-[3px] border-y border-border py-[3px]">
+          {group.items.map((item) => (
+            <NavRow key={item.id} item={item} activePath={activePath} onNavigate={onNavigate} sub />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?: () => void }) {
   return (
     /*
       Full-bleed rows, per core.css. `.sb-side` pads 12px vertically and ZERO
       horizontally, and `.sb-nav a` carries its own 20px inset — so the hover wash
-      spans the whole sidebar as a band. The px-3 that used to sit here inset every
-      row, which is what turned the wash into a floating pill.
+      spans the whole sidebar as a band. `.sb-nav { gap: 0 }` — the rows do the
+      separating.
     */
     <nav className="flex-1 overflow-y-auto py-3">
-      {ADMIN_NAV.map((group) => (
-        <div key={group.id}>
-          {/* core.css `.sb-side .grp`: 10.5px/700/.07em, padding 16px 16px 8px. */}
-          <p className="px-4 pb-2 pt-4 text-nav-group font-bold uppercase text-muted">
-            {group.label}
-          </p>
-          {/* `.sb-nav { gap: 0 }` — the 42px rows do the separating. */}
-          <ul>
-            {group.items.map((item) => {
-              const href = `${ADMIN_BASE}${item.href}`;
-              const base = href.split('?')[0];
-              const target = item.href.split('?')[0];
-              // Match on whole path SEGMENTS. A bare startsWith would light up
-              // '/admin/courses' for a hypothetical '/admin/courses-archive', and
-              // would light up two items at once as soon as one nav path is a
-              // prefix of another. No nav path collides today, which is exactly
-              // why this would have gone unnoticed until one did.
-              const isActive =
-                item.status === 'live' &&
-                (target === ''
-                  ? activePath === ADMIN_BASE
-                  : base !== ADMIN_BASE &&
-                    (activePath === base || activePath.startsWith(`${base}/`)));
-              return (
-                <li key={item.id}>
-                  <Link
-                    href={href}
-                    onClick={onNavigate}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={cn(
-                      // Current item = ink label + a 2px ink underline hugging the
-                      // text, per the design system's RESOLVED side-nav grammar
-                      // (Guidelines §6.2 / §14, adoption decision D2): text-forward,
-                      // with NO block-background wash and NO side-bar marking the
-                      // current item — either of those reads as "selected surface"
-                      // where the underline reads as "you are here". Resting rows sit
-                      // at --text-2 and darken to ink on hover; a transient hover wash
-                      // is fine, a persistent one ON the current item is what the rule
-                      // forbids. (Was a left-bar + bg-sunken + bold.)
-                      // Square, not rounded: "Navigation hover/selection is square
-                      // (no radius)" (Guidelines §2). rounded-md gave every row a
-                      // 4px pill on hover, which is the block-selection look the
-                      // nav grammar exists to avoid.
-                      //
-                      // px-3 (12) not px-2.5 (10): 10 is not on the spacing scale
-                      // (4·8·12·16·20·24·32·40), and "do not invent intermediate
-                      // values".
-                      //
-                      // text-control (13.5) is the system's named size for nav and
-                      // controls; this was text-sm (14) only because no token
-                      // existed for it.
-                      // Measured against core.css `.sb-nav a`, not inferred:
-                      //   height:42px; padding:0 var(--s5) /* 20 */;
-                      //   font-size:13.5px; font-weight:500; color:var(--text-2);
-                      // The row was 36px tall with 10px of padding, which is what
-                      // made the menu read cramped next to the system's specimen.
-                      'flex h-[42px] items-center justify-between px-5 text-control transition-colors',
-                      isActive
-                        ? // `.sb-nav a.is-active`: ink, 600, underline
-                          // text-decoration-thickness:1.75px; text-underline-offset:5px.
-                          'font-semibold text-foreground underline decoration-primary decoration-[1.75px] underline-offset-[5px]'
-                        : // `.sb-nav a:hover { background:var(--sunken); color:var(--text) }`
-                          // (core.css:542, in the same block as the accordion row
-                          // wash). The wash belongs on HOVER.
-                          //
-                          // I previously moved it to active: on the strength of the
-                          // Guidelines line "Hover = the label darkens to ink (rows
-                          // may take a square grey wash on press)". The shipped CSS
-                          // is unambiguous and `.sb-nav` has no :active rule at all,
-                          // so that reading removed a treatment the system specifies.
-                          // Prose lost to implementation here.
-                          'font-medium text-foreground-2 hover:bg-surface-muted hover:text-foreground',
-                    )}
-                  >
-                    <span className="truncate">{item.label}</span>
-                    {item.status === 'gated' && (
-                      // 11px is the eyebrow, the smallest size the ramp has;
-                      // text-[10px] was off it entirely. px-2 (8) not px-1.5 (6),
-                      // for the same spacing-scale reason as the row above.
-                      <span className="ml-2 rounded-sm bg-surface-muted px-2 py-0.5 text-eyebrow font-semibold text-muted">
-                        Soon
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+      <ul>
+        {ADMIN_NAV.map((group) =>
+          // A single-item group is a plain top-level row — the resolved page
+          // shows Dashboard as a bare item, and a one-child section head whose
+          // label duplicates its child is furniture.
+          group.items.length === 1 ? (
+            <NavRow
+              key={group.id}
+              item={group.items[0]}
+              activePath={activePath}
+              onNavigate={onNavigate}
+            />
+          ) : (
+            <NavSection
+              key={group.id}
+              group={group}
+              activePath={activePath}
+              onNavigate={onNavigate}
+            />
+          ),
+        )}
+      </ul>
     </nav>
   );
 }

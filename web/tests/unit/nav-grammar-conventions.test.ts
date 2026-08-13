@@ -104,6 +104,29 @@ describe('side-nav follows the resolved navigation grammar', () => {
   });
 });
 
+describe('groups are resolved collapsible sections, not uppercase micro-labels', () => {
+  /*
+   * The design system's Navigation page resolves the side menu's grouping to
+   * `.sb-navsec` — a real 42px section row with a right chevron that rotates
+   * open, children bracketed by light hairlines (`.sb-subnav`) — and NOT the
+   * legacy `.sb-side .grp` 10.5px uppercase label, which core.css still ships
+   * for back-compat. The owner principle: where the system offers both, the
+   * resolved treatment is the reference.
+   */
+  const src = SHELL.replace(/\/\/.*$/gm, '');
+
+  it('the section head is a disclosure button, not a label', () => {
+    expect(src).toMatch(/aria-expanded=\{open\}/);
+    expect(src, 'the legacy uppercase group label is retired').not.toMatch(/text-nav-group/);
+  });
+
+  it('expanded children are bracketed by the light hairline, never the keyline', () => {
+    const sub = /aria-expanded[\s\S]*?border-y ([a-z-]+)/.exec(src);
+    expect(sub?.[1], 'the subnav bracket is the light divider').toBe('border-border');
+    expect(src, 'no keyline inside the nav').not.toMatch(/border-keyline/);
+  });
+});
+
 describe('motion respects the reduced-motion preference', () => {
   it('globals.css disables animation and transition under reduce', () => {
     /*
