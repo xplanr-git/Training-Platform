@@ -75,6 +75,12 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // Overridable dist dir for LOCAL verify runs only. On Windows, `next build`
+  // and a running `next dev` fight over `.next` (EPERM on .next/trace), and
+  // with two work sessions in one checkout that collision is routine —
+  // `NEXT_DIST_DIR=.next-verify npm run build` lets the gate run beside a live
+  // dev server. Unset (CI, Vercel, normal dev) this is exactly '.next'.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   // The v2 database schema lives in the sibling db/ package (TS source).
   transpilePackages: ['@training-platform/db'],
   // `@training-platform/db` is a `file:../db` dependency, so npm symlinks it to
