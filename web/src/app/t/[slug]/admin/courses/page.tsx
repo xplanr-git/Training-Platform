@@ -9,6 +9,7 @@ import { setCourseStatus } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/badge';
+import { SegmentedNav } from '@/components/ui/segmented';
 import {
   Table,
   TableBody,
@@ -21,20 +22,40 @@ import { NavForm } from '@/components/nav-form';
 
 export const metadata = { title: 'Courses' };
 
+/** The course statuses a ?status= filter may name. Anything else means "all". */
+const COURSE_STATUSES = ['published', 'draft', 'archived'] as const;
+type CourseStatusFilter = (typeof COURSE_STATUSES)[number];
+
 export default async function CoursesList({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; status?: string }>;
 }) {
   const { slug } = await params;
-  const { q, page: pageParam } = await searchParams;
+  const { q, page: pageParam, status: statusParam } = await searchParams;
   const query = (q ?? '').trim();
+  // Validated against the closed set, not passed through: ?status= is
+  // user-controlled input on its way into a WHERE clause.
+  const statusFilter = COURSE_STATUSES.includes(statusParam as CourseStatusFilter)
+    ? (statusParam as CourseStatusFilter)
+    : undefined;
   const ctx = await requireAdminForSlug(slug);
 
   const filters = ctx.tenantId ? [eq(courses.tenantId, ctx.tenantId)] : [];
   if (ctx.tenantId && query) filters.push(ilike(courses.title, `%${query}%`));
+  if (ctx.tenantId && statusFilter) filters.push(eq(courses.status, statusFilter));
+
+  // Segment hrefs keep the search query and drop ?page= — a changed filter
+  // starts at page 1 of the new result set.
+  const filterHref = (status?: CourseStatusFilter) => {
+    const p = new URLSearchParams();
+    if (query) p.set('q', query);
+    if (status) p.set('status', status);
+    const qs = p.toString();
+    return `/admin/courses${qs ? `?${qs}` : ''}`;
+  };
 
   /*
     The count and the page of rows are independent, so they run together — this
@@ -86,23 +107,51 @@ export default async function CoursesList({
         </Button>
       </div>
 
-      <form method="get" className="mt-5 flex max-w-sm gap-2">
-        <Input
-          type="search"
-          name="q"
-          aria-label="Search courses"
-          defaultValue={query}
-          placeholder="Search courses…"
-          className="flex-1"
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <SegmentedNav
+          label="Filter courses by status"
+          items={[
+            { label: 'All', href: filterHref(), active: !statusFilter },
+            ...COURSE_STATUSES.map((s) => ({
+              // Sentence case; the row's StatusBadge capitalises the same word.
+              label: s[0].toUpperCase() + s.slice(1),
+              href: filterHref(s),
+              active: statusFilter === s,
+            })),
+          ]}
         />
-        <Button type="submit" variant="outline">
-          Search
-        </Button>
-      </form>
+        <form method="get" className="flex max-w-sm flex-1 gap-2">
+          {/* The form submits ?q= and would drop ?status= — carry it. */}
+          {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
+          <Input
+            type="search"
+            name="q"
+            aria-label="Search courses"
+            defaultValue={query}
+            placeholder="Search courses…"
+            className="flex-1"
+          />
+          <Button type="submit" variant="outline">
+            Search
+          </Button>
+        </form>
+      </div>
 
       {rows.length === 0 ? (
         query ? (
-          <NoMatches className="mt-8" query={query} basePath="/admin/courses" />
+          <NoMatches className="mt-8" query={query} basePath={filterHref(statusFilter)} />
+        ) : statusFilter ? (
+          // A filter with no rows is not "no courses yet" — the academy may be
+          // full of courses in other states, and first-run copy here would tell
+          // an admin with 40 published courses to create their first one.
+          <EmptyState
+            className="mt-8"
+            icon={<BookOpen />}
+            title={`No ${statusFilter} courses`}
+            action={{ href: filterHref(), label: 'Show all courses' }}
+          >
+            Nothing is in this state right now.
+          </EmptyState>
         ) : (
           <EmptyState
             className="mt-8"
@@ -175,7 +224,11 @@ export default async function CoursesList({
         </div>
       )}
 
-      <Pagination meta={meta} basePath="/admin/courses" params={{ q: query || undefined }} />
+      <Pagination
+        meta={meta}
+        basePath="/admin/courses"
+        params={{ q: query || undefined, status: statusFilter }}
+      />
     </div>
   );
 }

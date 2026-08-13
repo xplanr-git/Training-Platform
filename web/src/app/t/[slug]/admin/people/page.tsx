@@ -24,6 +24,7 @@ import { startViewAs } from '@/lib/view-as-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge, StatusBadge } from '@/components/ui/badge';
+import { SegmentedNav } from '@/components/ui/segmented';
 import {
   Table,
   TableBody,
@@ -37,27 +38,54 @@ import { NavForm } from '@/components/nav-form';
 
 export const metadata = { title: 'People' };
 
+/**
+ * The membership states a ?status= filter may name. 'pending' is deliberately
+ * absent: pending rows are join REQUESTS, not members — they live in their own
+ * section above the table, so a filter that surfaced them here would show
+ * someone with no access beside people who have it.
+ */
+const MEMBER_STATUSES = ['active', 'invited', 'deactivated'] as const;
+type MemberStatusFilter = (typeof MEMBER_STATUSES)[number];
+
 export default async function People({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; status?: string }>;
 }) {
   const { slug } = await params;
-  const { q, page: pageParam } = await searchParams;
+  const { q, page: pageParam, status: statusParam } = await searchParams;
   const query = (q ?? '').trim();
+  // Validated against the closed set, not passed through: ?status= is
+  // user-controlled input on its way into a WHERE clause.
+  const statusFilter = MEMBER_STATUSES.includes(statusParam as MemberStatusFilter)
+    ? (statusParam as MemberStatusFilter)
+    : undefined;
   const ctx = await requireAdminForSlug(slug);
 
   // Pending rows are join REQUESTS, not members, and are listed separately
-  // below. Leaving them in this table would show someone with no access beside
-  // people who have it, with only a status pill to tell them apart.
+  // below (see MEMBER_STATUSES). A named filter is always a non-pending value,
+  // so the equality subsumes the exclusion.
   const filters = ctx.tenantId
-    ? [eq(memberships.tenantId, ctx.tenantId), ne(memberships.status, 'pending')]
+    ? [
+        eq(memberships.tenantId, ctx.tenantId),
+        statusFilter ? eq(memberships.status, statusFilter) : ne(memberships.status, 'pending'),
+      ]
     : [];
   if (ctx.tenantId && query) {
     filters.push(or(ilike(users.name, `%${query}%`), ilike(users.email, `%${query}%`))!);
   }
+
+  // Segment hrefs keep the search query and drop ?page= — a changed filter
+  // starts at page 1 of the new result set.
+  const filterHref = (status?: MemberStatusFilter) => {
+    const p = new URLSearchParams();
+    if (query) p.set('q', query);
+    if (status) p.set('status', status);
+    const qs = p.toString();
+    return `/admin/people${qs ? `?${qs}` : ''}`;
+  };
 
   /*
     Count and rows are independent, so they run together rather than as two
@@ -188,19 +216,34 @@ export default async function People({
         </section>
       )}
 
-      <form method="get" className="mt-6 flex max-w-sm gap-2">
-        <Input
-          type="search"
-          name="q"
-          aria-label="Search people"
-          defaultValue={query}
-          placeholder="Search people…"
-          className="flex-1"
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <SegmentedNav
+          label="Filter people by status"
+          items={[
+            { label: 'All', href: filterHref(), active: !statusFilter },
+            ...MEMBER_STATUSES.map((s) => ({
+              label: s[0].toUpperCase() + s.slice(1),
+              href: filterHref(s),
+              active: statusFilter === s,
+            })),
+          ]}
         />
-        <Button type="submit" variant="outline">
-          Search
-        </Button>
-      </form>
+        <form method="get" className="flex max-w-sm flex-1 gap-2">
+          {/* The form submits ?q= and would drop ?status= — carry it. */}
+          {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
+          <Input
+            type="search"
+            name="q"
+            aria-label="Search people"
+            defaultValue={query}
+            placeholder="Search people…"
+            className="flex-1"
+          />
+          <Button type="submit" variant="outline">
+            Search
+          </Button>
+        </form>
+      </div>
 
       <div className="mt-6 overflow-x-auto rounded-(--radius-card) bg-surface">
         <Table>
@@ -304,10 +347,23 @@ export default async function People({
                     <EmptyRow title={`No one matches “${query}”`}>
                       Search looks at names and email addresses. Try a shorter search, or{' '}
                       <Link
-                        href="/admin/people"
+                        href={filterHref(statusFilter)}
                         className="text-link hover:text-link-hover hover:underline font-semibold"
                       >
                         show everyone
+                      </Link>
+                      .
+                    </EmptyRow>
+                  ) : statusFilter ? (
+                    // A filter with no rows is not "no one here yet" — the
+                    // academy may be full of members in other states.
+                    <EmptyRow title={`No ${statusFilter} members`}>
+                      Nothing is in this state right now.{' '}
+                      <Link
+                        href={filterHref()}
+                        className="text-link hover:text-link-hover hover:underline font-semibold"
+                      >
+                        Show everyone
                       </Link>
                       .
                     </EmptyRow>
@@ -324,7 +380,11 @@ export default async function People({
         </Table>
       </div>
 
-      <Pagination meta={meta} basePath="/admin/people" params={{ q: query || undefined }} />
+      <Pagination
+        meta={meta}
+        basePath="/admin/people"
+        params={{ q: query || undefined, status: statusFilter }}
+      />
     </div>
   );
 }
