@@ -171,7 +171,7 @@ export default function LoginPage() {
                   // 16px tall as bare text, and it is the recovery path on a
                   // shared site machine. Padding with a negative inset keeps the
                   // label where it was while giving it a real target.
-                  className="-my-3 -mr-1.5 inline-flex min-h-11 items-center rounded px-1.5 text-meta text-link underline hover:text-link-hover"
+                  className="-my-3 -mr-1.5 inline-flex min-h-11 items-center rounded px-1.5 text-meta text-link hover:text-link-hover hover:underline"
                 >
                   Forgot password?
                 </Link>

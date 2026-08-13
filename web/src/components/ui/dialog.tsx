@@ -94,7 +94,10 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-lg leading-none font-semibold', className)}
+      // core.css `.sb-modal .mh h3`: 16/800 — heavier and one step smaller
+      // than the stock 18/600, so the title reads as the modal's masthead
+      // rather than a page heading that wandered into a popup.
+      className={cn('text-base leading-none font-extrabold', className)}
       {...props}
     />
   );

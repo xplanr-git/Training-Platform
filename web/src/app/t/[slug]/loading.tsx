@@ -9,7 +9,7 @@ import { CardListSkeleton } from '@/components/skeletons';
  */
 export default function TenantLoading() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6" aria-busy="true">
+    <main className="mx-auto w-full max-w-3xl px-6 py-12 sm:py-14" aria-busy="true">
       <Skeleton className="h-8 w-2/3" />
       <Skeleton className="mt-3 h-4 w-full" />
       <Skeleton className="mt-2 h-4 w-4/5" />

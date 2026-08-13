@@ -176,8 +176,12 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
           {stats.map((s) => (
             <Card key={s.label}>
               <CardContent className="py-4">
-                <div className="text-2xl font-semibold tabular-nums">{s.value}</div>
-                <div className="text-meta text-muted">{s.label}</div>
+                {/* core.css `.sb-kpi`: label 13/500 ABOVE a 28/800 value — the
+                    label names the number before the eye lands on it, and the
+                    admin Insights tiles already read this way; the two stat
+                    surfaces were label-under vs label-over of each other. */}
+                <div className="text-control font-medium text-foreground-2">{s.label}</div>
+                <div className="mt-1 text-kpi font-extrabold tabular-nums">{s.value}</div>
               </CardContent>
             </Card>
           ))}
@@ -236,7 +240,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                       ) : (
                         <a
                           href={`/verify/${r.certCode}`}
-                          className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-link hover:text-link-hover"
+                          className="-my-1.5 mt-2 inline-flex items-center gap-1 py-3 text-sm text-link hover:text-link-hover hover:underline"
                         >
                           <Award className="h-4 w-4" /> View certificate
                         </a>

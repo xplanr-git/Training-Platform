@@ -137,14 +137,16 @@ describe('the keyline rule (GUIDELINES.md §2)', () => {
    * common mistake, and the reason it is common is that it looks tidier in
    * isolation and only reads as heavy once the whole page is assembled.
    */
-  it('the header row carries the 2px dark keyline', () => {
+  it('the header row carries the dark keyline at the system weight', () => {
     const table = FILES.find((f) => f.rel === 'components/ui/table.tsx')!.src;
     const header = table.slice(
       table.indexOf('function TableHeader'),
       table.indexOf('function TableBody'),
     );
     expect(header).toMatch(/border-keyline/);
-    expect(header).toMatch(/border-b-2/);
+    // --keyline-w is 1.75px — the same stroke as the nav underline and the
+    // active tab. border-b-2 was the pre-v4.1 rounding of it.
+    expect(header).toMatch(/border-b-\[1\.75px\]/);
   });
 
   it('and table ROWS never do', () => {
@@ -378,6 +380,66 @@ describe('state colour comes from the status tokens, not raw palette utilities',
     expect(
       offenders,
       `use the status tokens (Callout / StatusBadge / text-status-* / text-destructive):\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+});
+
+describe('link grammar: blue at rest, underline on hover (core.css .sb-link)', () => {
+  /*
+   * "At rest a link is blue with no underline; on hover the underline appears
+   * and the blue deepens" — the v4.1 Reference, verbatim intent. Both halves
+   * drifted independently: three sites underlined at rest, six never
+   * underlined at all. Each spelling looked plausible in isolation, which is
+   * exactly how a one-grammar rule dies.
+   *
+   * `group-hover:` is accepted alongside `hover:` for links whose hover state
+   * is owned by an enclosing card. `underline-offset-*` is a tuning value, not
+   * an underline — the lookahead excludes it.
+   */
+  it('every text-link call site underlines on hover, and only on hover', () => {
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      for (const m of f.src.matchAll(/className="([^"]*\btext-link\b[^"]*)"/g)) {
+        const cls = m[1];
+        if (!/(?:group-)?hover:underline\b/.test(cls)) {
+          offenders.push(`${f.rel} — missing hover:underline — "${cls.slice(0, 70)}"`);
+        }
+        if (/(?<![:-])\bunderline\b(?!-)/.test(cls)) {
+          offenders.push(`${f.rel} — underlined at rest — "${cls.slice(0, 70)}"`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `a link is blue at rest and underlines on hover:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+});
+
+describe('data marks are greyscale, never ink and never a status colour', () => {
+  /*
+   * v4.1: "pure ink is never the default fill for a bar" — a progress fill is a
+   * data mark, and its LENGTH is the datum. State belongs in a StatusBadge next
+   * to the bar, not in the fill's hue. The Progress primitive and both ad-hoc
+   * progressbar fills were ink (or amber) before the --color-data ramp existed.
+   */
+  it('no progressbar fill paints with ink or a status token', () => {
+    const offenders: string[] = [];
+    for (const f of TSX) {
+      // The fill is the styled child inside the track (role="progressbar", or
+      // the Radix Indicator). Scan the markup window that follows each track —
+      // not the whole file, which may legitimately paint ink elsewhere (the
+      // video letterbox in attached-video sits two elements above its bar).
+      for (const t of f.src.matchAll(/role="progressbar"|ProgressPrimitive\.Indicator/g)) {
+        const windowSrc = f.src.slice(t.index ?? 0, (t.index ?? 0) + 500);
+        for (const m of windowSrc.matchAll(/\bbg-(primary|foreground|status-[a-z]+)\b/g)) {
+          offenders.push(`${f.rel} — ${m[0]}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `progress fills are bg-data-strong on a bg-data-track groove:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 });

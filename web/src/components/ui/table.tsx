@@ -9,7 +9,9 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
     <div data-slot="table-container" className="relative w-full overflow-x-auto">
       <table
         data-slot="table"
-        className={cn('w-full caption-bottom text-sm', className)}
+        // 12.5px data, constant across every density (core.css: "Dense DATA
+        // size = 12.5") — density changes row height only, never the font.
+        className={cn('w-full caption-bottom text-meta', className)}
         {...props}
       />
     </div>
@@ -33,7 +35,9 @@ function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
   return (
     <thead
       data-slot="table-header"
-      className={cn('[&_tr]:border-keyline [&_tr]:border-b-2', className)}
+      // 1.75px is --keyline-w, the system's one dark keyline weight — the same
+      // stroke the nav underline and active tab carry.
+      className={cn('[&_tr]:border-keyline [&_tr]:border-b-[1.75px]', className)}
       {...props}
     />
   );
@@ -83,11 +87,12 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        // 12.5px/600 muted, and deliberately NOT uppercase: sb keeps the header
-        // font constant across every density, and the tracked-out uppercase
-        // "category" header is the other half of the heavy-table look the
-        // keyline rule is guarding against.
-        'text-muted h-10 px-2 text-left align-middle text-meta font-semibold whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        // The 11px LABEL size at 600, muted, in a 46px header row — core.css
+        // `.sb-thead`/`.sb-th` exactly — and deliberately NOT uppercase: sb
+        // keeps the header font constant across every density, and the
+        // tracked-out uppercase "category" header is the other half of the
+        // heavy-table look the keyline rule is guarding against.
+        'text-muted h-[46px] px-2 text-left align-middle text-label font-semibold whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       {...props}
@@ -100,7 +105,10 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
     <td
       data-slot="table-cell"
       className={cn(
-        'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        // py-2.5 (10px) is the standard-density row padding: 10 + ~20 line +
+        // 10 lands the 40-44px row core.css specifies for `.sb-table--std`,
+        // and a 20px StatusBadge in a cell makes exactly 44.
+        'px-2 py-2.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       {...props}

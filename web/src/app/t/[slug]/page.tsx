@@ -119,18 +119,18 @@ export default async function TenantHome({
         <nav className="mb-6 flex flex-wrap items-center justify-end gap-3 text-sm">
           {signedIn ? (
             <>
-              <Link href="/dashboard" className="text-link hover:text-link-hover">
+              <Link href="/dashboard" className="text-link hover:text-link-hover hover:underline">
                 My learning
               </Link>
               <SignOutButton />
             </>
           ) : (
             <>
-              <Link href="/login" className="text-link hover:text-link-hover">
+              <Link href="/login" className="text-link hover:text-link-hover hover:underline">
                 Sign in
               </Link>
               {/* Always safe here: this page IS a tenant, so /join resolves. */}
-              <Link href="/join" className="text-link hover:text-link-hover">
+              <Link href="/join" className="text-link hover:text-link-hover hover:underline">
                 Request access
               </Link>
             </>

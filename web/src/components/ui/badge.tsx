@@ -5,12 +5,20 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/components/ui/utils';
 
+/**
+ * Neutral tag shades, straight from core.css §6: `default` is the FILLED tag —
+ * dark grey (--color-data-strong) with white text, because "none is ever solid
+ * black": pure ink is reserved for text, keylines and the primary action, and
+ * an ink-filled tag reads as a small button. `secondary` is the soft resting
+ * tag (sunken, ink text); `outline` the quiet one. Metrics match StatusBadge:
+ * 20px tall at the 11px label size.
+ */
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-sm border px-2 py-0.5 text-meta font-semibold w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring aria-invalid:border-destructive transition-colors overflow-hidden',
+  'inline-flex items-center justify-center rounded-sm border h-5 px-2 text-label font-semibold w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring aria-invalid:border-destructive transition-colors overflow-hidden',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90',
+        default: 'border-transparent bg-data-strong text-primary-foreground',
         secondary:
           'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
         destructive:
@@ -76,7 +84,10 @@ function StatusBadge({
     <span
       data-slot="status-badge"
       className={cn(
-        'inline-flex h-6 w-fit shrink-0 items-center gap-1.5 rounded-sm px-2 text-meta font-semibold whitespace-nowrap',
+        // core.css `.sb-tag`: a 20px tag at the 11px LABEL size (was 24px at
+        // 12.5, one notch heavier than the system's). Dot 6px, gap 5→gap-1.5,
+        // squared 2px.
+        'inline-flex h-5 w-fit shrink-0 items-center gap-1.5 rounded-sm px-2 text-label font-semibold whitespace-nowrap',
         TONES[tone],
         className,
       )}

@@ -27,7 +27,9 @@ function RadioGroupItem({
     <RadioGroupPrimitive.Item
       data-slot="radio-group-item"
       className={cn(
-        'border-input text-primary focus-visible:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 aspect-square size-4 shrink-0 rounded-full border transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        // Same box grammar as Checkbox: 18px, 1.5px border (a radio is the
+        // checkbox's round sibling in core.css `.sb-check .box.radio`).
+        'border-input text-primary bg-input-background focus-visible:border-ring aria-invalid:ring-destructive/20 aria-invalid:border-destructive aspect-square size-[18px] shrink-0 rounded-full border-[1.5px] transition-[color,border-color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       {...props}

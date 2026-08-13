@@ -65,14 +65,18 @@ export function AttachedVideo({
         </p>
         {!playable && encodeProgress > 0 && (
           <div
-            className="mt-1.5 h-1 w-full overflow-hidden rounded-sm bg-surface-muted"
+            className="mt-1.5 h-1 w-full overflow-hidden rounded-sm bg-data-track"
             role="progressbar"
             aria-valuenow={encodeProgress}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label="Encoding progress"
           >
-            <div className="h-full bg-status-amber" style={{ width: `${encodeProgress}%` }} />
+            {/* A greyscale data mark, not amber: the fill's LENGTH is the datum
+              (how far encoding has got), and state is already carried by the
+              status word above. Colour on the fill was smuggling state into
+              magnitude — the exact thing the v4.1 data-viz rule forbids. */}
+            <div className="h-full bg-data-strong" style={{ width: `${encodeProgress}%` }} />
           </div>
         )}
         {!playable && (

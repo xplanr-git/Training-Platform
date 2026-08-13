@@ -141,17 +141,16 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
         {metrics.map((m) => (
           <Card key={m.label}>
             <CardContent className="py-4">
-              <p className="text-sm text-muted">{m.label}</p>
-              <p className="mt-1 text-2xl font-extrabold tracking-[-0.02em] tabular-nums">
-                {m.value}
-              </p>
+              {/* core.css `.sb-kpi`: label 13/500 over a 28/800 value. */}
+              <p className="text-control font-medium text-foreground-2">{m.label}</p>
+              <p className="mt-1 text-kpi font-extrabold tabular-nums">{m.value}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {watch.length > 0 && (
-        <section className="mt-10">
+        <section className="mt-16">
           <h2 className="text-h2">Video engagement</h2>
           <p className="mt-1 text-sm text-muted">
             Actual time played per video lesson — not just who clicked “complete”.
@@ -195,7 +194,7 @@ export default async function Analytics({ params }: { params: Promise<{ slug: st
         </section>
       )}
 
-      <section className="mt-10">
+      <section className="mt-16">
         <h2 className="text-h2">Where learners get stuck</h2>
         <p className="mt-1 text-sm text-muted">
           Questions ranked by attempts, with average time spent and how often they&apos;re answered

@@ -530,11 +530,14 @@ raw system tokens (`--border-input #CFCEC9`, alpha tints) fail; do **not** "fix"
 
 ### Checking for updates (do this before UI work)
 
-The external source is a git repo. Baseline reconciled commit: **`52edb04`**
-(`Structurebuild/design-system@main`, 2026-08-12). To check for updates:
+The external source is a git repo. Baseline reconciled commit: **`16359f2`**
+(`Structurebuild/design-system@main`, reconciled 2026-08-13 — that commit added
+`examples/`, the rendered pack of Reference / resolved-Navigation / Icon-set /
+Product-UI pages; the parity pass against it is
+`docs/Design-System-Examples-Parity_Analysis_2026_08_13__14_05.md`). To check for updates:
 
 ```bash
-git -C /c/design-system-main fetch --quiet && git -C /c/design-system-main log --oneline 52edb04..origin/main
+git -C /c/design-system-main fetch --quiet && git -C /c/design-system-main log --oneline 16359f2..origin/main
 ```
 
 Any output = the system changed since we last reconciled. Diff `core.css` / `brand-outdure.css`

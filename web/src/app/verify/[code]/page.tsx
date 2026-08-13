@@ -53,7 +53,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
 
   if (!cert) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-14">
+      <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-12 sm:py-14">
         <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center">
           <h1 className="text-h1 font-bold">Certificate not found</h1>
           <p className="mt-2 text-body text-foreground-2">
@@ -99,7 +99,7 @@ export default async function VerifyCertificate({ params }: { params: Promise<{ 
   return (
     <main
       data-print-certificate
-      className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6 py-14"
+      className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6 py-12 sm:py-14"
     >
       {/*
         `print:hidden` used to sit on this whole row. PrintButton already carries its

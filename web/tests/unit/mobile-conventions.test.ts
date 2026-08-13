@@ -18,21 +18,22 @@ const code = (p: string) =>
 describe('the primitives are 44px on a phone and unchanged on a desktop', () => {
   /*
    * Input was h-9 (36px) and Button default h-10 (40px) at every width — the two
-   * commonest controls in the app, both under the bar. Fixed mobile-first
-   * (`h-11 sm:h-9`) so a phone gets 44px and desktop density is untouched: measured
-   * 44px at 375px and 36/40px at 1280px.
+   * commonest controls in the app, both under the bar. Fixed mobile-first so a
+   * phone gets 44px; from sm: up the controls sit at the design system's own
+   * heights — 40px inputs (core.css `.sb-input`), 38px buttons (`.sb-btn`) —
+   * so desktop density is the system's, not Tailwind's.
    */
-  it('Input is 44px below sm', () => {
+  it('Input is 44px below sm and the system 40px above', () => {
     const src = code('src/components/ui/input.tsx');
     expect(src).toMatch(/\bh-11\b/);
-    expect(src, 'desktop density must be preserved explicitly').toMatch(/\bsm:h-9\b/);
+    expect(src, 'desktop density must be preserved explicitly').toMatch(/\bsm:h-10\b/);
   });
 
   it('Button default, sm and icon each clear 44px below sm', () => {
     const src = code('src/components/ui/button.tsx');
-    expect(src).toMatch(/default: ['\"]h-11 [^'\"]*sm:h-10['\"]/);
+    expect(src).toMatch(/default: ['\"]h-11 [^'\"]*sm:h-\[38px\]['\"]/);
     expect(src).toMatch(/sm: ['\"]h-10 [^'\"]*sm:h-9['\"]/);
-    expect(src).toMatch(/icon: ['\"]h-11 w-11 sm:h-10 sm:w-10['\"]/);
+    expect(src).toMatch(/icon: ['\"]h-11 w-11 sm:h-\[38px\] sm:w-\[38px\]['\"]/);
   });
 });
 

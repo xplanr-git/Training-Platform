@@ -305,7 +305,7 @@ export default async function People({
                       Search looks at names and email addresses. Try a shorter search, or{' '}
                       <Link
                         href="/admin/people"
-                        className="text-link hover:text-link-hover font-semibold underline"
+                        className="text-link hover:text-link-hover hover:underline font-semibold"
                       >
                         show everyone
                       </Link>

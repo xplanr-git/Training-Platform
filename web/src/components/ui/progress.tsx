@@ -13,16 +13,18 @@ function Progress({
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
-      // Ink fill on a sunken track. The track was bg-primary/20 — a 20% ink wash,
-      // which reads as a lighter version of the fill rather than as a groove the
-      // fill sits in. Squared to the 2px tag radius; a fully round bar is the pill
-      // shape GUIDELINES.md §9 rules out.
-      className={cn('bg-sunken relative h-2 w-full overflow-hidden rounded-sm', className)}
+      // Greyscale fill on the data track, per the v4.1 data-viz rule: a progress
+      // bar is a data mark, and "pure ink is never the default fill for a bar" —
+      // ink stays reserved for text, keylines and the primary action. The fill is
+      // --color-data-strong (the dark data tone), the groove is --color-data-track.
+      // Squared to the 2px tag radius; a fully round bar is the pill shape
+      // GUIDELINES.md §9 rules out.
+      className={cn('bg-data-track relative h-2 w-full overflow-hidden rounded-sm', className)}
       {...props}
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="bg-primary h-full w-full flex-1 transition-all"
+        className="bg-data-strong h-full w-full flex-1 transition-all"
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
     </ProgressPrimitive.Root>

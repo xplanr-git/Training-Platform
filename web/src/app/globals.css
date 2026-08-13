@@ -98,6 +98,22 @@
      and inputs still sit at 14 and are a separate, wider change. */
   --text-control: 0.84375rem;
   --text-control--line-height: 1.4;
+  /* 28 — the KPI value (core.css `.sb-kpi .v`: 28/800/-0.02em). A component
+     size, not a prose step: it sits between h1 (24) and display (32) so a
+     stat tile's number reads bigger than a page title without shouting at
+     display size. Pair with font-extrabold and tabular-nums. */
+  --text-kpi: 1.75rem;
+  --text-kpi--line-height: 1.15;
+  --text-kpi--letter-spacing: -0.02em;
+
+  /* 11 — the dense LABEL size: table headers and status tags (core.css: "dense
+     LABEL size = 11 (matches eyebrow/tag)"). Same 11px as the eyebrow but with
+     NORMAL tracking and no uppercase — the eyebrow's .09em letterspacing is a
+     kicker treatment, and applying it to a table header is half of the
+     heavy-table look the keyline rule guards against. */
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.3;
+
   /* 10.5 — the side menu's group label, and deliberately NOT the eyebrow.
      core.css gives `.sb-side .grp` its own smaller, tighter setting
      (10.5px / .07em) rather than the 11px / .09em eyebrow, so that a long nav's
@@ -119,6 +135,9 @@
   --color-popover: #ffffff;
   --color-popover-foreground: #1b1b1e;
   --color-primary: #1b1b1e;
+  /* core.css --ink-hover: the primary action's hover/press goes to true black
+     rather than a translucent ink (bg-primary/90 read as a fade, not a press). */
+  --color-primary-hover: #000000;
   --color-primary-foreground: #ffffff;
   --color-secondary: #f1f1f0;
   --color-secondary-foreground: #1b1b1e;
@@ -204,6 +223,32 @@
   --color-cat-4: #7a3fb0;
   --color-cat-5: #b23a48;
 
+  /* Data-viz marks are GREYSCALE, never ink and never colour (core.css v4.1 §1).
+     Pure ink is reserved for text, keylines and the primary action — "it is never
+     the default fill for a bar, tag or chip". A single-series magnitude bar is
+     --color-data; --color-data-strong is the dark tone for marks that carry white
+     text (progress fills, funnel stages, filled tags); a mono multi-series chart
+     steps --color-data-1 (lightest) → --color-data-5 (darkest). The track is its
+     own token — slightly cooler than the sunken plane so a groove reads as a
+     groove on top of it. Colour on a data mark means STATE was being smuggled
+     into magnitude; use StatusBadge next to the bar instead. */
+  --color-data-1: #cdced2;
+  --color-data-2: #adaeb3;
+  --color-data-3: #8d8e93;
+  --color-data-4: #6c6d72;
+  --color-data-5: #54555a;
+  --color-data: #a2a3a8;
+  --color-data-strong: #54555a;
+  --color-data-soft: #c6c7cb;
+  --color-data-track: #ececea;
+
+  /* The firm structural edge (core.css --border-strong). Sits between the light
+     divider (--color-border) and the input border: hover states firm a quiet
+     edge to this before anything darkens to ink. Decoration-adjacent, so it is
+     deliberately NOT held to the 3:1 component-boundary bar that --color-input
+     clears — do not use it as a control's only boundary. */
+  --color-border-strong: #d5d4d0;
+
   /* Shadows are a whisper. Cards on the shell carry none at all — whitespace and
      the surface change do the separating. --shadow-pop is for floating layers
      (menus, popovers, dialogs), which need to lift off the page to read as
@@ -248,6 +293,11 @@ body {
   }
 
   h1 {
+    /* Display and H1 sit at 800 on the system ramp ("Display · 32/800, H1 ·
+       24/800" — the Reference specimen); h2/h3 stay at the 700 set above.
+       Being in @layer base, a font-semibold utility at a call site still
+       wins where a page deliberately wants lighter. */
+    font-weight: 800;
     letter-spacing: -0.02em;
   }
 

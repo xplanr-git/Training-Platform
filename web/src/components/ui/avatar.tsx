@@ -9,7 +9,8 @@ function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimi
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
-      className={cn('relative flex size-10 shrink-0 overflow-hidden rounded-full', className)}
+      // core.css `.sb-avatar`: 34px (round is the avatar's sanctioned circle).
+      className={cn('relative flex size-[34px] shrink-0 overflow-hidden rounded-full', className)}
       {...props}
     />
   );
@@ -33,7 +34,9 @@ function AvatarFallback({
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'bg-surface-muted flex size-full items-center justify-center rounded-full',
+        // Ink fill with white initials at 12/700 (`.sb-avatar`), not the stock
+        // grey wash — a grey disc with ink text reads as a disabled control.
+        'bg-primary text-primary-foreground text-meta font-bold flex size-full items-center justify-center rounded-full',
         className,
       )}
       {...props}

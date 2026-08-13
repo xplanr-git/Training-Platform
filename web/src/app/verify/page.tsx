@@ -52,7 +52,7 @@ export default async function VerifyLookup({
   const submittedEmpty = code !== undefined && !entered;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-14">
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-12 sm:py-14">
       <div className="rounded-(--radius-card) border border-border bg-surface p-8">
         <h1 className="text-h1 font-bold">Verify a certificate</h1>
         <p className="mt-2 text-body text-foreground-2">

@@ -40,7 +40,10 @@ export function JoinForm({ tenantSlug, academyName }: { tenantSlug: string; acad
           An administrator at {academyName} will review it. You will be able to sign in once it is
           accepted — we will not email you before then.
         </p>
-        <Link href="/login" className="text-link hover:text-link-hover mt-4 inline-block text-sm">
+        <Link
+          href="/login"
+          className="text-link hover:text-link-hover hover:underline mt-4 inline-block text-sm"
+        >
           Go to sign in
         </Link>
       </div>
@@ -86,7 +89,7 @@ export function JoinForm({ tenantSlug, academyName }: { tenantSlug: string; acad
 
       <p className="text-sm text-muted">
         Already have an account?{' '}
-        <Link href="/login" className="text-link hover:text-link-hover">
+        <Link href="/login" className="text-link hover:text-link-hover hover:underline">
           Sign in
         </Link>
       </p>
