@@ -50,25 +50,12 @@ export default async function Settings({ params }: { params: Promise<{ slug: str
                 placeholder="https://…/logo.png"
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="primaryColor">Primary colour</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="primaryColor"
-                  name="primaryColor"
-                  defaultValue={branding.primaryColor ?? ''}
-                  placeholder="#1b1b1e"
-                  className="w-40"
-                />
-                {branding.primaryColor && (
-                  <span
-                    className="h-9 w-9 shrink-0 rounded-md border border-border"
-                    style={{ background: branding.primaryColor }}
-                    aria-hidden
-                  />
-                )}
-              </div>
-            </div>
+            {/* No "Primary colour" field: the storefront is monochrome by
+                design (blue = link, ink = everything else), so a colour saved
+                here painted nothing — a setting that does nothing is a trap.
+                Tenant colour lives on the certificate template (owner decision
+                2026-08-13); stored primaryColor values are preserved untouched
+                in case the policy widens again. */}
             <Button type="submit" className="self-start">
               Save settings
             </Button>

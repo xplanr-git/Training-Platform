@@ -51,7 +51,6 @@ export default async function TenantHome({
   const tenant = await tenantBySlug(slug);
 
   const branding = (tenant?.branding ?? {}) as Branding;
-  const accent = branding.primaryColor || undefined;
   const logoUrl = safeHttpUrl(branding.logoUrl);
 
   const filters = tenant ? [eq(courses.tenantId, tenant.id), eq(courses.status, 'published')] : [];
@@ -140,9 +139,7 @@ export default async function TenantHome({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt={tenant?.name ?? slug} className="mb-4 h-12 w-auto" />
         )}
-        <h1 className="text-display" style={accent ? { color: accent } : undefined}>
-          {tenant?.name ?? slug}
-        </h1>
+        <h1 className="text-display">{tenant?.name ?? slug}</h1>
         <p className="mt-2 text-muted">
           {branding.tagline || 'Browse the courses and start your training.'}
         </p>
@@ -184,10 +181,12 @@ export default async function TenantHome({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="mt-auto">
-                  <span
-                    className="text-link group-hover:text-link-hover text-sm font-semibold group-hover:underline"
-                    style={accent ? { color: accent } : undefined}
-                  >
+                  {/* System blue, never the tenant accent: "blue = link" only
+                      stays true if nothing else can paint a link another
+                      colour. Tenant colour lives on the certificate (owner
+                      decision 2026-08-13); storefront identity is carried by
+                      the logo and name. */}
+                  <span className="text-link group-hover:text-link-hover text-sm font-semibold group-hover:underline">
                     View course →
                   </span>
                 </CardContent>
