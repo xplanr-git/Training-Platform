@@ -122,11 +122,13 @@ describe('page rhythm is the same on every learner shell', () => {
 
   it('container width follows the stated rule: grids wide, reading columns 3xl', () => {
     const width = (f: string) => /<main className="[^"]*max-w-(\w+)/.exec(read(f))?.[1] ?? null;
-    // Storefront is a 3-card grid, the dashboard a 4-tile stat grid; the rest are
-    // single reading/working columns. This was three arbitrary-looking widths until
-    // the rule was written down in globals.css.
+    // Storefront is a 3-card grid, so it stays wide. The dashboard was a 4-tile
+    // stat grid (4xl); Slice 1 replaced those tiles with a requirements-led
+    // reading column, so it now follows the reading-column rule (3xl) like the
+    // course pages. The rest are single reading/working columns. This was three
+    // arbitrary-looking widths until the rule was written down in globals.css.
     expect(width('src/app/t/[slug]/page.tsx')).toBe('5xl');
-    expect(width('src/app/t/[slug]/dashboard/page.tsx')).toBe('4xl');
+    expect(width('src/app/t/[slug]/dashboard/page.tsx')).toBe('3xl');
     expect(width('src/app/t/[slug]/courses/[courseSlug]/page.tsx')).toBe('3xl');
     expect(width('src/app/t/[slug]/learn/[courseSlug]/page.tsx')).toBe('3xl');
   });

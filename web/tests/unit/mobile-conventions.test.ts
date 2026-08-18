@@ -68,11 +68,14 @@ describe('text links that act as controls have a real hit area', () => {
     expect(offenders, `use <BackLink>:\n${offenders.join('\n')}`).toEqual([]);
   });
 
-  it('the three other bare-text controls carry padding or a min-height', () => {
+  it('the other bare-text controls carry padding or a min-height', () => {
     /*
      * Each measured 20px (16px for the login one) and each is a real destination:
-     * the PDF opener on a PDF lesson, the certificate link on the dashboard, and
-     * password recovery on a shared site machine.
+     * the PDF opener on a PDF lesson, and password recovery on a shared site
+     * machine. (The dashboard certificate link was removed in Slice 1, when the
+     * requirements-led home stopped surfacing certificates — they now live on the
+     * course-complete panel — so its case is gone; the sizing rule for the
+     * controls that remain is unchanged.)
      *
      * Anchored on each control's HREF, and asserting only the sizing token.
      * These regexes used to carry the colour too — `text-sm text-brand-700`,
@@ -86,11 +89,6 @@ describe('text links that act as controls have a real hit area', () => {
       [
         'src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx',
         /href=\{pdfUrl\}[\s\S]{0,240}?min-h-11/,
-      ],
-      // The certificate link on a dashboard row.
-      [
-        'src/app/t/[slug]/dashboard/page.tsx',
-        /href=\{`\/verify\/\$\{r\.certCode\}`\}[\s\S]{0,240}?py-3/,
       ],
       // Password recovery, beside the password field.
       ['src/app/login/page.tsx', /href="\/login\/forgot"[\s\S]{0,240}?min-h-11/],

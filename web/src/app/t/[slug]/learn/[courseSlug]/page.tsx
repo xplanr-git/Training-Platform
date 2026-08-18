@@ -140,7 +140,7 @@ export default async function Learn({
       ) : (
         <Card className="mt-4">
           <CardContent className="py-5">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
               <span className="font-medium">{progress.percent}% complete</span>
               <span className="text-muted tabular-nums">
                 {progress.done} of {progress.total} lessons
