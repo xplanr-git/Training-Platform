@@ -47,3 +47,5 @@ db/node_modules
 # tracked — intermediate paste buffers from an earlier edit, committed by
 # accident and then read as if they were part of the design.
 tmp/
+.vercel
+.env*

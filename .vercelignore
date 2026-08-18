@@ -1,0 +1,16 @@
+# CLI deploys upload the repo root and only honor THIS file plus the root
+# .gitignore — web/.gitignore is not consulted, so local build artifacts
+# (web/.next alone is >1GB of webpack cache) must be excluded here or the
+# upload dies on Vercel's 100MB per-file limit.
+**/.next
+**/.next-verify
+**/node_modules
+**/test-results
+**/playwright-report
+**/coverage
+.git
+tmp
+
+# Not needed to build: documentation, screenshots, and the retired Vite
+# prototype (root src/ stays only because excluding it saves little).
+docs

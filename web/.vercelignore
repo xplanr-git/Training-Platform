@@ -1,0 +1,10 @@
+# The Vercel project's Root Directory is `web`, so the CLI reads THIS ignore
+# file on `vercel deploy` (web/.gitignore is not consulted). Local build
+# artifacts must be excluded or the upload dies on the 100MB per-file limit —
+# .next alone holds >1GB of webpack cache after a local `npm run build`.
+.next
+.next-verify
+node_modules
+test-results
+playwright-report
+coverage
