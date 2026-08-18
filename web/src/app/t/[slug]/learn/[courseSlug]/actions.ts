@@ -10,9 +10,13 @@ import {
   inArray,
   count,
   isNotNull,
+  desc,
+  gte,
+  sql,
   enrollments,
   progressEvents,
   lessons,
+  sections,
   quizzes,
   quizQuestions,
   quizAttempts,
@@ -26,6 +30,7 @@ import type { QuizSettings } from '@/lib/content-types';
 import { finalizeCourseCompletion } from '@/lib/completion';
 import { env } from '@/lib/env';
 import { gradeQuiz } from '@/lib/quiz';
+import { criticalQuestionIds, allCriticalCorrect, reviewRequired } from '@/lib/competency';
 import { rateLimit, RULES } from '@/lib/rate-limit';
 import { safeRedirect } from '@/lib/safe-redirect';
 
@@ -205,10 +210,57 @@ export async function markLessonComplete(
 }
 
 /**
+ * Records that a learner has reviewed a warranty-critical section. This is the
+ * remediation step: after a failed critical check the next attempt is blocked
+ * until the learner reviews the section, and confirming review here unlocks one
+ * retry. Recorded as an append-only `reviewed` event keyed on the section.
+ */
+export async function markSectionReviewed(
+  tenantSlug: string,
+  courseSlug: string,
+  enrollmentId: string,
+  sectionId: string,
+  lessonId: string,
+) {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  const enr = await verifyEnrollment(ctx, enrollmentId);
+  // The section must belong to the enrolled course (Drizzle bypasses RLS).
+  const [sec] = await db
+    .select({ id: sections.id })
+    .from(sections)
+    .where(
+      and(
+        eq(sections.id, sectionId),
+        eq(sections.courseId, enr.courseId),
+        eq(sections.tenantId, ctx.tenantId),
+      ),
+    )
+    .limit(1);
+  if (!sec) throw new Error(`${ActionError.LESSON_NOT_FOUND} in this course`);
+
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: null,
+    eventType: 'reviewed',
+    payload: { sectionId },
+  });
+
+  revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}/${lessonId}`);
+  return { redirectTo: `/learn/${courseSlug}/${lessonId}` };
+}
+
+/**
  * Grades a quiz submission server-side, stores the attempt + per-question
- * answers, and — if the score meets the pass threshold — records the quiz
- * lesson as completed (which can complete the course). A failing attempt is
- * recorded but does not complete the lesson; the learner can retry.
+ * answers, and records the quiz lesson as completed when it passes — which can
+ * complete the course.
+ *
+ * "Passes" depends on the check: an ordinary quiz passes on the score threshold;
+ * a warranty-critical check passes only when EVERY critical question is correct.
+ * A failing critical check does not complete the lesson and blocks an immediate
+ * retry — the learner must review the section first (see markSectionReviewed).
  */
 export async function submitQuizAttempt(
   tenantSlug: string,
@@ -239,32 +291,27 @@ export async function submitQuizAttempt(
   const settings = quiz.settings as QuizSettings;
   const threshold = settings.passThreshold ?? 70;
 
-  /*
-   * Bound the number of attempts BEFORE grading.
-   *
-   * Submissions were unlimited and each one returned `?score=&passed=`, so a
-   * handful of multiple-choice questions could be brute-forced to a pass in
-   * seconds — and a pass auto-issues a certificate. For a platform selling
-   * audit-grade evidence of accredited training, "the learner guessed until it
-   * said yes" is the failure that matters most.
-   *
-   * Two independent bounds, because they stop different things. The rate limit
-   * makes rapid guessing impractical; this cap makes patient guessing
-   * impractical too. A rate limit alone just spreads the same attack over an
-   * afternoon.
-   *
-   * DEFAULT_MAX_ATTEMPTS applies where an author has set nothing, which today is
-   * every existing quiz. 10 is deliberately generous — a learner genuinely
-   * struggling with a hard quiz should not be locked out — while still bounding
-   * the guess count far below what brute force needs.
-   */
-  const maxAttempts =
-    Number.isInteger(settings.maxAttempts) && settings.maxAttempts! > 0
-      ? settings.maxAttempts!
-      : DEFAULT_MAX_ATTEMPTS;
+  // Load the questions now: whether this is a warranty-critical check (any
+  // question flagged `critical`) decides both the attempt policy and what
+  // "passing" means below.
+  const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
+  const critIds = criticalQuestionIds(questions);
+  const isCritical = critIds.length > 0;
 
-  const [{ used } = { used: 0 }] = await db
-    .select({ used: count() })
+  // The section this check belongs to — the unit a learner reviews after a
+  // critical fail, and the key a review is recorded against.
+  const [lessonRow] = await db
+    .select({ sectionId: lessons.sectionId })
+    .from(lessons)
+    .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
+    .limit(1);
+  const sectionId = lessonRow?.sectionId ?? null;
+
+  // Prior submitted attempts (newest first) and whether the lesson is already
+  // complete. A critical lesson only completes on a critical pass, so a completed
+  // critical lesson means the check is already satisfied.
+  const priorAttempts = await db
+    .select({ submittedAt: quizAttempts.submittedAt })
     .from(quizAttempts)
     .where(
       and(
@@ -272,11 +319,70 @@ export async function submitQuizAttempt(
         eq(quizAttempts.quizId, quizId),
         isNotNull(quizAttempts.submittedAt),
       ),
+    )
+    .orderBy(desc(quizAttempts.submittedAt));
+  const used = priorAttempts.length;
+  const lastAttemptAt = priorAttempts[0]?.submittedAt ?? null;
+
+  const [{ completedCount } = { completedCount: 0 }] = await db
+    .select({ completedCount: count() })
+    .from(progressEvents)
+    .where(
+      and(
+        eq(progressEvents.enrollmentId, enrollmentId),
+        eq(progressEvents.lessonId, lessonId),
+        eq(progressEvents.eventType, 'completed'),
+      ),
     );
-  if (used >= maxAttempts) {
-    throw new Error(
-      `You have used all ${maxAttempts} attempts at this quiz. Ask your administrator to reset it.`,
-    );
+  const lessonCompleted = completedCount > 0;
+
+  if (isCritical) {
+    /*
+     * Warranty-critical check. The immediate-retry cap is REPLACED by a
+     * remediation gate: after a failed critical check the learner must review the
+     * section before another attempt, so guess -> retry -> guess is not a path to
+     * Trained. The first attempt is always allowed; one review unlocks one retry.
+     */
+    let reviewedSince = false;
+    if (sectionId && lastAttemptAt) {
+      const [{ reviews } = { reviews: 0 }] = await db
+        .select({ reviews: count() })
+        .from(progressEvents)
+        .where(
+          and(
+            eq(progressEvents.enrollmentId, enrollmentId),
+            eq(progressEvents.eventType, 'reviewed'),
+            sql`${progressEvents.payload}->>'sectionId' = ${sectionId}`,
+            gte(progressEvents.occurredAt, lastAttemptAt),
+          ),
+        );
+      reviewedSince = reviews > 0;
+    }
+    if (
+      reviewRequired({
+        isCritical,
+        lessonCompleted,
+        priorAttemptCount: used,
+        reviewedSinceLastAttempt: reviewedSince,
+      })
+    ) {
+      throw new Error('Review this section, then try the knowledge check again.');
+    }
+  } else {
+    /*
+     * Non-critical quiz: keep the simple attempt cap (unlimited submissions once
+     * let a handful of MCQs be brute-forced to a pass in seconds). 10 is generous
+     * for an ordinary check; warranty-critical checks use review gating instead.
+     */
+    const maxAttempts =
+      Number.isInteger(settings.maxAttempts) && settings.maxAttempts! > 0
+        ? settings.maxAttempts!
+        : DEFAULT_MAX_ATTEMPTS;
+    if (used >= maxAttempts) {
+      throw new Error(
+        `You have used all ${maxAttempts} attempts at this quiz. Ask your administrator to reset it.`,
+      );
+    }
   }
 
   // Keyed on the enrolment, not the address: an IP key would punish a whole
@@ -287,8 +393,6 @@ export async function submitQuizAttempt(
       `Too many attempts in a short time. Try again in ${limited.retryAfterSeconds} seconds.`,
     );
   }
-
-  const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
 
   const responses: Record<string, number[]> = {};
   const durations: Record<string, number> = {};
@@ -306,7 +410,16 @@ export async function submitQuizAttempt(
     responses,
     threshold,
   );
-  const { score, passed } = result;
+  const { score } = result;
+  const thresholdPassed = result.passed;
+  const correctIds = new Set(
+    result.perQuestion.filter((g) => g.isCorrect).map((g) => g.questionId),
+  );
+  const criticalPassed = allCriticalCorrect(critIds, correctIds);
+  // For a warranty-critical check, "passing" means every critical question is
+  // correct — the score threshold cannot substitute for a wrong critical answer.
+  // Non-critical quizzes are unchanged (threshold pass).
+  const passedLesson = isCritical ? criticalPassed : thresholdPassed;
 
   await db.transaction(async (tx) => {
     const [attempt] = await tx
@@ -317,7 +430,7 @@ export async function submitQuizAttempt(
         quizId,
         submittedAt: new Date(),
         score: String(score),
-        passed,
+        passed: passedLesson,
       })
       .returning();
     if (result.perQuestion.length > 0) {
@@ -334,15 +447,15 @@ export async function submitQuizAttempt(
       );
     }
     // A quiz attempt is the evidence a certificate rests on: for an accredited
-    // course, "when did this learner sit it, what did they score, was the
-    // threshold met" is the question an auditor asks. Recording the threshold
-    // and attempt number alongside the score matters because an admin can change
-    // the threshold afterwards (quiz.pass_threshold_change), and the log has to
-    // show what it was at the time.
+    // course, "when did this learner sit it, what did they score, did they pass"
+    // is the question an auditor asks. For a critical check the pass is the
+    // critical result (all critical questions correct); the raw score, the
+    // threshold result and the threshold are recorded alongside it so a later
+    // threshold change stays auditable.
     await audited(tx, {
       tenantId: ctx.tenantId,
       actorUserId: ctx.userId,
-      action: passed ? 'quiz_attempt.passed' : 'quiz_attempt.failed',
+      action: passedLesson ? 'quiz_attempt.passed' : 'quiz_attempt.failed',
       resourceType: 'quiz_attempt',
       resourceId: attempt.id,
       after: {
@@ -350,15 +463,17 @@ export async function submitQuizAttempt(
         lessonId,
         enrollmentId,
         score,
-        passed,
+        passed: passedLesson,
+        thresholdPassed,
         threshold,
+        critical: isCritical,
+        criticalPassed,
         attemptNumber: used + 1,
-        maxAttempts,
       },
     });
   });
 
-  if (passed) {
+  if (passedLesson) {
     await recordLessonCompleted(ctx, enr.courseId, enrollmentId, enr.status, lessonId);
   }
 

@@ -13,6 +13,8 @@ import {
   asc,
   desc,
   sql,
+  count,
+  gte,
   isNotNull,
   courses,
   sections,
@@ -28,7 +30,8 @@ import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
-import { markLessonComplete, submitQuizAttempt } from '../actions';
+import { isCriticalCheck } from '@/lib/competency';
+import { markLessonComplete, submitQuizAttempt, markSectionReviewed } from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { BunnyVideoPlayer } from '@/components/bunny-video-player';
@@ -199,7 +202,11 @@ export default async function LessonPlayer({
     quiz ? loadQuestions(quiz.id) : Promise.resolve([]),
     quiz && enrollmentId
       ? db
-          .select({ score: quizAttempts.score, passed: quizAttempts.passed })
+          .select({
+            score: quizAttempts.score,
+            passed: quizAttempts.passed,
+            submittedAt: quizAttempts.submittedAt,
+          })
           .from(quizAttempts)
           .where(
             and(
@@ -210,7 +217,9 @@ export default async function LessonPlayer({
           )
           .orderBy(desc(quizAttempts.submittedAt))
           .limit(1)
-      : Promise.resolve([] as Array<{ score: string | null; passed: boolean | null }>),
+      : Promise.resolve(
+          [] as Array<{ score: string | null; passed: boolean | null; submittedAt: Date | null }>,
+        ),
   ]);
   const lastAttempt = attemptRows[0] ?? null;
 
@@ -235,6 +244,28 @@ export default async function LessonPlayer({
     title: s.title,
     items: bySection.get(s.id) ?? [],
   }));
+
+  // Warranty-critical remediation state. A critical check with a failed prior
+  // attempt blocks the next attempt until the learner reviews the section (via
+  // markSectionReviewed) — so guess/retry is not a path to Trained. Only computed
+  // for a critical check the learner can actually attempt.
+  const isCriticalQuiz = isQuiz && isCriticalCheck(questions);
+  const sectionFirstLessonId = bySection.get(lesson.sectionId)?.[0]?.id ?? lesson.id;
+  let reviewNeeded = false;
+  if (isCriticalQuiz && enrollmentId && !readOnly && !done && lastAttempt?.submittedAt) {
+    const [{ reviews } = { reviews: 0 }] = await db
+      .select({ reviews: count() })
+      .from(progressEvents)
+      .where(
+        and(
+          eq(progressEvents.enrollmentId, enrollmentId),
+          eq(progressEvents.eventType, 'reviewed'),
+          sql`${progressEvents.payload}->>'sectionId' = ${lesson.sectionId}`,
+          gte(progressEvents.occurredAt, lastAttempt.submittedAt),
+        ),
+      );
+    reviewNeeded = reviews === 0;
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
@@ -383,7 +414,11 @@ export default async function LessonPlayer({
                   )}
                 >
                   You scored {Math.round(Number(lastAttempt.score ?? 0))}%.{' '}
-                  {lastAttempt.passed ? 'Passed.' : 'Not passed — try again.'}
+                  {lastAttempt.passed
+                    ? 'Passed.'
+                    : isCriticalQuiz
+                      ? 'Not quite — review this section, then try the check again.'
+                      : 'Not passed — try again.'}
                 </p>
               )}
               {done ? (
@@ -414,6 +449,32 @@ export default async function LessonPlayer({
                       </li>
                     ))}
                   </ol>
+                </div>
+              ) : reviewNeeded ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-foreground-2">
+                    This is a warranty-critical check. Review this section, then try the knowledge
+                    check again.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button asChild variant="outline">
+                      <Link href={`/learn/${courseSlug}/${sectionFirstLessonId}`}>
+                        Review this section
+                      </Link>
+                    </Button>
+                    <NavForm
+                      action={markSectionReviewed.bind(
+                        null,
+                        slug,
+                        courseSlug,
+                        enrollmentId,
+                        lesson.sectionId,
+                        lesson.id,
+                      )}
+                    >
+                      <Button type="submit">I&apos;ve reviewed — try the check again</Button>
+                    </NavForm>
+                  </div>
                 </div>
               ) : (
                 <QuizForm
