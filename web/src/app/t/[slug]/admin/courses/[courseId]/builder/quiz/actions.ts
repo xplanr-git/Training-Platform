@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db, audited, eq, and, quizzes, quizQuestions, lessons } from '@training-platform/db';
+import { db, audited, eq, and, asc, quizzes, quizQuestions, lessons } from '@training-platform/db';
 import { requireAdmin } from '@/lib/tenant';
 import { clampInt } from '@/lib/validation';
 import { parseCorrectIndices } from '@/lib/quiz';
@@ -187,6 +187,97 @@ export async function addQuestion(
       // was the correct answer at the time this learner sat it" is the question
       // an auditor asks, and it is unanswerable from the current row alone.
       after: { quizId, prompt, type, options, correct, points },
+    });
+  });
+  revalidateQuiz(slug, courseId, lessonId);
+}
+
+/**
+ * Persists a complete question order for one quiz. Drag-and-drop sends the
+ * final arrangement rather than a swap, which makes the action idempotent and
+ * race-tolerant — whichever call commits last decides the order.
+ *
+ * The id set must match the quiz's questions exactly; a mismatch means a
+ * question was added or deleted mid-drag and the stale order must not be
+ * applied. The order is audited: for an accredited course, question order can
+ * change how a paper reads, so "who rearranged the quiz" is a real question.
+ */
+export async function reorderQuestions(
+  slug: string,
+  courseId: string,
+  lessonId: string,
+  quizId: string,
+  orderedIds: string[],
+) {
+  const ctx = await requireAdmin();
+
+  // Same chain of custody as ensureQuiz: the lesson must be in this course and
+  // academy, and the quiz must belong to that lesson — quizId and lessonId
+  // arrive separately and are checked against each other, not just the tenant.
+  const [lesson] = await db
+    .select({ id: lessons.id })
+    .from(lessons)
+    .where(
+      and(
+        eq(lessons.id, lessonId),
+        eq(lessons.courseId, courseId),
+        eq(lessons.tenantId, ctx.tenantId),
+      ),
+    )
+    .limit(1);
+  if (!lesson) throw new Error('That lesson is no longer part of this course. Reload the page.');
+
+  const [quiz] = await db
+    .select({ id: quizzes.id })
+    .from(quizzes)
+    .where(
+      and(
+        eq(quizzes.id, quizId),
+        eq(quizzes.lessonId, lessonId),
+        eq(quizzes.tenantId, ctx.tenantId),
+      ),
+    )
+    .limit(1);
+  if (!quiz) throw new Error('That quiz no longer exists. Reload the page.');
+
+  if (!Array.isArray(orderedIds) || orderedIds.some((id) => typeof id !== 'string')) {
+    throw new Error('Invalid question order.');
+  }
+
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: quizQuestions.id, position: quizQuestions.position })
+      .from(quizQuestions)
+      .where(and(eq(quizQuestions.quizId, quizId), eq(quizQuestions.tenantId, ctx.tenantId)))
+      .orderBy(asc(quizQuestions.position))
+      .for('update');
+
+    const current = rows.map((r) => r.id);
+    const complete =
+      current.length === orderedIds.length &&
+      new Set(orderedIds).size === orderedIds.length &&
+      current.every((id) => orderedIds.includes(id));
+    if (!complete) {
+      throw new Error('The questions changed while you were reordering. Reload the page.');
+    }
+
+    const positionOf = new Map(rows.map((r) => [r.id, r.position]));
+    for (let i = 0; i < orderedIds.length; i++) {
+      if (positionOf.get(orderedIds[i]) === i) continue;
+      await tx
+        .update(quizQuestions)
+        .set({ position: i })
+        .where(and(eq(quizQuestions.id, orderedIds[i]), eq(quizQuestions.tenantId, ctx.tenantId!)));
+    }
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'quiz_question.reorder',
+      resourceType: 'quiz',
+      resourceId: quizId,
+      before: { order: current },
+      after: { order: orderedIds },
     });
   });
   revalidateQuiz(slug, courseId, lessonId);

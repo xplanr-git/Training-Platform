@@ -134,7 +134,9 @@ describe('state is never conveyed by colour alone (WCAG 1.4.1)', () => {
   it('a correct quiz option says so in words', () => {
     // It was a lucide Check plus brand-700 text. A screen reader got neither the
     // icon nor the colour, and colour alone fails 1.4.1 regardless.
-    const src = read('src/app/t/[slug]/admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx');
+    // The question list moved out of the page and into this client component
+    // when it became drag-sortable; the guard follows the markup.
+    const src = read('src/components/sortable-questions.tsx');
     expect(src).toMatch(/\(correct\)/);
     // \s+ not a literal space: prettier wraps the attributes once the icon
     // carries a colour class, and a formatting pass must not fail the guard.

@@ -191,8 +191,9 @@ describe('nothing is fluffy (GUIDELINES.md §9)', () => {
     'components/ui/switch.tsx': 'the switch track and thumb are the universal affordance',
     'components/ui/scroll-area.tsx': 'scrollbar thumb',
     'components/ui/badge.tsx': 'the 6px status dot',
-    'app/t/[slug]/admin/courses/[courseId]/builder/quiz/[lessonId]/page.tsx':
-      'the option marker is a radio-style dot',
+    // The quiz editor's question list (and its radio-style option marker) moved
+    // from the page into this client component when it became drag-sortable.
+    'components/sortable-questions.tsx': 'the option marker is a radio-style dot',
   };
 
   it('rounded-full appears only where a circle is meant', () => {

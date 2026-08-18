@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { db, eq, and, count, courses, enrollments, certificates } from '@training-platform/db';
 import { requireAdminForSlug } from '@/lib/tenant';
 import { updateCourse, deleteCourse } from '../actions';
+import { AutoSubmit } from '@/components/auto-submit';
 import { NavForm } from '@/components/nav-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -132,9 +133,10 @@ export default async function EditCourse({
                 courses that don&apos;t award one.
               </p>
             </div>
-            <Button type="submit" className="self-start">
-              Save changes
-            </Button>
+            {/* Fields save themselves when changed (NavForm shows Saving…/
+                Saved.) — including the status select, which matches the
+                one-click Publish the course list already offers. */}
+            <AutoSubmit />
           </NavForm>
         </CardContent>
       </Card>

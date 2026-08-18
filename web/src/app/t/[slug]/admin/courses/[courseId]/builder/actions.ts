@@ -246,6 +246,60 @@ export async function addSection(slug: string, courseId: string, formData: FormD
   revalidateBuilder(slug, courseId);
 }
 
+/**
+ * Renames a section in place — the one edit a section supports besides its
+ * lessons. Everything that renders the title (builder header, learner outline)
+ * reads it live, so no other rows change.
+ */
+export async function renameSection(
+  slug: string,
+  courseId: string,
+  sectionId: string,
+  title: string,
+) {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+
+  const clean = String(title ?? '').trim();
+  if (!clean) throw new Error('Enter a section title.');
+
+  await db.transaction(async (tx) => {
+    // Scoped to THIS course, not just the tenant — courseId and sectionId
+    // arrive separately, same cross-check as addLesson.
+    const [before] = await tx
+      .select({ id: sections.id, title: sections.title })
+      .from(sections)
+      .where(
+        and(
+          eq(sections.id, sectionId),
+          eq(sections.courseId, courseId),
+          eq(sections.tenantId, ctx.tenantId),
+        ),
+      )
+      .for('update');
+    if (!before) {
+      throw new Error('That section is no longer part of this course. Reload the page.');
+    }
+    if (before.title === clean) return;
+
+    await tx
+      .update(sections)
+      .set({ title: clean })
+      .where(and(eq(sections.id, sectionId), eq(sections.tenantId, ctx.tenantId!)));
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'section.update',
+      resourceType: 'section',
+      resourceId: sectionId,
+      before: { title: before.title },
+      after: { title: clean },
+    });
+  });
+  revalidateBuilder(slug, courseId);
+}
+
 export async function deleteSection(slug: string, courseId: string, sectionId: string) {
   const ctx = await requireAdmin();
   const deleted = await db.transaction(async (tx) => {
@@ -351,6 +405,105 @@ export async function addLesson(
   revalidateBuilder(slug, courseId);
 }
 
+/**
+ * Renames a lesson in place — the inline fast path. The full edit form
+ * (updateLesson) still exists for type/content changes; it reads every field
+ * from its FormData, so it cannot be reused for a single-field save without
+ * clobbering the others.
+ */
+export async function renameLesson(
+  slug: string,
+  courseId: string,
+  lessonId: string,
+  title: string,
+) {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+
+  const clean = String(title ?? '').trim();
+  if (!clean) throw new Error('Enter a lesson title.');
+
+  await db.transaction(async (tx) => {
+    const [before] = await tx
+      .select({ id: lessons.id, title: lessons.title })
+      .from(lessons)
+      .where(
+        and(
+          eq(lessons.id, lessonId),
+          eq(lessons.courseId, courseId),
+          eq(lessons.tenantId, ctx.tenantId),
+        ),
+      )
+      .for('update');
+    if (!before) throw new Error(ActionError.LESSON_NOT_FOUND);
+    if (before.title === clean) return;
+
+    await tx
+      .update(lessons)
+      .set({ title: clean, updatedAt: new Date() })
+      .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId!)));
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'lesson.update',
+      resourceType: 'lesson',
+      resourceId: lessonId,
+      before: { title: before.title },
+      after: { title: clean },
+    });
+  });
+  revalidateBuilder(slug, courseId);
+}
+
+/**
+ * Sets (or clears — blank input) a lesson's estimated minutes inline. Raw
+ * string in, parseOptionalMinutes decides what it means, same as the form.
+ */
+export async function setLessonMinutes(
+  slug: string,
+  courseId: string,
+  lessonId: string,
+  minutes: string,
+) {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+
+  const parsed = parseOptionalMinutes(minutes);
+
+  await db.transaction(async (tx) => {
+    const [before] = await tx
+      .select({ id: lessons.id, estimatedMinutes: lessons.estimatedMinutes })
+      .from(lessons)
+      .where(
+        and(
+          eq(lessons.id, lessonId),
+          eq(lessons.courseId, courseId),
+          eq(lessons.tenantId, ctx.tenantId),
+        ),
+      )
+      .for('update');
+    if (!before) throw new Error(ActionError.LESSON_NOT_FOUND);
+    if (before.estimatedMinutes === parsed) return;
+
+    await tx
+      .update(lessons)
+      .set({ estimatedMinutes: parsed, updatedAt: new Date() })
+      .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId!)));
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'lesson.update',
+      resourceType: 'lesson',
+      resourceId: lessonId,
+      before: { estimatedMinutes: before.estimatedMinutes },
+      after: { estimatedMinutes: parsed },
+    });
+  });
+  revalidateBuilder(slug, courseId);
+}
+
 export async function updateLesson(
   slug: string,
   courseId: string,
@@ -423,6 +576,178 @@ export async function deleteLesson(slug: string, courseId: string, lessonId: str
     await reconcileCourseCompletions({ tenantId: ctx.tenantId!, courseId });
   }
 
+  revalidateBuilder(slug, courseId);
+}
+
+/**
+ * Persists a complete section order in one write — the drag-and-drop
+ * counterpart to moveSection's single swap. The client sends every section id
+ * in its final order; sending the whole order rather than a delta makes the
+ * action idempotent and race-tolerant: whichever call commits last decides the
+ * order, and replaying it changes nothing.
+ *
+ * The id set must match the course's sections exactly. A mismatch means the
+ * course changed under the drag (a section added or deleted in another tab),
+ * and applying the stale order would move rows nobody dragged.
+ */
+export async function reorderSections(slug: string, courseId: string, orderedIds: string[]) {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+
+  if (!Array.isArray(orderedIds) || orderedIds.some((id) => typeof id !== 'string')) {
+    throw new Error('Invalid section order.');
+  }
+
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: sections.id, position: sections.position })
+      .from(sections)
+      .where(and(eq(sections.courseId, courseId), eq(sections.tenantId, ctx.tenantId)))
+      .orderBy(asc(sections.position))
+      .for('update');
+
+    const current = rows.map((r) => r.id);
+    const complete =
+      current.length === orderedIds.length &&
+      new Set(orderedIds).size === orderedIds.length &&
+      current.every((id) => orderedIds.includes(id));
+    if (!complete) {
+      throw new Error('The sections changed while you were reordering. Reload the page.');
+    }
+
+    const positionOf = new Map(rows.map((r) => [r.id, r.position]));
+    for (let i = 0; i < orderedIds.length; i++) {
+      if (positionOf.get(orderedIds[i]) === i) continue;
+      await tx
+        .update(sections)
+        .set({ position: i })
+        .where(and(eq(sections.id, orderedIds[i]), eq(sections.tenantId, ctx.tenantId!)));
+    }
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'section.reorder',
+      resourceType: 'section',
+      resourceId: courseId,
+      before: { order: current },
+      after: { order: orderedIds },
+    });
+  });
+  revalidateBuilder(slug, courseId);
+}
+
+/**
+ * Places a lesson at an exact position in a section — possibly a different one —
+ * in a single write. Drag-and-drop's counterpart to moveLesson's swap; also the
+ * only path that moves a lesson BETWEEN sections.
+ *
+ * `orderedIds` is the target section's complete lesson order after the drop,
+ * including the moved lesson. A cross-section move deliberately leaves the
+ * source section's positions untouched: order is relative, so the gap left
+ * behind changes nothing the learner or the builder can observe.
+ *
+ * The lesson stays inside the same course, so course-completion percentages are
+ * unaffected and no reconcile pass is needed (unlike deleteLesson).
+ */
+export async function moveLessonToSection(
+  slug: string,
+  courseId: string,
+  lessonId: string,
+  targetSectionId: string,
+  orderedIds: string[],
+) {
+  const ctx = await requireAdmin();
+  await assertCourse(ctx.tenantId, courseId);
+
+  if (
+    !Array.isArray(orderedIds) ||
+    orderedIds.some((id) => typeof id !== 'string') ||
+    !orderedIds.includes(lessonId)
+  ) {
+    throw new Error('Invalid lesson order.');
+  }
+
+  // The target section must be in THIS course. courseId and sectionId arrive
+  // separately — same cross-check as addLesson, same failure mode without it.
+  const [target] = await db
+    .select({ id: sections.id })
+    .from(sections)
+    .where(
+      and(
+        eq(sections.id, targetSectionId),
+        eq(sections.courseId, courseId),
+        eq(sections.tenantId, ctx.tenantId),
+      ),
+    )
+    .limit(1);
+  if (!target) throw new Error('That section is no longer part of this course. Reload the page.');
+
+  await db.transaction(async (tx) => {
+    const [lesson] = await tx
+      .select({ id: lessons.id, sectionId: lessons.sectionId, position: lessons.position })
+      .from(lessons)
+      .where(
+        and(
+          eq(lessons.id, lessonId),
+          eq(lessons.courseId, courseId),
+          eq(lessons.tenantId, ctx.tenantId),
+        ),
+      )
+      .for('update');
+    if (!lesson) throw new Error(ActionError.LESSON_NOT_FOUND);
+
+    const targetRows = await tx
+      .select({ id: lessons.id, position: lessons.position })
+      .from(lessons)
+      .where(and(eq(lessons.sectionId, targetSectionId), eq(lessons.tenantId, ctx.tenantId)))
+      .orderBy(asc(lessons.position))
+      .for('update');
+
+    // After the drop the target holds exactly its current lessons plus — on a
+    // cross-section move — the dragged one. Anything else means the course
+    // changed mid-drag, and the stale order must not be applied.
+    const expected = new Set(targetRows.map((r) => r.id));
+    expected.add(lessonId);
+    const complete =
+      orderedIds.length === expected.size &&
+      new Set(orderedIds).size === orderedIds.length &&
+      orderedIds.every((id) => expected.has(id));
+    if (!complete) {
+      throw new Error('The lessons changed while you were reordering. Reload the page.');
+    }
+
+    if (lesson.sectionId !== targetSectionId) {
+      await tx
+        .update(lessons)
+        .set({ sectionId: targetSectionId, updatedAt: new Date() })
+        .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId!)));
+    }
+
+    const positionOf = new Map(targetRows.map((r) => [r.id, r.position]));
+    for (let i = 0; i < orderedIds.length; i++) {
+      const id = orderedIds[i];
+      if (id !== lessonId && positionOf.get(id) === i) continue;
+      await tx
+        .update(lessons)
+        .set({ position: i })
+        .where(and(eq(lessons.id, id), eq(lessons.tenantId, ctx.tenantId!)));
+    }
+
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'lesson.reorder',
+      resourceType: 'lesson',
+      resourceId: lessonId,
+      before: { sectionId: lesson.sectionId, position: lesson.position },
+      after: {
+        sectionId: targetSectionId,
+        position: orderedIds.indexOf(lessonId),
+        order: orderedIds,
+      },
+    });
+  });
   revalidateBuilder(slug, courseId);
 }
 
