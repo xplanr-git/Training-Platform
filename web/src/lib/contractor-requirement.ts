@@ -1,13 +1,19 @@
 import { connectRole } from '@/lib/connect-roles';
 
 /**
- * The Academy training a Contractor must complete to become Trained.
+ * The Academy training a Contractor must complete to satisfy Outdure's required
+ * installer training standard.
  *
- * Confirmed business rule: Registered → complete Trained Installer Training →
- * Trained (no staff review). Encoded here as the course SLUG — a single,
- * human-checkable constant, deliberately NOT a configuration system: Slice 1 has
- * exactly one required course, and inventing config machinery for it would be the
- * kind of enterprise complexity the Small-Team-Simplicity governance rejects.
+ * Confirmed business rule: Registered → complete the required installer training
+ * → Trained (no staff review). The course is user-facing named "Outdure Installer
+ * Training"; the STATUS "Trained" is a separate concept and is not exposed here.
+ *
+ * Encoded as the course SLUG — a single, human-checkable constant, deliberately
+ * NOT a configuration system: Slice 1 has exactly one required course. The slug
+ * intentionally stays `trained-installer-training` (a stable internal identifier)
+ * even though the display name changed to "Outdure Installer Training": the
+ * user-facing name and the internal id do not need to match, and renaming the
+ * slug would churn links/references for no functional gain.
  *
  * When the dealer/Product-Champion model is resolved, a second requirement will
  * live alongside this one; that is a later slice, not a reason to generalise now.

@@ -34,8 +34,10 @@ import { SignOutButton } from '@/components/sign-out-button';
  * Learner home — requirements-led.
  *
  * Answers, in order: what do I need to do → where am I up to → what next. The
- * Contractor requirement (complete Trained Installer Training to become Trained)
- * is the primary frame; other enrolments sit calmly beneath it. This deliberately
+ * Contractor requirement (complete the required installer training, user-facing
+ * "Outdure Installer Training") is the primary frame; other enrolments sit calmly
+ * beneath it. Job-language only — the STATUS "Trained" is not shown here. This
+ * deliberately
  * replaces the old Enrolled/In-progress/Completed/Certificates metric-tile
  * dashboard, whose four tiles filled the whole first mobile viewport before the
  * learner reached a useful action.
