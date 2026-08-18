@@ -1,0 +1,395 @@
+{
+  "tenant_slug": "outdure",
+  "actor_email": "stevie.van.heerden@outdure.com",
+  "course_slugs": [
+    "standard-training",
+    "trained-installer-training"
+  ],
+  "videos": [
+    {
+      "lessonTitle": "How to reload plans",
+      "bunnyId": "188ddcf9-6ecd-47db-be7b-c88ff189240a",
+      "durationSec": 75,
+      "driveName": "How to reload plans.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A420 - Qwickbuild Driver Pack",
+      "bunnyId": "ffb2b81e-613a-41a1-b341-33dd538e5595",
+      "durationSec": 51,
+      "driveName": "A420.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Welcome - Distributors",
+      "bunnyId": "1ce5b91b-be72-4233-ba88-67dada3587a3",
+      "durationSec": 60,
+      "driveName": "Welcome Distributor.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Welcome - Dealers",
+      "bunnyId": "ced492ad-358b-4c14-871e-b1c9ab1308ec",
+      "durationSec": 65,
+      "driveName": "Welcome Dealers.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A409 - Twistclip Screw",
+      "bunnyId": "7815f69f-d71c-4a51-8d37-f3b7ff798625",
+      "durationSec": 77,
+      "driveName": "A409.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A410 / A411 / A412 / A413 - Qwickbuild Bolts",
+      "bunnyId": "5bcf49f5-7c36-4cc5-adea-053260019476",
+      "durationSec": 94,
+      "driveName": "A410-A411-A412-A413.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Welcome - Staff",
+      "bunnyId": "11af1d17-f117-44dc-87b4-5d06b02269ec",
+      "durationSec": 96,
+      "driveName": "Welcome outdure staff.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A194 / A195 Posts",
+      "bunnyId": "7b3f928d-3b93-44d4-8b18-f680605ad788",
+      "durationSec": 126,
+      "driveName": "A194 - A195.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Product Series Intro & Overview",
+      "bunnyId": "a99640fe-a33a-4662-9a96-2fd3792d831b",
+      "durationSec": 130,
+      "driveName": "Outdure Product range.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A210 / A211 - Beam/post Brackets",
+      "bunnyId": "a352d71f-37af-49f4-9b79-4faa53a96ff6",
+      "durationSec": 134,
+      "driveName": "A210 - A211.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A512 - Qwickbuild T Clip",
+      "bunnyId": "f096cf15-6016-4754-bea5-62ef4bab1d2b",
+      "durationSec": 146,
+      "driveName": "A512.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A401 / A402 / A403 / A404",
+      "bunnyId": "8a45364b-9c0f-4eaf-92ce-d2429aafe2f1",
+      "durationSec": 154,
+      "driveName": "A401-A402-A403-A404.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A307 - Double Joist Bracket Flat for A110",
+      "bunnyId": "a73688d6-e972-4a5b-8701-2a11136a5606",
+      "durationSec": 202,
+      "driveName": "A307.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A207 - Brace Plate Bracket",
+      "bunnyId": "8bd84c41-927c-4ee8-9ce0-2b46c08e4105",
+      "durationSec": 203,
+      "driveName": "A207.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A302 - Joiner Bracket for A110",
+      "bunnyId": "74632f5f-42ab-49a5-ab8d-861dab6d63ae",
+      "durationSec": 214,
+      "driveName": "A302.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A202 - Joiner Bracket",
+      "bunnyId": "463b9c34-551f-4b7c-907f-552404066b89",
+      "durationSec": 230,
+      "driveName": "A202.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A206 - Double Joist Bracket Flat",
+      "bunnyId": "d1a23f03-c5f4-473c-a557-64fafc0ce3a6",
+      "durationSec": 237,
+      "driveName": "A206.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A212 - Beam/post Bracket Kit",
+      "bunnyId": "79da2c3b-36aa-4a9a-a07e-fd28cfced117",
+      "durationSec": 258,
+      "driveName": "A212.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A208 - Trim bracket",
+      "bunnyId": "983da4d1-4fa4-4e89-9700-cb829ec77728",
+      "durationSec": 265,
+      "driveName": "A208.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A301 - 90 Bracket & Joist Anchor - for A110",
+      "bunnyId": "d4931c2b-37e8-440f-9a4c-847c821f1661",
+      "durationSec": 296,
+      "driveName": "A301.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A205 - Double Joist Bracket",
+      "bunnyId": "69c7c582-c4ac-4866-b0ec-82968ea0d465",
+      "durationSec": 322,
+      "driveName": "A205.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A203 - Joist Anchor",
+      "bunnyId": "60fe2f1d-ac8a-4fdc-84ac-53211fab635a",
+      "durationSec": 341,
+      "driveName": "A203.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "QwickBuild framing",
+      "bunnyId": "dfa2b25c-9f36-428d-85a0-e104171c0f49",
+      "durationSec": 498,
+      "driveName": "A100 range.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Welcome to Outdure",
+      "bunnyId": "3ff91fb1-d357-4d19-942f-44baaabebce4",
+      "durationSec": 1145,
+      "driveName": "Outdure who are we.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A306 - Double Joist Bracket for A110",
+      "bunnyId": "85373ed5-6f61-42f8-9683-9bce6b507036",
+      "durationSec": 216,
+      "driveName": "A306.mov",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Select surface",
+      "bunnyId": "b4c0caf5-74a3-4f33-841a-8111d2021644",
+      "durationSec": 88,
+      "driveName": "Surface selection .MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Item list",
+      "bunnyId": "5b69450a-c19e-4a60-b56a-519c06204332",
+      "durationSec": 111,
+      "driveName": "Item list final.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Create multiple projects",
+      "bunnyId": "a868b33c-f6fa-4494-8a2b-5d8513e9ac03",
+      "durationSec": 158,
+      "driveName": "How to create multiple projects.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "How to create an account",
+      "bunnyId": "bf2ba3eb-e63e-4d96-890c-b729e3156811",
+      "durationSec": 185,
+      "driveName": "Create an account on deckplanner.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Dashboard",
+      "bunnyId": "b54a6e8d-4470-49e2-995c-a13c5d9cf834",
+      "durationSec": 312,
+      "driveName": "Dashboard.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Structure",
+      "bunnyId": "54d9bfa9-04f1-4797-b80b-4d72db60ca78",
+      "durationSec": 202,
+      "driveName": "Structure design .mov",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Shape and size",
+      "bunnyId": "44f5c6ad-eab3-42ad-8833-d763e56ae2ab",
+      "durationSec": 509,
+      "driveName": "Shape and size.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A595 / A596 - Composite Decking Screws",
+      "bunnyId": "13d53614-277d-4c57-a8da-60bddd3f1c69",
+      "durationSec": 92,
+      "driveName": "A595 - A596 .MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A840 - ANTI-SLIP STRIP",
+      "bunnyId": "9f7f5ca0-b28d-4092-bd63-c962d5fbbd29",
+      "durationSec": 100,
+      "driveName": "A840.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A701 - Tile Rubber Bead",
+      "bunnyId": "017747ef-d23e-4e9d-9c99-f46ee90ae575",
+      "durationSec": 102,
+      "driveName": "A701.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A710 / A711 - Tile Spacers",
+      "bunnyId": "03a01d7f-f337-4225-abc9-959301feb487",
+      "durationSec": 118,
+      "driveName": "A710-A711.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Turf System Overview",
+      "bunnyId": "8dd809e3-fc2c-4ece-935c-dcfd388f49f9",
+      "durationSec": 121,
+      "driveName": "Turf overview .MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A801 - TURF BASEBOARD",
+      "bunnyId": "8591f04b-14b4-46e3-bbf0-8febfb569b8e",
+      "durationSec": 125,
+      "driveName": "A801.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A610/ A611/ A620/ A621",
+      "bunnyId": "7cd34eab-017a-4e8c-abdd-ebce42b957fe",
+      "durationSec": 129,
+      "driveName": "A610-A611-A620-A621.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Downloading PDF",
+      "bunnyId": "cb06069b-41f5-4ddb-962b-ebdb496092a9",
+      "durationSec": 302,
+      "driveName": "Deckplanner PDF.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A810 / A811 - SCREWS FOR TURF",
+      "bunnyId": "46a15a7a-4ddb-47ce-a34c-a9868b2091ac",
+      "durationSec": 196,
+      "driveName": "A810 - A811.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A590 - Qwickbuild Starter Clip",
+      "bunnyId": "f7aeebd1-ee4b-4ab4-a73a-44a306e7f3ed",
+      "durationSec": 206,
+      "driveName": "A590.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Tile System Overview",
+      "bunnyId": "c5015254-1742-4eb6-9271-1f58e9f40351",
+      "durationSec": 218,
+      "driveName": "Tile overview.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A712 - Tile Trim Bracket",
+      "bunnyId": "463d4f93-740a-4a76-ba35-134c1481ef34",
+      "durationSec": 255,
+      "driveName": "A712- tile trim bracket.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A855 - BATTEN",
+      "bunnyId": "10c71cc3-24b8-496e-ab9a-0536188e05c1",
+      "durationSec": 272,
+      "driveName": "A855.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A851 - QWICKBUILD SOLID BLOCKING (6X6\"X4')",
+      "bunnyId": "bb4f2f91-e46f-45f0-a392-b3583cfc6317",
+      "durationSec": 294,
+      "driveName": "A851.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Twistclips",
+      "bunnyId": "0a935b73-2251-460c-ae32-5af939bb3ad7",
+      "durationSec": 305,
+      "driveName": "Twistclips.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A702 / A703 - Tile Retainer Brackets",
+      "bunnyId": "baa606f0-c265-475a-b5eb-f88d9b078047",
+      "durationSec": 359,
+      "driveName": "A702-A703.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "General overview",
+      "bunnyId": "c02f27fd-f654-49d3-86e1-000d280448e4",
+      "durationSec": 838,
+      "driveName": "What is deckplanner .MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A831 / A832 - QWICKGRATE KIT black/sliver",
+      "bunnyId": "11fde7aa-cf6e-4a4a-824c-c3ea7129fd46",
+      "durationSec": 552,
+      "driveName": "A831-A832.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A900 supports",
+      "bunnyId": "1b60e32c-5eec-46f8-92d7-82580691a9f0",
+      "durationSec": 556,
+      "driveName": "A900.MOV",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "Design layout",
+      "bunnyId": "3658c221-7dc8-478b-a580-467b5ab8dbe2",
+      "durationSec": 310,
+      "driveName": "Design layout.mov",
+      "uploaded": true
+    },
+    {
+      "lessonTitle": "A201 - 90 Bracket",
+      "bunnyId": "012aecb9-1f9e-4810-a9a2-da786a5cb45d",
+      "durationSec": 810,
+      "driveName": "A201.mov",
+      "uploaded": true
+    }
+  ],
+  "unattachable": [
+    {
+      "lessonTitle": "A220 - Beam End Cap",
+      "reason": "never recorded (register: MISSING VIDEO)"
+    },
+    {
+      "lessonTitle": "Welcome - Contractors",
+      "reason": "never recorded (register: COMING SOON)"
+    },
+    {
+      "lessonTitle": "Welcome - Home owners",
+      "reason": "never recorded (register: COMING SOON)"
+    }
+  ]
+}

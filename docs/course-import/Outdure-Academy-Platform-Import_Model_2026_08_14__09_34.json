@@ -1,0 +1,3819 @@
+{
+  "meta": {
+    "generated": "2026-08-14T09:34:16",
+    "source_manifest": "Outdure-Academy-Course-Import_Extraction_2026_08_14__09_17.json",
+    "source_sheet": "Google Sheet '2024 ONLINE TRAINING PLATFORM' (1lUuWs4JbH_zTt7fURPsVSTgn3yWI0VdcIH5vu0h88Xc), owner curtis@outdure.com",
+    "decisions": [
+      "placeholder videos = video lessons with nothing attached (builder-native state)",
+      "courses created as draft",
+      "standard course: Welcome (Dealers) only, per sheet strikethroughs",
+      "Railing placeholder section not imported (outside the 2026 course total)",
+      "A855 quiz + A410-A413 quiz not created (no questions -> would block publish)",
+      "Q009 matching expanded to 6 MCQs; Q043 keyed to B (confirm)",
+      "original (column J) wording used; CHANGES REQUIRED redraft = backlog",
+      "passThreshold 70 (platform default; sheet silent)"
+    ]
+  },
+  "tenant_slug": "outdure",
+  "actor_email": "stevie.van.heerden@outdure.com",
+  "courses": [
+    {
+      "slug": "standard-training",
+      "title": "Standard Training",
+      "description": "Outdure standard product training — the QwickBuild framing system, its key components, and the DeckPlanner design tool. Each product video is followed by a short knowledge quiz; complete the course to earn your certificate.",
+      "level": "Beginner",
+      "category": "Product Training",
+      "confersRoleCode": null,
+      "sections": [
+        {
+          "title": "Welcome",
+          "lessons": [
+            {
+              "title": "Welcome - Dealers",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome - Dealers",
+                  "durationMmss": "1:04",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "Intro Series",
+          "lessons": [
+            {
+              "title": "Welcome to Outdure",
+              "type": "video",
+              "estimatedMinutes": 19,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome to Outdure",
+                  "durationMmss": "19:05",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "Product Series",
+          "lessons": [
+            {
+              "title": "Product Series Intro & Overview",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "Product Series Intro & Overview",
+                  "durationMmss": "2:09",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "QwickBuild framing",
+              "type": "video",
+              "estimatedMinutes": 8,
+              "content": {
+                "planned": {
+                  "videoName": "QwickBuild framing",
+                  "durationMmss": "8:18",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild Framing - A100 Product Range",
+                  "youtubeDescription": "Product Series // Outdure Qwickbuild Framing - A100 Product Range In this video, we dive into the Outdure Qwickbuild Framing - A100 Product Range, a versatile and modular solution for outdoor deck framing & flooring systems. Whether you're a professional builder or a DIY enthusiast, stay tuned as we walk you through the key features of the Qwickbuild system, including its unique design, adjustable height capabilities, and compatibility with all leading decking brands. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": true
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "QwickBuild - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What are the benefits of using the Outdure framing",
+                    "options": [
+                      "Perfectly straight every time",
+                      "Configurable to suit all deck types",
+                      "Has easy to install components",
+                      "No uneven extra lapping material on connections, flush finish every time",
+                      "Lightweight and easy to handle",
+                      "Will remain durable for many years to come",
+                      "All of the above"
+                    ],
+                    "correct": [
+                      6
+                    ],
+                    "points": 1,
+                    "source": "Q001 (sheet row 5)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "Outdure has framing to suit Elevated structures and low height structures.",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q002 (sheet row 13)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "Outdure framing is designed to comply with international engineering requirements.",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q003 (sheet row 18)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many Outdure Joist / Beam profiles are there?",
+                    "options": [
+                      "6",
+                      "4",
+                      "8",
+                      "7"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q004 (sheet row 22)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What length do the Outdure Joist / Beam profiles come in?",
+                    "options": [
+                      "10' / 2.8m",
+                      "40' / 12.1m",
+                      "20' / 5.8m",
+                      "30' / 9.1m"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q005 (sheet row 27)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the Outdure frame made of?",
+                    "options": [
+                      "Steel",
+                      "Composite",
+                      "Alumunium",
+                      "Pressure treated lumber"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q006 (sheet row 32)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the lowest Outdure Joist / Beam profile available?",
+                    "options": [
+                      "1\" / 28mm",
+                      "1/2\" / 13mm",
+                      "3/8\" / 10mm",
+                      "2\" / 45mm"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q007 (sheet row 37)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "All Outdure framing profiles include the option to use our proprietary Twistclips ?",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q008 (sheet row 42)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X1/2\") 13X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X1\") 28X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X2\") 45X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X4\") 90X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X6\") 135X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      4
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X8\") 180X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      5
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A201 - 90 Bracket",
+              "type": "video",
+              "estimatedMinutes": 14,
+              "content": {
+                "planned": {
+                  "videoName": "A201 - 90 Bracket",
+                  "durationMmss": "13:30",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild - A201 Qwickbuild 90° Bracket",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A201 - 90° Bracket with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A201 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "Which item is the A201 90° Bracket?",
+                    "options": [
+                      "Image 1   Double joist bracket",
+                      "Image 2   Joist anchor",
+                      "Image 3   90 bracket",
+                      "Image 4   Joiner bracket"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q012 (sheet row 67)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "When would you use A201 90° brackets on both sides of the profile?",
+                    "options": [
+                      "Non-load bearing structural connection",
+                      "Load bearing structural connection",
+                      "Whenever I have leftover brackets"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q013 (sheet row 72)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many A201 90° Brackets are included in a box?",
+                    "options": [
+                      "5",
+                      "10",
+                      "15",
+                      "20"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q014 (sheet row 76)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Is the A401 Self-Drilling Screw included with the box of components?",
+                    "options": [
+                      "Yes",
+                      "No",
+                      "Only if you ask"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q015 (sheet row 81)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A202 - Joiner Bracket",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A202 - Joiner Bracket",
+                  "durationMmss": "3:50",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild - A202 QWICKBUILD JOINER BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A202 JOINER BRACKET with our aluminium Qwickbuild framing system.\nDon't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A202 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "Which item is the A202 Joiner Bracket?",
+                    "options": [
+                      "Image 1   Double joist bracket",
+                      "Image 2   Joist anchor",
+                      "Image 3   Joiner bracket",
+                      "Imhae 4   90 bracket"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q016 (sheet row 89)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the main use of the A202 Joiner Bracket?",
+                    "options": [
+                      "Strengthening wooden beams",
+                      "Supporting heavy loads",
+                      "Joining profiles end to end",
+                      "Creating decorative elements"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q017 (sheet row 94)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Where does the QR code on the box linking you to?",
+                    "options": [
+                      "It links to Outdure's website",
+                      "It links to the Google Maps",
+                      "It links to instructional videos on how to install the product"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q018 (sheet row 99)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many brackets are included in a box of A202 Joiner Bracket?",
+                    "options": [
+                      "2",
+                      "10",
+                      "15",
+                      "20"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q019 (sheet row 103)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A203 - Joist Anchor",
+              "type": "video",
+              "estimatedMinutes": 6,
+              "content": {
+                "planned": {
+                  "videoName": "A203 - Joist Anchor",
+                  "durationMmss": "5:40",
+                  "youtubeTitle": "Product Series // Outdure - A203 QWICKBUILD JOIST ANCHOR BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A203 JOIST ANCHOR BRACKET with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A203 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the main purpose of the A203 Joist Anchor Bracket?",
+                    "options": [
+                      "To decorate joists",
+                      "To anchor joists onto beams and prevent movement",
+                      "To add insulation to beams",
+                      "To increase the length of the profiles"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q020 (sheet row 111)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many brackets are included in a box of A203 Joist Anchor Bracket?",
+                    "options": [
+                      "5",
+                      "15",
+                      "20",
+                      "25"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q021 (sheet row 116)"
+                  },
+                  {
+                    "type": "multi_select",
+                    "prompt": "Which Joist / Beam profiles require the A203 Joist Anchor Bracket on both sides?",
+                    "options": [
+                      "Image 1   2x1/2\" / 13x45mm",
+                      "Image 2   2x1\" / 28x45mm",
+                      "Image 3.  2x2\" / 45x45mm",
+                      "Image 4.  2x4\" / 90x45mm",
+                      "Image 5.  2x6\" / 135x45mm",
+                      "Image 6.  2x8\" / 180x45mm"
+                    ],
+                    "correct": [
+                      3,
+                      4,
+                      5
+                    ],
+                    "points": 1,
+                    "source": "Q022 (sheet row 121)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Twistclips",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "Twistclips",
+                  "durationMmss": "5:05",
+                  "youtubeTitle": "Product Series // Outdure - TWISTCLIPS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the OUTDURE TWISTCLIPS with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Twistclips - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the purpose of the Twistclips?",
+                    "options": [
+                      "A concealed fastener for laying surfaces",
+                      "Decorative feature",
+                      "Creating double board joins",
+                      "A concealed fastener to fix joist to beam profiles"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q041 (sheet row 243)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "We have twistclips to suit most leading board brands.",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q042 (sheet row 248)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Is there a one type fits all Twistclip?",
+                    "options": [
+                      "Yes",
+                      "No, there are different type of Twistclips - refer to the Outdure Catalogue"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q043 (sheet row 251)",
+                    "note": "answer key not marked in sheet; keyed to B (the only sensible answer) — confirm"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What image shows the twistclip?",
+                    "options": [
+                      "Image 1  T Clip",
+                      "Image 2   90 bracket",
+                      "Image 3  Twistclip",
+                      "Image 4  Joist anchor"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q044 (sheet row 254)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A194 / A195 Posts",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A194 / A195 Posts",
+                  "durationMmss": "2:05",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild Posts - A194 / A195",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the Qwickbuild Posts - A194 / A195 with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": true
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A194 / A195 Posts - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "How many Outdure Post profiles are there?",
+                    "options": [
+                      "10",
+                      "2",
+                      "6",
+                      "3"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q010 (sheet row 55)"
+                  },
+                  {
+                    "type": "multi_select",
+                    "prompt": "Which of the below Post sizes are available in the Outdure range?",
+                    "options": [
+                      "4x4\" / 90x90mm",
+                      "2x2\" / 45x45mm",
+                      "6x6\" / 135x135mm",
+                      "8x8\" / 180x180mm"
+                    ],
+                    "correct": [
+                      0,
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q011 (sheet row 60)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A900 supports",
+              "type": "video",
+              "estimatedMinutes": 9,
+              "content": {
+                "planned": {
+                  "videoName": "A900 supports",
+                  "durationMmss": "9:15",
+                  "youtubeTitle": "Product Series // A900 QWICKBUILD DECK SUPPORTS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A901 QWICKBUILD DECK SUPPORTS with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A900 supports - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What type of products are in the A900 series?",
+                    "options": [
+                      "Turf",
+                      "Tile",
+                      "Pedestal supports",
+                      "Aluminum profiles"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q069 (sheet row 391)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many key products are in the A900 Supports series?",
+                    "options": [
+                      "1",
+                      "12",
+                      "8",
+                      "4"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q070 (sheet row 396)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "You can stack A915 up to 1 foot / 300mm high",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q071 (sheet row 401)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the difference between A905 support and A910 support?",
+                    "options": [
+                      "There is no difference",
+                      "They can hold different weights",
+                      "They are designed to suit different profiles",
+                      "They accommodate different height ranges"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q072 (sheet row 404)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What percentage can the A920 Slope corrector adjust to",
+                    "options": [
+                      "3%",
+                      "5%",
+                      "7%",
+                      "10%"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q073 (sheet row 409)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the purpose of A925 Protection Pad - Acoustic",
+                    "options": [
+                      "To raise the height of the deck",
+                      "To give a 'bouncy' feel to my deck",
+                      "It is designed to provide extra acoustic insulation below my deck structure",
+                      "It is designed to protect my pedestals from getting wet"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q074 (sheet row 414)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "Each support pedestal is designed to hold up to 1 tonne (point load)",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q075 (sheet row 419)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Tile System Overview",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "Tile System Overview",
+                  "durationMmss": "3:37",
+                  "youtubeTitle": "Product Series // QWICKBUILD TILE SYSTEM OVERVIEW",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the QWICKBUILD TILES with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Turf System Overview",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "Turf System Overview",
+                  "durationMmss": "2:00",
+                  "youtubeTitle": "Product Series // QWICKBUILD TURF SYSTEM OVERVIEW",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the QWICKBUILD TURF SYSTEM with our aluminium Qwickbuild framing system.   Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "DeckPlanner",
+          "lessons": [
+            {
+              "title": "General overview",
+              "type": "video",
+              "estimatedMinutes": 14,
+              "content": {
+                "planned": {
+                  "videoName": "General overview",
+                  "durationMmss": "13:57",
+                  "youtubeTitle": "Deckplanner Series // General Overview",
+                  "status": {
+                    "recorded": null,
+                    "edited": null,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Shape and size",
+              "type": "video",
+              "estimatedMinutes": 8,
+              "content": {
+                "planned": {
+                  "videoName": "Shape and size",
+                  "durationMmss": "8:28",
+                  "youtubeTitle": "Deckplanner Series // Shape and Size",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Select surface",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "Select surface",
+                  "durationMmss": "1:27",
+                  "youtubeTitle": "Deckplanner Series // Select Surface",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Design layout",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "Design layout",
+                  "durationMmss": "5:10",
+                  "youtubeTitle": "Deckplanner Series // Design Layout",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Structure",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "Structure",
+                  "durationMmss": "3:22",
+                  "youtubeTitle": "Deckplanner Series // Structure",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Item list",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "Item list",
+                  "durationMmss": "1:51",
+                  "youtubeTitle": "Deckplanner Series // Item List",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Downloading PDF",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "Downloading PDF",
+                  "durationMmss": "5:02",
+                  "youtubeTitle": "Deckplanner Series // PDF Review",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "trained-installer-training",
+      "title": "Trained Installer Training",
+      "description": "The full Outdure product curriculum for trained installers — every product family from A100 framing to A900 supports, the tile and turf surface systems, and the complete DeckPlanner series. Completing this course confers the Trained installer tier.",
+      "level": "Intermediate",
+      "category": "Product Training",
+      "confersRoleCode": "CON_TRAINED",
+      "sections": [
+        {
+          "title": "Welcome",
+          "lessons": [
+            {
+              "title": "Welcome - Dealers",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome - Dealers",
+                  "durationMmss": "1:04",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Welcome - Distributors",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome - Distributors",
+                  "durationMmss": "1:00",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Welcome - Staff",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome - Staff",
+                  "durationMmss": "1:35",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Welcome - Contractors",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome - Contractors",
+                  "durationMmss": "1:04",
+                  "youtubeDescription": "COMING SOON",
+                  "status": {
+                    "recorded": false,
+                    "edited": false,
+                    "live": false,
+                    "onYoutube": false
+                  },
+                  "sheetNote": "COMING SOON",
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Welcome - Home owners",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome - Home owners",
+                  "durationMmss": "1:04",
+                  "youtubeDescription": "COMING SOON",
+                  "status": {
+                    "recorded": false,
+                    "edited": false,
+                    "live": false,
+                    "onYoutube": false
+                  },
+                  "sheetNote": "COMING SOON",
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "Intro Series",
+          "lessons": [
+            {
+              "title": "Welcome to Outdure",
+              "type": "video",
+              "estimatedMinutes": 19,
+              "content": {
+                "planned": {
+                  "videoName": "Welcome to Outdure",
+                  "durationMmss": "19:05",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 1 — Qwickbuild Overview and A100",
+          "lessons": [
+            {
+              "title": "Product Series Intro & Overview",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "Product Series Intro & Overview",
+                  "durationMmss": "2:09",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "QwickBuild framing",
+              "type": "video",
+              "estimatedMinutes": 8,
+              "content": {
+                "planned": {
+                  "videoName": "QwickBuild framing",
+                  "durationMmss": "8:18",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild Framing - A100 Product Range",
+                  "youtubeDescription": "Product Series // Outdure Qwickbuild Framing - A100 Product Range In this video, we dive into the Outdure Qwickbuild Framing - A100 Product Range, a versatile and modular solution for outdoor deck framing & flooring systems. Whether you're a professional builder or a DIY enthusiast, stay tuned as we walk you through the key features of the Qwickbuild system, including its unique design, adjustable height capabilities, and compatibility with all leading decking brands. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": true
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "QwickBuild - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What are the benefits of using the Outdure framing",
+                    "options": [
+                      "Perfectly straight every time",
+                      "Configurable to suit all deck types",
+                      "Has easy to install components",
+                      "No uneven extra lapping material on connections, flush finish every time",
+                      "Lightweight and easy to handle",
+                      "Will remain durable for many years to come",
+                      "All of the above"
+                    ],
+                    "correct": [
+                      6
+                    ],
+                    "points": 1,
+                    "source": "Q001 (sheet row 5)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "Outdure has framing to suit Elevated structures and low height structures.",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q002 (sheet row 13)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "Outdure framing is designed to comply with international engineering requirements.",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q003 (sheet row 18)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many Outdure Joist / Beam profiles are there?",
+                    "options": [
+                      "6",
+                      "4",
+                      "8",
+                      "7"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q004 (sheet row 22)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What length do the Outdure Joist / Beam profiles come in?",
+                    "options": [
+                      "10' / 2.8m",
+                      "40' / 12.1m",
+                      "20' / 5.8m",
+                      "30' / 9.1m"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q005 (sheet row 27)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the Outdure frame made of?",
+                    "options": [
+                      "Steel",
+                      "Composite",
+                      "Alumunium",
+                      "Pressure treated lumber"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q006 (sheet row 32)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the lowest Outdure Joist / Beam profile available?",
+                    "options": [
+                      "1\" / 28mm",
+                      "1/2\" / 13mm",
+                      "3/8\" / 10mm",
+                      "2\" / 45mm"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q007 (sheet row 37)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "All Outdure framing profiles include the option to use our proprietary Twistclips ?",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q008 (sheet row 42)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X1/2\") 13X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X1\") 28X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X2\") 45X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X4\") 90X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X6\") 135X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      4
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which code name matches the (2X8\") 180X45mm joist/beam profile?",
+                    "options": [
+                      "A100",
+                      "A110",
+                      "A120",
+                      "A130",
+                      "A140",
+                      "A150"
+                    ],
+                    "correct": [
+                      5
+                    ],
+                    "points": 1,
+                    "source": "Q009 (matching, sheet row 45) expanded to one MCQ per pair"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A194 / A195 Posts",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A194 / A195 Posts",
+                  "durationMmss": "2:05",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild Posts - A194 / A195",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the Qwickbuild Posts - A194 / A195 with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": true
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A194 / A195 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "How many Outdure Post profiles are there?",
+                    "options": [
+                      "10",
+                      "2",
+                      "6",
+                      "3"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q010 (sheet row 55)"
+                  },
+                  {
+                    "type": "multi_select",
+                    "prompt": "Which of the below Post sizes are available in the Outdure range?",
+                    "options": [
+                      "4x4\" / 90x90mm",
+                      "2x2\" / 45x45mm",
+                      "6x6\" / 135x135mm",
+                      "8x8\" / 180x180mm"
+                    ],
+                    "correct": [
+                      0,
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q011 (sheet row 60)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 2 — Qwickbuild Most Common Brackets",
+          "lessons": [
+            {
+              "title": "A201 - 90 Bracket",
+              "type": "video",
+              "estimatedMinutes": 14,
+              "content": {
+                "planned": {
+                  "videoName": "A201 - 90 Bracket",
+                  "durationMmss": "13:30",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild - A201 Qwickbuild 90° Bracket",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A201 - 90° Bracket with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A201 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "Which item is the A201 90° Bracket?",
+                    "options": [
+                      "Image 1   Double joist bracket",
+                      "Image 2   Joist anchor",
+                      "Image 3   90 bracket",
+                      "Image 4   Joiner bracket"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q012 (sheet row 67)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "When would you use A201 90° brackets on both sides of the profile?",
+                    "options": [
+                      "Non-load bearing structural connection",
+                      "Load bearing structural connection",
+                      "Whenever I have leftover brackets"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q013 (sheet row 72)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many A201 90° Brackets are included in a box?",
+                    "options": [
+                      "5",
+                      "10",
+                      "15",
+                      "20"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q014 (sheet row 76)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Is the A401 Self-Drilling Screw included with the box of components?",
+                    "options": [
+                      "Yes",
+                      "No",
+                      "Only if you ask"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q015 (sheet row 81)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A202 - Joiner Bracket",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A202 - Joiner Bracket",
+                  "durationMmss": "3:50",
+                  "youtubeTitle": "Product Series // Outdure Qwickbuild - A202 QWICKBUILD JOINER BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A202 JOINER BRACKET with our aluminium Qwickbuild framing system.\nDon't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A202 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "Which item is the A202 Joiner Bracket?",
+                    "options": [
+                      "Image 1   Double joist bracket",
+                      "Image 2   Joist anchor",
+                      "Image 3   Joiner bracket",
+                      "Imhae 4   90 bracket"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q016 (sheet row 89)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the main use of the A202 Joiner Bracket?",
+                    "options": [
+                      "Strengthening wooden beams",
+                      "Supporting heavy loads",
+                      "Joining profiles end to end",
+                      "Creating decorative elements"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q017 (sheet row 94)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Where does the QR code on the box linking you to?",
+                    "options": [
+                      "It links to Outdure's website",
+                      "It links to the Google Maps",
+                      "It links to instructional videos on how to install the product"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q018 (sheet row 99)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many brackets are included in a box of A202 Joiner Bracket?",
+                    "options": [
+                      "2",
+                      "10",
+                      "15",
+                      "20"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q019 (sheet row 103)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A203 - Joist Anchor",
+              "type": "video",
+              "estimatedMinutes": 6,
+              "content": {
+                "planned": {
+                  "videoName": "A203 - Joist Anchor",
+                  "durationMmss": "5:40",
+                  "youtubeTitle": "Product Series // Outdure - A203 QWICKBUILD JOIST ANCHOR BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A203 JOIST ANCHOR BRACKET with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A203 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the main purpose of the A203 Joist Anchor Bracket?",
+                    "options": [
+                      "To decorate joists",
+                      "To anchor joists onto beams and prevent movement",
+                      "To add insulation to beams",
+                      "To increase the length of the profiles"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q020 (sheet row 111)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many brackets are included in a box of A203 Joist Anchor Bracket?",
+                    "options": [
+                      "5",
+                      "15",
+                      "20",
+                      "25"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q021 (sheet row 116)"
+                  },
+                  {
+                    "type": "multi_select",
+                    "prompt": "Which Joist / Beam profiles require the A203 Joist Anchor Bracket on both sides?",
+                    "options": [
+                      "Image 1   2x1/2\" / 13x45mm",
+                      "Image 2   2x1\" / 28x45mm",
+                      "Image 3.  2x2\" / 45x45mm",
+                      "Image 4.  2x4\" / 90x45mm",
+                      "Image 5.  2x6\" / 135x45mm",
+                      "Image 6.  2x8\" / 180x45mm"
+                    ],
+                    "correct": [
+                      3,
+                      4,
+                      5
+                    ],
+                    "points": 1,
+                    "source": "Q022 (sheet row 121)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 3 — A200 Range",
+          "lessons": [
+            {
+              "title": "A205 - Double Joist Bracket",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "A205 - Double Joist Bracket",
+                  "durationMmss": "5:21",
+                  "youtubeTitle": "Product Series // Outdure - A205 QWICKBUILD DOUBLE JOIST BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A205 DOUBLE JOIST BRACKET with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A206 - Double Joist Bracket Flat",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A206 - Double Joist Bracket Flat",
+                  "durationMmss": "3:57",
+                  "youtubeTitle": "Product Series // Outdure - A206 QWICKBUILD DOUBLE JOIST BRACKET FLAT",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A206 DOUBLE JOIST BRACKET FLAT with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A207 - Brace Plate Bracket",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "A207 - Brace Plate Bracket",
+                  "durationMmss": "3:23",
+                  "youtubeTitle": "Product Series // Outdure - A207 QWICKBUILD BRACE PLATE BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A207 BRACE PLATE BRACKET with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A208 - Trim bracket",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A208 - Trim bracket",
+                  "durationMmss": "4:25",
+                  "youtubeTitle": "Product Series // Outdure - A208 QWICKBUILD TRIM BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A208 TRIM BRACKET with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A210 / A211 - Beam/post Brackets",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A210 / A211 - Beam/post Brackets",
+                  "durationMmss": "2:13",
+                  "youtubeTitle": "Product Series // Outdure - A210 & A211 QWICKBUILD BEAM TO POST (4X4\") 90X90 BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A210 & A211 BEAM TO POST (4X4\") 90X90 BRACKET with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A212 - Beam/post Bracket Kit",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A212 - Beam/post Bracket Kit",
+                  "durationMmss": "4:17",
+                  "youtubeTitle": "Product Series // Outdure - A212 BEAM TO POST (6X6\") 135X135 BRACKET KIT",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A212 BEAM TO POST (6X6\") 135X135 BRACKET KIT with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A220 - Beam End Cap",
+              "type": "video",
+              "estimatedMinutes": null,
+              "content": {
+                "planned": {
+                  "videoName": "A220 - Beam End Cap",
+                  "status": {
+                    "recorded": false,
+                    "edited": false,
+                    "live": false,
+                    "onYoutube": false
+                  },
+                  "sheetNote": "MISSING VIDEO !",
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Knowledge Quiz A200",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the difference between the standard and the flat Double Joist Bracket?",
+                    "options": [
+                      "Nothing there is no difference it's a personal preference",
+                      "One fits the A110 (2X1\") 28X45mm frame",
+                      "One has the camlock design to suit twistclips",
+                      "One is longer than the other"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q023 (sheet row 132)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What item is the A205 Double Joist Bracket?",
+                    "options": [
+                      "Image 1  A910 deck support",
+                      "Image 2    joiner bracket",
+                      "Image 3    joist anchor",
+                      "Image 4    double joist bracket"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q024 (sheet row 137)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the main purpose of double joist brackets?",
+                    "options": [
+                      "To make your frame longer",
+                      "For attaching trim boards to the side of the structure",
+                      "To provide support for the second board on butt joins",
+                      "To increase the height of the joist"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q025 (sheet row 142)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the best way to calculate what materials I require for my job?",
+                    "options": [
+                      "Work it out onsite",
+                      "Draw it on a piece of paper",
+                      "Guess whats needed and return the leftover later",
+                      "Use Outdure's online DeckPlanner"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q026 (sheet row 147)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the purpose of A207 Brace Plate?",
+                    "options": [
+                      "Attaching two profiles end on end",
+                      "Attaching two profiles directly on top of each other as a compound connection",
+                      "It serves no purpose",
+                      "Attaching a post to a beam"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q027 (sheet row 154)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What screws are supplied with the A207 Brace Plate?",
+                    "options": [
+                      "Image 1   A611",
+                      "Image 2   A401",
+                      "Image 3   A655",
+                      "Imahe 4   A404"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q028 (sheet row 159)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which item is a Trim Bracket?",
+                    "options": [
+                      "image 1 double joist bracket",
+                      "image 2 90 bracekt",
+                      "image 3 twistclip",
+                      "image 4 Trim bracket"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q029 (sheet row 165)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "When would you typically use a A208 trim bracket?",
+                    "options": [
+                      "Around all boundary edges of the structure, including against the building",
+                      "In the middle of the structure for added support",
+                      "Around all boundary edges of the structure, excluding against the building"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q030 (sheet row 170)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 4 — A300 Range (for A110)",
+          "lessons": [
+            {
+              "title": "A301 - 90 Bracket & Joist Anchor - for A110",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "A301 - 90 Bracket & Joist Anchor - for A110",
+                  "durationMmss": "4:55",
+                  "youtubeTitle": "Product Series // Outdure - A301 - 90 Bracket & Joist Anchor - for A110",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A301 - 90 Bracket & Joist Anchor - for A110 profiles with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A302 - Joiner Bracket for A110",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A302 - Joiner Bracket for A110",
+                  "durationMmss": "3:34",
+                  "youtubeTitle": "Product Series // Outdure - A302 - Joiner Bracket for A110",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A302 - Joiner Bracket for A110 profiles with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A306 - Double Joist Bracket for A110",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A306 - Double Joist Bracket for A110",
+                  "durationMmss": "3:42",
+                  "youtubeTitle": "Product Series // Outdure - A306 DOUBLE JOIST BRACKET - A110",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A306 DOUBLE JOIST BRACKET - A110 profiles with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A307 - Double Joist Bracket Flat for A110",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "A307 - Double Joist Bracket Flat for A110",
+                  "durationMmss": "3:21",
+                  "youtubeTitle": "Product Series // Outdure - A307 DOUBLE JOIST BRACKET FLAT - A110",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A307 DOUBLE JOIST BRACKET FLAT - A110 profiles with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Knowledge Quiz A300",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is unique about the A300 range?",
+                    "options": [
+                      "Nothing",
+                      "The A300 range only suits the A110 profiles",
+                      "The A300 range is compatible with other brands",
+                      "The A300 range is made of galvanised steel"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q031 (sheet row 180)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Which item is A301 90° Bracket and Joist Anchor?",
+                    "options": [
+                      "image 1 joist anchor",
+                      "image 2 90 braceket & joist anchor - A110",
+                      "image 3 joiner bracket - A110",
+                      "image 4 double joist bracket"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q032 (sheet row 185)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the purpose of A302 - Joiner bracket",
+                    "options": [
+                      "Join A110 profiles top and bottom as a compound profile",
+                      "Connect joist to beam connections",
+                      "Join A110 profiles end to end",
+                      "Attach trim to side of structure"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q033 (sheet row 191)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the best way to calculate what materials I require for my job?",
+                    "options": [
+                      "Work it out onsite",
+                      "Draw it on a piece of paper",
+                      "Guess whats needed and return the leftover later",
+                      "Use Outdure's online DeckPlanner"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q034 (sheet row 196)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the main purpose of double joist brackets?",
+                    "options": [
+                      "To make your frame longer",
+                      "For attaching trim boards to the side of the structure",
+                      "To provide support for the second board on butt joins",
+                      "To increase the height of the joist"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q035 (sheet row 203)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the difference between the standard and the flat Double Joist Bracket?",
+                    "options": [
+                      "Nothing there is no difference it's a personal preference",
+                      "One fits the A110 (2X1\") 28X45mm frame",
+                      "One has the camlock design to suit twistclips",
+                      "One is longer than the other"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q036 (sheet row 208)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What screws are included with the A300 range of components ?",
+                    "options": [
+                      "Image A310",
+                      "Image A401",
+                      "Image  A404",
+                      "Image A611"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q037 (sheet row 213)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 5 — A400 Fasteners",
+          "lessons": [
+            {
+              "title": "A401 / A402 / A403 / A404",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "A401 / A402 / A403 / A404",
+                  "durationMmss": "2:33",
+                  "youtubeTitle": "Product Series // Outdure - A401, A402, A403, A404 QWICKBUILD SCREWS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A401, A402, A403, A404 QWICKBUILD SCREWS with our aluminium Qwickbuild framing system.   Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A409 - Twistclip Screw",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "A409 - Twistclip Screw",
+                  "durationMmss": "1:17",
+                  "youtubeTitle": "Product Series // Outdure - A409 QWICKBUILD SCREW (3/4\") 20MM",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A409 QWICKBUILD SCREW (3/4\") 20MM, with our aluminium Qwickbuild framing system.   Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A410 / A411 / A412 / A413 - Qwickbuild Bolts",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A410 / A411 / A412 / A413 - Qwickbuild Bolts",
+                  "durationMmss": "1:34",
+                  "youtubeTitle": "Product Series // Outdure - A410, A411, A412, A413 QWICKBUILD BOLTS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A410, A411, A412, A413 QWICKBUILD BOLTS with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A420 - Qwickbuild Driver Pack",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "A420 - Qwickbuild Driver Pack",
+                  "durationMmss": "0:51",
+                  "youtubeTitle": "Product Series // Outdure - A420 QWICKBUILD DRIVER PACK",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A420 QWICKBUILD DRIVER PACK with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Knowledge Quiz A400",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What type of products are in the A400 series?",
+                    "options": [
+                      "Framing",
+                      "Pedestal supports",
+                      "Surface products",
+                      "Fasteners & fixings"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q038 (sheet row 221)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "When do you use the A409 screws?",
+                    "options": [
+                      "With the Twistclip - Refer to Twistclip videos on when required",
+                      "You don't use them ever"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q039 (sheet row 226)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What items come with the A420 QwickBuild Driver Pack?",
+                    "options": [
+                      "2 x T15",
+                      "2 x T20",
+                      "2 x 3/8 Hex drivers",
+                      "All of the above"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q040 (sheet row 236)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 6 — A500 Clips",
+          "lessons": [
+            {
+              "title": "Twistclips",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "Twistclips",
+                  "durationMmss": "5:05",
+                  "youtubeTitle": "Product Series // Outdure - TWISTCLIPS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the OUTDURE TWISTCLIPS with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Twistclips - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the purpose of the Twistclips?",
+                    "options": [
+                      "A concealed fastener for laying surfaces",
+                      "Decorative feature",
+                      "Creating double board joins",
+                      "A concealed fastener to fix joist to beam profiles"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q041 (sheet row 243)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "We have twistclips to suit most leading board brands.",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q042 (sheet row 248)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Is there a one type fits all Twistclip?",
+                    "options": [
+                      "Yes",
+                      "No, there are different type of Twistclips - refer to the Outdure Catalogue"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q043 (sheet row 251)",
+                    "note": "answer key not marked in sheet; keyed to B (the only sensible answer) — confirm"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What image shows the twistclip?",
+                    "options": [
+                      "Image 1  T Clip",
+                      "Image 2   90 bracket",
+                      "Image 3  Twistclip",
+                      "Image 4  Joist anchor"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q044 (sheet row 254)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A512 - Qwickbuild T Clip",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A512 - Qwickbuild T Clip",
+                  "durationMmss": "2:25",
+                  "youtubeTitle": "Product Series // A512 QWICKBUILD T CLIP",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A512 T CLIP with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "T Clip - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What item is the T clip?",
+                    "options": [
+                      "Image 1  T Clip",
+                      "Image 2   Joist Anchor",
+                      "Image 3   H65 Screw"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q045 (sheet row 260)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A590 - Qwickbuild Starter Clip",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "A590 - Qwickbuild Starter Clip",
+                  "durationMmss": "3:26",
+                  "youtubeTitle": "Product Series // A590 QWICKBUILD STARTER CLIP",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A590 STARTER CLIP with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A590 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "When do you use the A590 - Starter clip?",
+                    "options": [
+                      "Every board to prevent any uplift",
+                      "Only on ripped boards",
+                      "Only against walls",
+                      "On starter board or picture frame edge"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q046 (sheet row 266)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A595 / A596 - Composite Decking Screws",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A595 / A596 - Composite Decking Screws",
+                  "durationMmss": "1:32",
+                  "youtubeTitle": "Product Series // A595 & A596 QWICKBUILD COMPOSITE DECKING SCREW",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A595 & A596 QWICKBUILD COMPOSITE DECKING SCREW with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A595 / A596 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "true_false",
+                    "prompt": "There are two Composite decking screw colors",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q047 (sheet row 274)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the best way to calculate what materials I require for my job?",
+                    "options": [
+                      "Work it out onsite",
+                      "Draw it on a piece of paper",
+                      "Guess whats needed and return the leftover later",
+                      "Use Outdure's online DeckPlanner"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q048 (sheet row 277)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 7 — A600 Screws for Hardwood",
+          "lessons": [
+            {
+              "title": "A610/ A611/ A620/ A621",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A610/ A611/ A620/ A621",
+                  "durationMmss": "2:09",
+                  "youtubeTitle": "Product Series // A610, A611, A620, A621 QWICKBUILD SCREWS FOR HARDWOOD",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A610, A611, A620, A621 QWICKBUILD SCREWS FOR HARDWOOD with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Knowledge Quiz A600",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "true_false",
+                    "prompt": "All screws are made from stainless steel?",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q049 (sheet row 285)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What are the differences between the A600 screws?",
+                    "options": [
+                      "Length",
+                      "Head size",
+                      "Head type",
+                      "All of the above"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q050 (sheet row 288)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "All four screws have a self drilling tip to drill into the Aluminum",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q051 (sheet row 293)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the best way to calculate what materials I require for my job?",
+                    "options": [
+                      "Work it out onsite",
+                      "Draw it on a piece of paper",
+                      "Guess whats needed and return the leftover later",
+                      "Use Outdure's online DeckPlanner"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q052 (sheet row 296)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 8 — A700 Tile System",
+          "lessons": [
+            {
+              "title": "Tile System Overview",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "Tile System Overview",
+                  "durationMmss": "3:37",
+                  "youtubeTitle": "Product Series // QWICKBUILD TILE SYSTEM OVERVIEW",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the QWICKBUILD TILES with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A701 - Tile Rubber Bead",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A701 - Tile Rubber Bead",
+                  "durationMmss": "1:42",
+                  "youtubeTitle": "Product Series // A701 QWICKBUILD TILE RUBBER BEAD",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A701 QWICKBUILD TILE RUBBER BEAD with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A701 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What products does the A700 series relate too?",
+                    "options": [
+                      "Composite Decking",
+                      "Indoor carpets",
+                      "Tiles",
+                      "Hardwood"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q053 (sheet row 304)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How do you install the tile rubber bead",
+                    "options": [
+                      "Use a hammer and hit it into the profile",
+                      "Slide the rubber in from one end",
+                      "There's no need. The tile just sits directly on top of the joist.",
+                      "Place it on top of the joist and use hands to push down into the channel."
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q054 (sheet row 309)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What length does the tile rubber bead come in?",
+                    "options": [
+                      "40\" / 1m",
+                      "20\" / 500mm",
+                      "10\" / 250mm",
+                      "Comes to length as you order it"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q055 (sheet row 314)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A702 / A703 - Tile Retainer Brackets",
+              "type": "video",
+              "estimatedMinutes": 6,
+              "content": {
+                "planned": {
+                  "videoName": "A702 / A703 - Tile Retainer Brackets",
+                  "durationMmss": "5:59",
+                  "youtubeTitle": "Product Series // A702 & A703 QWICKBUILD TILE RETAINER BRACKETS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A702 & A703 QWICKBUILD TILE RETAINER BRACKETS with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A702 / A703 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the difference between A703 Tile Retainer Snap Clip and A702 Tile Retainer Bracket?",
+                    "options": [
+                      "Only the A702 Tile Retainer Bracket retains the tiles.",
+                      "There is no difference",
+                      "Only the A703 Tile Retainer Snap Clip can be used parallel to joists."
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q056 (sheet row 320)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How do you calculate what's needed for my job?",
+                    "options": [
+                      "Call Outdure and they will be able to tell me",
+                      "Measure onsite and tally up whats needed",
+                      "Use Outdures online decking planner software",
+                      "Take a guess and return what not needed"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q057 (sheet row 324)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A710 / A711 - Tile Spacers",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A710 / A711 - Tile Spacers",
+                  "durationMmss": "1:57",
+                  "youtubeTitle": "Product Series // A710 & A711 QWICKBUILD TILE SPACERS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A710 & A711 QWICKBUILD TILE SPACERS with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A710 / A711 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "true_false",
+                    "prompt": "All gaps between the tiles need to be grouted",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q058 (sheet row 330)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What are the A710 and A711 Tile Spacers used for?",
+                    "options": [
+                      "To pack below the tile and get a flush finish to your indoor flooring",
+                      "To create correct spacing between tiles and prevent them from touching each other.",
+                      "They are used to decorate my floor"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q059 (sheet row 333)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A712 - Tile Trim Bracket",
+              "type": "video",
+              "estimatedMinutes": 4,
+              "content": {
+                "planned": {
+                  "videoName": "A712 - Tile Trim Bracket",
+                  "durationMmss": "4:15",
+                  "youtubeTitle": "Product Series // A712 QWICKBUILD TILE TRIM BRACKET",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A712 QWICKBUILD TILE TRIM BRACKET with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Knowledge Quiz A700",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What products does the A700 series relate too?",
+                    "options": [
+                      "Composite Decking",
+                      "Indoor carpets",
+                      "Tiles",
+                      "Hardwood"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q053 (sheet row 304)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How do you install the tile rubber bead",
+                    "options": [
+                      "Use a hammer and hit it into the profile",
+                      "Slide the rubber in from one end",
+                      "There's no need. The tile just sits directly on top of the joist.",
+                      "Place it on top of the joist and use hands to push down into the channel."
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q054 (sheet row 309)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What length does the tile rubber bead come in?",
+                    "options": [
+                      "40\" / 1m",
+                      "20\" / 500mm",
+                      "10\" / 250mm",
+                      "Comes to length as you order it"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q055 (sheet row 314)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the difference between A703 Tile Retainer Snap Clip and A702 Tile Retainer Bracket?",
+                    "options": [
+                      "Only the A702 Tile Retainer Bracket retains the tiles.",
+                      "There is no difference",
+                      "Only the A703 Tile Retainer Snap Clip can be used parallel to joists."
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q056 (sheet row 320)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How do you calculate what's needed for my job?",
+                    "options": [
+                      "Call Outdure and they will be able to tell me",
+                      "Measure onsite and tally up whats needed",
+                      "Use Outdures online decking planner software",
+                      "Take a guess and return what not needed"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q057 (sheet row 324)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "All gaps between the tiles need to be grouted",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q058 (sheet row 330)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What are the A710 and A711 Tile Spacers used for?",
+                    "options": [
+                      "To pack below the tile and get a flush finish to your indoor flooring",
+                      "To create correct spacing between tiles and prevent them from touching each other.",
+                      "They are used to decorate my floor"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q059 (sheet row 333)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the difference between the A712 Tile Trim Bracket and the A208 Trim Bracket?",
+                    "options": [
+                      "Only one will fit my tile size",
+                      "Nothing. There is no difference.",
+                      "The A712 Has a bottom lip to support my tile while adhesive is drying.",
+                      "The colour is different"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q060 (sheet row 339)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 9 — A800 Turf System",
+          "lessons": [
+            {
+              "title": "Turf System Overview",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "Turf System Overview",
+                  "durationMmss": "2:00",
+                  "youtubeTitle": "Product Series // QWICKBUILD TURF SYSTEM OVERVIEW",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the QWICKBUILD TURF SYSTEM with our aluminium Qwickbuild framing system.   Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A801 - TURF BASEBOARD",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A801 - TURF BASEBOARD",
+                  "durationMmss": "2:05",
+                  "youtubeTitle": "Product Series // A801 QWICKBUILD TURF BASEBOARD",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A801 QWICKBUILD TURF BASEBOARD with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A801 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the A801 Turf Baseboard made of?",
+                    "options": [
+                      "Steel",
+                      "Recycled plastic",
+                      "Pressure treated lumber",
+                      "Aluminum"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q061 (sheet row 348)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "Can you install a combination of surfaces (ie. turf, decking, tiles) all at one seamless height?",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q062 (sheet row 353)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "The artificial turf is installed by screwing it down to the A801 Turf Baseboards",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q063 (sheet row 356)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "Are Twistclips required when installing turf?",
+                    "options": [
+                      "No, they aren't used at all because the turf has no groove along the sides.",
+                      "Only when installing vertically to hold the turf onto the wall",
+                      "Yes, Twistclips are used when installing the A801 Turf Baseboards to the Outdure frame",
+                      "Yes, but only when installing turf directly next to decking"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q064 (sheet row 359)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A810 / A811 - SCREWS FOR TURF",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "A810 / A811 - SCREWS FOR TURF",
+                  "durationMmss": "3:15",
+                  "youtubeTitle": "Product Series // A810 & A811 QWICKBUILD SCREWS FOR TURF",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A810 & A811 QWICKBUILD SCREWS FOR TURF with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 10 — Additional A800 Items",
+          "lessons": [
+            {
+              "title": "A831 / A832 - QWICKGRATE KIT black/sliver",
+              "type": "video",
+              "estimatedMinutes": 9,
+              "content": {
+                "planned": {
+                  "videoName": "A831 / A832 - QWICKGRATE KIT black/sliver",
+                  "durationMmss": "9:12",
+                  "youtubeTitle": "Product Series // A831 & A832 QWICKBUILD QWICKGRATE KIT BLACK OR SILVER",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A831 & A832 QWICKBUILD QWICKGRATE KIT with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A831 / A832 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "multi_select",
+                    "prompt": "What colours does the A831 / A832 Qwickgrate comes in?",
+                    "options": [
+                      "Silver",
+                      "Brown",
+                      "White",
+                      "Black"
+                    ],
+                    "correct": [
+                      0,
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q065 (sheet row 367)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "The Qwickgrate can be easily removed once installed",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q066 (sheet row 372)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A840 - ANTI-SLIP STRIP",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "A840 - ANTI-SLIP STRIP",
+                  "durationMmss": "1:39",
+                  "youtubeTitle": "Product Series // A840 QWICKBUILD ANTI-SLIP STRIP WITH 3M SAFETY WALK",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A840 QWICKBUILD ANTI-SLIP STRIP WITH 3M SAFETY WALK with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A851 - QWICKBUILD SOLID BLOCKING (6X6\"X4')",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "A851 - QWICKBUILD SOLID BLOCKING (6X6\"X4')",
+                  "durationMmss": "4:53",
+                  "youtubeTitle": "Product Series // A851 QWICKBUILD SOLID BLOCKING",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A851 QWICKBUILD SOLID BLOCKING with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A851 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "Where do I find the correct installation detail for attaching A851 Solid Blocking to the Outdure frame?",
+                    "options": [
+                      "I don't need one, it can be fixed anywhere",
+                      "In Outudre's online Resource Section, where all of Outdure's detail drawings are stored",
+                      "I need to contact my engineer to tell me"
+                    ],
+                    "correct": [
+                      1
+                    ],
+                    "points": 1,
+                    "source": "Q067 (sheet row 377)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How do you calculate what material I need for my project ?",
+                    "options": [
+                      "Call Outdure and they will be able to help",
+                      "Measure onsite and tally up",
+                      "Use Outdures online Deck Planner",
+                      "Guess and return whats left over"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q068 (sheet row 382)"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "A855 - BATTEN",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "A855 - BATTEN",
+                  "durationMmss": "4:31",
+                  "youtubeTitle": "Product Series // A855 QWICKBUILD BATTEN",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A855 QWICKBUILD BATTEN with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "sheetNote": "A855 - Quiz exists in the sheet but has no questions; quiz not imported",
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": "EP 11 — A900 Supports",
+          "lessons": [
+            {
+              "title": "A900 supports",
+              "type": "video",
+              "estimatedMinutes": 9,
+              "content": {
+                "planned": {
+                  "videoName": "A900 supports",
+                  "durationMmss": "9:15",
+                  "youtubeTitle": "Product Series // A900 QWICKBUILD DECK SUPPORTS",
+                  "youtubeDescription": "In this episode of the product series we talk about how we use the A901 QWICKBUILD DECK SUPPORTS with our aluminium Qwickbuild framing system. Don't forget to like, comment, and subscribe for more insights in our Product Series!",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": true,
+                    "onYoutube": false
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "A900 - Quiz",
+              "type": "quiz",
+              "estimatedMinutes": null,
+              "content": {},
+              "quiz": {
+                "settings": {
+                  "passThreshold": 70
+                },
+                "questions": [
+                  {
+                    "type": "mcq",
+                    "prompt": "What type of products are in the A900 series?",
+                    "options": [
+                      "Turf",
+                      "Tile",
+                      "Pedestal supports",
+                      "Aluminum profiles"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q069 (sheet row 391)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "How many key products are in the A900 Supports series?",
+                    "options": [
+                      "1",
+                      "12",
+                      "8",
+                      "4"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q070 (sheet row 396)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "You can stack A915 up to 1 foot / 300mm high",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q071 (sheet row 401)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the difference between A905 support and A910 support?",
+                    "options": [
+                      "There is no difference",
+                      "They can hold different weights",
+                      "They are designed to suit different profiles",
+                      "They accommodate different height ranges"
+                    ],
+                    "correct": [
+                      3
+                    ],
+                    "points": 1,
+                    "source": "Q072 (sheet row 404)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What percentage can the A920 Slope corrector adjust to",
+                    "options": [
+                      "3%",
+                      "5%",
+                      "7%",
+                      "10%"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q073 (sheet row 409)"
+                  },
+                  {
+                    "type": "mcq",
+                    "prompt": "What is the purpose of A925 Protection Pad - Acoustic",
+                    "options": [
+                      "To raise the height of the deck",
+                      "To give a 'bouncy' feel to my deck",
+                      "It is designed to provide extra acoustic insulation below my deck structure",
+                      "It is designed to protect my pedestals from getting wet"
+                    ],
+                    "correct": [
+                      2
+                    ],
+                    "points": 1,
+                    "source": "Q074 (sheet row 414)"
+                  },
+                  {
+                    "type": "true_false",
+                    "prompt": "Each support pedestal is designed to hold up to 1 tonne (point load)",
+                    "options": [
+                      "True",
+                      "False"
+                    ],
+                    "correct": [
+                      0
+                    ],
+                    "points": 1,
+                    "source": "Q075 (sheet row 419)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": "DeckPlanner",
+          "lessons": [
+            {
+              "title": "General overview",
+              "type": "video",
+              "estimatedMinutes": 14,
+              "content": {
+                "planned": {
+                  "videoName": "General overview",
+                  "durationMmss": "13:57",
+                  "youtubeTitle": "Deckplanner Series // General Overview",
+                  "status": {
+                    "recorded": null,
+                    "edited": null,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "How to create an account",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "How to create an account",
+                  "durationMmss": "3:04",
+                  "youtubeTitle": "Deckplanner Series // How to Create an Account",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Dashboard",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "Dashboard",
+                  "durationMmss": "5:12",
+                  "youtubeTitle": "Deckplanner Series // Dashboard",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Shape and size",
+              "type": "video",
+              "estimatedMinutes": 8,
+              "content": {
+                "planned": {
+                  "videoName": "Shape and size",
+                  "durationMmss": "8:28",
+                  "youtubeTitle": "Deckplanner Series // Shape and Size",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Select surface",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "Select surface",
+                  "durationMmss": "1:27",
+                  "youtubeTitle": "Deckplanner Series // Select Surface",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Design layout",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "Design layout",
+                  "durationMmss": "5:10",
+                  "youtubeTitle": "Deckplanner Series // Design Layout",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Structure",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "Structure",
+                  "durationMmss": "3:22",
+                  "youtubeTitle": "Deckplanner Series // Structure",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Item list",
+              "type": "video",
+              "estimatedMinutes": 2,
+              "content": {
+                "planned": {
+                  "videoName": "Item list",
+                  "durationMmss": "1:51",
+                  "youtubeTitle": "Deckplanner Series // Item List",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Downloading PDF",
+              "type": "video",
+              "estimatedMinutes": 5,
+              "content": {
+                "planned": {
+                  "videoName": "Downloading PDF",
+                  "durationMmss": "5:02",
+                  "youtubeTitle": "Deckplanner Series // PDF Review",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "Create multiple projects",
+              "type": "video",
+              "estimatedMinutes": 3,
+              "content": {
+                "planned": {
+                  "videoName": "Create multiple projects",
+                  "durationMmss": "2:38",
+                  "youtubeTitle": "Deckplanner Series // Create Multiple Projects",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            },
+            {
+              "title": "How to reload plans",
+              "type": "video",
+              "estimatedMinutes": 1,
+              "content": {
+                "planned": {
+                  "videoName": "how to reload plans",
+                  "durationMmss": "1:14",
+                  "youtubeTitle": "Deckplanner Series // How to Reload Plans",
+                  "status": {
+                    "recorded": true,
+                    "edited": true,
+                    "live": null,
+                    "onYoutube": null
+                  },
+                  "source": "training-sheet-import 2026-08-14"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
