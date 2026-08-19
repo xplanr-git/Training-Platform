@@ -110,27 +110,34 @@ describe('the most-tapped learner control clears the bar', () => {
 
 describe('the lesson list survives on a phone', () => {
   /*
-   * The player's sidebar is `hidden lg:block` and the mobile substitute was a back
-   * link and a progress bar — so at 375px the course structure was simply absent. No
-   * lesson list, no sense of position, no way to jump; the only route was prev/next
-   * or backing out to the outline page.
+   * History: the player used a `hidden lg:block` side rail for the lesson list, so
+   * at 375px the course structure was absent — no list, no sense of position, no
+   * way to jump. It was then given a mobile <details> copy, so two lists rendered.
+   *
+   * The approved learner PX removed the side rail entirely: "In this topic" now
+   * sits BELOW the content in ONE responsive layout, scoped to the current topic,
+   * with "View all topics" for the whole course. The same list renders at every
+   * width, so it can no longer be lost on a phone — and there is no second copy to
+   * drift. These assertions track that new structure; the intent (the list
+   * survives on a phone) is unchanged and now met more simply.
    */
   const PLAYER = code('src/app/t/[slug]/learn/[courseSlug]/[lessonId]/page.tsx');
 
-  it('the player renders a lesson list in the mobile block', () => {
-    const mobile = PLAYER.slice(PLAYER.indexOf('lg:hidden'));
-    expect(mobile.slice(0, 1400), 'no LessonNav below lg').toContain('<LessonNav');
+  it('the player renders the topic lesson list', () => {
+    expect(PLAYER, 'the In-this-topic list must render below the content').toContain('<LessonNav');
   });
 
-  it('it is a disclosure, so the video still leads', () => {
-    expect(PLAYER).toMatch(/<details/);
-    expect(PLAYER).toMatch(/<summary/);
+  it('the list is not a desktop-only side rail', () => {
+    // `hidden ... lg:block` was the rail that vanished at 375px. One responsive
+    // column now — the list is present at every width, not desktop-only.
+    expect(PLAYER, 'no desktop-only side rail wrapping the nav').not.toMatch(
+      /hidden[^\n>]*lg:block/,
+    );
   });
 
-  it('desktop and mobile share one implementation', () => {
-    // Two copies of a lesson list would drift; the aside and the disclosure both
-    // render the component.
-    expect((PLAYER.match(/<LessonNav/g) ?? []).length).toBe(2);
+  it('there is one lesson-list implementation, not a desktop + mobile pair', () => {
+    // A single <LessonNav> below the content — no second copy to drift.
+    expect((PLAYER.match(/<LessonNav/g) ?? []).length).toBe(1);
   });
 
   it('rows are 44px on a phone and keep the sidebar tighter', () => {

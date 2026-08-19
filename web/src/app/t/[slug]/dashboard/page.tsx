@@ -209,7 +209,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                     <span className="text-sm font-medium">
                       {requiredEnrollment.percent}% complete
                     </span>
-                    <span className="text-sm text-muted tabular-nums">
+                    <span className="text-foreground-2 text-sm tabular-nums">
                       {requiredEnrollment.done} of {requiredEnrollment.total} lessons
                       {requiredEnrollment.minutesLeft != null
                         ? ` · ${requiredEnrollment.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(requiredEnrollment.minutesLeft)} left`
@@ -233,9 +233,9 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
               ) : (
                 <Link
                   href={`/learn/${requiredCourse.slug}`}
-                  className="mt-4 inline-flex min-h-11 items-center text-sm text-link hover:text-link-hover"
+                  className="text-foreground-2 hover:text-foreground mt-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold transition-colors"
                 >
-                  Review training
+                  Review training →
                 </Link>
               )}
             </CardContent>
@@ -262,11 +262,11 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                   >
                     <div className="min-w-0">
                       <span className="text-sm font-medium">{r.title}</span>
-                      <p className="mt-0.5 text-xs text-muted tabular-nums">
+                      <p className="text-foreground-2 mt-0.5 text-xs tabular-nums">
                         {r.done}/{r.total} lessons · {stateLabel}
                       </p>
                     </div>
-                    <span className="shrink-0 text-sm text-muted">{action} →</span>
+                    <span className="text-foreground-2 shrink-0 text-sm">{action} →</span>
                   </Link>
                 </li>
               );

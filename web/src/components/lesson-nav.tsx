@@ -33,19 +33,25 @@ export function LessonNav({
   courseSlug,
   currentLessonId,
   completed,
+  showSectionTitles = true,
 }: {
   sections: OutlineSection[];
   courseSlug: string;
   currentLessonId: string;
   completed: ReadonlySet<string>;
+  /** Hide the per-section title — used by the lesson page's "In this topic"
+   *  block, which is already scoped to one topic and carries its own heading. */
+  showSectionTitles?: boolean;
 }) {
   return (
     <nav className="space-y-4">
       {sections.map((g) => (
         <div key={g.id}>
-          <p className="mb-1 px-1 text-[11px] font-bold uppercase tracking-wider text-muted">
-            {g.title || 'Section'}
-          </p>
+          {showSectionTitles && (
+            <p className="mb-1 px-1 text-[11px] font-bold uppercase tracking-wider text-muted">
+              {g.title || 'Section'}
+            </p>
+          )}
           <ul className="space-y-0.5">
             {g.items.map((l) => {
               const Icon = LESSON_ICON[l.type] ?? BookOpen;
@@ -60,8 +66,10 @@ export function LessonNav({
                       // The 2px inset ink marker is carried by a left border that
                       // is TRANSPARENT when inactive rather than absent, so
                       // selecting a lesson does not shift the whole list 2px to
-                      // the right.
-                      'flex items-center gap-2 rounded-md border-l-2 px-2 py-3 text-sm transition-colors lg:py-1.5',
+                      // the right. SQUARE geometry: state is shown by the marker +
+                      // wash + weight, never a rounded/selected card (DS: nav
+                      // selection is square; state != geometry).
+                      'flex items-center gap-2 border-l-2 px-2 py-3 text-sm transition-colors lg:py-1.5',
                       isCurrent
                         ? 'border-primary bg-sunken font-bold'
                         : 'border-transparent text-foreground hover:bg-surface-muted',
