@@ -28,6 +28,7 @@ import { assertNotViewingAs, isViewingAs } from '@/lib/view-as';
 import { ActionError } from '@/lib/action-errors';
 import type { QuizSettings } from '@/lib/content-types';
 import { finalizeCourseCompletion } from '@/lib/completion';
+import { isConfidenceLevel } from '@/lib/confidence';
 import { env } from '@/lib/env';
 import { gradeQuiz } from '@/lib/quiz';
 import { criticalQuestionIds, allCriticalCorrect, reviewRequired } from '@/lib/competency';
@@ -587,29 +588,71 @@ export async function recordInstallerIdea(
   return { ok: true };
 }
 
-/** Post-training practical confidence — captured once at completion. */
+/**
+ * Installation confidence — a CORE outcome signal, ordinal and self-reported.
+ * NEVER confers or changes competency, Trained/verified status, or warranty
+ * eligibility, and never gates completion or navigation.
+ *
+ * `phase` distinguishes the course-start BASELINE from the completion OUTCOME so
+ * confidence UPLIFT can be read (as movement, not a fabricated score). The
+ * optional `reasons`/`comment` follow-up is captured only when the learner
+ * reports low confidence — it names what would help, which is the actionable
+ * part. The 4-point scale ('not_yet'|'somewhat'|'confident'|'very') is shared
+ * with topic-level confidence for consistency.
+ */
 export async function recordCourseConfidence(
   enrollmentId: string,
   courseId: string,
-  input: { level: 'very' | 'fairly' | 'more_guidance'; comment: string },
+  phase: 'baseline' | 'outcome',
+  input: { level: string; reasons: string[]; comment: string },
 ): Promise<{ ok: true } | { error: string }> {
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect('/login');
   await assertNotViewingAs();
   await verifyEnrollment(ctx, enrollmentId);
-  const level = (['very', 'fairly', 'more_guidance'] as const).includes(
-    input?.level as 'very' | 'fairly' | 'more_guidance',
-  )
-    ? input.level
-    : null;
-  if (!level) return { error: 'Choose an option.' };
+  if (!isConfidenceLevel(input?.level)) return { error: 'Choose an option.' };
+  if (phase !== 'baseline' && phase !== 'outcome') return { error: 'Unknown phase.' };
+  const reasons = cleanList(input?.reasons, 8, 64);
   const comment = cleanText(input?.comment, 2000);
   await db.insert(progressEvents).values({
     tenantId: ctx.tenantId,
     enrollmentId,
     lessonId: null,
     eventType: 'course_confidence',
-    payload: { level, comment, courseId },
+    payload: { phase, level: input.level, reasons, comment, courseId },
+  });
+  return { ok: true };
+}
+
+/**
+ * Topic-level confidence at a practical-capability boundary. Same scale as
+ * course confidence; `capabilityKey` + `sectionId` are stored so aggregate
+ * analysis (including the internal-only confidence-vs-demonstrated-knowledge
+ * comparison) is possible later. Purely a signal — no status effect.
+ */
+export async function recordTopicConfidence(
+  enrollmentId: string,
+  courseId: string,
+  capabilityKey: string,
+  sectionId: string | null,
+  lessonId: string | null,
+  input: { level: string; reasons: string[]; comment: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  if (!isConfidenceLevel(input?.level)) return { error: 'Choose an option.' };
+  const key = cleanText(capabilityKey, 64);
+  if (!key) return { error: 'Unknown topic.' };
+  const reasons = cleanList(input?.reasons, 8, 64);
+  const comment = cleanText(input?.comment, 2000);
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: lessonId ?? null,
+    eventType: 'topic_confidence',
+    payload: { capabilityKey: key, sectionId, level: input.level, reasons, comment, courseId },
   });
   return { ok: true };
 }

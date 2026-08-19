@@ -54,8 +54,11 @@ describe('finishing a course is acknowledged', () => {
   it('does not fetch the certificate in a serial round trip', () => {
     // The page was deliberately parallelised earlier; a lone await here would put
     // the extra query back on the critical path.
-    const block = OUTLINE.slice(OUTLINE.indexOf('const [progress, certificate]'));
-    expect(block.slice(0, 400)).toContain('Promise.all');
+    // Anchor on the destructure prefix, not the exact bracket — the batch has
+    // since grown (confidence state joined the same Promise.all). What this guard
+    // protects is that certificate is fetched IN that batch, not serially.
+    const block = OUTLINE.slice(OUTLINE.indexOf('const [progress, certificate'));
+    expect(block.slice(0, 500)).toContain('Promise.all');
   });
 });
 

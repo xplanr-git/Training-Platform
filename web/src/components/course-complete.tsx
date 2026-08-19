@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ShareButton } from '@/components/share-button';
-import { CourseConfidence } from '@/components/course-confidence';
+import { ConfidenceCheck, type ConfidenceInput } from '@/components/confidence-check';
+import { FOLLOWUP_REASONS } from '@/lib/confidence';
 
 /**
  * What the learner sees the moment they finish a course.
@@ -51,12 +52,7 @@ export function CourseComplete({
    * the panel still renders (e.g. in preview) without it. NEVER gates anything —
    * the course is already complete when this shows.
    */
-  confidenceAction?:
-    | ((input: {
-        level: 'very' | 'fairly' | 'more_guidance';
-        comment: string;
-      }) => Promise<{ ok: true } | { error: string }>)
-    | null;
+  confidenceAction?: ((input: ConfidenceInput) => Promise<{ ok: true } | { error: string }>) | null;
 }) {
   return (
     <section
@@ -142,7 +138,16 @@ export function CourseComplete({
               never change the result the learner just earned. */}
           {confidenceAction ? (
             <div className="mt-5 border-t border-border pt-4">
-              <CourseConfidence action={confidenceAction} />
+              <ConfidenceCheck
+                prompt="After this training, how confident are you installing QwickBuild on a real project?"
+                helpText="Optional — this won’t change your result."
+                action={confidenceAction}
+                followup={{
+                  prompt: 'What would help you feel more confident?',
+                  reasons: FOLLOWUP_REASONS,
+                }}
+                ackText="Thanks — that helps us support you and improve the training."
+              />
             </div>
           ) : null}
 

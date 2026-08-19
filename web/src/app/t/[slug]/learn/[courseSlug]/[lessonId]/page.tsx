@@ -47,13 +47,18 @@ import {
   checkQuizAnswer,
   recordLessonFeedback,
   recordInstallerIdea,
+  recordTopicConfidence,
 } from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { BunnyVideoPlayer } from '@/components/bunny-video-player';
 import { LessonFeedback } from '@/components/lesson-feedback';
 import { InstallerIdea } from '@/components/installer-idea';
+import { ConfidenceCheck } from '@/components/confidence-check';
 import { ShareButton } from '@/components/share-button';
+import { capabilityTriggers } from '@/lib/confidence';
+import { FOLLOWUP_REASONS } from '@/lib/confidence';
+import { getConfidenceState } from '@/lib/confidence-state';
 import { hostedVideoFromContent } from '@/lib/video';
 import { isVideoFault } from '@/lib/video-availability';
 import { resolveVideoSource } from '@/lib/video-source';
@@ -158,6 +163,20 @@ export default async function LessonPlayer({
   const pdfUrl = safeHttpUrl(content.url);
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
   const isQuiz = lesson.type === 'quiz';
+
+  // Topic confidence: this lesson ends a practical capability (e.g. structural
+  // connections, fasteners). Ask once, here — never per lesson. Skip in
+  // read-only/preview, and skip if already answered (never re-ask). The DB read
+  // is guarded so only the handful of trigger lessons pay for it.
+  const capabilityHere =
+    enrollmentId && !readOnly
+      ? (capabilityTriggers(sectionRows, ordered).find((c) => c.lessonId === lesson.id) ?? null)
+      : null;
+  const capabilityAnswered =
+    capabilityHere && enrollmentId
+      ? (await getConfidenceState(enrollmentId)).topics.has(capabilityHere.key)
+      : false;
+  const showTopicConfidence = !!capabilityHere && !capabilityAnswered;
   const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
   const hosted = hostedVideoFromContent(content);
 
@@ -587,6 +606,30 @@ export default async function LessonPlayer({
           <span />
         )}
       </div>
+
+      {/* Topic confidence checkpoint — a core outcome signal at the end of a
+          practical capability. Voluntary; never gates progress or status. */}
+      {showTopicConfidence && capabilityHere && enrollmentId && (
+        <section className="border-keyline mt-10 border-t-[1.75px] pt-4">
+          <ConfidenceCheck
+            prompt={capabilityHere.prompt}
+            helpText="Optional — this helps us improve the training. It doesn’t change your result."
+            action={recordTopicConfidence.bind(
+              null,
+              enrollmentId,
+              course.id,
+              capabilityHere.key,
+              lesson.sectionId,
+              lesson.id,
+            )}
+            followup={{
+              prompt: 'What would help you feel more confident?',
+              reasons: FOLLOWUP_REASONS,
+            }}
+            ackText="Thanks — that’s really useful."
+          />
+        </section>
+      )}
 
       {/* In this topic — BELOW the content (no side rail). One 1.75px structural
             keyline marks the content -> navigation boundary; the list itself uses

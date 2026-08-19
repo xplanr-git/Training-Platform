@@ -15,6 +15,8 @@ import { Callout } from '@/components/ui/callout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { recordCourseConfidence } from './actions';
+import { ConfidenceCheck } from '@/components/confidence-check';
+import { getConfidenceState } from '@/lib/confidence-state';
 
 const LESSON_ICON: Record<string, typeof Video> = {
   video: Video,
@@ -91,7 +93,7 @@ export default async function Learn({
   // together. The certificate is fetched even when the course is not finished —
   // completion is only known once progress resolves, and waiting to find out would
   // cost a serial round trip on exactly the page where the panel matters.
-  const [progress, certificate] = view.enrollmentId
+  const [progress, certificate, confidence] = view.enrollmentId
     ? await Promise.all([
         getCourseProgress(view.enrollmentId, course.id),
         db
@@ -103,11 +105,13 @@ export default async function Learn({
           .where(eq(certificates.enrollmentId, view.enrollmentId))
           .limit(1)
           .then((r) => r[0] ?? null),
+        getConfidenceState(view.enrollmentId),
       ])
     : [
         previewProgress(
           lessonRows.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes })),
         ),
+        null,
         null,
       ];
 
@@ -177,7 +181,11 @@ export default async function Learn({
             issuedAt={certificate?.issuedAt ?? null}
             reviewHref={resumeLesson ? `/learn/${courseSlug}/${resumeLesson.id}` : null}
             inviteHref={`/courses/${courseSlug}`}
-            confidenceAction={recordCourseConfidence.bind(null, view.enrollmentId, course.id)}
+            confidenceAction={
+              confidence?.outcome
+                ? null
+                : recordCourseConfidence.bind(null, view.enrollmentId, course.id, 'outcome')
+            }
           />
         </div>
       ) : (
@@ -201,6 +209,20 @@ export default async function Learn({
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Course-start confidence BASELINE — the denominator for uplift. Shown once,
+          near the beginning, and never after completion (the outcome question takes
+          over). Voluntary; captures a starting point, no follow-up, never blocks. */}
+      {view.enrollmentId && confidence && !confidence.baseline && !progress.isComplete && (
+        <div className="mt-6 rounded-(--radius-card) border border-border px-5 py-4">
+          <ConfidenceCheck
+            prompt="Before you start — how confident are you installing QwickBuild today?"
+            helpText="Optional. There are no wrong answers — this just helps us see how the training helps."
+            action={recordCourseConfidence.bind(null, view.enrollmentId, course.id, 'baseline')}
+            ackText="Thanks — that gives us a starting point."
+          />
+        </div>
       )}
 
       <div className="mt-10 space-y-10">
