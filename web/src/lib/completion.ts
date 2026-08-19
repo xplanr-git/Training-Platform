@@ -4,9 +4,12 @@ import {
   audited,
   eq,
   and,
+  asc,
   enrollments,
   certificates,
   courses,
+  sections,
+  lessons,
   tenants,
   users,
   memberships,
@@ -15,6 +18,7 @@ import { advanceTier } from '@/lib/connect-roles';
 import { getCourseProgress } from '@/lib/progress';
 import { absoluteUrl } from '@/lib/absolute-url';
 import { buildCredential } from '@/lib/certificate';
+import { buildTrainingRecordSnapshot } from '@/lib/training-record';
 import { sendCertificateEmail } from '@/lib/email';
 
 /**
@@ -68,6 +72,33 @@ export async function finalizeCourseCompletion(opts: {
     .limit(1);
   if (!meta) return;
 
+  // Immutable completion-snapshot inputs: the ordered curriculum AS IT EXISTS
+  // now, at the moment of completion. Read-only, so fetched outside the write
+  // transaction below. The snapshot (persisted into the credential JSON) is the
+  // authoritative historical record — the Training Record renders from it, never
+  // from the live course, so later content edits cannot rewrite what a learner
+  // actually completed. See lib/training-record.ts.
+  const sectionRows = await db
+    .select({
+      id: sections.id,
+      title: sections.title,
+      criticalCompetency: sections.criticalCompetency,
+    })
+    .from(sections)
+    .where(eq(sections.courseId, courseId))
+    .orderBy(asc(sections.position));
+  const lessonRows = await db
+    .select({
+      id: lessons.id,
+      sectionId: lessons.sectionId,
+      title: lessons.title,
+      type: lessons.type,
+      position: lessons.position,
+    })
+    .from(lessons)
+    .where(eq(lessons.courseId, courseId))
+    .orderBy(asc(lessons.position));
+
   // Connect tier alignment: completing a course that confers a tier advances the
   // learner's membership tier (same group, upward only).
   const [mem] = await db
@@ -84,6 +115,25 @@ export async function finalizeCourseCompletion(opts: {
   // persisted into the credential JSON as its `id`, so a dev-issued certificate
   // would otherwise carry a permanently unreachable identifier.
   const verifyUrl = absoluteUrl(`/verify/${code}`);
+
+  // Build the immutable training-record snapshot from the curriculum as it exists
+  // at completion. requiredChecksPassed defaults to true: reaching 100% already
+  // implies every critical check passed (a critical check only completes on a
+  // critical pass — see competency.ts).
+  const trainingRecord = buildTrainingRecordSnapshot({
+    course: { id: courseId, name: meta.courseTitle },
+    certificateId: code,
+    completedAt: issuedAt.toISOString(),
+    topics: sectionRows.map((s) => ({
+      id: s.id,
+      title: s.title,
+      criticalCompetency: s.criticalCompetency,
+      items: lessonRows
+        .filter((l) => l.sectionId === s.id)
+        .sort((a, b) => a.position - b.position)
+        .map((l) => ({ id: l.id, title: l.title, type: l.type })),
+    })),
+  });
 
   let certIssued = false;
 
@@ -125,15 +175,19 @@ export async function finalizeCourseCompletion(opts: {
           templateId: meta.certificateTemplateId ?? null,
           verificationCode: code,
           issuedAt,
-          credential: buildCredential({
-            verificationCode: code,
-            learnerName: meta.learnerName,
-            learnerEmail: meta.learnerEmail,
-            courseTitle: meta.courseTitle,
-            tenantName: meta.tenantName,
-            issuedAt: issuedAt.toISOString(),
-            verifyUrl,
-          }),
+          credential: {
+            ...buildCredential({
+              verificationCode: code,
+              learnerName: meta.learnerName,
+              learnerEmail: meta.learnerEmail,
+              courseTitle: meta.courseTitle,
+              tenantName: meta.tenantName,
+              issuedAt: issuedAt.toISOString(),
+              verifyUrl,
+            }),
+            // Immutable historical record of the curriculum completed at issue.
+            trainingRecord,
+          },
         });
         certIssued = true;
         await audited(tx, {
