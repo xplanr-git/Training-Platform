@@ -123,6 +123,24 @@ export default async function Learn({
   // Null once the course is complete (nothing is "current").
   const currentSectionId = progress.isComplete ? null : (resumeLesson?.sectionId ?? null);
 
+  // Topic metadata string (count + estimated duration) and the completion split:
+  // fully-done topics collapse into one disclosure; the rest stay open in order.
+  const topicMeta = (id: string) => {
+    const m = sectionMeta.get(id) ?? { count: 0, minutes: null, partial: false };
+    return (
+      `${m.count} ${m.count === 1 ? 'lesson' : 'lessons'}` +
+      (m.minutes != null
+        ? ` · ${m.partial ? 'at least' : 'about'} ${formatMinutes(m.minutes)}`
+        : '')
+    );
+  };
+  const isSectionDone = (id: string) => {
+    const items = bySection.get(id) ?? [];
+    return items.length > 0 && items.every((l) => progress.completed.has(l.id));
+  };
+  const doneSections = sectionRows.filter((s) => isSectionDone(s.id));
+  const activeSections = sectionRows.filter((s) => !isSectionDone(s.id));
+
   const lessonsLeft = progress.total - progress.done;
   const resumeLabel =
     progress.done === 0
@@ -189,91 +207,90 @@ export default async function Learn({
             end — you will be able to start as soon as lessons are added.
           </EmptyState>
         )}
-        {sectionRows.map((s) => {
-          const meta = sectionMeta.get(s.id) ?? { count: 0, minutes: null, partial: false };
-          const items = bySection.get(s.id) ?? [];
-          const isDone = items.length > 0 && items.every((l) => progress.completed.has(l.id));
-          const isCurrent = s.id === currentSectionId;
-          const metaText =
-            `${meta.count} ${meta.count === 1 ? 'lesson' : 'lessons'}` +
-            (meta.minutes != null
-              ? ` · ${meta.partial ? 'at least' : 'about'} ${formatMinutes(meta.minutes)}`
-              : '');
 
-          // The topic's lessons — text-led, freely navigable. Borderless on the
-          // shell (a white card on #FCFCFB is noise — DS §4b); light row dividers
-          // separate, section whitespace groups.
-          const lessonList = (
-            <ul className="divide-y divide-border">
-              {items.map((l) => {
-                const Icon = LESSON_ICON[l.type] ?? BookOpen;
-                const lDone = progress.completed.has(l.id);
+        {/* Completed topics compress into ONE disclosure so the eye lands on the
+            current + remaining work. Free navigation is preserved — each row
+            links into that topic. Chevron points right, rotates down when open. */}
+        {doneSections.length > 0 && (
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-3 py-1.5">
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-90" />
+              <Check className="text-status-green h-4 w-4 shrink-0" />
+              <span className="text-h3">{doneSections.length} topics completed</span>
+            </summary>
+            <ul className="mt-3 space-y-3 pl-7">
+              {doneSections.map((s) => {
+                const first = (bySection.get(s.id) ?? [])[0];
                 return (
-                  <li key={l.id}>
+                  <li key={s.id}>
                     <Link
-                      href={`/learn/${courseSlug}/${l.id}`}
-                      className="flex items-center gap-3 rounded-sm px-2 py-3 text-sm transition-colors hover:bg-surface-muted"
+                      href={first ? `/learn/${courseSlug}/${first.id}` : `/learn/${courseSlug}`}
+                      className="flex flex-col gap-0.5 hover:underline sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
                     >
-                      {lDone ? (
-                        <Check className="text-status-green h-4 w-4 shrink-0" />
-                      ) : (
-                        <Icon className="h-4 w-4 shrink-0 text-muted" />
-                      )}
-                      <span className="flex-1 truncate">{l.title || 'Untitled lesson'}</span>
-                      {l.estimatedMinutes != null && (
-                        <span className="text-foreground-2 shrink-0 text-xs tabular-nums">
-                          {l.estimatedMinutes} min
-                        </span>
-                      )}
-                      {lDone && <span className="text-status-green text-xs">Done</span>}
+                      <span className="text-sm font-medium">{s.title || 'Section'}</span>
+                      <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
+                        {topicMeta(s.id)}
+                      </span>
                     </Link>
                   </li>
                 );
               })}
-              {items.length === 0 && (
-                <li>
-                  <EmptyRow className="py-5" title="No lessons in this section yet" />
-                </li>
-              )}
             </ul>
-          );
+          </details>
+        )}
 
-          // Completed topics compress into a disclosure so the eye lands on the
-          // current + remaining work — but stay one click from every lesson
-          // (free navigation preserved). Chevron points right, rotates down open.
-          if (isDone) {
-            return (
-              <details key={s.id} className="group">
-                <summary className="flex cursor-pointer list-none items-center gap-3 py-1">
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-90" />
-                  <Check className="text-status-green h-4 w-4 shrink-0" />
-                  <span className="text-h3 flex-1 truncate">{s.title || 'Section'}</span>
-                  <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
-                    {metaText} · Complete
-                  </span>
-                </summary>
-                <div className="mt-1 pl-7">{lessonList}</div>
-              </details>
-            );
-          }
-
-          // Current topic: an ink LEFT MARKER (state via marker, not a card —
-          // geometry stays square). Remaining topics: neutral, scannable.
+        {/* Current topic gets an ink LEFT MARKER (state via marker, square — not
+            a card); remaining topics are neutral and scannable. Header stacks on a
+            phone so a long title never collides with the count/duration. */}
+        {activeSections.map((s) => {
+          const items = bySection.get(s.id) ?? [];
+          const isCurrent = s.id === currentSectionId;
           return (
             <section
               key={s.id}
               className={isCurrent ? 'border-l-2 border-foreground pl-4' : undefined}
             >
-              <div className="mb-2 flex items-baseline justify-between gap-3">
+              <div className="mb-2 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                 <div className="min-w-0">
                   <h2 className="text-h2">{s.title || 'Section'}</h2>
                   {isCurrent && <p className="text-foreground-2 mt-0.5 text-meta">In progress</p>}
                 </div>
-                <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
-                  {metaText}
+                <span className="text-foreground-2 shrink-0 text-meta tabular-nums sm:text-right">
+                  {topicMeta(s.id)}
                 </span>
               </div>
-              {lessonList}
+              <ul className="divide-y divide-border">
+                {items.map((l) => {
+                  const Icon = LESSON_ICON[l.type] ?? BookOpen;
+                  const lDone = progress.completed.has(l.id);
+                  return (
+                    <li key={l.id}>
+                      <Link
+                        href={`/learn/${courseSlug}/${l.id}`}
+                        className="flex items-center gap-3 rounded-sm px-2 py-3 text-sm transition-colors hover:bg-surface-muted"
+                      >
+                        {lDone ? (
+                          <Check className="text-status-green h-4 w-4 shrink-0" />
+                        ) : (
+                          <Icon className="h-4 w-4 shrink-0 text-muted" />
+                        )}
+                        <span className="flex-1 truncate">{l.title || 'Untitled lesson'}</span>
+                        {l.estimatedMinutes != null && (
+                          <span className="text-foreground-2 shrink-0 text-xs tabular-nums">
+                            {l.estimatedMinutes} min
+                          </span>
+                        )}
+                        {lDone && <span className="text-status-green text-xs">Done</span>}
+                      </Link>
+                    </li>
+                  );
+                })}
+                {items.length === 0 && (
+                  <li>
+                    <EmptyRow className="py-5" title="No lessons in this section yet" />
+                  </li>
+                )}
+              </ul>
             </section>
           );
         })}
