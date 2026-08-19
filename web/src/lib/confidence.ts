@@ -62,7 +62,14 @@ export const CAPABILITIES: Capability[] = [
     label: 'Structural connections',
     prompt:
       'How confident are you selecting and installing the correct brackets for the joist and beam connections on a real project?',
-    sections: ['EP 2 — Qwickbuild Most Common Brackets', 'EP 3 — A200 Range'],
+    // A300 (EP 4) is the same brackets in the A110-profile variants — the same
+    // capability, not a distinct one — so it folds in here rather than earning a
+    // seventh checkpoint. This also moves the checkpoint to after the A300 check.
+    sections: [
+      'EP 2 — Qwickbuild Most Common Brackets',
+      'EP 3 — A200 Range',
+      'EP 4 — A300 Range (for A110)',
+    ],
   },
   {
     key: 'deck_clips',
@@ -73,9 +80,10 @@ export const CAPABILITIES: Capability[] = [
   },
   {
     key: 'fasteners',
-    label: 'Fasteners & bolts',
-    prompt:
-      'How confident are you choosing and using the correct fasteners and bolts on a real project?',
+    label: 'Fasteners',
+    // Kept general: not every project uses bolts (they're rare on QwickBuild
+    // decks), so name the category — "fasteners" — rather than list components.
+    prompt: 'How confident are you choosing and using the correct fasteners on a real project?',
     sections: ['EP 5 — A400 Fasteners', 'EP 7 — A600 Screws for Hardwood'],
   },
   {
@@ -103,10 +111,14 @@ type SectionLite = { id: string; position: number; title: string };
 type LessonLite = { id: string; sectionId: string; type: string };
 
 /**
- * The lesson at which a capability's confidence question should appear: the last
- * NON-quiz lesson of the highest-positioned section the capability contains. Quiz
- * pages stay clean (the check is not the place to ask how you feel). Returns null
- * if the course has none of the capability's sections.
+ * The lesson at which a capability's confidence question appears: the LAST lesson
+ * of the highest-positioned section the capability contains — i.e. after the
+ * learner has both learned AND been tested. For five of six capabilities that
+ * last lesson is the terminal knowledge check, so confidence lands on the check
+ * page once it's answered ("just tested — how do you feel about doing it for
+ * real?"). For turf, whose final section ends on a video with its checks earlier,
+ * it lands on that last video — still after every turf check. Returns null if the
+ * course has none of the capability's sections.
  */
 export function triggerLessonId(
   cap: Capability,
@@ -119,9 +131,7 @@ export function triggerLessonId(
   const last = present[0];
   if (!last) return null;
   const inSection = orderedLessons.filter((l) => l.sectionId === last.id);
-  const nonQuiz = inSection.filter((l) => l.type !== 'quiz');
-  const pick = (nonQuiz.length ? nonQuiz : inSection).at(-1);
-  return pick?.id ?? null;
+  return inSection.at(-1)?.id ?? null;
 }
 
 /** capabilityKey → its trigger lessonId, for the whole course. */

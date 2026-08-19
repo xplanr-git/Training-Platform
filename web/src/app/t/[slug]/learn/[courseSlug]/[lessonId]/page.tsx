@@ -164,19 +164,15 @@ export default async function LessonPlayer({
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
   const isQuiz = lesson.type === 'quiz';
 
-  // Topic confidence: this lesson ends a practical capability (e.g. structural
-  // connections, fasteners). Ask once, here — never per lesson. Skip in
-  // read-only/preview, and skip if already answered (never re-ask). The DB read
-  // is guarded so only the handful of trigger lessons pay for it.
+  // Does this lesson end a practical capability (structural, fasteners, …)? The
+  // trigger is the capability's LAST lesson — usually its terminal knowledge
+  // check — so confidence is asked only after the learner has learned AND been
+  // tested. Skip in read-only/preview. Pure computation; the answered-state DB
+  // read is deferred until we know this and that the lesson is complete.
   const capabilityHere =
     enrollmentId && !readOnly
       ? (capabilityTriggers(sectionRows, ordered).find((c) => c.lessonId === lesson.id) ?? null)
       : null;
-  const capabilityAnswered =
-    capabilityHere && enrollmentId
-      ? (await getConfidenceState(enrollmentId)).topics.has(capabilityHere.key)
-      : false;
-  const showTopicConfidence = !!capabilityHere && !capabilityAnswered;
   const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
   const hosted = hostedVideoFromContent(content);
 
@@ -230,6 +226,14 @@ export default async function LessonPlayer({
       : Promise.resolve([] as Array<{ maxPos: string | null }>),
   ]);
   const done = progress.completed.has(lesson.id);
+
+  // Show the capability confidence checkpoint only once this lesson is COMPLETE
+  // (a quiz passed / the last video finished) — never mid-check — and never twice.
+  const capabilityAnswered =
+    capabilityHere && enrollmentId && done
+      ? (await getConfidenceState(enrollmentId)).topics.has(capabilityHere.key)
+      : false;
+  const showTopicConfidence = !!capabilityHere && done && !capabilityAnswered;
 
   // Questions need the quiz id, so they are the one genuinely serial follow-up.
   const quiz = quizRows[0] ?? null;
@@ -670,14 +674,15 @@ export default async function LessonPlayer({
         )}
       </div>
 
-      {/* Private lesson feedback — always available; proactively opened only on a
-          substantive lesson (a video of ~3 min or more), never on the check or in
-          a preview / view-as. */}
+      {/* Private lesson feedback — quiet and voluntary: always the collapsed
+          "Give feedback" affordance, never auto-opened. Auto-expanding on every
+          longer video turned an optional diagnostic into a repeated prompt across
+          the course (survey fatigue); the learner opens it when they have
+          something to say. Never on the check or in a preview / view-as. */}
       {enrollmentId && !readOnly && !isQuiz && (
         <div className="mt-8 space-y-6 border-t border-border pt-6">
           <LessonFeedback
             action={recordLessonFeedback.bind(null, enrollmentId, course.id, lesson.id)}
-            prompt={lesson.type === 'video' && (lesson.estimatedMinutes ?? 0) >= 3}
           />
           {/* Innovation capture — a separate, quieter affordance. Kept apart from
               the lesson diagnostic so a real-world idea is never mistaken for a
