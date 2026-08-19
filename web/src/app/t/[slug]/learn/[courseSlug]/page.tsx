@@ -67,6 +67,25 @@ export default async function Learn({
     bySection.set(l.sectionId, arr);
   }
 
+  // Per-topic timing for the map header: lesson count + estimated duration.
+  // Mirrors the course-level partial rule — some lessons carry no estimate, so
+  // the figure is "at least" rather than "about" when only some are estimated.
+  const sectionMeta = new Map<
+    string,
+    { count: number; minutes: number | null; partial: boolean }
+  >();
+  for (const s of sectionRows) {
+    const items = bySection.get(s.id) ?? [];
+    const est = items
+      .map((l) => l.estimatedMinutes)
+      .filter((m): m is number => typeof m === 'number' && Number.isFinite(m) && m > 0);
+    sectionMeta.set(s.id, {
+      count: items.length,
+      minutes: est.length ? est.reduce((a, b) => a + b, 0) : null,
+      partial: est.length > 0 && est.length < items.length,
+    });
+  }
+
   // Progress and the certificate both key off enrollmentId alone, so they go
   // together. The certificate is fetched even when the course is not finished —
   // completion is only known once progress resolves, and waiting to find out would
@@ -160,52 +179,65 @@ export default async function Learn({
         </Card>
       )}
 
-      <div className="mt-8 space-y-5">
+      <div className="mt-10 space-y-10">
         {sectionRows.length === 0 && (
           <EmptyState title="No lessons here yet">
             You are enrolled, but this course has no content published yet. Nothing is wrong on your
             end — you will be able to start as soon as lessons are added.
           </EmptyState>
         )}
-        {sectionRows.map((s) => (
-          <section key={s.id}>
-            <h2 className="mb-2 text-h2">{s.title || 'Section'}</h2>
-            <Card className="overflow-hidden p-0">
+        {sectionRows.map((s) => {
+          const meta = sectionMeta.get(s.id) ?? { count: 0, minutes: null, partial: false };
+          const items = bySection.get(s.id) ?? [];
+          return (
+            <section key={s.id}>
+              {/* Topic header: title + count/duration. Borderless on the shell
+                  (a white card on #FCFCFB is noise — DS §4b); the light row
+                  dividers do the separating, section whitespace does the grouping. */}
+              <div className="mb-2 flex items-baseline justify-between gap-3">
+                <h2 className="text-h2">{s.title || 'Section'}</h2>
+                <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
+                  {meta.count} {meta.count === 1 ? 'lesson' : 'lessons'}
+                  {meta.minutes != null
+                    ? ` · ${meta.partial ? 'at least' : 'about'} ${formatMinutes(meta.minutes)}`
+                    : ''}
+                </span>
+              </div>
               <ul className="divide-y divide-border">
-                {(bySection.get(s.id) ?? []).map((l) => {
+                {items.map((l) => {
                   const Icon = LESSON_ICON[l.type] ?? BookOpen;
                   const lDone = progress.completed.has(l.id);
                   return (
                     <li key={l.id}>
                       <Link
                         href={`/learn/${courseSlug}/${l.id}`}
-                        className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-muted"
+                        className="flex items-center gap-3 rounded-sm px-2 py-3 text-sm transition-colors hover:bg-surface-muted"
                       >
                         {lDone ? (
-                          <Check className="h-4 w-4 shrink-0 text-status-green" />
+                          <Check className="text-status-green h-4 w-4 shrink-0" />
                         ) : (
                           <Icon className="h-4 w-4 shrink-0 text-muted" />
                         )}
                         <span className="flex-1 truncate">{l.title || 'Untitled lesson'}</span>
                         {l.estimatedMinutes != null && (
-                          <span className="shrink-0 text-xs text-muted tabular-nums">
+                          <span className="text-foreground-2 shrink-0 text-xs tabular-nums">
                             {l.estimatedMinutes} min
                           </span>
                         )}
-                        {lDone && <span className="text-xs text-status-green">Done</span>}
+                        {lDone && <span className="text-status-green text-xs">Done</span>}
                       </Link>
                     </li>
                   );
                 })}
-                {(bySection.get(s.id) ?? []).length === 0 && (
+                {items.length === 0 && (
                   <li>
                     <EmptyRow className="py-5" title="No lessons in this section yet" />
                   </li>
                 )}
               </ul>
-            </Card>
-          </section>
-        ))}
+            </section>
+          );
+        })}
       </div>
     </main>
   );
