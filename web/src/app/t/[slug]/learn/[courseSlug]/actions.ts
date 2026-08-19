@@ -253,6 +253,33 @@ export async function markSectionReviewed(
 }
 
 /**
+ * Grades ONE question for the stepped knowledge check — formative and read-only:
+ * it records nothing and never sends the answer key to the client, so a
+ * warranty-critical check cannot be passed by reading the page source. The
+ * learner only learns whether the selection they SUBMITTED was correct, and the
+ * client locks that question afterwards. The authoritative record is still
+ * submitQuizAttempt on finish.
+ */
+export async function checkQuizAnswer(
+  quizId: string,
+  questionId: string,
+  selected: number[],
+): Promise<{ isCorrect: boolean; correct: number[] }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  const [q] = await db
+    .select({ correct: quizQuestions.correct, quizId: quizQuestions.quizId })
+    .from(quizQuestions)
+    .where(and(eq(quizQuestions.id, questionId), eq(quizQuestions.tenantId, ctx.tenantId)))
+    .limit(1);
+  if (!q || q.quizId !== quizId) throw new Error(ActionError.LESSON_NOT_FOUND);
+  const correct = [...new Set((q.correct as number[]) ?? [])].sort((a, b) => a - b);
+  const sel = [...new Set(Array.isArray(selected) ? selected : [])].sort((a, b) => a - b);
+  const isCorrect = sel.length === correct.length && sel.every((v, i) => v === correct[i]);
+  return { isCorrect, correct };
+}
+
+/**
  * Grades a quiz submission server-side, stores the attempt + per-question
  * answers, and records the quiz lesson as completed when it passes — which can
  * complete the course.

@@ -101,10 +101,13 @@ describe('text links that act as controls have a real hit area', () => {
 
 describe('the most-tapped learner control clears the bar', () => {
   it('a quiz answer row is 44px+', () => {
-    // Measured 38px: the label wraps the input, so the row IS the target, and it was
-    // 6px short on the highest-frequency deliberate tap in the product.
+    // The option label wraps the input, so the row IS the tap target. The stepped
+    // one-question check guarantees the 44px floor with `min-h-11` on the option
+    // row directly, rather than relying on padding measuring out to 44px.
     const src = code('src/components/quiz-form.tsx');
-    expect(src).toMatch(/rounded-md border border-border px-3 py-3 text-sm/);
+    expect(src, 'the answer option row must guarantee a 44px tap target').toMatch(
+      /min-h-11[^\n]*border[^\n]*px-4 py-3/,
+    );
   });
 });
 

@@ -5,7 +5,16 @@ import { VideoUnavailable } from '@/components/video-unavailable';
 import { EmptyState } from '@/components/empty-state';
 import { Callout } from '@/components/ui/callout';
 import { redirect, notFound } from 'next/navigation';
-import { Video, FileText, HelpCircle, BookOpen, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  Video,
+  FileText,
+  HelpCircle,
+  BookOpen,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
+} from 'lucide-react';
 import {
   db,
   eq,
@@ -31,7 +40,12 @@ import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
 import { isCriticalCheck } from '@/lib/competency';
-import { markLessonComplete, submitQuizAttempt, markSectionReviewed } from '../actions';
+import {
+  markLessonComplete,
+  submitQuizAttempt,
+  markSectionReviewed,
+  checkQuizAnswer,
+} from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { BunnyVideoPlayer } from '@/components/bunny-video-player';
@@ -372,21 +386,12 @@ export default async function LessonPlayer({
           ))}
         {isQuiz && (
           <div>
-            {lastAttempt && (
-              <p
-                className={cn(
-                  'mb-5 rounded-(--radius-card) border px-4 py-3 text-sm',
-                  lastAttempt.passed
-                    ? 'border-status-green/30 bg-status-green-bg text-status-green'
-                    : 'border-status-amber/30 bg-status-amber-bg text-status-amber',
-                )}
-              >
-                You scored {Math.round(Number(lastAttempt.score ?? 0))}%.{' '}
-                {lastAttempt.passed
-                  ? 'Passed.'
-                  : isCriticalQuiz
-                    ? 'Not quite — review this section, then try the check again.'
-                    : 'Not passed — try again.'}
+            {/* A non-critical retry: a plain, neutral nudge — no coloured banner,
+                no score exposure. The passed state and the needs-review path have
+                their own treatments below. */}
+            {lastAttempt && !lastAttempt.passed && !done && !reviewNeeded && (
+              <p className="text-foreground-2 mb-5 text-sm">
+                That attempt didn’t pass — have another go.
               </p>
             )}
             {done ? (
@@ -419,34 +424,50 @@ export default async function LessonPlayer({
                 </ol>
               </div>
             ) : reviewNeeded ? (
-              <div className="flex flex-col gap-3">
-                <p className="text-sm text-foreground-2">
-                  This is a warranty-critical check. Review this section, then try the knowledge
-                  check again.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Button asChild variant="outline">
-                    <Link href={`/learn/${courseSlug}/${sectionFirstLessonId}`}>
-                      Review this section
-                    </Link>
-                  </Button>
-                  <NavForm
-                    action={markSectionReviewed.bind(
-                      null,
-                      slug,
-                      courseSlug,
-                      enrollmentId,
-                      lesson.sectionId,
-                      lesson.id,
-                    )}
-                  >
-                    <Button type="submit">I&apos;ve reviewed — try the check again</Button>
-                  </NavForm>
+              // NEUTRAL — a normal controlled learning path, not an error/warning.
+              // Plain language (no "warranty-critical"/remediation); Review is the
+              // primary action; the retry only unlocks once the section is reviewed.
+              <div className="flex items-start gap-3">
+                <RotateCcw aria-hidden="true" className="text-foreground mt-0.5 h-5 w-5 shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="text-h3">Review this section before trying again</h3>
+                  <p className="text-foreground-2 mt-1.5 text-sm">
+                    One of your answers about {topicTitle ?? 'this section'} wasn’t correct. Review
+                    this short section, then try the knowledge check again.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Button asChild>
+                      <Link href={`/learn/${courseSlug}/${sectionFirstLessonId}`}>
+                        Review {topicTitle ?? 'this section'}
+                      </Link>
+                    </Button>
+                    <NavForm
+                      action={markSectionReviewed.bind(
+                        null,
+                        slug,
+                        courseSlug,
+                        enrollmentId,
+                        lesson.sectionId,
+                        lesson.id,
+                      )}
+                    >
+                      <Button type="submit" variant="outline">
+                        I’ve reviewed — back to check
+                      </Button>
+                    </NavForm>
+                  </div>
                 </div>
               </div>
             ) : (
               <QuizForm
-                action={submitQuizAttempt.bind(
+                questions={questions.map((q) => ({
+                  id: q.id,
+                  prompt: q.prompt,
+                  type: q.type,
+                  options: q.options as string[],
+                }))}
+                checkAction={checkQuizAnswer.bind(null, quiz!.id)}
+                submitAction={submitQuizAttempt.bind(
                   null,
                   slug,
                   courseSlug,
@@ -455,12 +476,6 @@ export default async function LessonPlayer({
                   lesson.id,
                   quiz!.id,
                 )}
-                questions={questions.map((q) => ({
-                  id: q.id,
-                  prompt: q.prompt,
-                  type: q.type,
-                  options: q.options as string[],
-                }))}
               />
             )}
           </div>
