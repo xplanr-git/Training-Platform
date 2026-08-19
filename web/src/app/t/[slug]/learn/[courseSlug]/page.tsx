@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Callout } from '@/components/ui/callout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { recordCourseConfidence } from './actions';
 
 const LESSON_ICON: Record<string, typeof Video> = {
   video: Video,
@@ -175,6 +176,8 @@ export default async function Learn({
             verificationCode={certificate?.verificationCode ?? null}
             issuedAt={certificate?.issuedAt ?? null}
             reviewHref={resumeLesson ? `/learn/${courseSlug}/${resumeLesson.id}` : null}
+            inviteHref={`/courses/${courseSlug}`}
+            confidenceAction={recordCourseConfidence.bind(null, view.enrollmentId, course.id)}
           />
         </div>
       ) : (

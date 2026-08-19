@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ShareButton } from '@/components/share-button';
+import { CourseConfidence } from '@/components/course-confidence';
 
 /**
  * What the learner sees the moment they finish a course.
@@ -34,12 +36,27 @@ export function CourseComplete({
   verificationCode,
   issuedAt,
   reviewHref,
+  inviteHref = null,
+  confidenceAction = null,
 }: {
   courseTitle: string;
   /** Null when the course is complete but no certificate row exists. */
   verificationCode: string | null;
   issuedAt: Date | null;
   reviewHref: string | null;
+  /** Public course/landing path to share when inviting a colleague. */
+  inviteHref?: string | null;
+  /**
+   * Bound server action for the post-training confidence question. Optional so
+   * the panel still renders (e.g. in preview) without it. NEVER gates anything —
+   * the course is already complete when this shows.
+   */
+  confidenceAction?:
+    | ((input: {
+        level: 'very' | 'fairly' | 'more_guidance';
+        comment: string;
+      }) => Promise<{ ok: true } | { error: string }>)
+    | null;
 }) {
   return (
     <section
@@ -120,6 +137,33 @@ export function CourseComplete({
               ) : null}
             </>
           )}
+
+          {/* Outcome check — readiness, not satisfaction. Voluntary, and it can
+              never change the result the learner just earned. */}
+          {confidenceAction ? (
+            <div className="mt-5 border-t border-border pt-4">
+              <CourseConfidence action={confidenceAction} />
+            </div>
+          ) : null}
+
+          {/* Referral — the strongest proactive moment (§16), kept subordinate to
+              the credential. Native share / copy link; no incentive. */}
+          {inviteHref ? (
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="text-sm text-foreground-2">
+                Know another installer who’d find this useful?
+              </p>
+              <div className="mt-2.5">
+                <ShareButton
+                  path={inviteHref}
+                  title="Outdure Academy"
+                  text="I’ve been doing the Outdure Installer Training — thought this might be useful for you."
+                  label="Invite a colleague"
+                  variant="action"
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

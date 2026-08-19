@@ -514,3 +514,102 @@ export async function submitQuizAttempt(
     redirectTo: `/learn/${courseSlug}/${lessonId}`,
   };
 }
+
+/**
+ * Private learner feedback on the append-only progress_events log — new event
+ * types, no schema change. Learners never see each other's feedback; it goes to
+ * Outdure. Three DISTINCT signals, each captured so it can later answer a real
+ * Outdure decision (not a "did you like it" sentiment score):
+ *
+ *  - `lesson_feedback` — diagnostic responses about a lesson (clear / learnt
+ *    something / already knew / wasn't clear), multi-select, + an optional
+ *    comment naming WHAT to explain better.
+ *  - `installer_idea` — a real-world product/installation/training idea.
+ *  - `course_confidence` — practical confidence after the whole training.
+ *
+ * Content-version note: lessonId + courseId interpret feedback while content is
+ * stable; a lesson content-version reference is a future dependency for analytics
+ * across content revisions (no curriculum-versioning model exists yet — the
+ * completion snapshot is the only versioned record).
+ */
+function cleanList(v: unknown, max: number, len: number): string[] {
+  return Array.isArray(v) ? v.slice(0, max).map((r) => String(r).slice(0, len)) : [];
+}
+function cleanText(v: unknown, len: number): string {
+  return String(v ?? '')
+    .trim()
+    .slice(0, len);
+}
+
+export async function recordLessonFeedback(
+  enrollmentId: string,
+  courseId: string,
+  lessonId: string,
+  input: { responses: string[]; comment: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  const responses = cleanList(input?.responses, 8, 64);
+  const comment = cleanText(input?.comment, 2000);
+  if (!responses.length && !comment) return { error: 'Pick at least one, or add a note.' };
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId,
+    eventType: 'lesson_feedback',
+    payload: { responses, comment, courseId },
+  });
+  return { ok: true };
+}
+
+/** A real-world installer idea — distinct from lesson feedback (§ innovation). */
+export async function recordInstallerIdea(
+  enrollmentId: string,
+  courseId: string,
+  lessonId: string | null,
+  input: { idea: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  const idea = cleanText(input?.idea, 4000);
+  if (!idea) return { error: 'Add your idea first.' };
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: lessonId ?? null,
+    eventType: 'installer_idea',
+    payload: { idea, courseId },
+  });
+  return { ok: true };
+}
+
+/** Post-training practical confidence — captured once at completion. */
+export async function recordCourseConfidence(
+  enrollmentId: string,
+  courseId: string,
+  input: { level: 'very' | 'fairly' | 'more_guidance'; comment: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  const level = (['very', 'fairly', 'more_guidance'] as const).includes(
+    input?.level as 'very' | 'fairly' | 'more_guidance',
+  )
+    ? input.level
+    : null;
+  if (!level) return { error: 'Choose an option.' };
+  const comment = cleanText(input?.comment, 2000);
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: null,
+    eventType: 'course_confidence',
+    payload: { level, comment, courseId },
+  });
+  return { ok: true };
+}

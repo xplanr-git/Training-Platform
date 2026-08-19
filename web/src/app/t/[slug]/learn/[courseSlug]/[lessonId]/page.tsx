@@ -45,10 +45,15 @@ import {
   submitQuizAttempt,
   markSectionReviewed,
   checkQuizAnswer,
+  recordLessonFeedback,
+  recordInstallerIdea,
 } from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { BunnyVideoPlayer } from '@/components/bunny-video-player';
+import { LessonFeedback } from '@/components/lesson-feedback';
+import { InstallerIdea } from '@/components/installer-idea';
+import { ShareButton } from '@/components/share-button';
 import { hostedVideoFromContent } from '@/lib/video';
 import { isVideoFault } from '@/lib/video-availability';
 import { resolveVideoSource } from '@/lib/video-source';
@@ -74,10 +79,13 @@ function loadQuestions(quizId: string) {
 
 export default async function LessonPlayer({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; courseSlug: string; lessonId: string }>;
+  searchParams: Promise<{ review?: string }>;
 }) {
   const { slug, courseSlug, lessonId } = await params;
+  const { review: reviewForLessonId } = await searchParams;
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect(`/login?next=${encodeURIComponent(`/learn/${courseSlug}`)}`);
 
@@ -288,8 +296,46 @@ export default async function LessonPlayer({
   const currentSection = outline.find((s) => s.id === lesson.sectionId) ?? null;
   const topicTitle = currentSection?.title ?? null;
 
+  // Review-control (§0): the learner reaches this lesson from a Needs-Review
+  // screen (?review=<quizLessonId>). The "back to the check" acknowledgment lives
+  // HERE, on the review content — not on the Needs-Review screen — so a review
+  // can't be self-asserted without actually opening the relevant section. Valid
+  // only when the review target is the quiz in THIS lesson's section.
+  const reviewTarget =
+    reviewForLessonId && enrollmentId && !readOnly
+      ? (ordered.find(
+          (l) =>
+            l.id === reviewForLessonId && l.sectionId === lesson.sectionId && l.type === 'quiz',
+        ) ?? null)
+      : null;
+
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10 sm:py-12">
+      {/* Review-control bar (§0): only reachable by opening the review lesson from
+          the Needs-Review screen. Marking reviewed lives here, on the content —
+          not a self-assert on the previous screen. */}
+      {reviewTarget && (
+        <div className="bg-sunken mb-6 flex flex-col gap-3 rounded-sm px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-foreground-2 text-sm">
+            <b className="text-foreground">Reviewing {topicTitle ?? 'this section'}</b> for the
+            knowledge check. Take a look, then head back.
+          </p>
+          <NavForm
+            action={markSectionReviewed.bind(
+              null,
+              slug,
+              courseSlug,
+              enrollmentId!,
+              lesson.sectionId,
+              reviewTarget.id,
+            )}
+          >
+            <Button type="submit" size="sm" className="shrink-0">
+              Back to the knowledge check
+            </Button>
+          </NavForm>
+        </div>
+      )}
       {/* Course context — back navigation is its own group */}
       <BackLink href={`/learn/${courseSlug}`} className="max-w-full">
         {course.title}
@@ -435,26 +481,17 @@ export default async function LessonPlayer({
                     One of your answers about {topicTitle ?? 'this section'} wasn’t correct. Review
                     this short section, then try the knowledge check again.
                   </p>
-                  <div className="mt-4 flex flex-wrap gap-3">
+                  <div className="mt-4">
+                    {/* Review is the only path — the "reviewed" acknowledgment now
+                        lives on the review lesson itself (?review carries the check
+                        to return to), so it can't be self-asserted from here. */}
                     <Button asChild>
-                      <Link href={`/learn/${courseSlug}/${sectionFirstLessonId}`}>
+                      <Link
+                        href={`/learn/${courseSlug}/${sectionFirstLessonId}?review=${lesson.id}`}
+                      >
                         Review {topicTitle ?? 'this section'}
                       </Link>
                     </Button>
-                    <NavForm
-                      action={markSectionReviewed.bind(
-                        null,
-                        slug,
-                        courseSlug,
-                        enrollmentId,
-                        lesson.sectionId,
-                        lesson.id,
-                      )}
-                    >
-                      <Button type="submit" variant="outline">
-                        I’ve reviewed — back to check
-                      </Button>
-                    </NavForm>
                   </div>
                 </div>
               </div>
@@ -570,14 +607,43 @@ export default async function LessonPlayer({
         </section>
       )}
 
-      <div className="mt-6">
+      {/* Wider navigation + quiet utilities. Share is a tertiary text control —
+          never competing with Next / Complete / Back to check. Feedback is not
+          shown on the check itself (§10). */}
+      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
           href={`/learn/${courseSlug}`}
           className="text-foreground-2 hover:text-foreground inline-flex items-center gap-1 text-sm font-semibold transition-colors"
         >
           View all topics →
         </Link>
+        {!isQuiz && (
+          <ShareButton
+            path={`/learn/${courseSlug}/${lesson.id}`}
+            title="Outdure Installer Training"
+            text="This Outdure Installer Training lesson might be useful."
+            label="Share lesson"
+          />
+        )}
       </div>
+
+      {/* Private lesson feedback — always available; proactively opened only on a
+          substantive lesson (a video of ~3 min or more), never on the check or in
+          a preview / view-as. */}
+      {enrollmentId && !readOnly && !isQuiz && (
+        <div className="mt-8 space-y-6 border-t border-border pt-6">
+          <LessonFeedback
+            action={recordLessonFeedback.bind(null, enrollmentId, course.id, lesson.id)}
+            prompt={lesson.type === 'video' && (lesson.estimatedMinutes ?? 0) >= 3}
+          />
+          {/* Innovation capture — a separate, quieter affordance. Kept apart from
+              the lesson diagnostic so a real-world idea is never mistaken for a
+              rating, and vice versa. */}
+          <InstallerIdea
+            action={recordInstallerIdea.bind(null, enrollmentId, course.id, lesson.id)}
+          />
+        </div>
+      )}
     </main>
   );
 }
