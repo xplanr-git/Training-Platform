@@ -46,13 +46,25 @@ describe('action error sentinels are single-sourced', () => {
     expect(learn).toMatch(/ActionError\.LESSON_NOT_FOUND/);
   });
 
-  it('NavForm.friendly() matches against the constants', () => {
-    const nav = read('src/components/nav-form.tsx');
-    expect(nav).toMatch(/from '@\/lib\/action-errors'/);
+  it('friendly() matches against every constant (single-sourced in action-errors)', () => {
+    // friendly()/isFrameworkNavigation() live in action-errors alongside the
+    // sentinels so the copy and the constants cannot drift apart, and so both
+    // client forms (NavForm and QuizForm) share ONE implementation.
+    const src = read('src/lib/action-errors.ts');
+    expect(src).toMatch(/export function friendly/);
+    expect(src).toMatch(/export function isFrameworkNavigation/);
     for (const k of SENTINELS) {
-      expect(nav, `friendly must reference ActionError.${k}`).toMatch(
+      expect(src, `friendly must reference ActionError.${k}`).toMatch(
         new RegExp(`ActionError\\.${k}`),
       );
+    }
+  });
+
+  it('both client forms import the shared error helpers', () => {
+    for (const p of ['src/components/nav-form.tsx', 'src/components/quiz-form.tsx']) {
+      const src = read(p);
+      expect(src, `${p} must import from action-errors`).toMatch(/from '@\/lib\/action-errors'/);
+      expect(src, `${p} must re-throw framework navigation`).toMatch(/isFrameworkNavigation/);
     }
   });
 });

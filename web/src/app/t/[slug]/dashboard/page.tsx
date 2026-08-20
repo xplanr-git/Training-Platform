@@ -180,11 +180,9 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     isComplete: requiredEnrollment?.isComplete ?? false,
   });
   const reqAction = requiredCourse ? requirementAction(reqState, requiredCourse.slug) : null;
-  const otherCourses = withProgress.filter((r) => r.slug !== CONTRACTOR_REQUIRED_COURSE_SLUG);
 
   // Overall learner state → which orientation to lead with.
   const allComplete = withProgress.length > 0 && withProgress.every((r) => r.isComplete);
-  const nothingToShow = !showsRequirement && !otherCourses.length;
 
   // The course to CONTINUE: the required one if in progress, else the most
   // recently-started incomplete course. Resume to its first incomplete lesson so
@@ -206,6 +204,15 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
       ? `/learn/${continueCourse.slug}/${nextLesson.id}`
       : `/learn/${continueCourse.slug}`;
   }
+
+  // The "other courses" list excludes the required course (it has its own panel)
+  // AND the course shown in the Continue hero, so a resumed non-required course
+  // never appears twice on Home.
+  const heroCourseSlug = continueCourse && resumeHref ? continueCourse.slug : null;
+  const otherCourses = withProgress.filter(
+    (r) => r.slug !== CONTRACTOR_REQUIRED_COURSE_SLUG && r.slug !== heroCourseSlug,
+  );
+  const nothingToShow = !showsRequirement && !otherCourses.length && !heroCourseSlug;
 
   const showPathway = showsInstallerPathway(audience);
   const tenantName = tenant?.name ?? 'Outdure Academy';

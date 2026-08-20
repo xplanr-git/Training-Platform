@@ -59,7 +59,12 @@ import { ShareButton } from '@/components/share-button';
 import { capabilityTriggers } from '@/lib/confidence';
 import { FOLLOWUP_REASONS } from '@/lib/confidence';
 import { getConfidenceState } from '@/lib/confidence-state';
-import { deriveLearningItems, type LessonRow, type LearningItem } from '@/lib/learning-units';
+import {
+  deriveLearningItems,
+  checkLessonHeading,
+  type LessonRow,
+  type LearningItem,
+} from '@/lib/learning-units';
 import { hostedVideoFromContent } from '@/lib/video';
 import { isVideoFault } from '@/lib/video-availability';
 import { resolveVideoSource } from '@/lib/video-source';
@@ -411,7 +416,7 @@ export default async function LessonPlayer({
           <span className="bg-surface-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-muted">
             <HeaderIcon className="h-4 w-4" />
           </span>
-          <h1 className="text-2xl">{lesson.title}</h1>
+          <h1 className="text-2xl">{isQuiz ? checkLessonHeading(lesson.title) : lesson.title}</h1>
         </div>
         {(isPreview || readOnly) && (
           <Callout tone="amber" className="mt-2 px-3 py-2 text-meta">
@@ -501,10 +506,10 @@ export default async function LessonPlayer({
             )}
             {done ? (
               <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
-                <Check className="h-4 w-4" /> You have passed this quiz.
+                <Check className="h-4 w-4" /> You have passed this knowledge check.
               </p>
             ) : questions.length === 0 ? (
-              <EmptyState title="This quiz has no questions yet">
+              <EmptyState title="This knowledge check has no questions yet">
                 Nothing to answer here for now — it has not been written yet. Carry on to the next
                 lesson; this one will not hold up your certificate.
               </EmptyState>
@@ -618,7 +623,7 @@ export default async function LessonPlayer({
             <span className="text-sm text-muted">End of course</span>
           )
         ) : isQuiz ? (
-          <span className="text-sm text-muted">Pass the quiz to complete</span>
+          <span className="text-sm text-muted">Pass the knowledge check to complete</span>
         ) : (
           <NavForm
             action={markLessonComplete.bind(

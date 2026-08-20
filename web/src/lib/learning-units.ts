@@ -195,3 +195,23 @@ export function sectionItemMeta(
 export function itemsLabel(n: number): string {
   return n === 1 ? 'item' : 'items';
 }
+
+/**
+ * Learner-facing heading for a standalone knowledge-check lesson. Storage titles
+ * were authored as internal labels ("A201 - Quiz", "Knowledge Quiz A200", "T Clip
+ * - Quiz"); the learner should never see the word "Quiz" (the surface calls these
+ * "knowledge check" everywhere else). Normalises the wording while preserving the
+ * subject code/name, and is idempotent so it stays safe if the data is later
+ * cleaned up (a title already reading "Knowledge check …" is returned unchanged).
+ */
+export function checkLessonHeading(title: string): string {
+  const t = (title ?? '').trim();
+  if (!t) return 'Knowledge check';
+  // "Knowledge Quiz A200" -> "Knowledge check A200"
+  let s = t.replace(/knowledge\s+quiz/i, 'Knowledge check');
+  // Strip a trailing "- Quiz" / "– Quiz" / "Quiz": "A201 - Quiz" -> "A201".
+  s = s.replace(/\s*[-–—]?\s*quiz\s*$/i, '').trim();
+  if (!s) return 'Knowledge check';
+  if (/knowledge check/i.test(s)) return s;
+  return `Knowledge check — ${s}`;
+}

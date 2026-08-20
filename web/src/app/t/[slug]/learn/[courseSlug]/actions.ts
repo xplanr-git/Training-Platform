@@ -313,9 +313,13 @@ export async function submitQuizAttempt(
     .limit(1);
   // The quiz must be the one attached to this lesson.
   if (!quiz || quiz.lessonId !== lessonId)
-    throw new Error(
-      'This quiz has changed since you opened it. Reload the page and answer it again — your progress is safe.',
-    );
+    // Returned, not thrown: this is an actionable learner message, and thrown
+    // Server Action messages are redacted in production. The client surfaces
+    // { error } directly.
+    return {
+      error:
+        'This knowledge check has changed since you opened it. Reload the page and answer it again — your progress is safe.',
+    };
   const settings = quiz.settings as QuizSettings;
   const threshold = settings.passThreshold ?? 70;
 
@@ -394,7 +398,7 @@ export async function submitQuizAttempt(
         reviewedSinceLastAttempt: reviewedSince,
       })
     ) {
-      throw new Error('Review this section, then try the knowledge check again.');
+      return { error: 'Review this section, then try the knowledge check again.' };
     }
   } else {
     /*
@@ -407,9 +411,9 @@ export async function submitQuizAttempt(
         ? settings.maxAttempts!
         : DEFAULT_MAX_ATTEMPTS;
     if (used >= maxAttempts) {
-      throw new Error(
-        `You have used all ${maxAttempts} attempts at this quiz. Ask your administrator to reset it.`,
-      );
+      return {
+        error: `You have used all ${maxAttempts} attempts at this knowledge check. Ask your administrator to reset it.`,
+      };
     }
   }
 
@@ -417,9 +421,9 @@ export async function submitQuizAttempt(
   // training room sharing one connection, and be sidestepped by a phone.
   const limited = await rateLimit(RULES_QUIZ_ACTION, enrollmentId, RULES.quizAttempt);
   if (!limited.ok) {
-    throw new Error(
-      `Too many attempts in a short time. Try again in ${limited.retryAfterSeconds} seconds.`,
-    );
+    return {
+      error: `Too many attempts in a short time. Try again in ${limited.retryAfterSeconds} seconds.`,
+    };
   }
 
   const responses: Record<string, number[]> = {};

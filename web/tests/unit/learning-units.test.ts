@@ -3,6 +3,7 @@ import {
   deriveLearningItems,
   itemProgress,
   sectionItemMeta,
+  checkLessonHeading,
   type LessonRow,
 } from '@/lib/learning-units';
 
@@ -141,6 +142,18 @@ describe('item-based counts and time', () => {
     expect(p.doneItems).toBe(1);
     expect(p.percent).toBe(33);
     expect(p.itemsLeft).toBe(2);
+  });
+
+  it('checkLessonHeading never shows "Quiz" to the learner', () => {
+    expect(checkLessonHeading('A201 - Quiz')).toBe('Knowledge check — A201');
+    expect(checkLessonHeading('T Clip - Quiz')).toBe('Knowledge check — T Clip');
+    expect(checkLessonHeading('A831 / A832 - Quiz')).toBe('Knowledge check — A831 / A832');
+    // "Knowledge Quiz A200" normalises in place (idempotent, no double label).
+    expect(checkLessonHeading('Knowledge Quiz A200')).toBe('Knowledge check A200');
+    expect(checkLessonHeading('Knowledge check A200')).toBe('Knowledge check A200');
+    // Degenerate titles fall back cleanly.
+    expect(checkLessonHeading('Quiz')).toBe('Knowledge check');
+    expect(checkLessonHeading('')).toBe('Knowledge check');
   });
 
   it('sectionItemMeta reports per-topic item count + done', () => {
