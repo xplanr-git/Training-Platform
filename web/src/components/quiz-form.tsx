@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/components/ui/utils';
 
@@ -13,47 +13,45 @@ export interface QuizFormQuestion {
   options: string[];
 }
 
-type Result = { isCorrect: boolean; correct: number[] };
-
 /**
- * The knowledge check — ONE question at a time.
+ * The knowledge check — ONE question at a time, minimum clicks.
  *
- * Flow per question: pick an answer → Check answer → a formative result (right /
- * not quite, with the correct option shown) → Next question. On the last
- * question, Finish submits the whole attempt for the AUTHORITATIVE grade
- * (submitQuizAttempt), which records it and decides pass / needs-review.
+ * Flow: pick an answer → Next. Advancing just records the selection in local
+ * state; nothing is graded mid-check, so there is no per-question "Check answer"
+ * step and no answer is ever revealed early (the key never reaches the page).
+ * On the last question, Finish submits the whole attempt for the AUTHORITATIVE
+ * server grade (submitQuizAttempt), which records it and decides pass /
+ * needs-review — exactly as before. A quiet Back lets the learner revise an
+ * earlier answer before finishing (safe, since nothing is locked or graded until
+ * Finish).
  *
- * Integrity, not ceremony: `checkAction` grades one question on the SERVER and
- * never returns the key up front, so a warranty-critical check can't be read out
- * of the page source; and once a question is checked its inputs lock, so a wrong
- * critical answer can't be quietly changed before finishing — it flows into the
- * review-then-retry rule. Native radio/checkbox inputs keep grading + E2E intact.
+ * Integrity is unchanged: grading, the critical-question rule, Required Review
+ * and one-review-unlocks-one-retry all live in submitQuizAttempt on the server.
+ * Removing the mandatory mid-check step lowers interaction cost, not the bar.
+ * Immediate correct/incorrect feedback is deliberately OFF here (formative
+ * reveal added back only for specific questions if that ever earns its place).
+ * A selection is required before advancing, so no question is answered blank.
  */
 export function QuizForm({
   questions,
-  checkAction,
   submitAction,
 }: {
   questions: QuizFormQuestion[];
-  checkAction: (questionId: string, selected: number[]) => Promise<Result>;
   submitAction: (formData: FormData) => Promise<{ redirectTo?: string; error?: string } | void>;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [selections, setSelections] = useState<Record<string, number[]>>({});
-  const [results, setResults] = useState<Record<string, Result>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const q = questions[step];
   const multi = q.type === 'multi_select';
   const selected = selections[q.id] ?? [];
-  const result = results[q.id];
-  const checked = !!result;
   const isLast = step === questions.length - 1;
+  const canAdvance = selected.length > 0;
 
   function toggle(oi: number) {
-    if (checked) return;
     setSelections((s) => {
       const cur = s[q.id] ?? [];
       if (multi) {
@@ -63,21 +61,8 @@ export function QuizForm({
     });
   }
 
-  async function check() {
-    if (!selected.length || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const r = await checkAction(q.id, selected);
-      setResults((m) => ({ ...m, [q.id]: r }));
-    } catch {
-      setError('Something went wrong checking that answer. Try again.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function finish() {
+    if (!canAdvance || busy) return;
     setBusy(true);
     setError(null);
     const fd = new FormData();
@@ -105,25 +90,19 @@ export function QuizForm({
         Question {step + 1} of {questions.length}
       </p>
       <h2 className="text-h2 mt-2">{q.prompt}</h2>
+      {multi && <p className="text-muted mt-1 text-xs">Choose all that apply.</p>}
 
       <div className="mt-5 flex flex-col gap-2.5">
         {q.options.map((o, oi) => {
           const isSel = selected.includes(oi);
-          const isCorrectOpt = checked && result.correct.includes(oi);
-          const isWrongSel = checked && isSel && !result.correct.includes(oi);
           return (
             <label
               key={oi}
               className={cn(
-                'flex min-h-11 items-center gap-3 rounded-sm border px-4 py-3 text-sm transition-colors',
-                checked ? 'cursor-default' : 'cursor-pointer hover:bg-surface-muted',
-                isCorrectOpt
-                  ? 'border-status-green bg-status-green-bg'
-                  : isWrongSel
-                    ? 'border-foreground'
-                    : isSel
-                      ? 'border-foreground bg-sunken shadow-[inset_0_0_0_1px_var(--color-foreground)]'
-                      : 'border-input',
+                'flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border px-4 py-3 text-sm transition-colors',
+                isSel
+                  ? 'border-foreground bg-sunken shadow-[inset_0_0_0_1px_var(--color-foreground)]'
+                  : 'border-input hover:bg-surface-muted',
               )}
             >
               <input
@@ -131,14 +110,10 @@ export function QuizForm({
                 name={`q_${q.id}`}
                 value={oi}
                 checked={isSel}
-                disabled={checked}
                 onChange={() => toggle(oi)}
                 className="accent-primary"
               />
               <span className="flex-1">{o}</span>
-              {isCorrectOpt && (
-                <Check aria-hidden="true" className="text-status-green h-4 w-4 shrink-0" />
-              )}
             </label>
           );
         })}
@@ -146,39 +121,29 @@ export function QuizForm({
 
       {error && <p className="text-status-red mt-3 text-sm">{error}</p>}
 
-      {!checked ? (
-        <div className="mt-6">
-          <Button type="button" onClick={check} disabled={!selected.length || busy}>
-            {busy ? 'Checking…' : 'Check answer'}
+      {/* ONE primary action per state: Next, or Finish on the last question.
+          Back is a quiet secondary — never competes with the primary. */}
+      <div className="mt-6 flex items-center gap-4">
+        {isLast ? (
+          <Button type="button" onClick={finish} disabled={!canAdvance || busy}>
+            {busy ? 'Finishing…' : 'Finish check'}
           </Button>
-        </div>
-      ) : (
-        <div className="mt-5">
-          {result.isCorrect ? (
-            <p className="text-foreground-2 flex items-start gap-2 text-sm">
-              <Check aria-hidden="true" className="text-status-green mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                <b className="text-foreground">Correct.</b>
-              </span>
-            </p>
-          ) : (
-            <p className="text-foreground-2 text-sm">
-              <b className="text-foreground">Not quite.</b> The correct answer is highlighted above.
-            </p>
-          )}
-          <div className="mt-5">
-            {isLast ? (
-              <Button type="button" onClick={finish} disabled={busy}>
-                {busy ? 'Finishing…' : 'Finish check'}
-              </Button>
-            ) : (
-              <Button type="button" onClick={() => setStep((s) => s + 1)}>
-                Next question
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+        ) : (
+          <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canAdvance}>
+            Next
+          </Button>
+        )}
+        {step > 0 && (
+          <button
+            type="button"
+            onClick={() => setStep((s) => s - 1)}
+            disabled={busy}
+            className="text-foreground-2 hover:text-foreground inline-flex min-h-11 items-center gap-1 text-sm font-semibold transition-colors"
+          >
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back
+          </button>
+        )}
+      </div>
     </div>
   );
 }

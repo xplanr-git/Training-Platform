@@ -45,7 +45,6 @@ import {
   markLessonComplete,
   submitQuizAttempt,
   markSectionReviewed,
-  checkQuizAnswer,
   recordLessonFeedback,
   recordInstallerIdea,
   recordTopicConfidence,
@@ -535,7 +534,6 @@ export default async function LessonPlayer({
                   type: q.type,
                   options: q.options as string[],
                 }))}
-                checkAction={checkQuizAnswer.bind(null, quiz!.id)}
                 submitAction={submitQuizAttempt.bind(
                   null,
                   slug,

@@ -93,11 +93,16 @@ describe('the quiz builder does not describe behaviour it does not have', () => 
     expect(src, 'the control is labelled "Pass threshold (%)"').not.toMatch(/quiz settings/i);
   });
 
-  it('nothing in the quiz form actually forces an answer, which is why', () => {
-    // If this ever changes, the copy above may become sayable — so it is asserted
-    // rather than left as a comment.
+  it('the quiz form now DOES require a selection before advancing (V2)', () => {
+    // Behaviour changed in Learner Coherence V2: the check moved to Select → Next,
+    // and a selection is now required before you can advance or finish
+    // (`canAdvance = selected.length > 0`, which gates both buttons). So a learner
+    // cannot pass a question — or finish — blank. The builder empty-state copy above
+    // must therefore stay in sync: it may now say every question must be answered,
+    // but the two false claims it once made (see comment) remain forbidden.
     const form = read('src/components/quiz-form.tsx');
-    expect(form).not.toMatch(/\brequired\b/);
+    expect(form, 'a selection must gate advancing').toMatch(/canAdvance/);
+    expect(form).toMatch(/selected\.length\s*>\s*0/);
   });
 
   it('only the answer-key control for the chosen type is rendered', () => {
