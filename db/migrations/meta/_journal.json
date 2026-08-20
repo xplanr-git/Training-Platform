@@ -169,6 +169,13 @@
       "when": 1787242372790,
       "tag": "0023_natural_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1787243191216,
+      "tag": "0024_tiresome_psylocke",
+      "breakpoints": true
     }
   ]
 }

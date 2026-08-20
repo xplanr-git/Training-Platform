@@ -144,7 +144,9 @@ export default async function LessonPlayer({
         assessmentForLessonId: lessons.assessmentForLessonId,
       })
       .from(lessons)
-      .where(eq(lessons.courseId, course.id))
+      // Active only: an excluded lesson is absent from nav/outline and (via the
+      // idx<0 → notFound below) cannot be opened in the player.
+      .where(and(eq(lessons.courseId, course.id), eq(lessons.active, true)))
       .orderBy(asc(lessons.position)),
     db
       .select({ content: lessons.content })

@@ -117,7 +117,7 @@ live at `training.structurebuild.co`, deployed from remote `academy/main`.
 ### Where the code lives
 
 - **`web/`** — Next.js 15 App Router. This is the application.
-- **`db/`** — Drizzle schema, **23 tables**, **24 migrations** (`0000`–`0023`).
+- **`db/`** — Drizzle schema, **23 tables**, **25 migrations** (`0000`–`0024`).
 - **Root `src/`, `index.html`, `vite.config.ts`, `supabase/`** — the **RETIRED
   Vite prototype**. Not deployed, not maintained. `npm run dev:legacy` still
   starts it; `npm run dev` starts the real app. Deletion is unscheduled.
@@ -347,7 +347,7 @@ Read this before doing anything in this repo.
 │   ├── schema.ts                      23 tables, all tenant-scoped
 │   ├── client.ts                      `db` — BYPASSES RLS. Scope by tenant_id yourself.
 │   ├── audit.ts                       audited(tx, entry) — required by §7.11
-│   └── migrations/                    0000–0023, append-only. Next number is 0024.
+│   └── migrations/                    0000–0024, append-only. Next number is 0025.
 │
 ├── docs/
 │   ├── POLISH_BACKLOG.md              live backlog; §5 holds the owner-blocked decisions

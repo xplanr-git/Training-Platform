@@ -84,7 +84,7 @@ export default async function MyTrainingPage({ params }: { params: Promise<{ slu
             assessmentForLessonId: lessons.assessmentForLessonId,
           })
           .from(lessons)
-          .where(inArray(lessons.courseId, courseIds))
+          .where(and(inArray(lessons.courseId, courseIds), eq(lessons.active, true)))
       : Promise.resolve([] as Array<{ courseId: string } & LessonRow>),
   ]);
 

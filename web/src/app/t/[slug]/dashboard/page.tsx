@@ -135,7 +135,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
             assessmentForLessonId: lessons.assessmentForLessonId,
           })
           .from(lessons)
-          .where(inArray(lessons.courseId, courseIds))
+          .where(and(inArray(lessons.courseId, courseIds), eq(lessons.active, true)))
       : Promise.resolve([] as Array<{ courseId: string } & LessonRow>),
   ]);
 
@@ -206,7 +206,8 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
       .select({ id: lessons.id })
       .from(lessons)
       .innerJoin(sections, eq(sections.id, lessons.sectionId))
-      .where(eq(lessons.courseId, continueCourse.courseId))
+      // Resume must skip excluded lessons — never resume into one that 404s.
+      .where(and(eq(lessons.courseId, continueCourse.courseId), eq(lessons.active, true)))
       .orderBy(asc(sections.position), asc(lessons.position));
     const nextLesson = ordered.find((l) => !continueCourse.completedSet.has(l.id));
     resumeHref = nextLesson

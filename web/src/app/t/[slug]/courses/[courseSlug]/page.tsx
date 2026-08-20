@@ -129,7 +129,7 @@ export default async function CourseLanding({
         estimatedMinutes: lessons.estimatedMinutes,
       })
       .from(lessons)
-      .where(eq(lessons.courseId, course.id))
+      .where(and(eq(lessons.courseId, course.id), eq(lessons.active, true)))
       .orderBy(asc(lessons.position)),
   ]);
   const enrolled = enrolledRows.length > 0;

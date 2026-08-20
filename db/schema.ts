@@ -295,6 +295,14 @@ export const lessons = pgTable(
      * NEVER infers pairing from titles.
      */
     assessmentForLessonId: uuid('assessment_for_lesson_id'),
+    // Reversible cohort exclusion: false removes the lesson from the LEARNER
+    // curriculum entirely — it is dropped from every learner-facing list, the
+    // player 404s it, and (critically) it is excluded from the completion
+    // denominator, item counts and remaining-time, so it is never a phantom item
+    // that blocks a certificate. Used to withhold a lesson whose media/content is
+    // not ready (e.g. A220, a video that was never supplied) without deleting it.
+    // Admin authoring/builder still sees it. Default true leaves everything as-is.
+    active: boolean('active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

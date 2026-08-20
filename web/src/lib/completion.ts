@@ -144,7 +144,8 @@ export async function finalizeCourseCompletion(opts: {
       position: lessons.position,
     })
     .from(lessons)
-    .where(eq(lessons.courseId, courseId))
+    // Excluded lessons are not part of the curriculum total (see lessons.active).
+    .where(and(eq(lessons.courseId, courseId), eq(lessons.active, true)))
     .orderBy(asc(lessons.position));
 
   // Connect tier alignment: completing a course that confers a tier advances the

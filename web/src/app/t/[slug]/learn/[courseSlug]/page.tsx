@@ -80,7 +80,11 @@ export default async function Learn({
       .from(sections)
       .where(eq(sections.courseId, course.id))
       .orderBy(asc(sections.position)),
-    db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)),
+    db
+      .select()
+      .from(lessons)
+      .where(and(eq(lessons.courseId, course.id), eq(lessons.active, true)))
+      .orderBy(asc(lessons.position)),
   ]);
   if (view.mode === 'denied') redirect(`/courses/${courseSlug}`);
   const isPreview = view.mode === 'preview';

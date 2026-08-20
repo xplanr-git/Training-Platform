@@ -24,7 +24,10 @@ export async function getCourseProgress(
     db
       .select({ id: lessons.id, estimatedMinutes: lessons.estimatedMinutes })
       .from(lessons)
-      .where(eq(lessons.courseId, courseId)),
+      // Excluded lessons (active=false) are not part of the curriculum, so they
+      // are removed from the completion denominator — a withheld lesson can never
+      // block completion or a certificate.
+      .where(and(eq(lessons.courseId, courseId), eq(lessons.active, true))),
   ]);
 
   const completedIds = completedRows.map((r) => r.lessonId).filter((id): id is string => !!id);
