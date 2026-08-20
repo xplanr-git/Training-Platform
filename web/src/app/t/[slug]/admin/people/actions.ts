@@ -14,6 +14,7 @@ import {
 } from '@/lib/validation';
 import { rateLimitExceeded } from '@/lib/rate-limit-guard';
 import { RULES } from '@/lib/rate-limit';
+import { isAudience } from '@/lib/audience';
 
 export interface ActionResult {
   ok: boolean;
@@ -63,6 +64,10 @@ export async function inviteMember(tenantSlug: string, formData: FormData): Prom
   } catch {
     return { ok: false, error: 'That role cannot be assigned.' };
   }
+
+  // Audience (WHO they are) — optional; drives relevance, never status.
+  const audienceRaw = String(formData.get('audience') ?? '').trim();
+  const audience = isAudience(audienceRaw) ? audienceRaw : null;
 
   // Reuse the auth user if we already know them.
   const [existingUser] = await db
@@ -152,6 +157,7 @@ export async function inviteMember(tenantSlug: string, formData: FormData): Prom
       tenantId: ctx.tenantId!,
       userId: userId!,
       role,
+      audience,
       status: 'invited',
       invitedBy: ctx.userId,
     });
@@ -161,7 +167,7 @@ export async function inviteMember(tenantSlug: string, formData: FormData): Prom
       action: 'membership.invite',
       resourceType: 'membership',
       resourceId: userId!,
-      after: { email, role, status: 'invited' },
+      after: { email, role, audience, status: 'invited' },
     });
   });
 
@@ -381,5 +387,37 @@ export async function declineJoinRequest(tenantSlug: string, membershipId: strin
 
   // Deliberately no email. Telling someone an academy declined them is the
   // academy's call to make in person, not an automated message from us.
+  revalidatePath(`/t/${tenantSlug}/admin/people`);
+}
+
+/**
+ * Sets/corrects a member's audience (WHO they are — installer/dealer/etc.).
+ * Audience drives which training and pathway they see; it is NOT a permission
+ * or a status, so it needs no admin-boundary confirmation. Empty clears it back
+ * to unknown. Admin-only (requireAdmin).
+ */
+export async function setMemberAudience(
+  tenantSlug: string,
+  membershipId: string,
+  value: string,
+): Promise<void> {
+  const ctx = await requireAdmin();
+  const audience = isAudience(value) ? value : null;
+  await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(memberships)
+      .set({ audience })
+      .where(and(eq(memberships.id, membershipId), eq(memberships.tenantId, ctx.tenantId)))
+      .returning({ userId: memberships.userId });
+    if (!updated) throw new Error('That member no longer exists. Reload the page.');
+    await audited(tx, {
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      action: 'membership.audience_set',
+      resourceType: 'membership',
+      resourceId: updated.userId,
+      after: { audience },
+    });
+  });
   revalidatePath(`/t/${tenantSlug}/admin/people`);
 }

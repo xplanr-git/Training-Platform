@@ -18,6 +18,7 @@ import { parsePage, pageMeta, PAGE_SIZE } from '@/lib/pagination';
 import { Pagination } from '@/components/pagination';
 import { InviteForm } from './invite-form';
 import { RoleSelect } from './role-select';
+import { AudienceSelect } from './audience-select';
 import { setMemberStatus, acceptJoinRequest, declineJoinRequest } from './actions';
 import { canViewAs } from '@/lib/view-as';
 import { startViewAs } from '@/lib/view-as-actions';
@@ -102,6 +103,7 @@ export default async function People({
         userId: memberships.userId,
         role: memberships.role,
         connectRoleCode: memberships.connectRoleCode,
+        audience: memberships.audience,
         status: memberships.status,
         name: users.name,
         email: users.email,
@@ -247,6 +249,7 @@ export default async function People({
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Audience</TableHead>
               <TableHead>Tier</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -266,6 +269,14 @@ export default async function People({
                     // Not your own row (no self role-change) and not a platform
                     // admin (not demotable from a tenant screen).
                     editable={m.role !== 'platform_admin' && m.userId !== ctx.userId}
+                  />
+                </TableCell>
+                <TableCell>
+                  <AudienceSelect
+                    tenantSlug={slug}
+                    membershipId={m.id}
+                    audience={m.audience}
+                    personLabel={m.name || m.email}
                   />
                 </TableCell>
                 <TableCell>

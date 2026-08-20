@@ -28,7 +28,14 @@ const SIGNED_IN_LANDINGS = [
 describe('a signed-in user is never stranded', () => {
   for (const [name, path] of SIGNED_IN_LANDINGS) {
     it(`${name} offers sign-out`, () => {
-      expect(read(path), `${path} renders no SignOutButton`).toMatch(/<SignOutButton/);
+      // V2: the learner dashboard's sign-out now lives in the persistent
+      // LearnerShell it renders (Home/My training/Help/Account + sign-out), so
+      // the shell is the provider there. Every other landing still carries the
+      // button directly.
+      const pattern = path.endsWith('t/[slug]/dashboard/page.tsx')
+        ? /<SignOutButton|<LearnerShell/
+        : /<SignOutButton/;
+      expect(read(path), `${path} renders no sign-out affordance`).toMatch(pattern);
     });
   }
 

@@ -54,6 +54,19 @@ export function InviteForm({ tenantSlug }: { tenantSlug: string }) {
               <option value="company_admin">Admin</option>
             </NativeSelect>
           </div>
+          <div className="flex flex-col gap-1.5">
+            {/* Audience = WHO they are, so we show them relevant training. Not a
+                status; optional (the learner can also self-identify on first use). */}
+            <Label htmlFor="inv-audience">Audience</Label>
+            <NativeSelect id="inv-audience" name="audience" wrapperClassName="w-44">
+              <option value="">Unknown</option>
+              <option value="installer">Installer / Contractor</option>
+              <option value="dealer">Dealer / Reseller</option>
+              <option value="distributor">Distributor</option>
+              <option value="staff">Staff</option>
+              <option value="other">Other</option>
+            </NativeSelect>
+          </div>
           <Button type="submit" disabled={pending}>
             {pending ? 'Inviting…' : 'Invite'}
           </Button>

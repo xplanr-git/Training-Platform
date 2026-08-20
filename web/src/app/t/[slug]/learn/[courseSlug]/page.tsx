@@ -48,7 +48,7 @@ export default async function Learn({
 }: {
   params: Promise<{ slug: string; courseSlug: string }>;
 }) {
-  const { courseSlug } = await params;
+  const { slug, courseSlug } = await params;
   const ctx = await getTenantContext();
   if (!ctx) redirect(`/login?next=${encodeURIComponent(`/learn/${courseSlug}`)}`);
   if (!ctx.tenantId) redirect('/');
@@ -169,7 +169,15 @@ export default async function Learn({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
-      <BackLink href="/dashboard">Your learning</BackLink>
+      <div className="flex items-center justify-between gap-4">
+        <BackLink href="/dashboard">Your learning</BackLink>
+        <Link
+          href={`/t/${slug}/help?from=${encodeURIComponent(`/learn/${courseSlug}`)}&course=${encodeURIComponent(courseSlug)}&courseTitle=${encodeURIComponent(course.title)}`}
+          className="text-foreground-2 hover:text-foreground inline-flex min-h-11 items-center gap-1 text-sm font-semibold transition-colors"
+        >
+          Get help
+        </Link>
+      </div>
       <h1 className="mt-3 text-2xl">{course.title}</h1>
       {isPreview && (
         <Callout tone="amber" className="mt-3">

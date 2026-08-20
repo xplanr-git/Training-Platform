@@ -1,21 +1,22 @@
 import Link from 'next/link';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Info } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { redirect } from 'next/navigation';
 import {
   db,
   eq,
   and,
+  asc,
   desc,
   inArray,
   enrollments,
   courses,
-  certificates,
   progressEvents,
   lessons,
+  sections,
   memberships,
 } from '@training-platform/db';
-import { getTenantContext, currentAdminRole } from '@/lib/tenant';
+import { getTenantContext, currentAdminRole, tenantBySlug } from '@/lib/tenant';
 import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { landAfterSignIn } from '@/app/login/actions';
 import { deriveProgress, formatMinutes } from '@/lib/progress';
@@ -25,6 +26,8 @@ import {
   itemsLabel,
   type LessonRow,
 } from '@/lib/learning-units';
+import { showsInstallerPathway } from '@/lib/audience';
+import { getAudience } from '@/lib/audience-server';
 import {
   CONTRACTOR_REQUIRED_COURSE_SLUG,
   showsContractorRequirement,
@@ -33,26 +36,19 @@ import {
 } from '@/lib/contractor-requirement';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { SignOutButton } from '@/components/sign-out-button';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { LearnerShell } from '@/components/learner-shell';
+import { AudiencePicker } from '@/components/audience-picker';
+import { setMyAudience } from './actions';
 
 /**
- * Learner home — requirements-led.
+ * Authenticated learner HOME — orientation, not just a course list (V2).
  *
- * Answers, in order: what do I need to do → where am I up to → what next. The
- * Contractor requirement (complete the required installer training, user-facing
- * "Outdure Installer Training") is the primary frame; other enrolments sit calmly
- * beneath it. Job-language only — the STATUS "Trained" is not shown here. This
- * deliberately
- * replaces the old Enrolled/In-progress/Completed/Certificates metric-tile
- * dashboard, whose four tiles filled the whole first mobile viewport before the
- * learner reached a useful action.
- *
- * Slice 1 scope: the Trained state is kept NEUTRAL — no warranty-bearing
- * certification is celebrated, and nothing infers Verified, listing eligibility,
- * or Strategic Partner. The competency/completion model that gates real
- * certification is Slice 2.
+ * It answers, within the first viewport where possible: what is this, what
+ * applies to me, where am I up to, how long is left, and — dominant for a
+ * returning learner — CONTINUE (resume the exact saved spot). A new learner
+ * gets a concise "how this works + your place is saved" welcome before the
+ * curriculum; a completed learner gets their outcome + where to find their
+ * record. Relevance is driven by AUDIENCE (who they are), never by status.
  */
 export default async function LearnerDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -61,18 +57,16 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
   if (!ctx.tenantId) redirect('/');
 
   const viewingAs = await isViewingAs();
-  // Skip the landing step while viewing-as: landAfterSignIn would route the admin
-  // to /admin and bounce them off the learner view they came to see.
   if (!viewingAs) await landAfterSignIn(`/t/${slug}/dashboard`);
-  // The data is the viewed learner's; authorization stays the admin's.
   const dataUserId = await effectiveUserId(ctx.userId);
-  const isAdmin = !viewingAs && !!(await currentAdminRole(ctx.userId, ctx.tenantId));
+  const [isAdmin, tenant, audience] = await Promise.all([
+    viewingAs
+      ? Promise.resolve(false)
+      : currentAdminRole(ctx.userId, ctx.tenantId).then((r) => !!r),
+    tenantBySlug(slug),
+    getAudience(dataUserId, ctx.tenantId),
+  ]);
 
-  // Enrolments, the learner's Connect tier (server-side only — never rendered),
-  // and the required-course row (fetched by slug whether or not the learner is
-  // enrolled in it, so a "Not started" requirement can still be shown). These
-  // three are independent, so they go together; the set-based progress reads
-  // below depend on the enrolment rows and follow.
   const [rows, membershipRow, requiredCourseRow] = await Promise.all([
     db
       .select({
@@ -101,9 +95,6 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
       .limit(1),
   ]);
 
-  // Progress WITHOUT the N+1: two set-based reads (completed lessons across the
-  // learner's enrolments, and every lesson of the enrolled courses), then derive
-  // each in memory with the same pure function getCourseProgress uses.
   const enrollmentIds = rows.map((r) => r.enrollmentId);
   const courseIds = [...new Set(rows.map((r) => r.courseId))];
 
@@ -133,13 +124,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
           })
           .from(lessons)
           .where(inArray(lessons.courseId, courseIds))
-      : Promise.resolve(
-          [] as Array<
-            {
-              courseId: string;
-            } & LessonRow
-          >,
-        ),
+      : Promise.resolve([] as Array<{ courseId: string } & LessonRow>),
   ]);
 
   const completedByEnrollment = new Map<string, string[]>();
@@ -159,14 +144,12 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
   const withProgress = rows.map((r) => {
     const courseLessons = lessonsByCourse.get(r.courseId) ?? [];
     const completed = new Set(completedByEnrollment.get(r.enrollmentId) ?? []);
-    // Authoritative completion stays row-based (certificate trigger unchanged).
     const p = deriveProgress([...completed], courseLessons);
-    // Learner-facing counts/%/time are over ITEMS (video + its check = one item).
-    // Order is irrelevant to counts, so a trivial section order is fine here.
     const order = new Map(courseLessons.map((l) => [l.sectionId, 0]));
     const ip = itemProgress(deriveLearningItems(courseLessons, order, completed));
     return {
       ...r,
+      completedSet: completed,
       percent: ip.percent,
       done: ip.doneItems,
       total: ip.totalItems,
@@ -176,15 +159,19 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     };
   });
 
-  // The Contractor requirement. Shown to everyone except a positively-identified
-  // dealer, and only when the required course actually exists and is published
-  // (never point a learner at a draft or a missing course).
+  // Audience relevance: the Contractor required-training frame is for installers
+  // (and unknown audience, alongside a first-use prompt) — never forced on a
+  // positively-identified dealer/distributor/staff learner.
+  const audienceAllowsRequirement =
+    audience === 'installer' || audience === null || audience === undefined;
   const requiredCourse =
     requiredCourseRow[0] && requiredCourseRow[0].status === 'published'
       ? requiredCourseRow[0]
       : null;
   const showsRequirement =
-    showsContractorRequirement(membershipRow[0]?.connectRoleCode ?? null) && !!requiredCourse;
+    audienceAllowsRequirement &&
+    showsContractorRequirement(membershipRow[0]?.connectRoleCode ?? null) &&
+    !!requiredCourse;
 
   const requiredEnrollment = withProgress.find((r) => r.slug === CONTRACTOR_REQUIRED_COURSE_SLUG);
   const reqState = requirementState({
@@ -193,120 +180,225 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     isComplete: requiredEnrollment?.isComplete ?? false,
   });
   const reqAction = requiredCourse ? requirementAction(reqState, requiredCourse.slug) : null;
-
-  // Everything that is not the required course, presented calmly beneath it.
   const otherCourses = withProgress.filter((r) => r.slug !== CONTRACTOR_REQUIRED_COURSE_SLUG);
 
+  // Overall learner state → which orientation to lead with.
+  const allComplete = withProgress.length > 0 && withProgress.every((r) => r.isComplete);
   const nothingToShow = !showsRequirement && !otherCourses.length;
 
-  return (
-    <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
-      <div className="flex items-start justify-between gap-4">
-        <h1 className="text-2xl">Your training</h1>
-        <div className="flex shrink-0 items-center gap-4">
-          <ThemeToggle />
-          {isAdmin && (
-            <Button asChild variant="outline">
-              <Link href="/admin">Admin</Link>
-            </Button>
-          )}
-          <SignOutButton />
-        </div>
-      </div>
+  // The course to CONTINUE: the required one if in progress, else the most
+  // recently-started incomplete course. Resume to its first incomplete lesson so
+  // the lesson player can pick up the saved video position — not the course start.
+  const continueCourse =
+    requiredEnrollment && !requiredEnrollment.isComplete && requiredEnrollment.done > 0
+      ? requiredEnrollment
+      : (withProgress.find((r) => r.done > 0 && !r.isComplete) ?? null);
+  let resumeHref: string | null = null;
+  if (continueCourse) {
+    const ordered = await db
+      .select({ id: lessons.id })
+      .from(lessons)
+      .innerJoin(sections, eq(sections.id, lessons.sectionId))
+      .where(eq(lessons.courseId, continueCourse.courseId))
+      .orderBy(asc(sections.position), asc(lessons.position));
+    const nextLesson = ordered.find((l) => !continueCourse.completedSet.has(l.id));
+    resumeHref = nextLesson
+      ? `/learn/${continueCourse.slug}/${nextLesson.id}`
+      : `/learn/${continueCourse.slug}`;
+  }
 
-      {showsRequirement && requiredCourse && (
-        <section aria-labelledby="required-training" className="mt-6">
-          <p className="text-sm text-muted">Required training</p>
-          <Card className="mt-2">
-            <CardContent className="py-5">
+  const showPathway = showsInstallerPathway(audience);
+  const tenantName = tenant?.name ?? 'Outdure Academy';
+
+  return (
+    <>
+      <LearnerShell slug={slug} tenantName={tenantName} active="home" />
+      <main className="mx-auto max-w-3xl px-6 py-12 sm:py-14">
+        {isAdmin && (
+          <div className="mb-6 flex justify-end">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/t/${slug}/admin`}>Admin</Link>
+            </Button>
+          </div>
+        )}
+
+        {/* First-use relevance question — only when audience is unknown. */}
+        {audience === null && !viewingAs && (
+          <div className="mb-8">
+            <AudiencePicker action={setMyAudience.bind(null, slug)} />
+          </div>
+        )}
+
+        {/* State-aware welcome / continue. */}
+        {continueCourse && resumeHref ? (
+          <section className="rounded-(--radius-card) bg-sunken px-5 py-5">
+            <p className="text-muted text-meta">Pick up where you left off</p>
+            <h1 className="text-h2 mt-0.5 font-bold">{continueCourse.title}</h1>
+            <div className="mt-2 flex items-center gap-3">
+              <Progress value={continueCourse.percent} className="h-2 max-w-xs flex-1" />
+              <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
+                {continueCourse.percent}%
+                {continueCourse.minutesLeft != null
+                  ? ` · ${continueCourse.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(continueCourse.minutesLeft)} left`
+                  : ''}
+              </span>
+            </div>
+            <Button asChild size="lg" className="mt-4">
+              <Link href={resumeHref}>Continue training</Link>
+            </Button>
+            <p className="text-muted mt-3 text-meta">
+              Your progress and video position are saved automatically — leave any time and pick up
+              here.
+            </p>
+          </section>
+        ) : allComplete ? (
+          <section className="rounded-(--radius-card) bg-sunken px-5 py-5">
+            <h1 className="text-h2 font-bold">You’ve completed your training</h1>
+            <p className="text-foreground-2 mt-1 text-sm leading-relaxed">
+              Nice work. You can revisit any course any time, and your certificate and training
+              record are on{' '}
+              <Link href={`/t/${slug}/training`} className="text-link hover:underline">
+                My training
+              </Link>
+              .
+            </p>
+          </section>
+        ) : (
+          <section>
+            <h1 className="text-2xl">Welcome to {tenantName}</h1>
+            <p className="text-foreground-2 mt-2 max-w-prose text-sm leading-relaxed">
+              This is where you complete the Outdure product training for your role. Work through it
+              at your own pace, on any device — your progress and video position are saved
+              automatically, so you can stop after a lesson and pick up later.
+            </p>
+          </section>
+        )}
+
+        {/* Required training. */}
+        {showsRequirement && requiredCourse && (
+          <section aria-labelledby="required-training" className="mt-10">
+            <p className="text-muted text-sm">Required training</p>
+            <div className="mt-2">
               <h2 id="required-training" className="text-h2">
                 {requiredCourse.title}
               </h2>
-
               {reqState === 'in-progress' && requiredEnrollment ? (
-                <>
-                  <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-sm font-medium">
-                      {requiredEnrollment.percent}% complete
-                    </span>
-                    <span className="text-foreground-2 text-sm tabular-nums">
-                      {requiredEnrollment.done} of {requiredEnrollment.total}{' '}
-                      {itemsLabel(requiredEnrollment.total)}
-                      {requiredEnrollment.minutesLeft != null
-                        ? ` · ${requiredEnrollment.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(requiredEnrollment.minutesLeft)} left`
-                        : ''}
-                    </span>
-                  </div>
-                  <Progress value={requiredEnrollment.percent} className="mt-2 h-2" />
-                </>
+                <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-sm font-medium">
+                    {requiredEnrollment.percent}% complete
+                  </span>
+                  <span className="text-foreground-2 text-meta tabular-nums">
+                    {requiredEnrollment.done} of {requiredEnrollment.total}{' '}
+                    {itemsLabel(requiredEnrollment.total)}
+                    {requiredEnrollment.minutesLeft != null
+                      ? ` · ${requiredEnrollment.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(requiredEnrollment.minutesLeft)} left`
+                      : ''}
+                  </span>
+                </div>
               ) : reqState === 'complete' ? (
-                // Neutral Trained state (Slice 1): acknowledge completion without
-                // celebrating a warranty-bearing credential or implying Verified.
-                <p className="mt-3 text-sm text-muted">You’ve completed the required training.</p>
+                <p className="text-muted mt-2 text-sm">You’ve completed the required training.</p>
               ) : (
-                <p className="mt-3 text-sm text-muted">Not started</p>
+                <p className="text-muted mt-2 text-sm">
+                  Not started
+                  {requiredEnrollment?.minutesLeft != null
+                    ? ` · ${requiredEnrollment.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(requiredEnrollment.minutesLeft)}`
+                    : ''}
+                </p>
               )}
-
-              {reqAction ? (
+              {reqAction && reqState !== 'in-progress' && (
                 <Button asChild size="lg" className="mt-4">
                   <Link href={reqAction.href}>{reqAction.label}</Link>
                 </Button>
-              ) : (
+              )}
+              {reqState === 'in-progress' && (
                 <Link
                   href={`/learn/${requiredCourse.slug}`}
-                  className="text-foreground-2 hover:text-foreground mt-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold transition-colors"
+                  className="text-foreground-2 hover:text-foreground mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold"
                 >
-                  Review training →
+                  View all topics →
                 </Link>
               )}
-            </CardContent>
-          </Card>
-        </section>
-      )}
+            </div>
+          </section>
+        )}
 
-      {otherCourses.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-h2">{showsRequirement ? 'Other courses' : 'Your courses'}</h2>
-          <ul className="mt-2 divide-y divide-border">
-            {otherCourses.map((r) => {
-              const stateLabel = r.isComplete
-                ? 'Completed'
-                : r.done > 0
-                  ? 'In progress'
-                  : 'Not started';
-              const action = r.isComplete ? 'Review' : r.done > 0 ? 'Continue' : 'Start';
-              return (
-                <li key={r.courseId}>
-                  <Link
-                    href={`/learn/${r.slug}`}
-                    className="-mx-2 flex min-h-11 items-center justify-between gap-4 rounded-sm px-2 py-3 transition-colors hover:bg-surface-muted"
-                  >
-                    <div className="min-w-0">
-                      <span className="text-sm font-medium">{r.title}</span>
-                      <p className="text-foreground-2 mt-0.5 text-meta tabular-nums">
-                        {r.done}/{r.total} {itemsLabel(r.total)} · {stateLabel}
-                      </p>
-                    </div>
-                    <span className="text-foreground-2 shrink-0 text-sm">{action} →</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+        {/* Installer pathway — conservative, directional, never auto-progressing. */}
+        {showPathway && (
+          <section className="mt-10">
+            <h2 className="text-h3">Where this training can lead</h2>
+            <ol className="mt-3 space-y-3">
+              <li className="border-keyline border-l-[1.75px] pl-4">
+                <p className="text-sm font-semibold">Trained</p>
+                <p className="text-foreground-2 mt-0.5 text-meta leading-relaxed">
+                  Complete the required installer training. This is the status this Academy can
+                  award.
+                </p>
+              </li>
+              <li className="border-border border-l pl-4">
+                <p className="text-foreground-2 text-sm font-semibold">Verified Installer</p>
+                <p className="text-muted mt-0.5 text-meta leading-relaxed">
+                  A separate Outdure review beyond training. Not earned by completing a course.
+                </p>
+              </li>
+              <li className="border-border border-l pl-4">
+                <p className="text-foreground-2 text-sm font-semibold">Strategic Partner</p>
+                <p className="text-muted mt-0.5 text-meta leading-relaxed">
+                  A closer relationship, selected by Outdure. Not earned by completing a course.
+                </p>
+              </li>
+            </ol>
+            <p className="text-muted mt-3 flex items-start gap-1.5 text-meta leading-relaxed">
+              <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Exact benefits and warranty wording are confirmed by Outdure.
+            </p>
+          </section>
+        )}
 
-      {nothingToShow && (
-        <EmptyState
-          className="mt-6"
-          icon={<GraduationCap />}
-          title="You have not started a course yet"
-          action={{ href: '/', label: 'Browse courses' }}
-        >
-          Pick a course to enrol. Your place is saved as you go, so you can stop after a lesson and
-          pick up where you left off — on a phone on site, or at a desk later.
-        </EmptyState>
-      )}
-    </main>
+        {/* Other / enrolled courses. */}
+        {otherCourses.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-h2">{showsRequirement ? 'Other courses' : 'Your courses'}</h2>
+            <ul className="divide-border mt-2 divide-y">
+              {otherCourses.map((r) => {
+                const stateLabel = r.isComplete
+                  ? 'Completed'
+                  : r.done > 0
+                    ? 'In progress'
+                    : 'Not started';
+                const action = r.isComplete ? 'Review' : r.done > 0 ? 'Continue' : 'Start';
+                return (
+                  <li key={r.courseId}>
+                    <Link
+                      href={`/learn/${r.slug}`}
+                      className="hover:bg-surface-muted -mx-2 flex min-h-11 items-center justify-between gap-4 rounded-sm px-2 py-3 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium">{r.title}</span>
+                        <p className="text-foreground-2 mt-0.5 text-meta tabular-nums">
+                          {r.done}/{r.total} {itemsLabel(r.total)} · {stateLabel}
+                        </p>
+                      </div>
+                      <span className="text-foreground-2 shrink-0 text-sm">{action} →</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+        {nothingToShow && (
+          <EmptyState
+            className="mt-8"
+            icon={<GraduationCap />}
+            title="No training assigned yet"
+            action={{ href: `/t/${slug}/help`, label: 'Ask for help' }}
+          >
+            You don’t have any training to complete right now. If you were expecting some, let us
+            know and we’ll sort it out.
+          </EmptyState>
+        )}
+      </main>
+    </>
   );
 }

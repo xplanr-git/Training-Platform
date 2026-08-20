@@ -60,6 +60,20 @@ export const membershipStatus = pgEnum('membership_status', [
   'pending',
 ]);
 
+/**
+ * Academy audience — WHO the learner is, distinct from training/commercial
+ * STATUS (Registered/Trained/Verified/Strategic live in connectRoleCode). Drives
+ * relevance (which training + pathway a learner sees). Nullable: unknown is a
+ * legitimate state and must never be silently treated as installer.
+ */
+export const audienceType = pgEnum('audience', [
+  'installer',
+  'dealer',
+  'distributor',
+  'staff',
+  'other',
+]);
+
 export const courseStatus = pgEnum('course_status', ['draft', 'published', 'archived']);
 
 export const lessonType = pgEnum('lesson_type', ['video', 'pdf', 'scorm', 'quiz', 'text', 'live']);
@@ -143,6 +157,9 @@ export const memberships = pgTable(
     role: membershipRole('role').notNull().default('learner'),
     // Connect user-type/tier alignment (e.g. CON_REGISTERED). See web lib/connect-roles.
     connectRoleCode: text('connect_role_code'),
+    // Academy audience (WHO this person is), set by admin at invite or a learner
+    // first-use question. Null = unknown; never defaulted to installer.
+    audience: audienceType('audience'),
     status: membershipStatus('status').notNull().default('invited'),
     invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -71,6 +71,26 @@ function layout(body: string): string {
   </div>`;
 }
 
+/**
+ * A learner's "Get help" request, routed to the academy's own inbox (the
+ * from-address doubles as support for v1). Carries the learner's email as
+ * reply-to context in the body and the page/course/topic context so support
+ * knows what they were looking at. No-ops with a log line when Resend is unset
+ * (non-prod), so the flow works in the beta and delivery is enabled by a key.
+ */
+export async function sendSupportEmail(learnerEmail: string, contextLine: string, message: string) {
+  await send(
+    env.emailFrom(),
+    `Academy help request from ${learnerEmail}`,
+    layout(
+      `<h2>Help request</h2>
+      <p><strong>From:</strong> ${escapeHtml(learnerEmail)}</p>
+      <p><strong>Context:</strong> ${escapeHtml(contextLine)}</p>
+      <p style="white-space:pre-wrap">${escapeHtml(message)}</p>`,
+    ),
+  );
+}
+
 export async function sendWelcomeEmail(
   to: string,
   name: string,

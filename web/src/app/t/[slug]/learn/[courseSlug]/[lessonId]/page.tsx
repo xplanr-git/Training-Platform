@@ -699,14 +699,24 @@ export default async function LessonPlayer({
         >
           View all topics →
         </Link>
-        {!isQuiz && (
-          <ShareButton
-            path={`/learn/${courseSlug}/${lesson.id}`}
-            title="Outdure Installer Training"
-            text="This Outdure Installer Training lesson might be useful."
-            label="Share lesson"
-          />
-        )}
+        <div className="flex items-center gap-4">
+          {/* Help is reachable from the learning flow too — carrying where the
+              learner was, so support (and later BART) has the context. */}
+          <Link
+            href={`/t/${slug}/help?from=${encodeURIComponent(`/learn/${courseSlug}/${lesson.id}`)}&course=${encodeURIComponent(courseSlug)}&courseTitle=${encodeURIComponent(course.title)}${topicTitle ? `&topic=${encodeURIComponent(topicTitle)}` : ''}&item=${encodeURIComponent(lesson.title)}`}
+            className="text-foreground-2 hover:text-foreground inline-flex items-center gap-1 text-sm font-semibold transition-colors"
+          >
+            Get help
+          </Link>
+          {!isQuiz && (
+            <ShareButton
+              path={`/learn/${courseSlug}/${lesson.id}`}
+              title="Outdure Installer Training"
+              text="This Outdure Installer Training lesson might be useful."
+              label="Share lesson"
+            />
+          )}
+        </div>
       </div>
 
       {/* Private lesson feedback — quiet and voluntary: always the collapsed
