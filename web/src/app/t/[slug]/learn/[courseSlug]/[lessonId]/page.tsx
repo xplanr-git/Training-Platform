@@ -372,7 +372,9 @@ export default async function LessonPlayer({
       </BackLink>
       <div className="mt-3 flex items-center gap-3">
         <Progress value={progress.percent} className="h-2 max-w-xs flex-1" />
-        <span className="text-foreground-2 shrink-0 text-xs tabular-nums">{progress.percent}%</span>
+        <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
+          {progress.percent}%
+        </span>
       </div>
 
       {/* Topic + lesson title — one tight group, set apart from the back nav */}
@@ -385,7 +387,7 @@ export default async function LessonPlayer({
           <h1 className="text-2xl">{lesson.title}</h1>
         </div>
         {(isPreview || readOnly) && (
-          <Callout tone="amber" className="mt-2 px-3 py-2 text-xs">
+          <Callout tone="amber" className="mt-2 px-3 py-2 text-meta">
             Read-only — nothing on this page is recorded.
           </Callout>
         )}

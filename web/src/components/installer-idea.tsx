@@ -64,7 +64,7 @@ export function InstallerIdea({
   return (
     <div className="max-w-prose">
       <p className="text-sm font-semibold">Think this could be better?</p>
-      <p className="text-muted mt-0.5 text-xs">
+      <p className="text-muted mt-0.5 text-meta">
         A better product, detail, install method, or something missing from the docs — tell us what
         you’d change.
       </p>

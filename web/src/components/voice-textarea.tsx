@@ -136,7 +136,7 @@ export function VoiceTextarea({
         )}
       </div>
       {recording && (
-        <p className="text-foreground-2 mt-1.5 text-xs" aria-live="polite">
+        <p className="text-foreground-2 mt-1.5 text-meta" aria-live="polite">
           Recording… speak, then stop. You can edit the text before sending.
         </p>
       )}

@@ -73,7 +73,7 @@ export function ConfidenceCheck({
   return (
     <div className="max-w-prose">
       <p className="text-sm font-semibold">{prompt}</p>
-      {helpText && <p className="text-muted mt-0.5 text-xs">{helpText}</p>}
+      {helpText && <p className="text-muted mt-0.5 text-meta">{helpText}</p>}
       <div
         role="radiogroup"
         aria-label={prompt}

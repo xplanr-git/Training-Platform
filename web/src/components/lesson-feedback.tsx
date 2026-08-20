@@ -84,7 +84,7 @@ export function LessonFeedback({
   return (
     <div className="max-w-prose">
       <p className="text-sm font-semibold">How was this lesson?</p>
-      <p className="text-muted mt-0.5 text-xs">Pick any that apply.</p>
+      <p className="text-muted mt-0.5 text-meta">Pick any that apply.</p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {OPTIONS.map((o) => (
           <button
@@ -121,7 +121,7 @@ export function LessonFeedback({
         </label>
       )}
 
-      <p className="text-muted mt-3 text-xs">
+      <p className="text-muted mt-3 text-meta">
         Private feedback to Outdure — other learners don’t see this.
       </p>
       {error && <p className="text-status-red mt-2 text-sm">{error}</p>}

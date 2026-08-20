@@ -264,7 +264,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                   >
                     <div className="min-w-0">
                       <span className="text-sm font-medium">{r.title}</span>
-                      <p className="text-foreground-2 mt-0.5 text-xs tabular-nums">
+                      <p className="text-foreground-2 mt-0.5 text-meta tabular-nums">
                         {r.done}/{r.total} lessons · {stateLabel}
                       </p>
                     </div>

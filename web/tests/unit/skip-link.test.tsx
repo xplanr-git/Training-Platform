@@ -43,34 +43,40 @@ describe('skip link', () => {
     expect(rule).toMatch(/clip-path:\s*none/);
   });
 
-  it('is present on the surfaces whose nav precedes their content', () => {
+  it('is present on the surfaces whose header or nav precedes their content', () => {
     for (const [name, src] of [
       ['admin-shell', ADMIN_SHELL],
       ['lesson player', PLAYER],
     ] as const) {
       expect(src, `${name} should render <SkipLink />`).toMatch(/<SkipLink\s*\/>/);
-      expect(src, `${name} needs a matching id on its <main>`).toMatch(
-        /<main[^>]*id="main-content"/,
-      );
+      expect(src, `${name} needs a matching #main-content target`).toMatch(/id="main-content"/);
     }
+    // The admin shell's skip target is its <main> landmark itself — a real side
+    // nav precedes it. The lesson player's target moved (see the ordering test).
+    expect(ADMIN_SHELL).toMatch(/<main[^>]*id="main-content"/);
   });
 
-  it('the lesson player puts it before the course outline', () => {
+  it('the lesson player puts it before the content it skips to', () => {
     /*
-     * Ordering is the point — a skip link after the nav it skips is useless.
+     * Ordering is the point — a skip link after what it skips is useless.
+     *
+     * The PX redesign (2026-08) moved the course outline BELOW the lesson content
+     * (no side rail), so there is no longer an <aside> for the link to precede;
+     * what it skips is the back-nav/progress/title header group repeated on every
+     * lesson. The assertion is therefore: SkipLink renders before the
+     * #main-content anchor it jumps to.
      *
      * Comments are stripped first, and that is not incidental: the first version of
-     * this test failed because the prose explaining the fix says "sits in the
-     * <aside> below", and indexOf found that instead of the element.
+     * this test failed because the prose explaining the fix named the elements it
+     * was searching for, and indexOf found the prose instead of the element.
      */
     const src = PLAYER.replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\/\/.*$/gm, '');
     const link = src.indexOf('<SkipLink />');
-    const aside = src.indexOf('<aside');
-    const main = src.indexOf('<main');
+    const target = src.indexOf('id="main-content"');
     expect(link).toBeGreaterThan(-1);
-    expect(link).toBeLessThan(aside);
-    expect(aside).toBeLessThan(main);
+    expect(target).toBeGreaterThan(-1);
+    expect(link).toBeLessThan(target);
   });
 });
