@@ -4,7 +4,7 @@ import { CourseComplete } from '@/components/course-complete';
 import { EmptyRow } from '@/components/empty-state';
 import { EmptyState } from '@/components/empty-state';
 import { redirect, notFound } from 'next/navigation';
-import { Check, Video, FileText, HelpCircle, BookOpen } from 'lucide-react';
+import { Check, Video, FileText, HelpCircle, BookOpen, ChevronRight } from 'lucide-react';
 import { db, eq, and, asc, courses, sections, lessons, certificates } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { effectiveUserId } from '@/lib/view-as';
@@ -15,6 +15,9 @@ import { StatusBadge } from '@/components/ui/badge';
 import { Callout } from '@/components/ui/callout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { recordCourseConfidence } from './actions';
+import { ConfidenceCheck } from '@/components/confidence-check';
+import { getConfidenceState } from '@/lib/confidence-state';
 
 const LESSON_ICON: Record<string, typeof Video> = {
   video: Video,
@@ -72,11 +75,30 @@ export default async function Learn({
     bySection.set(l.sectionId, arr);
   }
 
+  // Per-topic timing for the map header: lesson count + estimated duration.
+  // Mirrors the course-level partial rule — some lessons carry no estimate, so
+  // the figure is "at least" rather than "about" when only some are estimated.
+  const sectionMeta = new Map<
+    string,
+    { count: number; minutes: number | null; partial: boolean }
+  >();
+  for (const s of sectionRows) {
+    const items = bySection.get(s.id) ?? [];
+    const est = items
+      .map((l) => l.estimatedMinutes)
+      .filter((m): m is number => typeof m === 'number' && Number.isFinite(m) && m > 0);
+    sectionMeta.set(s.id, {
+      count: items.length,
+      minutes: est.length ? est.reduce((a, b) => a + b, 0) : null,
+      partial: est.length > 0 && est.length < items.length,
+    });
+  }
+
   // Progress and the certificate both key off enrollmentId alone, so they go
   // together. The certificate is fetched even when the course is not finished —
   // completion is only known once progress resolves, and waiting to find out would
   // cost a serial round trip on exactly the page where the panel matters.
-  const [progress, certificate] = view.enrollmentId
+  const [progress, certificate, confidence] = view.enrollmentId
     ? await Promise.all([
         getCourseProgress(view.enrollmentId, course.id),
         db
@@ -89,11 +111,13 @@ export default async function Learn({
           .where(eq(certificates.enrollmentId, view.enrollmentId))
           .limit(1)
           .then((r) => r[0] ?? null),
+        getConfidenceState(view.enrollmentId),
       ])
     : [
         previewProgress(
           lessonRows.map((l) => ({ id: l.id, estimatedMinutes: l.estimatedMinutes })),
         ),
+        null,
         null,
       ];
 
@@ -106,6 +130,27 @@ export default async function Learn({
   });
   const resumeLesson =
     orderedLessons.find((l) => !progress.completed.has(l.id)) ?? orderedLessons[0];
+  // The topic the learner is currently in — the one holding the resume lesson.
+  // Null once the course is complete (nothing is "current").
+  const currentSectionId = progress.isComplete ? null : (resumeLesson?.sectionId ?? null);
+
+  // Topic metadata string (count + estimated duration) and the completion split:
+  // fully-done topics collapse into one disclosure; the rest stay open in order.
+  const topicMeta = (id: string) => {
+    const m = sectionMeta.get(id) ?? { count: 0, minutes: null, partial: false };
+    return (
+      `${m.count} ${m.count === 1 ? 'lesson' : 'lessons'}` +
+      (m.minutes != null
+        ? ` · ${m.partial ? 'at least' : 'about'} ${formatMinutes(m.minutes)}`
+        : '')
+    );
+  };
+  const isSectionDone = (id: string) => {
+    const items = bySection.get(id) ?? [];
+    return items.length > 0 && items.every((l) => progress.completed.has(l.id));
+  };
+  const doneSections = sectionRows.filter((s) => isSectionDone(s.id));
+  const activeSections = sectionRows.filter((s) => !isSectionDone(s.id));
 
   const lessonsLeft = progress.total - progress.done;
   const resumeLabel =
@@ -143,12 +188,18 @@ export default async function Learn({
             revokedAt={certificate?.revokedAt ?? null}
             certificateEnabled={course.certificateEnabled}
             reviewHref={resumeLesson ? `/learn/${courseSlug}/${resumeLesson.id}` : null}
+            inviteHref={`/courses/${courseSlug}`}
+            confidenceAction={
+              confidence?.outcome
+                ? null
+                : recordCourseConfidence.bind(null, view.enrollmentId, course.id, 'outcome')
+            }
           />
         </div>
       ) : (
         <Card className="mt-4">
           <CardContent className="py-5">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
               <span className="font-medium">{progress.percent}% complete</span>
               <span className="text-muted tabular-nums">
                 {progress.done} of {progress.total} lessons
@@ -168,26 +219,88 @@ export default async function Learn({
         </Card>
       )}
 
-      <div className="mt-8 space-y-5">
+      {/* Course-start confidence BASELINE — the denominator for uplift. Shown once,
+          near the beginning, and never after completion (the outcome question takes
+          over). Voluntary; captures a starting point, no follow-up, never blocks. */}
+      {view.enrollmentId && confidence && !confidence.baseline && !progress.isComplete && (
+        <div className="mt-6 rounded-(--radius-card) border border-border px-5 py-4">
+          <ConfidenceCheck
+            prompt="Before you start — how confident are you installing QwickBuild today?"
+            helpText="Optional. There are no wrong answers — this just helps us see how the training helps."
+            action={recordCourseConfidence.bind(null, view.enrollmentId, course.id, 'baseline')}
+            ackText="Thanks — that gives us a starting point."
+          />
+        </div>
+      )}
+
+      <div className="mt-10 space-y-10">
         {sectionRows.length === 0 && (
           <EmptyState title="No lessons here yet">
             You are enrolled, but this course has no content published yet. Nothing is wrong on your
             end — you will be able to start as soon as lessons are added.
           </EmptyState>
         )}
-        {sectionRows.map((s) => (
-          <section key={s.id}>
-            <h2 className="mb-2 text-h2">{s.title || 'Section'}</h2>
-            <Card className="overflow-hidden p-0">
+
+        {/* Completed topics compress into ONE disclosure so the eye lands on the
+            current + remaining work. Free navigation is preserved — each row
+            links into that topic. Chevron points right, rotates down when open. */}
+        {doneSections.length > 0 && (
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-3 py-1.5">
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-90" />
+              <Check className="text-status-green h-4 w-4 shrink-0" />
+              <span className="text-h3">{doneSections.length} topics completed</span>
+            </summary>
+            <ul className="mt-3 space-y-3 pl-7">
+              {doneSections.map((s) => {
+                const first = (bySection.get(s.id) ?? [])[0];
+                return (
+                  <li key={s.id}>
+                    <Link
+                      href={first ? `/learn/${courseSlug}/${first.id}` : `/learn/${courseSlug}`}
+                      className="flex flex-col gap-0.5 hover:underline sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+                    >
+                      <span className="text-sm font-medium">{s.title || 'Section'}</span>
+                      <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
+                        {topicMeta(s.id)}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
+        )}
+
+        {/* Current topic gets an ink LEFT MARKER (state via marker, square — not
+            a card); remaining topics are neutral and scannable. Header stacks on a
+            phone so a long title never collides with the count/duration. */}
+        {activeSections.map((s) => {
+          const items = bySection.get(s.id) ?? [];
+          const isCurrent = s.id === currentSectionId;
+          return (
+            <section
+              key={s.id}
+              className={isCurrent ? 'border-l-2 border-foreground pl-4' : undefined}
+            >
+              <div className="mb-2 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-h2">{s.title || 'Section'}</h2>
+                  {isCurrent && <p className="text-foreground-2 mt-0.5 text-meta">In progress</p>}
+                </div>
+                <span className="text-foreground-2 shrink-0 text-meta tabular-nums sm:text-right">
+                  {topicMeta(s.id)}
+                </span>
+              </div>
               <ul className="divide-y divide-border">
-                {(bySection.get(s.id) ?? []).map((l) => {
+                {items.map((l) => {
                   const Icon = LESSON_ICON[l.type] ?? BookOpen;
                   const lDone = progress.completed.has(l.id);
                   return (
                     <li key={l.id}>
                       <Link
                         href={`/learn/${courseSlug}/${l.id}`}
-                        className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-muted"
+                        className="flex items-center gap-3 rounded-sm px-2 py-3 text-sm transition-colors hover:bg-surface-muted"
                       >
                         {lDone ? (
                           <Check
@@ -208,15 +321,15 @@ export default async function Learn({
                     </li>
                   );
                 })}
-                {(bySection.get(s.id) ?? []).length === 0 && (
+                {items.length === 0 && (
                   <li>
                     <EmptyRow className="py-5" title="No lessons in this section yet" />
                   </li>
                 )}
               </ul>
-            </Card>
-          </section>
-        ))}
+            </section>
+          );
+        })}
       </div>
     </main>
   );

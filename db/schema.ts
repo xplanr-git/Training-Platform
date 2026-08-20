@@ -222,6 +222,12 @@ export const sections = pgTable(
     position: integer('position').notNull().default(0),
     title: text('title').notNull().default(''),
     isFree: boolean('is_free').notNull().default(false),
+    // Names the warranty-critical competency area this section teaches (e.g.
+    // "Bracing"), for the six confirmed critical areas. NULL = an ordinary
+    // section. A section with this set is a "critical check": its knowledge-check
+    // questions flagged `quiz_questions.critical` must all be answered correctly
+    // before the section (and so the course, and so Trained status) can complete.
+    criticalCompetency: text('critical_competency'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ courseIdx: index('sections_course_idx').on(t.courseId) }),
@@ -386,6 +392,11 @@ export const quizQuestions = pgTable(
     options: jsonb('options').notNull().default([]),
     correct: jsonb('correct').notNull().default([]),
     points: integer('points').notNull().default(1),
+    // Warranty-critical questions MUST be answered correctly to pass a critical
+    // check — a learner cannot compensate for a wrong critical answer with easy
+    // ones. Only questions in the confirmed critical areas set this; default
+    // false leaves every existing question and non-critical quiz unchanged.
+    critical: boolean('critical').notNull().default(false),
   },
   (t) => ({ quizIdx: index('quiz_questions_quiz_idx').on(t.quizId) }),
 );

@@ -6,7 +6,16 @@ import { VideoUnavailable } from '@/components/video-unavailable';
 import { EmptyState } from '@/components/empty-state';
 import { Callout } from '@/components/ui/callout';
 import { redirect, notFound } from 'next/navigation';
-import { Video, FileText, HelpCircle, BookOpen, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  Video,
+  FileText,
+  HelpCircle,
+  BookOpen,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
+} from 'lucide-react';
 import {
   db,
   eq,
@@ -14,6 +23,8 @@ import {
   asc,
   desc,
   sql,
+  count,
+  gte,
   isNotNull,
   courses,
   sections,
@@ -29,10 +40,26 @@ import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { resolveCourseView, previewProgress } from '@/lib/course-access';
 import { safeHttpUrl } from '@/lib/validation';
 import { getCourseProgress } from '@/lib/progress';
-import { markLessonComplete, submitQuizAttempt } from '../actions';
+import { isCriticalCheck } from '@/lib/competency';
+import {
+  markLessonComplete,
+  submitQuizAttempt,
+  markSectionReviewed,
+  checkQuizAnswer,
+  recordLessonFeedback,
+  recordInstallerIdea,
+  recordTopicConfidence,
+} from '../actions';
 import { NavForm } from '@/components/nav-form';
 import { QuizForm } from '@/components/quiz-form';
 import { BunnyVideoPlayer } from '@/components/bunny-video-player';
+import { LessonFeedback } from '@/components/lesson-feedback';
+import { InstallerIdea } from '@/components/installer-idea';
+import { ConfidenceCheck } from '@/components/confidence-check';
+import { ShareButton } from '@/components/share-button';
+import { capabilityTriggers } from '@/lib/confidence';
+import { FOLLOWUP_REASONS } from '@/lib/confidence';
+import { getConfidenceState } from '@/lib/confidence-state';
 import { hostedVideoFromContent } from '@/lib/video';
 import { isVideoFault } from '@/lib/video-availability';
 import { resolveVideoSource } from '@/lib/video-source';
@@ -58,10 +85,13 @@ function loadQuestions(quizId: string) {
 
 export default async function LessonPlayer({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; courseSlug: string; lessonId: string }>;
+  searchParams: Promise<{ review?: string }>;
 }) {
   const { slug, courseSlug, lessonId } = await params;
+  const { review: reviewForLessonId } = await searchParams;
   const ctx = await getTenantContext();
   if (!ctx?.tenantId) redirect(`/login?next=${encodeURIComponent(`/learn/${courseSlug}`)}`);
 
@@ -134,6 +164,16 @@ export default async function LessonPlayer({
   const pdfUrl = safeHttpUrl(content.url);
   const nextHref = next ? `/learn/${courseSlug}/${next.id}` : `/learn/${courseSlug}`;
   const isQuiz = lesson.type === 'quiz';
+
+  // Does this lesson end a practical capability (structural, fasteners, …)? The
+  // trigger is the capability's LAST lesson — usually its terminal knowledge
+  // check — so confidence is asked only after the learner has learned AND been
+  // tested. Skip in read-only/preview. Pure computation; the answered-state DB
+  // read is deferred until we know this and that the lesson is complete.
+  const capabilityHere =
+    enrollmentId && !readOnly
+      ? (capabilityTriggers(sectionRows, ordered).find((c) => c.lessonId === lesson.id) ?? null)
+      : null;
   const HeaderIcon = LESSON_ICON[lesson.type] ?? BookOpen;
   const hosted = hostedVideoFromContent(content);
 
@@ -188,6 +228,14 @@ export default async function LessonPlayer({
   ]);
   const done = progress.completed.has(lesson.id);
 
+  // Show the capability confidence checkpoint only once this lesson is COMPLETE
+  // (a quiz passed / the last video finished) — never mid-check — and never twice.
+  const capabilityAnswered =
+    capabilityHere && enrollmentId && done
+      ? (await getConfidenceState(enrollmentId)).topics.has(capabilityHere.key)
+      : false;
+  const showTopicConfidence = !!capabilityHere && done && !capabilityAnswered;
+
   // Questions need the quiz id, so they are the one genuinely serial follow-up.
   const quiz = quizRows[0] ?? null;
   // The result banner is read from the LAST recorded attempt, never from the URL.
@@ -200,7 +248,11 @@ export default async function LessonPlayer({
     quiz ? loadQuestions(quiz.id) : Promise.resolve([]),
     quiz && enrollmentId
       ? db
-          .select({ score: quizAttempts.score, passed: quizAttempts.passed })
+          .select({
+            score: quizAttempts.score,
+            passed: quizAttempts.passed,
+            submittedAt: quizAttempts.submittedAt,
+          })
           .from(quizAttempts)
           .where(
             and(
@@ -211,7 +263,9 @@ export default async function LessonPlayer({
           )
           .orderBy(desc(quizAttempts.submittedAt))
           .limit(1)
-      : Promise.resolve([] as Array<{ score: string | null; passed: boolean | null }>),
+      : Promise.resolve(
+          [] as Array<{ score: string | null; passed: boolean | null; submittedAt: Date | null }>,
+        ),
   ]);
   const lastAttempt = attemptRows[0] ?? null;
 
@@ -237,274 +291,414 @@ export default async function LessonPlayer({
     items: bySection.get(s.id) ?? [],
   }));
 
+  // Warranty-critical remediation state. A critical check with a failed prior
+  // attempt blocks the next attempt until the learner reviews the section (via
+  // markSectionReviewed) — so guess/retry is not a path to Trained. Only computed
+  // for a critical check the learner can actually attempt.
+  const isCriticalQuiz = isQuiz && isCriticalCheck(questions);
+  const sectionFirstLessonId = bySection.get(lesson.sectionId)?.[0]?.id ?? lesson.id;
+  let reviewNeeded = false;
+  if (isCriticalQuiz && enrollmentId && !readOnly && !done && lastAttempt?.submittedAt) {
+    const [{ reviews } = { reviews: 0 }] = await db
+      .select({ reviews: count() })
+      .from(progressEvents)
+      .where(
+        and(
+          eq(progressEvents.enrollmentId, enrollmentId),
+          eq(progressEvents.eventType, 'reviewed'),
+          sql`${progressEvents.payload}->>'sectionId' = ${lesson.sectionId}`,
+          gte(progressEvents.occurredAt, lastAttempt.submittedAt),
+        ),
+      );
+    reviewNeeded = reviews === 0;
+  }
+
+  // One responsive layout — NO desktop side rail. The current topic's items and
+  // the whole-course route both live BELOW the content. `currentSection` is the
+  // topic the lesson belongs to; its title is the orientation line above the
+  // lesson title (course context -> topic -> lesson).
+  const currentSection = outline.find((s) => s.id === lesson.sectionId) ?? null;
+  const topicTitle = currentSection?.title ?? null;
+
+  // Review-control (§0): the learner reaches this lesson from a Needs-Review
+  // screen (?review=<quizLessonId>). The "back to the check" acknowledgment lives
+  // HERE, on the review content — not on the Needs-Review screen — so a review
+  // can't be self-asserted without actually opening the relevant section. Valid
+  // only when the review target is the quiz in THIS lesson's section.
+  const reviewTarget =
+    reviewForLessonId && enrollmentId && !readOnly
+      ? (ordered.find(
+          (l) =>
+            l.id === reviewForLessonId && l.sectionId === lesson.sectionId && l.type === 'quiz',
+        ) ?? null)
+      : null;
+
   return (
-    <div className="mx-auto flex w-full max-w-6xl gap-8 px-4 py-8 lg:px-6">
+    <main className="mx-auto w-full max-w-3xl px-6 py-10 sm:py-12">
       {/*
-        The entire course outline sits in the <aside> below, before <main>. On a
-        twenty-lesson course that is twenty links between the keyboard learner and
-        the video they just opened — every time they advance a lesson.
+        Keyboard learners land on back-nav, progress, and the title group before
+        the lesson content — on every lesson advance. The skip link jumps them
+        straight to the content block (#main-content below).
       */}
       <SkipLink />
-
-      {/* Course outline (desktop) */}
-      <aside className="hidden w-72 shrink-0 lg:block">
-        <BackLink href={`/learn/${courseSlug}`} className="mb-4 max-w-full">
-          {course.title}
-        </BackLink>
-        <div className="mb-5">
-          <div className="mb-1.5 text-meta text-muted">{progress.percent}% complete</div>
-          <Progress value={progress.percent} className="h-2" />
+      {/* Review-control bar (§0): only reachable by opening the review lesson from
+          the Needs-Review screen. Marking reviewed lives here, on the content —
+          not a self-assert on the previous screen. */}
+      {reviewTarget && (
+        <div className="bg-sunken mb-6 flex flex-col gap-3 rounded-sm px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-foreground-2 text-sm">
+            <b className="text-foreground">Reviewing {topicTitle ?? 'this section'}</b> for the
+            knowledge check. Take a look, then head back.
+          </p>
+          <NavForm
+            action={markSectionReviewed.bind(
+              null,
+              slug,
+              courseSlug,
+              enrollmentId!,
+              lesson.sectionId,
+              reviewTarget.id,
+            )}
+          >
+            <Button type="submit" size="sm" className="shrink-0">
+              Back to the knowledge check
+            </Button>
+          </NavForm>
         </div>
-        <LessonNav
-          sections={outline}
-          courseSlug={courseSlug}
-          currentLessonId={lesson.id}
-          completed={progress.completed}
-        />
-      </aside>
+      )}
+      {/* Course context — back navigation is its own group */}
+      <BackLink href={`/learn/${courseSlug}`} className="max-w-full">
+        {course.title}
+      </BackLink>
+      <div className="mt-3 flex items-center gap-3">
+        <Progress value={progress.percent} className="h-2 max-w-xs flex-1" />
+        <span className="text-foreground-2 shrink-0 text-xs tabular-nums">{progress.percent}%</span>
+      </div>
 
-      {/* Player */}
-      <main id="main-content" className="min-w-0 flex-1">
-        {/* Mobile back + progress */}
-        <div className="mb-5 lg:hidden">
-          <BackLink href={`/learn/${courseSlug}`} className="max-w-full">
-            {course.title}
-          </BackLink>
-          <div className="mt-2 flex items-center gap-3">
-            <Progress value={progress.percent} className="h-2 flex-1" />
-            <span className="shrink-0 text-meta text-muted">{progress.percent}%</span>
-          </div>
-          {/*
-            On a phone the sidebar is hidden, and until now nothing replaced it — no
-            lesson list, no sense of where you are in the course. Collapsed by
-            default because the video is what the learner came for; <details> needs
-            no JavaScript, which suits a server component and a poor site signal.
-          */}
-          <details className="mt-3 rounded-(--radius-card) border border-border bg-surface">
-            <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-3 text-sm font-medium">
-              All lessons
-              <span className="text-meta font-normal text-muted tabular-nums">
-                {progress.done} of {progress.total}
-              </span>
-            </summary>
-            <div className="border-t border-border px-2 pb-2 pt-2">
-              <LessonNav
-                sections={outline}
-                courseSlug={courseSlug}
-                currentLessonId={lesson.id}
-                completed={progress.completed}
-              />
-            </div>
-          </details>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-muted text-muted">
+      {/* Topic + lesson title — one tight group, set apart from the back nav */}
+      <div className="mt-6">
+        {topicTitle && <p className="text-foreground-2 text-sm">{topicTitle}</p>}
+        <div className="mt-1 flex items-center gap-3">
+          <span className="bg-surface-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-muted">
             <HeaderIcon className="h-4 w-4" />
           </span>
           <h1 className="text-2xl">{lesson.title}</h1>
-          {(isPreview || readOnly) && (
-            <Callout tone="amber" className="mt-2 px-3 py-2 text-meta">
-              Read-only — nothing on this page is recorded.
-            </Callout>
-          )}
         </div>
+        {(isPreview || readOnly) && (
+          <Callout tone="amber" className="mt-2 px-3 py-2 text-xs">
+            Read-only — nothing on this page is recorded.
+          </Callout>
+        )}
+      </div>
 
-        <div className="mt-6">
-          {lesson.type === 'text' && (
-            <div className="whitespace-pre-line leading-relaxed text-foreground-2">
-              {content.body ||
-                'Nothing has been written into this lesson yet. Carry on to the next one — it will not hold up your certificate.'}
-            </div>
-          )}
-          {lesson.type === 'video' &&
-            source &&
-            (source.kind === 'bunny' ? (
-              enrollmentId && !readOnly ? (
-                <BunnyVideoPlayer
-                  libraryId={source.libraryId}
-                  videoId={source.videoId}
-                  enrollmentId={enrollmentId}
-                  lessonId={lesson.id}
-                  resumeAtSec={resumeAtSec}
-                />
-              ) : (
-                /* Preview OR view-as: the bare embed, deliberately NOT the
+      <div id="main-content" className="mt-6">
+        {lesson.type === 'text' && (
+          <div className="whitespace-pre-line leading-relaxed text-foreground-2">
+            {content.body ||
+              'Nothing has been written into this lesson yet. Carry on to the next one — it will not hold up your certificate.'}
+          </div>
+        )}
+        {lesson.type === 'video' &&
+          source &&
+          (source.kind === 'bunny' ? (
+            enrollmentId && !readOnly ? (
+              <BunnyVideoPlayer
+                libraryId={source.libraryId}
+                videoId={source.videoId}
+                enrollmentId={enrollmentId}
+                lessonId={lesson.id}
+                resumeAtSec={resumeAtSec}
+              />
+            ) : (
+              /* Preview OR view-as: the bare embed, deliberately NOT the
                    tracking player. recordVideoProgress needs an enrolment and
                    refuses while viewing-as; a look must not write watch time. */
-                <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
-                  <iframe
-                    src={`https://iframe.mediadelivery.net/embed/${source.libraryId}/${source.videoId}`}
-                    className="h-full w-full"
-                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
-                    allowFullScreen
-                    title={lesson.title}
-                  />
-                </div>
-              )
-            ) : source.kind === 'youtube' ? (
               <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
                 <iframe
-                  src={source.embedUrl}
+                  src={`https://iframe.mediadelivery.net/embed/${source.libraryId}/${source.videoId}`}
                   className="h-full w-full"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                   allowFullScreen
                   title={lesson.title}
                 />
               </div>
-            ) : (
-              <VideoUnavailable
-                unavailable={source.unavailable}
-                isPreview={isPreview}
-                builderHref={`/admin/courses/${course.id}/builder`}
+            )
+          ) : source.kind === 'youtube' ? (
+            <div className="aspect-video w-full overflow-hidden rounded-(--radius-card) bg-black">
+              <iframe
+                src={source.embedUrl}
+                className="h-full w-full"
+                allowFullScreen
+                title={lesson.title}
               />
-            ))}
-          {lesson.type === 'pdf' &&
-            (pdfUrl ? (
-              <div>
-                <div className="h-[70vh] w-full overflow-hidden rounded-(--radius-card) border border-border">
-                  <iframe src={pdfUrl} className="h-full w-full" title={lesson.title} />
+            </div>
+          ) : (
+            <VideoUnavailable
+              unavailable={source.unavailable}
+              isPreview={isPreview}
+              builderHref={`/admin/courses/${course.id}/builder`}
+            />
+          ))}
+        {lesson.type === 'pdf' &&
+          (pdfUrl ? (
+            <div>
+              <div className="h-[70vh] w-full overflow-hidden rounded-(--radius-card) border border-border">
+                <iframe src={pdfUrl} className="h-full w-full" title={lesson.title} />
+              </div>
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex min-h-11 items-center rounded-md border border-input px-3 text-sm font-semibold text-foreground-2 transition-colors hover:border-foreground hover:text-foreground"
+              >
+                Open PDF in new tab
+              </a>
+            </div>
+          ) : (
+            <p className="text-muted">
+              There is no PDF on this lesson yet. Carry on to the next one — it will not hold up
+              your certificate.
+            </p>
+          ))}
+        {isQuiz && (
+          <div>
+            {/* A non-critical retry: a plain, neutral nudge — no coloured banner,
+                no score exposure. The passed state and the needs-review path have
+                their own treatments below. */}
+            {lastAttempt && !lastAttempt.passed && !done && !reviewNeeded && (
+              <p className="text-foreground-2 mb-5 text-sm">
+                That attempt didn’t pass — have another go.
+              </p>
+            )}
+            {done ? (
+              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
+                <Check className="h-4 w-4" /> You have passed this quiz.
+              </p>
+            ) : questions.length === 0 ? (
+              <EmptyState title="This quiz has no questions yet">
+                Nothing to answer here for now — it has not been written yet. Carry on to the next
+                lesson; this one will not hold up your certificate.
+              </EmptyState>
+            ) : !enrollmentId || readOnly ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-muted">
+                  These are the questions as a learner sees them. Answers can&apos;t be submitted
+                  from a preview or a view-as — an attempt records against the learner&apos;s own
+                  enrolment.
+                </p>
+                <ol className="list-decimal space-y-3 pl-5">
+                  {questions.map((q) => (
+                    <li key={q.id} className="text-sm">
+                      <span className="font-medium">{q.prompt}</span>
+                      <ul className="mt-1 space-y-0.5 text-muted">
+                        {(q.options as string[]).map((opt, i) => (
+                          <li key={i}>{opt}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : reviewNeeded ? (
+              // NEUTRAL — a normal controlled learning path, not an error/warning.
+              // Plain language (no "warranty-critical"/remediation); Review is the
+              // primary action; the retry only unlocks once the section is reviewed.
+              <div className="flex items-start gap-3">
+                <RotateCcw aria-hidden="true" className="text-foreground mt-0.5 h-5 w-5 shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="text-h3">Review this section before trying again</h3>
+                  <p className="text-foreground-2 mt-1.5 text-sm">
+                    One of your answers about {topicTitle ?? 'this section'} wasn’t correct. Review
+                    this short section, then try the knowledge check again.
+                  </p>
+                  <div className="mt-4">
+                    {/* Review is the only path — the "reviewed" acknowledgment now
+                        lives on the review lesson itself (?review carries the check
+                        to return to), so it can't be self-asserted from here. */}
+                    <Button asChild>
+                      <Link
+                        href={`/learn/${courseSlug}/${sectionFirstLessonId}?review=${lesson.id}`}
+                      >
+                        Review {topicTitle ?? 'this section'}
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-                <Button asChild variant="outline" className="mt-3 min-h-11">
-                  <a href={pdfUrl} target="_blank" rel="noreferrer">
-                    Open PDF in new tab
-                  </a>
-                </Button>
               </div>
             ) : (
-              <p className="text-muted">
-                There is no PDF on this lesson yet. Carry on to the next one — it will not hold up
-                your certificate.
-              </p>
-            ))}
-          {isQuiz && (
-            <div>
-              {lastAttempt && (
-                <Callout tone={lastAttempt.passed ? 'green' : 'amber'} className="mb-5">
-                  You scored {Math.round(Number(lastAttempt.score ?? 0))}%.{' '}
-                  {lastAttempt.passed ? 'Passed.' : 'Not passed — try again.'}
-                </Callout>
-              )}
-              {done ? (
-                <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
-                  <Check className="h-4 w-4" /> You have passed this quiz.
-                </p>
-              ) : questions.length === 0 ? (
-                <EmptyState title="This quiz has no questions yet">
-                  Nothing to answer here for now — it has not been written yet. Carry on to the next
-                  lesson; this one will not hold up your certificate.
-                </EmptyState>
-              ) : !enrollmentId || readOnly ? (
-                <div className="flex flex-col gap-3">
-                  <p className="text-sm text-muted">
-                    These are the questions as a learner sees them. Answers can&apos;t be submitted
-                    from a preview or a view-as — an attempt records against the learner&apos;s own
-                    enrolment.
-                  </p>
-                  <ol className="list-decimal space-y-3 pl-5">
-                    {questions.map((q) => (
-                      <li key={q.id} className="text-sm">
-                        <span className="font-medium">{q.prompt}</span>
-                        <ul className="mt-1 space-y-0.5 text-muted">
-                          {(q.options as string[]).map((opt, i) => (
-                            <li key={i}>{opt}</li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ) : (
-                <QuizForm
-                  action={submitQuizAttempt.bind(
-                    null,
-                    slug,
-                    courseSlug,
-                    course.id,
-                    enrollmentId,
-                    lesson.id,
-                    quiz!.id,
-                  )}
-                  questions={questions.map((q) => ({
-                    id: q.id,
-                    prompt: q.prompt,
-                    type: q.type,
-                    options: q.options as string[],
-                  }))}
-                />
-              )}
-            </div>
-          )}
-        </div>
+              <QuizForm
+                questions={questions.map((q) => ({
+                  id: q.id,
+                  prompt: q.prompt,
+                  type: q.type,
+                  options: q.options as string[],
+                }))}
+                checkAction={checkQuizAnswer.bind(null, quiz!.id)}
+                submitAction={submitQuizAttempt.bind(
+                  null,
+                  slug,
+                  courseSlug,
+                  course.id,
+                  enrollmentId,
+                  lesson.id,
+                  quiz!.id,
+                )}
+              />
+            )}
+          </div>
+        )}
+      </div>
 
-        <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6">
-          {prev ? (
-            <Button asChild variant="ghost" size="sm">
-              <Link href={`/learn/${courseSlug}/${prev.id}`}>
-                <ArrowLeft className="h-4 w-4" /> Previous
-              </Link>
-            </Button>
-          ) : (
-            <span />
-          )}
+      <div className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6">
+        {prev ? (
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/learn/${courseSlug}/${prev.id}`}>
+              <ArrowLeft className="h-4 w-4" /> Previous
+            </Link>
+          </Button>
+        ) : (
+          <span />
+        )}
 
-          {!enrollmentId ? (
-            // No completion in a preview: markLessonComplete would need an
-            // enrolment, and completing your own course would issue you a real
-            // certificate and advance your Connect tier.
-            next ? (
-              <Button asChild>
-                <Link href={`/learn/${courseSlug}/${next.id}`}>
-                  Next lesson <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <span className="text-sm text-muted">End of course</span>
-            )
-          ) : done ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
-              <Check className="h-4 w-4" /> Completed
-            </span>
-          ) : readOnly ? (
-            // Viewing-as is read-only: navigate, but no "Complete" (which would
-            // issue a certificate) — and markLessonComplete refuses it anyway.
-            next ? (
-              <Button asChild>
-                <Link href={`/learn/${courseSlug}/${next.id}`}>
-                  Next lesson <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <span className="text-sm text-muted">End of course</span>
-            )
-          ) : isQuiz ? (
-            <span className="text-sm text-muted">Pass the quiz to complete</span>
-          ) : (
-            <NavForm
-              action={markLessonComplete.bind(
-                null,
-                slug,
-                courseSlug,
-                course.id,
-                enrollmentId,
-                lesson.id,
-                nextHref,
-              )}
-            >
-              <Button type="submit">{next ? 'Complete & continue' : 'Complete course'}</Button>
-            </NavForm>
-          )}
-
-          {next && done ? (
-            <Button asChild variant="ghost" size="sm">
+        {!enrollmentId ? (
+          // No completion in a preview: markLessonComplete would need an
+          // enrolment, and completing your own course would issue you a real
+          // certificate and advance your Connect tier.
+          next ? (
+            <Button asChild>
               <Link href={`/learn/${courseSlug}/${next.id}`}>
-                Next <ArrowRight className="h-4 w-4" />
+                Next lesson <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           ) : (
-            <span />
-          )}
+            <span className="text-sm text-muted">End of course</span>
+          )
+        ) : done ? (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-green">
+            <Check className="h-4 w-4" /> Completed
+          </span>
+        ) : readOnly ? (
+          // Viewing-as is read-only: navigate, but no "Complete" (which would
+          // issue a certificate) — and markLessonComplete refuses it anyway.
+          next ? (
+            <Button asChild>
+              <Link href={`/learn/${courseSlug}/${next.id}`}>
+                Next lesson <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          ) : (
+            <span className="text-sm text-muted">End of course</span>
+          )
+        ) : isQuiz ? (
+          <span className="text-sm text-muted">Pass the quiz to complete</span>
+        ) : (
+          <NavForm
+            action={markLessonComplete.bind(
+              null,
+              slug,
+              courseSlug,
+              course.id,
+              enrollmentId,
+              lesson.id,
+              nextHref,
+            )}
+          >
+            <Button type="submit">{next ? 'Complete & continue' : 'Complete course'}</Button>
+          </NavForm>
+        )}
+
+        {next && done ? (
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/learn/${courseSlug}/${next.id}`}>
+              Next <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        ) : (
+          <span />
+        )}
+      </div>
+
+      {/* Topic confidence checkpoint — a core outcome signal at the end of a
+          practical capability. Voluntary; never gates progress or status. */}
+      {showTopicConfidence && capabilityHere && enrollmentId && (
+        <section className="border-keyline mt-10 border-t-[1.75px] pt-4">
+          <ConfidenceCheck
+            prompt={capabilityHere.prompt}
+            helpText="Optional — this helps us improve the training. It doesn’t change your result."
+            action={recordTopicConfidence.bind(
+              null,
+              enrollmentId,
+              course.id,
+              capabilityHere.key,
+              lesson.sectionId,
+              lesson.id,
+            )}
+            followup={{
+              prompt: 'What would help you feel more confident?',
+              reasons: FOLLOWUP_REASONS,
+            }}
+            ackText="Thanks — that’s really useful."
+          />
+        </section>
+      )}
+
+      {/* In this topic — BELOW the content (no side rail). One 1.75px structural
+            keyline marks the content -> navigation boundary; the list itself uses
+            light row dividers. Scoped to the current topic; the whole course is one
+            tap away via View all topics. Same layout on desktop and mobile. */}
+      {currentSection && (
+        <section className="border-keyline mt-10 border-t-[1.75px] pt-4">
+          <h2 className="text-h3">In this topic</h2>
+          <div className="mt-3">
+            <LessonNav
+              sections={[currentSection]}
+              courseSlug={courseSlug}
+              currentLessonId={lesson.id}
+              completed={progress.completed}
+              showSectionTitles={false}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Wider navigation + quiet utilities. Share is a tertiary text control —
+          never competing with Next / Complete / Back to check. Feedback is not
+          shown on the check itself (§10). */}
+      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Link
+          href={`/learn/${courseSlug}`}
+          className="text-foreground-2 hover:text-foreground inline-flex items-center gap-1 text-sm font-semibold transition-colors"
+        >
+          View all topics →
+        </Link>
+        {!isQuiz && (
+          <ShareButton
+            path={`/learn/${courseSlug}/${lesson.id}`}
+            title="Outdure Installer Training"
+            text="This Outdure Installer Training lesson might be useful."
+            label="Share lesson"
+          />
+        )}
+      </div>
+
+      {/* Private lesson feedback — quiet and voluntary: always the collapsed
+          "Give feedback" affordance, never auto-opened. Auto-expanding on every
+          longer video turned an optional diagnostic into a repeated prompt across
+          the course (survey fatigue); the learner opens it when they have
+          something to say. Never on the check or in a preview / view-as. */}
+      {enrollmentId && !readOnly && !isQuiz && (
+        <div className="mt-8 space-y-6 border-t border-border pt-6">
+          <LessonFeedback
+            action={recordLessonFeedback.bind(null, enrollmentId, course.id, lesson.id)}
+          />
+          {/* Innovation capture — a separate, quieter affordance. Kept apart from
+              the lesson diagnostic so a real-world idea is never mistaken for a
+              rating, and vice versa. */}
+          <InstallerIdea
+            action={recordInstallerIdea.bind(null, enrollmentId, course.id, lesson.id)}
+          />
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }

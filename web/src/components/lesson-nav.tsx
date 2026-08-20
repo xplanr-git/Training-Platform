@@ -33,19 +33,25 @@ export function LessonNav({
   courseSlug,
   currentLessonId,
   completed,
+  showSectionTitles = true,
 }: {
   sections: OutlineSection[];
   courseSlug: string;
   currentLessonId: string;
   completed: ReadonlySet<string>;
+  /** Hide the per-section title — used by the lesson page's "In this topic"
+   *  block, which is already scoped to one topic and carries its own heading. */
+  showSectionTitles?: boolean;
 }) {
   return (
     <nav className="space-y-4">
       {sections.map((g) => (
         <div key={g.id}>
-          <p className="mb-1 px-1 text-eyebrow font-bold uppercase text-muted">
-            {g.title || 'Section'}
-          </p>
+          {showSectionTitles && (
+            <p className="mb-1 px-1 text-eyebrow font-bold uppercase text-muted">
+              {g.title || 'Section'}
+            </p>
+          )}
           <ul className="space-y-0.5">
             {g.items.map((l) => {
               const Icon = LESSON_ICON[l.type] ?? BookOpen;

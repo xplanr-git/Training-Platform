@@ -10,9 +10,13 @@ import {
   inArray,
   count,
   isNotNull,
+  desc,
+  gte,
+  sql,
   enrollments,
   progressEvents,
   lessons,
+  sections,
   quizzes,
   quizQuestions,
   quizAttempts,
@@ -24,8 +28,10 @@ import { assertNotViewingAs, isViewingAs } from '@/lib/view-as';
 import { ActionError } from '@/lib/action-errors';
 import type { QuizSettings } from '@/lib/content-types';
 import { finalizeCourseCompletion } from '@/lib/completion';
+import { isConfidenceLevel } from '@/lib/confidence';
 import { env } from '@/lib/env';
 import { gradeQuiz } from '@/lib/quiz';
+import { criticalQuestionIds, allCriticalCorrect, reviewRequired } from '@/lib/competency';
 import { rateLimit, RULES } from '@/lib/rate-limit';
 import { safeRedirect } from '@/lib/safe-redirect';
 
@@ -205,10 +211,84 @@ export async function markLessonComplete(
 }
 
 /**
+ * Records that a learner has reviewed a warranty-critical section. This is the
+ * remediation step: after a failed critical check the next attempt is blocked
+ * until the learner reviews the section, and confirming review here unlocks one
+ * retry. Recorded as an append-only `reviewed` event keyed on the section.
+ */
+export async function markSectionReviewed(
+  tenantSlug: string,
+  courseSlug: string,
+  enrollmentId: string,
+  sectionId: string,
+  lessonId: string,
+) {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  const enr = await verifyEnrollment(ctx, enrollmentId);
+  // The section must belong to the enrolled course (Drizzle bypasses RLS).
+  const [sec] = await db
+    .select({ id: sections.id })
+    .from(sections)
+    .where(
+      and(
+        eq(sections.id, sectionId),
+        eq(sections.courseId, enr.courseId),
+        eq(sections.tenantId, ctx.tenantId),
+      ),
+    )
+    .limit(1);
+  if (!sec) throw new Error(`${ActionError.LESSON_NOT_FOUND} in this course`);
+
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: null,
+    eventType: 'reviewed',
+    payload: { sectionId },
+  });
+
+  revalidatePath(`/t/${tenantSlug}/learn/${courseSlug}/${lessonId}`);
+  return { redirectTo: `/learn/${courseSlug}/${lessonId}` };
+}
+
+/**
+ * Grades ONE question for the stepped knowledge check — formative and read-only:
+ * it records nothing and never sends the answer key to the client, so a
+ * warranty-critical check cannot be passed by reading the page source. The
+ * learner only learns whether the selection they SUBMITTED was correct, and the
+ * client locks that question afterwards. The authoritative record is still
+ * submitQuizAttempt on finish.
+ */
+export async function checkQuizAnswer(
+  quizId: string,
+  questionId: string,
+  selected: number[],
+): Promise<{ isCorrect: boolean; correct: number[] }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  const [q] = await db
+    .select({ correct: quizQuestions.correct, quizId: quizQuestions.quizId })
+    .from(quizQuestions)
+    .where(and(eq(quizQuestions.id, questionId), eq(quizQuestions.tenantId, ctx.tenantId)))
+    .limit(1);
+  if (!q || q.quizId !== quizId) throw new Error(ActionError.LESSON_NOT_FOUND);
+  const correct = [...new Set((q.correct as number[]) ?? [])].sort((a, b) => a - b);
+  const sel = [...new Set(Array.isArray(selected) ? selected : [])].sort((a, b) => a - b);
+  const isCorrect = sel.length === correct.length && sel.every((v, i) => v === correct[i]);
+  return { isCorrect, correct };
+}
+
+/**
  * Grades a quiz submission server-side, stores the attempt + per-question
- * answers, and — if the score meets the pass threshold — records the quiz
- * lesson as completed (which can complete the course). A failing attempt is
- * recorded but does not complete the lesson; the learner can retry.
+ * answers, and records the quiz lesson as completed when it passes — which can
+ * complete the course.
+ *
+ * "Passes" depends on the check: an ordinary quiz passes on the score threshold;
+ * a warranty-critical check passes only when EVERY critical question is correct.
+ * A failing critical check does not complete the lesson and blocks an immediate
+ * retry — the learner must review the section first (see markSectionReviewed).
  */
 export async function submitQuizAttempt(
   tenantSlug: string,
@@ -239,32 +319,27 @@ export async function submitQuizAttempt(
   const settings = quiz.settings as QuizSettings;
   const threshold = settings.passThreshold ?? 70;
 
-  /*
-   * Bound the number of attempts BEFORE grading.
-   *
-   * Submissions were unlimited and each one returned `?score=&passed=`, so a
-   * handful of multiple-choice questions could be brute-forced to a pass in
-   * seconds — and a pass auto-issues a certificate. For a platform selling
-   * audit-grade evidence of accredited training, "the learner guessed until it
-   * said yes" is the failure that matters most.
-   *
-   * Two independent bounds, because they stop different things. The rate limit
-   * makes rapid guessing impractical; this cap makes patient guessing
-   * impractical too. A rate limit alone just spreads the same attack over an
-   * afternoon.
-   *
-   * DEFAULT_MAX_ATTEMPTS applies where an author has set nothing, which today is
-   * every existing quiz. 10 is deliberately generous — a learner genuinely
-   * struggling with a hard quiz should not be locked out — while still bounding
-   * the guess count far below what brute force needs.
-   */
-  const maxAttempts =
-    Number.isInteger(settings.maxAttempts) && settings.maxAttempts! > 0
-      ? settings.maxAttempts!
-      : DEFAULT_MAX_ATTEMPTS;
+  // Load the questions now: whether this is a warranty-critical check (any
+  // question flagged `critical`) decides both the attempt policy and what
+  // "passing" means below.
+  const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
+  const critIds = criticalQuestionIds(questions);
+  const isCritical = critIds.length > 0;
 
-  const [{ used } = { used: 0 }] = await db
-    .select({ used: count() })
+  // The section this check belongs to — the unit a learner reviews after a
+  // critical fail, and the key a review is recorded against.
+  const [lessonRow] = await db
+    .select({ sectionId: lessons.sectionId })
+    .from(lessons)
+    .where(and(eq(lessons.id, lessonId), eq(lessons.tenantId, ctx.tenantId)))
+    .limit(1);
+  const sectionId = lessonRow?.sectionId ?? null;
+
+  // Prior submitted attempts (newest first) and whether the lesson is already
+  // complete. A critical lesson only completes on a critical pass, so a completed
+  // critical lesson means the check is already satisfied.
+  const priorAttempts = await db
+    .select({ submittedAt: quizAttempts.submittedAt })
     .from(quizAttempts)
     .where(
       and(
@@ -272,11 +347,70 @@ export async function submitQuizAttempt(
         eq(quizAttempts.quizId, quizId),
         isNotNull(quizAttempts.submittedAt),
       ),
+    )
+    .orderBy(desc(quizAttempts.submittedAt));
+  const used = priorAttempts.length;
+  const lastAttemptAt = priorAttempts[0]?.submittedAt ?? null;
+
+  const [{ completedCount } = { completedCount: 0 }] = await db
+    .select({ completedCount: count() })
+    .from(progressEvents)
+    .where(
+      and(
+        eq(progressEvents.enrollmentId, enrollmentId),
+        eq(progressEvents.lessonId, lessonId),
+        eq(progressEvents.eventType, 'completed'),
+      ),
     );
-  if (used >= maxAttempts) {
-    throw new Error(
-      `You have used all ${maxAttempts} attempts at this quiz. Ask your administrator to reset it.`,
-    );
+  const lessonCompleted = completedCount > 0;
+
+  if (isCritical) {
+    /*
+     * Warranty-critical check. The immediate-retry cap is REPLACED by a
+     * remediation gate: after a failed critical check the learner must review the
+     * section before another attempt, so guess -> retry -> guess is not a path to
+     * Trained. The first attempt is always allowed; one review unlocks one retry.
+     */
+    let reviewedSince = false;
+    if (sectionId && lastAttemptAt) {
+      const [{ reviews } = { reviews: 0 }] = await db
+        .select({ reviews: count() })
+        .from(progressEvents)
+        .where(
+          and(
+            eq(progressEvents.enrollmentId, enrollmentId),
+            eq(progressEvents.eventType, 'reviewed'),
+            sql`${progressEvents.payload}->>'sectionId' = ${sectionId}`,
+            gte(progressEvents.occurredAt, lastAttemptAt),
+          ),
+        );
+      reviewedSince = reviews > 0;
+    }
+    if (
+      reviewRequired({
+        isCritical,
+        lessonCompleted,
+        priorAttemptCount: used,
+        reviewedSinceLastAttempt: reviewedSince,
+      })
+    ) {
+      throw new Error('Review this section, then try the knowledge check again.');
+    }
+  } else {
+    /*
+     * Non-critical quiz: keep the simple attempt cap (unlimited submissions once
+     * let a handful of MCQs be brute-forced to a pass in seconds). 10 is generous
+     * for an ordinary check; warranty-critical checks use review gating instead.
+     */
+    const maxAttempts =
+      Number.isInteger(settings.maxAttempts) && settings.maxAttempts! > 0
+        ? settings.maxAttempts!
+        : DEFAULT_MAX_ATTEMPTS;
+    if (used >= maxAttempts) {
+      throw new Error(
+        `You have used all ${maxAttempts} attempts at this quiz. Ask your administrator to reset it.`,
+      );
+    }
   }
 
   // Keyed on the enrolment, not the address: an IP key would punish a whole
@@ -287,8 +421,6 @@ export async function submitQuizAttempt(
       `Too many attempts in a short time. Try again in ${limited.retryAfterSeconds} seconds.`,
     );
   }
-
-  const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
 
   const responses: Record<string, number[]> = {};
   const durations: Record<string, number> = {};
@@ -306,7 +438,16 @@ export async function submitQuizAttempt(
     responses,
     threshold,
   );
-  const { score, passed } = result;
+  const { score } = result;
+  const thresholdPassed = result.passed;
+  const correctIds = new Set(
+    result.perQuestion.filter((g) => g.isCorrect).map((g) => g.questionId),
+  );
+  const criticalPassed = allCriticalCorrect(critIds, correctIds);
+  // For a warranty-critical check, "passing" means every critical question is
+  // correct — the score threshold cannot substitute for a wrong critical answer.
+  // Non-critical quizzes are unchanged (threshold pass).
+  const passedLesson = isCritical ? criticalPassed : thresholdPassed;
 
   await db.transaction(async (tx) => {
     const [attempt] = await tx
@@ -317,7 +458,7 @@ export async function submitQuizAttempt(
         quizId,
         submittedAt: new Date(),
         score: String(score),
-        passed,
+        passed: passedLesson,
       })
       .returning();
     if (result.perQuestion.length > 0) {
@@ -334,15 +475,15 @@ export async function submitQuizAttempt(
       );
     }
     // A quiz attempt is the evidence a certificate rests on: for an accredited
-    // course, "when did this learner sit it, what did they score, was the
-    // threshold met" is the question an auditor asks. Recording the threshold
-    // and attempt number alongside the score matters because an admin can change
-    // the threshold afterwards (quiz.pass_threshold_change), and the log has to
-    // show what it was at the time.
+    // course, "when did this learner sit it, what did they score, did they pass"
+    // is the question an auditor asks. For a critical check the pass is the
+    // critical result (all critical questions correct); the raw score, the
+    // threshold result and the threshold are recorded alongside it so a later
+    // threshold change stays auditable.
     await audited(tx, {
       tenantId: ctx.tenantId,
       actorUserId: ctx.userId,
-      action: passed ? 'quiz_attempt.passed' : 'quiz_attempt.failed',
+      action: passedLesson ? 'quiz_attempt.passed' : 'quiz_attempt.failed',
       resourceType: 'quiz_attempt',
       resourceId: attempt.id,
       after: {
@@ -350,15 +491,17 @@ export async function submitQuizAttempt(
         lessonId,
         enrollmentId,
         score,
-        passed,
+        passed: passedLesson,
+        thresholdPassed,
         threshold,
+        critical: isCritical,
+        criticalPassed,
         attemptNumber: used + 1,
-        maxAttempts,
       },
     });
   });
 
-  if (passed) {
+  if (passedLesson) {
     await recordLessonCompleted(ctx, enr.courseId, enrollmentId, enr.status, lessonId);
   }
 
@@ -371,4 +514,145 @@ export async function submitQuizAttempt(
   return {
     redirectTo: `/learn/${courseSlug}/${lessonId}`,
   };
+}
+
+/**
+ * Private learner feedback on the append-only progress_events log — new event
+ * types, no schema change. Learners never see each other's feedback; it goes to
+ * Outdure. Three DISTINCT signals, each captured so it can later answer a real
+ * Outdure decision (not a "did you like it" sentiment score):
+ *
+ *  - `lesson_feedback` — diagnostic responses about a lesson (clear / learnt
+ *    something / already knew / wasn't clear), multi-select, + an optional
+ *    comment naming WHAT to explain better.
+ *  - `installer_idea` — a real-world product/installation/training idea.
+ *  - `course_confidence` — practical confidence after the whole training.
+ *
+ * Content-version note: lessonId + courseId interpret feedback while content is
+ * stable; a lesson content-version reference is a future dependency for analytics
+ * across content revisions (no curriculum-versioning model exists yet — the
+ * completion snapshot is the only versioned record).
+ */
+function cleanList(v: unknown, max: number, len: number): string[] {
+  return Array.isArray(v) ? v.slice(0, max).map((r) => String(r).slice(0, len)) : [];
+}
+function cleanText(v: unknown, len: number): string {
+  return String(v ?? '')
+    .trim()
+    .slice(0, len);
+}
+
+export async function recordLessonFeedback(
+  enrollmentId: string,
+  courseId: string,
+  lessonId: string,
+  input: { responses: string[]; comment: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  const responses = cleanList(input?.responses, 8, 64);
+  const comment = cleanText(input?.comment, 2000);
+  if (!responses.length && !comment) return { error: 'Pick at least one, or add a note.' };
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId,
+    eventType: 'lesson_feedback',
+    payload: { responses, comment, courseId },
+  });
+  return { ok: true };
+}
+
+/** A real-world installer idea — distinct from lesson feedback (§ innovation). */
+export async function recordInstallerIdea(
+  enrollmentId: string,
+  courseId: string,
+  lessonId: string | null,
+  input: { idea: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  const idea = cleanText(input?.idea, 4000);
+  if (!idea) return { error: 'Add your idea first.' };
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: lessonId ?? null,
+    eventType: 'installer_idea',
+    payload: { idea, courseId },
+  });
+  return { ok: true };
+}
+
+/**
+ * Installation confidence — a CORE outcome signal, ordinal and self-reported.
+ * NEVER confers or changes competency, Trained/verified status, or warranty
+ * eligibility, and never gates completion or navigation.
+ *
+ * `phase` distinguishes the course-start BASELINE from the completion OUTCOME so
+ * confidence UPLIFT can be read (as movement, not a fabricated score). The
+ * optional `reasons`/`comment` follow-up is captured only when the learner
+ * reports low confidence — it names what would help, which is the actionable
+ * part. The 4-point scale ('not_yet'|'somewhat'|'confident'|'very') is shared
+ * with topic-level confidence for consistency.
+ */
+export async function recordCourseConfidence(
+  enrollmentId: string,
+  courseId: string,
+  phase: 'baseline' | 'outcome',
+  input: { level: string; reasons: string[]; comment: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  if (!isConfidenceLevel(input?.level)) return { error: 'Choose an option.' };
+  if (phase !== 'baseline' && phase !== 'outcome') return { error: 'Unknown phase.' };
+  const reasons = cleanList(input?.reasons, 8, 64);
+  const comment = cleanText(input?.comment, 2000);
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: null,
+    eventType: 'course_confidence',
+    payload: { phase, level: input.level, reasons, comment, courseId },
+  });
+  return { ok: true };
+}
+
+/**
+ * Topic-level confidence at a practical-capability boundary. Same scale as
+ * course confidence; `capabilityKey` + `sectionId` are stored so aggregate
+ * analysis (including the internal-only confidence-vs-demonstrated-knowledge
+ * comparison) is possible later. Purely a signal — no status effect.
+ */
+export async function recordTopicConfidence(
+  enrollmentId: string,
+  courseId: string,
+  capabilityKey: string,
+  sectionId: string | null,
+  lessonId: string | null,
+  input: { level: string; reasons: string[]; comment: string },
+): Promise<{ ok: true } | { error: string }> {
+  const ctx = await getTenantContext();
+  if (!ctx?.tenantId) redirect('/login');
+  await assertNotViewingAs();
+  await verifyEnrollment(ctx, enrollmentId);
+  if (!isConfidenceLevel(input?.level)) return { error: 'Choose an option.' };
+  const key = cleanText(capabilityKey, 64);
+  if (!key) return { error: 'Unknown topic.' };
+  const reasons = cleanList(input?.reasons, 8, 64);
+  const comment = cleanText(input?.comment, 2000);
+  await db.insert(progressEvents).values({
+    tenantId: ctx.tenantId,
+    enrollmentId,
+    lessonId: lessonId ?? null,
+    eventType: 'topic_confidence',
+    payload: { capabilityKey: key, sectionId, level: input.level, reasons, comment, courseId },
+  });
+  return { ok: true };
 }

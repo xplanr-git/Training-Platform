@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDateLong } from '@/lib/format-date';
+import { ShareButton } from '@/components/share-button';
+import { ConfidenceCheck, type ConfidenceInput } from '@/components/confidence-check';
+import { FOLLOWUP_REASONS } from '@/lib/confidence';
 
 /**
  * What the learner sees the moment they finish a course.
@@ -37,6 +40,8 @@ export function CourseComplete({
   revokedAt,
   certificateEnabled,
   reviewHref,
+  inviteHref = null,
+  confidenceAction = null,
 }: {
   courseTitle: string;
   /** Null when the course is complete but no certificate row exists. */
@@ -51,6 +56,14 @@ export function CourseComplete({
    */
   certificateEnabled?: boolean;
   reviewHref: string | null;
+  /** Public course/landing path to share when inviting a colleague. */
+  inviteHref?: string | null;
+  /**
+   * Bound server action for the post-training confidence question. Optional so
+   * the panel still renders (e.g. in preview) without it. NEVER gates anything —
+   * the course is already complete when this shows.
+   */
+  confidenceAction?: ((input: ConfidenceInput) => Promise<{ ok: true } | { error: string }>) | null;
 }) {
   const revoked = Boolean(verificationCode && revokedAt);
   const awardsCertificate = certificateEnabled !== false;
@@ -184,6 +197,42 @@ export function CourseComplete({
               ) : null}
             </>
           )}
+
+          {/* Outcome check — readiness, not satisfaction. Voluntary, and it can
+              never change the result the learner just earned. */}
+          {confidenceAction ? (
+            <div className="mt-5 border-t border-border pt-4">
+              <ConfidenceCheck
+                prompt="After this training, how confident are you installing QwickBuild on a real project?"
+                helpText="Optional — this won’t change your result."
+                action={confidenceAction}
+                followup={{
+                  prompt: 'What would help you feel more confident?',
+                  reasons: FOLLOWUP_REASONS,
+                }}
+                ackText="Thanks — that helps us support you and improve the training."
+              />
+            </div>
+          ) : null}
+
+          {/* Referral — the strongest proactive moment (§16), kept subordinate to
+              the credential. Native share / copy link; no incentive. */}
+          {inviteHref ? (
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="text-sm text-foreground-2">
+                Know another installer who’d find this useful?
+              </p>
+              <div className="mt-2.5">
+                <ShareButton
+                  path={inviteHref}
+                  title="Outdure Academy"
+                  text="I’ve been doing the Outdure Installer Training — thought this might be useful for you."
+                  label="Invite a colleague"
+                  variant="action"
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>
