@@ -42,14 +42,17 @@ export function LearnerShell({
           <GraduationCap aria-hidden="true" className="h-5 w-5" />
           <span className="truncate">{tenantName}</span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+        {/* -mx-2 lets the tap padding bleed to the row edge on mobile without
+            widening the row; flex-wrap + tighter mobile padding keeps all five
+            destinations on-screen at 375 (no horizontal overflow). */}
+        <nav className="-mx-2 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm">
           {nav.map((n) => (
             <Link
               key={n.key}
               href={n.href}
               aria-current={active === n.key ? 'page' : undefined}
               className={cn(
-                'inline-flex min-h-11 items-center rounded-sm px-3 font-semibold transition-colors sm:min-h-0 sm:py-1.5',
+                'inline-flex min-h-11 items-center rounded-sm px-2 font-semibold transition-colors sm:min-h-0 sm:px-3 sm:py-1.5',
                 active === n.key
                   ? 'text-foreground underline decoration-primary decoration-[1.75px] underline-offset-[5px]'
                   : 'text-foreground-2 hover:text-foreground',
@@ -58,7 +61,7 @@ export function LearnerShell({
               {n.label}
             </Link>
           ))}
-          <SignOutButton className="text-foreground-2 hover:text-foreground ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-sm px-3 text-sm font-semibold transition-colors sm:min-h-0 sm:py-1.5" />
+          <SignOutButton className="text-foreground-2 hover:text-foreground inline-flex min-h-11 items-center gap-1.5 rounded-sm px-2 text-sm font-semibold transition-colors sm:min-h-0 sm:px-3 sm:py-1.5" />
         </nav>
       </div>
     </header>
