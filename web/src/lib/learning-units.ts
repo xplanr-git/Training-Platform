@@ -215,3 +215,17 @@ export function checkLessonHeading(title: string): string {
   if (/knowledge check/i.test(s)) return s;
   return `Knowledge check — ${s}`;
 }
+
+/**
+ * Learner-facing topic heading. Strips the internal "EP N —" episode-number
+ * prefix that leaked from the import ("EP 1 — Qwickbuild Overview and A100" ->
+ * "Qwickbuild Overview and A100"); topics are already ordered, so the episode
+ * number is redundant internal labelling. Only an unambiguous leading prefix is
+ * removed; if nothing meaningful remains, the original title is kept so a bare
+ * "EP 1" never becomes empty. Idempotent.
+ */
+export function topicHeading(title: string): string {
+  const t = (title ?? '').trim();
+  const stripped = t.replace(/^EP\s*\d+\s*[—–-]\s*/i, '').trim();
+  return stripped.length > 0 ? stripped : t;
+}

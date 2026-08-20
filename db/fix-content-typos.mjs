@@ -4,7 +4,7 @@
  *
  * Corrects unambiguous spelling errors in live learner-facing content:
  *   - quiz option "Alumunium"  -> "Aluminium"   (a CORRECT answer)
- *   - quiz option "Imhae 4 ..." -> "Image 4 ..."
+ *   - quiz option "Imhae 4 ..." / "Imahe 4 ..." -> "Image 4 ..."  (both transpositions)
  *   - lesson title "... black/sliver" -> "... black/silver"
  *
  * These are spelling fixes, NOT technical-content changes — no meaning is altered.
@@ -50,7 +50,7 @@ async function run() {
   // 2) Option label "Imhae " -> "Image " (the "Imhae 4 90 bracket" typo).
   const imhae = await sql`
     select id, prompt, options from quiz_questions
-    where options::text ilike '%Imhae %'`;
+    where options::text ilike '%Imhae %' or options::text ilike '%Imahe %'`;
   // 3) Lesson title "sliver" -> "silver".
   const sliver = await sql`
     select id, title from lessons where title ilike '%sliver%'`;
@@ -75,7 +75,7 @@ async function run() {
       await tx`update quiz_questions set options = ${tx.json(fixed)} where id = ${r.id}`;
     }
     for (const r of imhae) {
-      const fixed = r.options.map((o) => (typeof o === 'string' ? o.replace(/Imhae /g, 'Image ') : o));
+      const fixed = r.options.map((o) => (typeof o === 'string' ? o.replace(/Im(hae|ahe) /g, "Image ") : o));
       await tx`update quiz_questions set options = ${tx.json(fixed)} where id = ${r.id}`;
     }
     for (const r of sliver) {

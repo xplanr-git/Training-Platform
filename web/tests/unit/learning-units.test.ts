@@ -4,6 +4,7 @@ import {
   itemProgress,
   sectionItemMeta,
   checkLessonHeading,
+  topicHeading,
   type LessonRow,
 } from '@/lib/learning-units';
 
@@ -154,6 +155,18 @@ describe('item-based counts and time', () => {
     // Degenerate titles fall back cleanly.
     expect(checkLessonHeading('Quiz')).toBe('Knowledge check');
     expect(checkLessonHeading('')).toBe('Knowledge check');
+  });
+
+  it('topicHeading strips the internal "EP N —" prefix', () => {
+    expect(topicHeading('EP 1 — Qwickbuild Overview and A100')).toBe(
+      'Qwickbuild Overview and A100',
+    );
+    expect(topicHeading('EP 11 — A900 Supports')).toBe('A900 Supports');
+    // No prefix → unchanged; idempotent.
+    expect(topicHeading('DeckPlanner')).toBe('DeckPlanner');
+    expect(topicHeading('A900 Supports')).toBe('A900 Supports');
+    // Degenerate "EP 1" alone keeps the original rather than becoming empty.
+    expect(topicHeading('EP 1')).toBe('EP 1');
   });
 
   it('sectionItemMeta reports per-topic item count + done', () => {

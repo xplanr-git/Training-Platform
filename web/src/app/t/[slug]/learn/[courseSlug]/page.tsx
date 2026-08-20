@@ -31,6 +31,7 @@ import {
   itemProgress,
   sectionItemMeta,
   itemsLabel,
+  topicHeading,
   type LessonRow,
   type LearningItem,
 } from '@/lib/learning-units';
@@ -281,7 +282,9 @@ export default async function Learn({
                       }
                       className="flex flex-col gap-0.5 hover:underline sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
                     >
-                      <span className="text-sm font-medium">{s.title || 'Section'}</span>
+                      <span className="text-sm font-medium">
+                        {topicHeading(s.title) || 'Section'}
+                      </span>
                       <span className="text-foreground-2 shrink-0 text-meta tabular-nums">
                         {topicMeta(s.id)}
                       </span>
@@ -306,7 +309,7 @@ export default async function Learn({
             >
               <div className="mb-2 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                 <div className="min-w-0">
-                  <h2 className="text-h2">{s.title || 'Section'}</h2>
+                  <h2 className="text-h2">{topicHeading(s.title) || 'Section'}</h2>
                   {isCurrent && <p className="text-foreground-2 mt-0.5 text-meta">In progress</p>}
                 </div>
                 <span className="text-foreground-2 shrink-0 text-meta tabular-nums sm:text-right">

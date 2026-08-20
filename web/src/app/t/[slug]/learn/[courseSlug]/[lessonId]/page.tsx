@@ -62,6 +62,7 @@ import { getConfidenceState } from '@/lib/confidence-state';
 import {
   deriveLearningItems,
   checkLessonHeading,
+  topicHeading,
   type LessonRow,
   type LearningItem,
 } from '@/lib/learning-units';
@@ -350,7 +351,7 @@ export default async function LessonPlayer({
   // topic the lesson belongs to; its title is the orientation line above the
   // lesson title (course context -> topic -> lesson).
   const currentSection = outline.find((s) => s.id === lesson.sectionId) ?? null;
-  const topicTitle = currentSection?.title ?? null;
+  const topicTitle = currentSection?.title ? topicHeading(currentSection.title) : null;
 
   // Review-control (§0): the learner reaches this lesson from a Needs-Review
   // screen (?review=<quizLessonId>). The "back to the check" acknowledgment lives

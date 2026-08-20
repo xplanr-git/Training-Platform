@@ -1,24 +1,54 @@
 import { connectRole } from '@/lib/connect-roles';
+import type { Audience } from '@/lib/audience';
 
 /**
- * The Academy training a Contractor must complete to satisfy Outdure's required
- * installer training standard.
- *
- * Confirmed business rule: Registered → complete the required installer training
- * → Trained (no staff review). The course is user-facing named "Outdure Installer
- * Training"; the STATUS "Trained" is a separate concept and is not exposed here.
- *
- * Encoded as the course SLUG — a single, human-checkable constant, deliberately
- * NOT a configuration system: Slice 1 has exactly one required course. The slug
- * intentionally stays `trained-installer-training` (a stable internal identifier)
- * even though the display name changed to "Outdure Installer Training": the
- * user-facing name and the internal id do not need to match, and renaming the
- * slug would churn links/references for no functional gain.
- *
- * When the dealer/Product-Champion model is resolved, a second requirement will
- * live alongside this one; that is a later slice, not a reason to generalise now.
+ * "Required training" is now EXPLICIT DATA, not an inference from a course name
+ * or slug: a course carries `requiredForAudiences` (which audiences must complete
+ * it). pickRequiredCourse() below reads that. This constant remains ONLY as a
+ * backwards-compatibility fallback for an environment whose courses have not yet
+ * been seeded with requiredForAudiences (so the requirement panel does not simply
+ * vanish before the seed runs). Once every environment is seeded it is dead.
  */
 export const CONTRACTOR_REQUIRED_COURSE_SLUG = 'trained-installer-training';
+
+/**
+ * The effective audience for REQUIREDNESS. Unknown audience is treated as
+ * installer — the default cohort — so a not-yet-onboarded installer still sees
+ * their required training (matching the prior behaviour, where null/undefined
+ * did not hide the requirement). This is the ONLY place unknown is coerced, and
+ * only for the required-training decision; it never affects status or the rest
+ * of the experience, where unknown stays neutral.
+ */
+export function effectiveRequirementAudience(a: Audience | null | undefined): Audience {
+  return a ?? 'installer';
+}
+
+/**
+ * Pick the required course for a learner from the candidate course rows, using
+ * explicit data first and the legacy slug only as an unseeded-environment
+ * fallback. Pure and UI-agnostic.
+ *
+ *  - If ANY candidate has requiredForAudiences set (i.e. the data is seeded),
+ *    the required course is the one whose list includes the learner's effective
+ *    audience — or none, which correctly means "no required training for you".
+ *  - If NOTHING is seeded, fall back to the single legacy required slug, shown
+ *    to installers/unknown only (the prior audienceAllowsRequirement gate).
+ */
+export function pickRequiredCourse<
+  T extends { slug: string; requiredForAudiences?: readonly string[] | null },
+>(candidates: T[], audience: Audience | null | undefined): T | null {
+  const seeded = candidates.filter(
+    (c) => c.requiredForAudiences && c.requiredForAudiences.length > 0,
+  );
+  if (seeded.length > 0) {
+    const eff = effectiveRequirementAudience(audience);
+    return seeded.find((c) => c.requiredForAudiences!.includes(eff)) ?? null;
+  }
+  if (audience === 'installer' || audience == null) {
+    return candidates.find((c) => c.slug === CONTRACTOR_REQUIRED_COURSE_SLUG) ?? null;
+  }
+  return null;
+}
 
 export type RequirementState = 'not-enrolled' | 'not-started' | 'in-progress' | 'complete';
 
