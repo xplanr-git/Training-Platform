@@ -59,6 +59,7 @@ import { ShareButton } from '@/components/share-button';
 import { capabilityTriggers } from '@/lib/confidence';
 import { FOLLOWUP_REASONS } from '@/lib/confidence';
 import { getConfidenceState } from '@/lib/confidence-state';
+import { deriveLearningItems, type LessonRow, type LearningItem } from '@/lib/learning-units';
 import { hostedVideoFromContent } from '@/lib/video';
 import { isVideoFault } from '@/lib/video-availability';
 import { resolveVideoSource } from '@/lib/video-source';
@@ -131,6 +132,7 @@ export default async function LessonPlayer({
         type: lessons.type,
         title: lessons.title,
         estimatedMinutes: lessons.estimatedMinutes,
+        assessmentForLessonId: lessons.assessmentForLessonId,
       })
       .from(lessons)
       .where(eq(lessons.courseId, course.id))
@@ -277,18 +279,44 @@ export default async function LessonPlayer({
     if (Number.isFinite(pos) && pos > 0) resumeAtSec = Math.floor(pos);
   }
 
-  // Outline grouped by section (in order) for the sidebar.
   const bySection = new Map<string, typeof ordered>();
   for (const l of ordered) {
     const arr = bySection.get(l.sectionId) ?? [];
     arr.push(l);
     bySection.set(l.sectionId, arr);
   }
+
+  // "In this topic" outline uses the LEARNER-FACING model: a subject video + its
+  // paired check is ONE row (the check is folded in, not a separate task); a
+  // topic-summary check is its own row. Rows are keyed by the lesson the learner
+  // opens; "done" is item-complete (content AND check), and the current lesson —
+  // even if it's a paired check — highlights its parent item's row.
+  const learningItems = deriveLearningItems(
+    ordered as unknown as LessonRow[],
+    sectionOrder,
+    progress.completed,
+  );
+  const itemsBySection = new Map<string, LearningItem[]>();
+  for (const it of learningItems) {
+    const arr = itemsBySection.get(it.sectionId) ?? [];
+    arr.push(it);
+    itemsBySection.set(it.sectionId, arr);
+  }
   const outline = sectionRows.map((s) => ({
     id: s.id,
     title: s.title,
-    items: bySection.get(s.id) ?? [],
+    items: (itemsBySection.get(s.id) ?? []).map((it) => ({
+      id: it.openLessonId,
+      title: it.title,
+      type: it.contentType,
+    })),
   }));
+  const itemCompleted = new Set(
+    learningItems.filter((it) => it.state === 'complete').map((it) => it.openLessonId),
+  );
+  const currentItemOpenId =
+    learningItems.find((it) => it.contentLessonId === lesson.id || it.checkLessonId === lesson.id)
+      ?.openLessonId ?? lesson.id;
 
   // Warranty-critical remediation state. A critical check with a failed prior
   // attempt blocks the next attempt until the learner reviews the section (via
@@ -653,8 +681,8 @@ export default async function LessonPlayer({
             <LessonNav
               sections={[currentSection]}
               courseSlug={courseSlug}
-              currentLessonId={lesson.id}
-              completed={progress.completed}
+              currentLessonId={currentItemOpenId}
+              completed={itemCompleted}
               showSectionTitles={false}
             />
           </div>

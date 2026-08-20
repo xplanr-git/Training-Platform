@@ -347,7 +347,7 @@ Read this before doing anything in this repo.
 │   ├── schema.ts                      22 tables, all tenant-scoped
 │   ├── client.ts                      `db` — BYPASSES RLS. Scope by tenant_id yourself.
 │   ├── audit.ts                       audited(tx, entry) — required by §7.11
-│   └── migrations/                    0000–0019, append-only. Next number is 0020.
+│   └── migrations/                    0000–0020, append-only. Next number is 0021.
 │
 ├── docs/
 │   ├── POLISH_BACKLOG.md              live backlog; §5 holds the owner-blocked decisions

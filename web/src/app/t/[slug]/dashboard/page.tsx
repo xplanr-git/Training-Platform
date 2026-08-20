@@ -20,6 +20,12 @@ import { effectiveUserId, isViewingAs } from '@/lib/view-as';
 import { landAfterSignIn } from '@/app/login/actions';
 import { deriveProgress, formatMinutes } from '@/lib/progress';
 import {
+  deriveLearningItems,
+  itemProgress,
+  itemsLabel,
+  type LessonRow,
+} from '@/lib/learning-units';
+import {
   CONTRACTOR_REQUIRED_COURSE_SLUG,
   showsContractorRequirement,
   requirementState,
@@ -118,12 +124,21 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
           .select({
             courseId: lessons.courseId,
             id: lessons.id,
+            sectionId: lessons.sectionId,
+            position: lessons.position,
+            type: lessons.type,
+            title: lessons.title,
             estimatedMinutes: lessons.estimatedMinutes,
+            assessmentForLessonId: lessons.assessmentForLessonId,
           })
           .from(lessons)
           .where(inArray(lessons.courseId, courseIds))
       : Promise.resolve(
-          [] as Array<{ courseId: string; id: string; estimatedMinutes: number | null }>,
+          [] as Array<
+            {
+              courseId: string;
+            } & LessonRow
+          >,
         ),
   ]);
 
@@ -134,27 +149,30 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     if (arr) arr.push(c.lessonId);
     else completedByEnrollment.set(c.enrollmentId, [c.lessonId]);
   }
-  const lessonsByCourse = new Map<string, Array<{ id: string; estimatedMinutes: number | null }>>();
+  const lessonsByCourse = new Map<string, LessonRow[]>();
   for (const l of lessonRows) {
-    const item = { id: l.id, estimatedMinutes: l.estimatedMinutes };
     const arr = lessonsByCourse.get(l.courseId);
-    if (arr) arr.push(item);
-    else lessonsByCourse.set(l.courseId, [item]);
+    if (arr) arr.push(l);
+    else lessonsByCourse.set(l.courseId, [l]);
   }
 
   const withProgress = rows.map((r) => {
-    const p = deriveProgress(
-      completedByEnrollment.get(r.enrollmentId) ?? [],
-      lessonsByCourse.get(r.courseId) ?? [],
-    );
+    const courseLessons = lessonsByCourse.get(r.courseId) ?? [];
+    const completed = new Set(completedByEnrollment.get(r.enrollmentId) ?? []);
+    // Authoritative completion stays row-based (certificate trigger unchanged).
+    const p = deriveProgress([...completed], courseLessons);
+    // Learner-facing counts/%/time are over ITEMS (video + its check = one item).
+    // Order is irrelevant to counts, so a trivial section order is fine here.
+    const order = new Map(courseLessons.map((l) => [l.sectionId, 0]));
+    const ip = itemProgress(deriveLearningItems(courseLessons, order, completed));
     return {
       ...r,
-      percent: p.percent,
-      done: p.done,
-      total: p.total,
+      percent: ip.percent,
+      done: ip.doneItems,
+      total: ip.totalItems,
       isComplete: p.isComplete,
-      minutesLeft: p.minutesLeft,
-      minutesLeftIsPartial: p.minutesLeftIsPartial,
+      minutesLeft: ip.minutesLeft,
+      minutesLeftIsPartial: ip.minutesLeftIsPartial,
     };
   });
 
@@ -212,7 +230,8 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                       {requiredEnrollment.percent}% complete
                     </span>
                     <span className="text-foreground-2 text-sm tabular-nums">
-                      {requiredEnrollment.done} of {requiredEnrollment.total} lessons
+                      {requiredEnrollment.done} of {requiredEnrollment.total}{' '}
+                      {itemsLabel(requiredEnrollment.total)}
                       {requiredEnrollment.minutesLeft != null
                         ? ` · ${requiredEnrollment.minutesLeftIsPartial ? 'at least' : 'about'} ${formatMinutes(requiredEnrollment.minutesLeft)} left`
                         : ''}
@@ -265,7 +284,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
                     <div className="min-w-0">
                       <span className="text-sm font-medium">{r.title}</span>
                       <p className="text-foreground-2 mt-0.5 text-meta tabular-nums">
-                        {r.done}/{r.total} lessons · {stateLabel}
+                        {r.done}/{r.total} {itemsLabel(r.total)} · {stateLabel}
                       </p>
                     </div>
                     <span className="text-foreground-2 shrink-0 text-sm">{action} →</span>

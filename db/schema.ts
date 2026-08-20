@@ -254,12 +254,25 @@ export const lessons = pgTable(
     estimatedMinutes: integer('estimated_minutes'),
     // Normalises the old 12-URL-column shape: type-specific data lives here.
     content: jsonb('content').notNull().default({}),
+    /**
+     * Learning-unit link (V2). Set ONLY on a quiz lesson that is the knowledge
+     * check FOR a single subject content lesson — it points at that content
+     * lesson's id, so the two render as ONE learner-facing learning item
+     * (video/content + its check). NULL means either a normal content lesson OR
+     * a topic-level summary check (e.g. "Knowledge Quiz A200"), which stays a
+     * distinct end-of-topic activity. Deliberately a plain uuid, not a FK — same
+     * rationale as progress_events' historical ids: it must survive re-authoring
+     * and never trip a cascade. Authored data after the one-time seed; runtime
+     * NEVER infers pairing from titles.
+     */
+    assessmentForLessonId: uuid('assessment_for_lesson_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     courseIdx: index('lessons_course_idx').on(t.courseId),
     sectionIdx: index('lessons_section_idx').on(t.sectionId),
+    assessmentForIdx: index('lessons_assessment_for_idx').on(t.assessmentForLessonId),
   }),
 );
 
