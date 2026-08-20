@@ -316,7 +316,10 @@ export default async function Learn({
                         className="flex items-center gap-3 rounded-sm px-2 py-3 text-sm transition-colors hover:bg-surface-muted"
                       >
                         {done ? (
-                          <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-status-green" />
+                          <Check
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0 text-status-green"
+                          />
                         ) : (
                           <Icon className="h-4 w-4 shrink-0 text-muted" />
                         )}

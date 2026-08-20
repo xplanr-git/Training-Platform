@@ -90,7 +90,7 @@ export function QuizForm({
         Question {step + 1} of {questions.length}
       </p>
       <h2 className="text-h2 mt-2">{q.prompt}</h2>
-      {multi && <p className="text-muted mt-1 text-xs">Choose all that apply.</p>}
+      {multi && <p className="text-muted mt-1 text-meta">Choose all that apply.</p>}
 
       <div className="mt-5 flex flex-col gap-2.5">
         {q.options.map((o, oi) => {
