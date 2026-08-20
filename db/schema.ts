@@ -439,6 +439,13 @@ export const quizQuestions = pgTable(
     // ones. Only questions in the confirmed critical areas set this; default
     // false leaves every existing question and non-critical quiz unchanged.
     critical: boolean('critical').notNull().default(false),
+    // Reversible cohort exclusion: false hides the question from the LEARNER
+    // (grading + render) without deleting it, so content that cannot ship yet
+    // (e.g. the image-identification questions awaiting product photos) can be
+    // withheld from the cohort assessment and restored later by flipping it back.
+    // Admin authoring still sees every question; grading recomputes over active
+    // questions only. Default true leaves every existing question unchanged.
+    active: boolean('active').notNull().default(true),
   },
   (t) => ({ quizIdx: index('quiz_questions_quiz_idx').on(t.quizId) }),
 );

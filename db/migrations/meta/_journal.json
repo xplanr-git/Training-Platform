@@ -162,6 +162,13 @@
       "when": 1787239219346,
       "tag": "0022_cold_metal_master",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1787242372790,
+      "tag": "0023_natural_selene",
+      "breakpoints": true
     }
   ]
 }

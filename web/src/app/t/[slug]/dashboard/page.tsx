@@ -6,7 +6,6 @@ import {
   db,
   eq,
   and,
-  or,
   asc,
   desc,
   inArray,
@@ -31,7 +30,6 @@ import {
 import { showsInstallerPathway } from '@/lib/audience';
 import { getAudience } from '@/lib/audience-server';
 import {
-  CONTRACTOR_REQUIRED_COURSE_SLUG,
   pickRequiredCourse,
   showsContractorRequirement,
   requirementState,
@@ -89,9 +87,9 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
       .from(memberships)
       .where(and(eq(memberships.userId, dataUserId), eq(memberships.tenantId, ctx.tenantId)))
       .limit(1),
-    // Candidate required courses: any PUBLISHED course marked required for some
-    // audience (the data-driven set), plus the legacy slug as an unseeded-env
-    // fallback. pickRequiredCourse() resolves the learner's one below.
+    // Candidate required courses: PUBLISHED courses explicitly marked required
+    // for some audience. Purely data-driven — no slug fallback. pickRequiredCourse()
+    // resolves the learner's one (or none) below.
     db
       .select({
         slug: courses.slug,
@@ -104,10 +102,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
         and(
           eq(courses.tenantId, ctx.tenantId),
           eq(courses.status, 'published'),
-          or(
-            isNotNull(courses.requiredForAudiences),
-            eq(courses.slug, CONTRACTOR_REQUIRED_COURSE_SLUG),
-          ),
+          isNotNull(courses.requiredForAudiences),
         ),
       ),
   ]);
@@ -176,11 +171,11 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     };
   });
 
-  // Audience relevance is now DATA-driven: pickRequiredCourse selects the course
-  // marked required for this learner's audience (unknown → installer), or falls
-  // back to the legacy slug only where nothing is seeded. A positively-identified
-  // dealer/distributor/staff learner matches no installer requirement, so the
-  // frame is never forced on them — without a hardcoded audience gate here.
+  // Audience relevance is DATA-driven and honest: pickRequiredCourse returns the
+  // course explicitly marked required for this learner's KNOWN audience, else
+  // null. An UNKNOWN audience matches nothing — the AudiencePicker above asks the
+  // question instead; unknown is never treated as installer. A dealer/distributor/
+  // staff learner matches no installer requirement, so it is never forced on them.
   const requiredCourse = pickRequiredCourse(requiredCandidates, audience);
   const showsRequirement =
     !!requiredCourse && showsContractorRequirement(membershipRow[0]?.connectRoleCode ?? null);

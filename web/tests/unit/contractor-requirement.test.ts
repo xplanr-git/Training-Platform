@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   CONTRACTOR_REQUIRED_COURSE_SLUG,
+  pickRequiredCourse,
   showsContractorRequirement,
   requirementState,
   requirementAction,
@@ -28,6 +29,34 @@ describe('contractor requirement', () => {
     it('hides for a dealer (their requirement is a separate, later model)', () => {
       expect(showsContractorRequirement('DEAL_STOCKIST')).toBe(false);
       expect(showsContractorRequirement('DEAL_RESELLER')).toBe(false);
+    });
+  });
+
+  describe('pickRequiredCourse — data-driven, unknown stays neutral', () => {
+    const installer = {
+      slug: 'trained-installer-training',
+      requiredForAudiences: ['installer'] as const,
+    };
+    const dealerCourse = { slug: 'dealer-onboarding', requiredForAudiences: ['dealer'] as const };
+    const candidates = [installer, dealerCourse];
+
+    it('returns the course explicitly required for a KNOWN installer', () => {
+      expect(pickRequiredCourse(candidates, 'installer')).toBe(installer);
+    });
+    it('matches a dealer to the dealer course, never the installer one', () => {
+      expect(pickRequiredCourse(candidates, 'dealer')).toBe(dealerCourse);
+    });
+    it('UNKNOWN audience is NEUTRAL — never defaulted to installer', () => {
+      expect(pickRequiredCourse(candidates, null)).toBeNull();
+      expect(pickRequiredCourse(candidates, undefined)).toBeNull();
+    });
+    it('a known audience with no required course gets an honest null', () => {
+      expect(pickRequiredCourse(candidates, 'staff')).toBeNull();
+    });
+    it('an UNSEEDED environment (no requiredForAudiences) requires nothing of anyone', () => {
+      const unseeded = [{ slug: 'trained-installer-training', requiredForAudiences: null }];
+      expect(pickRequiredCourse(unseeded, 'installer')).toBeNull();
+      expect(pickRequiredCourse(unseeded, null)).toBeNull();
     });
   });
 

@@ -326,7 +326,13 @@ export async function submitQuizAttempt(
   // Load the questions now: whether this is a warranty-critical check (any
   // question flagged `critical`) decides both the attempt policy and what
   // "passing" means below.
-  const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
+  // Only ACTIVE questions are graded — a question withheld from the cohort (e.g.
+  // an image question awaiting product photos) is neither shown nor scored, and
+  // the threshold recomputes over what remains. Admin authoring sees all.
+  const questions = await db
+    .select()
+    .from(quizQuestions)
+    .where(and(eq(quizQuestions.quizId, quizId), eq(quizQuestions.active, true)));
   const critIds = criticalQuestionIds(questions);
   const isCritical = critIds.length > 0;
 

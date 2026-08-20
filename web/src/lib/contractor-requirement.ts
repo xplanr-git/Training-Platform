@@ -2,52 +2,35 @@ import { connectRole } from '@/lib/connect-roles';
 import type { Audience } from '@/lib/audience';
 
 /**
- * "Required training" is now EXPLICIT DATA, not an inference from a course name
- * or slug: a course carries `requiredForAudiences` (which audiences must complete
- * it). pickRequiredCourse() below reads that. This constant remains ONLY as a
- * backwards-compatibility fallback for an environment whose courses have not yet
- * been seeded with requiredForAudiences (so the requirement panel does not simply
- * vanish before the seed runs). Once every environment is seeded it is dead.
+ * The canonical slug of the installer training course. Kept as a documented
+ * identifier (the seed script marks THIS course required for installers), NOT as
+ * a source of "required" meaning — requiredness is read from data (see
+ * pickRequiredCourse). Nothing infers "required" from this slug any more.
  */
 export const CONTRACTOR_REQUIRED_COURSE_SLUG = 'trained-installer-training';
 
 /**
- * The effective audience for REQUIREDNESS. Unknown audience is treated as
- * installer — the default cohort — so a not-yet-onboarded installer still sees
- * their required training (matching the prior behaviour, where null/undefined
- * did not hide the requirement). This is the ONLY place unknown is coerced, and
- * only for the required-training decision; it never affects status or the rest
- * of the experience, where unknown stays neutral.
- */
-export function effectiveRequirementAudience(a: Audience | null | undefined): Audience {
-  return a ?? 'installer';
-}
-
-/**
- * Pick the required course for a learner from the candidate course rows, using
- * explicit data first and the legacy slug only as an unseeded-environment
- * fallback. Pure and UI-agnostic.
+ * Pick the required course for a learner — PURELY from explicit data. A course is
+ * required only for the audiences listed in its `requiredForAudiences`. Pure and
+ * UI-agnostic.
  *
- *  - If ANY candidate has requiredForAudiences set (i.e. the data is seeded),
- *    the required course is the one whose list includes the learner's effective
- *    audience — or none, which correctly means "no required training for you".
- *  - If NOTHING is seeded, fall back to the single legacy required slug, shown
- *    to installers/unknown only (the prior audienceAllowsRequirement gate).
+ * Deliberately has NO slug/name inference and NO "unknown → installer" coercion:
+ *
+ *  - A KNOWN audience returns the course explicitly marked required for it (or
+ *    null — an honest "nothing required for you").
+ *  - An UNKNOWN audience (null/undefined) returns null. Unknown is NEVER treated
+ *    as installer: the learner gets the neutral first-use audience question
+ *    instead of being shown installer-required training as though identified.
+ *  - An UNSEEDED environment (no course carries requiredForAudiences) returns
+ *    null for everyone — an honest unconfigured state, never a slug-inferred
+ *    requirement. The deploy seed (seed-required-training.mjs) configures this;
+ *    it must run as part of the release (see the deploy runbook).
  */
 export function pickRequiredCourse<
   T extends { slug: string; requiredForAudiences?: readonly string[] | null },
 >(candidates: T[], audience: Audience | null | undefined): T | null {
-  const seeded = candidates.filter(
-    (c) => c.requiredForAudiences && c.requiredForAudiences.length > 0,
-  );
-  if (seeded.length > 0) {
-    const eff = effectiveRequirementAudience(audience);
-    return seeded.find((c) => c.requiredForAudiences!.includes(eff)) ?? null;
-  }
-  if (audience === 'installer' || audience == null) {
-    return candidates.find((c) => c.slug === CONTRACTOR_REQUIRED_COURSE_SLUG) ?? null;
-  }
-  return null;
+  if (!audience) return null;
+  return candidates.find((c) => c.requiredForAudiences?.includes(audience)) ?? null;
 }
 
 export type RequirementState = 'not-enrolled' | 'not-started' | 'in-progress' | 'complete';

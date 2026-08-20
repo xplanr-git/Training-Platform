@@ -82,10 +82,13 @@ const LESSON_ICON: Record<string, typeof Video> = {
 };
 
 function loadQuestions(quizId: string) {
+  // ACTIVE only — questions withheld from the cohort (e.g. image questions
+  // awaiting photos) are not shown; grading in submitQuizAttempt filters the same
+  // way, so what the learner answers and what is graded stay in lockstep.
   return db
     .select()
     .from(quizQuestions)
-    .where(eq(quizQuestions.quizId, quizId))
+    .where(and(eq(quizQuestions.quizId, quizId), eq(quizQuestions.active, true)))
     .orderBy(asc(quizQuestions.position));
 }
 
@@ -623,9 +626,12 @@ export default async function LessonPlayer({
           ) : (
             <span className="text-sm text-muted">End of course</span>
           )
-        ) : isQuiz ? (
+        ) : isQuiz && questions.length > 0 ? (
           <span className="text-sm text-muted">Pass the knowledge check to complete</span>
         ) : (
+          // A content lesson, OR a knowledge check with no active questions (e.g.
+          // its questions are withheld from the cohort): there is nothing to grade,
+          // so it completes like a content lesson and never blocks the course.
           <NavForm
             action={markLessonComplete.bind(
               null,
