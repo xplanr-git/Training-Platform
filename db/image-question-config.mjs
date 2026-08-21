@@ -54,6 +54,7 @@ const IMAGE_QUESTIONS = {
   'Which item is the A202 Joiner Bracket?': '/product-images/a202-joiner-bracket.webp',
   'What item is the A205 Double Joist Bracket?': '/product-images/a206-double-joist-bracket.webp',
   'What image shows the twistclip?': '/product-images/a510-twistclip.webp',
+  'What item is the T clip?': '/product-images/a512-t-clip.webp',
 };
 const REWORDED_PROMPT = 'What is the product shown below?';
 const PREFIX = /^\s*Image\s*\d+\.?\s+/;
