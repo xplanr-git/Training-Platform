@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { friendly, isFrameworkNavigation } from '@/lib/action-errors';
 import { cn } from '@/components/ui/utils';
 
 export interface QuizFormQuestion {
@@ -77,8 +78,17 @@ export function QuizForm({
         setError(res.error);
         setBusy(false);
       }
-    } catch {
-      setError('Something went wrong finishing the check. Try again.');
+    } catch (err) {
+      // redirect()/notFound() from the action throw a NEXT_* digest — it MUST
+      // propagate, or a session that expired mid-check is swallowed into a
+      // generic error instead of sending the learner to sign in.
+      if (isFrameworkNavigation(err)) throw err;
+      console.error('[quiz submit failed]', err);
+      setError(
+        err instanceof Error && err.message
+          ? friendly(err.message)
+          : 'Something went wrong finishing the check. Try again.',
+      );
       setBusy(false);
     }
   }
@@ -121,27 +131,28 @@ export function QuizForm({
 
       {error && <p className="text-status-red mt-3 text-sm">{error}</p>}
 
-      {/* ONE primary action per state: Next, or Finish on the last question.
-          Back is a quiet secondary — never competes with the primary. */}
-      <div className="mt-6 flex items-center gap-4">
+      {/* Question navigation only. Back is a quiet secondary on the LEFT; the ONE
+          primary action per state (Next, or Finish on the last question) sits on
+          the RIGHT, so the dominant action is always where the eye ends. */}
+      <div className="mt-6 flex items-center justify-end gap-4">
+        {step > 0 && (
+          <button
+            type="button"
+            onClick={() => setStep((s) => s - 1)}
+            disabled={busy}
+            className="text-foreground-2 hover:text-foreground mr-auto inline-flex min-h-11 items-center gap-1 text-sm font-semibold transition-colors"
+          >
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back
+          </button>
+        )}
         {isLast ? (
           <Button type="button" onClick={finish} disabled={!canAdvance || busy}>
             {busy ? 'Finishing…' : 'Finish check'}
           </Button>
         ) : (
           <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canAdvance}>
-            Next
+            Next <ArrowRight aria-hidden="true" className="h-4 w-4" />
           </Button>
-        )}
-        {step > 0 && (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s - 1)}
-            disabled={busy}
-            className="text-foreground-2 hover:text-foreground inline-flex min-h-11 items-center gap-1 text-sm font-semibold transition-colors"
-          >
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back
-          </button>
         )}
       </div>
     </div>

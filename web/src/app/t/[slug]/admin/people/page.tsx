@@ -258,7 +258,11 @@ export default async function People({
           <TableBody>
             {rows.map((m) => (
               <TableRow key={m.id}>
-                <TableCell className="font-medium">{m.name || '—'}</TableCell>
+                <TableCell className="font-medium">
+                  <Link href={`/t/${slug}/admin/people/${m.userId}`} className="hover:underline">
+                    {m.name || m.email}
+                  </Link>
+                </TableCell>
                 <TableCell className="text-muted">{m.email}</TableCell>
                 <TableCell>
                   <RoleSelect

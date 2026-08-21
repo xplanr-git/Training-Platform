@@ -51,6 +51,14 @@ const EXEMPT: Array<[string, string]> = [
     // completions, certificates) ARE audited, asserted separately below.
     'append-only progress telemetry; its certificate/attempt writes are audited',
   ],
+  [
+    '/src/app/t/[slug]/help/actions.ts',
+    // Writes help_requests — learner-generated support messages, NOT one of the
+    // §7.11 audited tables (tenants/memberships/roles/courses/enrollments/
+    // certificates). The help_requests row IS the record of the request; there
+    // is no sensitive state mutation to audit.
+    'help_requests is the record itself; not a §7.11 audited table',
+  ],
 ];
 
 describe('every writing action routes through the audit helper', () => {

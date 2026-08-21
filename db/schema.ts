@@ -211,6 +211,18 @@ export const courses = pgTable(
     category: text('category'),
     // Connect tier this course confers on completion (e.g. CON_TRAINED).
     confersRoleCode: text('confers_role_code'),
+    // WHO this course is for, and for WHOM it is required — explicit data, so
+    // "required training" is no longer inferred from a hardcoded slug (see
+    // lib/contractor-requirement.ts). Both are additive and nullable:
+    //  - requiredForAudiences: audiences for whom completing this course is
+    //    expected (drives the Home "Required training" panel + admin status).
+    //    NULL/empty = required for no one.
+    //  - audiences: audiences this course is RELEVANT to / promoted to. NULL =
+    //    relevant to everyone (neutral). An explicitly enrolled course is always
+    //    accessible regardless of this — relevance only affects promotion.
+    // NULL on every existing row keeps behaviour unchanged until seeded.
+    requiredForAudiences: audienceType('required_for_audiences').array(),
+    audiences: audienceType('audiences').array(),
     // Default ON (opt-out per course). The column shipped in the v2 schema but was
     // never read — every completion issued a certificate regardless. Migration
     // 0017 gates issuance on it and backfills existing courses to true so nothing
@@ -283,6 +295,14 @@ export const lessons = pgTable(
      * NEVER infers pairing from titles.
      */
     assessmentForLessonId: uuid('assessment_for_lesson_id'),
+    // Reversible cohort exclusion: false removes the lesson from the LEARNER
+    // curriculum entirely — it is dropped from every learner-facing list, the
+    // player 404s it, and (critically) it is excluded from the completion
+    // denominator, item counts and remaining-time, so it is never a phantom item
+    // that blocks a certificate. Used to withhold a lesson whose media/content is
+    // not ready (e.g. A220, a video that was never supplied) without deleting it.
+    // Admin authoring/builder still sees it. Default true leaves everything as-is.
+    active: boolean('active').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -427,6 +447,13 @@ export const quizQuestions = pgTable(
     // ones. Only questions in the confirmed critical areas set this; default
     // false leaves every existing question and non-critical quiz unchanged.
     critical: boolean('critical').notNull().default(false),
+    // Reversible cohort exclusion: false hides the question from the LEARNER
+    // (grading + render) without deleting it, so content that cannot ship yet
+    // (e.g. the image-identification questions awaiting product photos) can be
+    // withheld from the cohort assessment and restored later by flipping it back.
+    // Admin authoring still sees every question; grading recomputes over active
+    // questions only. Default true leaves every existing question unchanged.
+    active: boolean('active').notNull().default(true),
   },
   (t) => ({ quizIdx: index('quiz_questions_quiz_idx').on(t.quizId) }),
 );
@@ -623,5 +650,40 @@ export const auditLog = pgTable(
     // predecessor lookup and verify_audit_chain().
     tenantSeqIdx: index('audit_log_tenant_seq_idx').on(t.tenantId, t.seq),
     seqUnique: unique('audit_log_seq_unique').on(t.seq),
+  }),
+);
+
+/**
+ * Help requests — the durable source of truth (email is only the notification).
+ * Learners ask for help from anywhere in the Academy; Outdure receives the
+ * message WITH the context of where they were. Persisted so a request is never
+ * lost when email delivery is unset or fails (the prior gap: email/log only),
+ * and so requests are queryable later. Flat, BART-ready shape (the same fields a
+ * future assistant would consume). userId is set-null on account deletion so a
+ * help record outlives account churn; email is copied in for the same reason.
+ */
+export const helpRequests = pgTable(
+  'help_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    email: text('email'),
+    message: text('message').notNull(),
+    path: text('path'),
+    courseSlug: text('course_slug'),
+    courseTitle: text('course_title'),
+    topicTitle: text('topic_title'),
+    learningItem: text('learning_item'),
+    audience: audienceType('audience'),
+    // 'sent' | 'unsent' | 'failed' — email is best-effort; the row is the record.
+    deliveryStatus: text('delivery_status'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tenantIdx: index('help_requests_tenant_idx').on(t.tenantId),
+    tenantCreatedIdx: index('help_requests_tenant_created_idx').on(t.tenantId, t.createdAt),
   }),
 );

@@ -9,6 +9,7 @@ import {
   asc,
   desc,
   inArray,
+  isNotNull,
   enrollments,
   courses,
   progressEvents,
@@ -29,7 +30,7 @@ import {
 import { showsInstallerPathway } from '@/lib/audience';
 import { getAudience } from '@/lib/audience-server';
 import {
-  CONTRACTOR_REQUIRED_COURSE_SLUG,
+  pickRequiredCourse,
   showsContractorRequirement,
   requirementState,
   requirementAction,
@@ -67,7 +68,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     getAudience(dataUserId, ctx.tenantId),
   ]);
 
-  const [rows, membershipRow, requiredCourseRow] = await Promise.all([
+  const [rows, membershipRow, requiredCandidates] = await Promise.all([
     db
       .select({
         enrollmentId: enrollments.id,
@@ -86,13 +87,24 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
       .from(memberships)
       .where(and(eq(memberships.userId, dataUserId), eq(memberships.tenantId, ctx.tenantId)))
       .limit(1),
+    // Candidate required courses: PUBLISHED courses explicitly marked required
+    // for some audience. Purely data-driven — no slug fallback. pickRequiredCourse()
+    // resolves the learner's one (or none) below.
     db
-      .select({ slug: courses.slug, title: courses.title, status: courses.status })
+      .select({
+        slug: courses.slug,
+        title: courses.title,
+        status: courses.status,
+        requiredForAudiences: courses.requiredForAudiences,
+      })
       .from(courses)
       .where(
-        and(eq(courses.tenantId, ctx.tenantId), eq(courses.slug, CONTRACTOR_REQUIRED_COURSE_SLUG)),
-      )
-      .limit(1),
+        and(
+          eq(courses.tenantId, ctx.tenantId),
+          eq(courses.status, 'published'),
+          isNotNull(courses.requiredForAudiences),
+        ),
+      ),
   ]);
 
   const enrollmentIds = rows.map((r) => r.enrollmentId);
@@ -123,7 +135,7 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
             assessmentForLessonId: lessons.assessmentForLessonId,
           })
           .from(lessons)
-          .where(inArray(lessons.courseId, courseIds))
+          .where(and(inArray(lessons.courseId, courseIds), eq(lessons.active, true)))
       : Promise.resolve([] as Array<{ courseId: string } & LessonRow>),
   ]);
 
@@ -159,32 +171,27 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
     };
   });
 
-  // Audience relevance: the Contractor required-training frame is for installers
-  // (and unknown audience, alongside a first-use prompt) — never forced on a
-  // positively-identified dealer/distributor/staff learner.
-  const audienceAllowsRequirement =
-    audience === 'installer' || audience === null || audience === undefined;
-  const requiredCourse =
-    requiredCourseRow[0] && requiredCourseRow[0].status === 'published'
-      ? requiredCourseRow[0]
-      : null;
+  // Audience relevance is DATA-driven and honest: pickRequiredCourse returns the
+  // course explicitly marked required for this learner's KNOWN audience, else
+  // null. An UNKNOWN audience matches nothing — the AudiencePicker above asks the
+  // question instead; unknown is never treated as installer. A dealer/distributor/
+  // staff learner matches no installer requirement, so it is never forced on them.
+  const requiredCourse = pickRequiredCourse(requiredCandidates, audience);
   const showsRequirement =
-    audienceAllowsRequirement &&
-    showsContractorRequirement(membershipRow[0]?.connectRoleCode ?? null) &&
-    !!requiredCourse;
+    !!requiredCourse && showsContractorRequirement(membershipRow[0]?.connectRoleCode ?? null);
 
-  const requiredEnrollment = withProgress.find((r) => r.slug === CONTRACTOR_REQUIRED_COURSE_SLUG);
+  const requiredEnrollment = requiredCourse
+    ? withProgress.find((r) => r.slug === requiredCourse.slug)
+    : undefined;
   const reqState = requirementState({
     enrolled: !!requiredEnrollment,
     done: requiredEnrollment?.done ?? 0,
     isComplete: requiredEnrollment?.isComplete ?? false,
   });
   const reqAction = requiredCourse ? requirementAction(reqState, requiredCourse.slug) : null;
-  const otherCourses = withProgress.filter((r) => r.slug !== CONTRACTOR_REQUIRED_COURSE_SLUG);
 
   // Overall learner state → which orientation to lead with.
   const allComplete = withProgress.length > 0 && withProgress.every((r) => r.isComplete);
-  const nothingToShow = !showsRequirement && !otherCourses.length;
 
   // The course to CONTINUE: the required one if in progress, else the most
   // recently-started incomplete course. Resume to its first incomplete lesson so
@@ -199,13 +206,24 @@ export default async function LearnerDashboard({ params }: { params: Promise<{ s
       .select({ id: lessons.id })
       .from(lessons)
       .innerJoin(sections, eq(sections.id, lessons.sectionId))
-      .where(eq(lessons.courseId, continueCourse.courseId))
+      // Resume must skip excluded lessons — never resume into one that 404s.
+      .where(and(eq(lessons.courseId, continueCourse.courseId), eq(lessons.active, true)))
       .orderBy(asc(sections.position), asc(lessons.position));
     const nextLesson = ordered.find((l) => !continueCourse.completedSet.has(l.id));
     resumeHref = nextLesson
       ? `/learn/${continueCourse.slug}/${nextLesson.id}`
       : `/learn/${continueCourse.slug}`;
   }
+
+  // The "other courses" list excludes the required course (it has its own panel)
+  // AND the course shown in the Continue hero, so a resumed non-required course
+  // never appears twice on Home.
+  const heroCourseSlug = continueCourse && resumeHref ? continueCourse.slug : null;
+  const requiredSlug = showsRequirement ? (requiredCourse?.slug ?? null) : null;
+  const otherCourses = withProgress.filter(
+    (r) => r.slug !== requiredSlug && r.slug !== heroCourseSlug,
+  );
+  const nothingToShow = !showsRequirement && !otherCourses.length && !heroCourseSlug;
 
   const showPathway = showsInstallerPathway(audience);
   const tenantName = tenant?.name ?? 'Outdure Academy';

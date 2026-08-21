@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { ActionError } from '@/lib/action-errors';
+import { friendly, isFrameworkNavigation } from '@/lib/action-errors';
 import { cn } from '@/components/ui/utils';
 import {
   AlertDialog,
@@ -16,51 +16,6 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type ActionResult = { redirectTo?: string; error?: string } | void;
-
-/**
- * Next signals redirect() and notFound() from a Server Action by throwing an
- * error carrying a `digest`. Those must propagate or the navigation is
- * swallowed and the user is stranded.
- */
-function isFrameworkNavigation(err: unknown): boolean {
-  const digest = (err as { digest?: unknown })?.digest;
-  return typeof digest === 'string' && digest.startsWith('NEXT_');
-}
-
-/**
- * Turns the sentinel messages the guards throw into something a person can act
- * on. Anything unrecognised falls back to a generic line rather than leaking an
- * internal message or a stack.
- */
-function friendly(message: string): string {
-  if (message.includes(ActionError.UNAUTHENTICATED)) {
-    return 'Your session has expired. Please sign in again.';
-  }
-  if (message.includes(ActionError.FORBIDDEN)) {
-    return "You don't have permission to do that.";
-  }
-  if (message.includes(ActionError.VIEW_AS_READONLY)) {
-    return "You're viewing as someone else — exit view-as to make changes.";
-  }
-  if (message.includes(ActionError.TENANT_INACTIVE)) {
-    return 'This academy is switched off, so nothing can be saved. Contact Outdure to switch it back on.';
-  }
-  if (message.includes(ActionError.TENANT_NOT_FOUND)) {
-    return 'That academy could not be found.';
-  }
-  if (message.includes(ActionError.ENROLLMENT_NOT_FOUND)) {
-    return 'We could not find your enrolment for this course. Reload the page and try again.';
-  }
-  if (message.includes(ActionError.LESSON_NOT_FOUND)) {
-    return 'That lesson is no longer part of this course. Reload the page.';
-  }
-  // Validator messages ('Invalid role.', 'Price cannot be negative.') are
-  // already written for humans — short, punctuated, no internals.
-  if (message.length < 120 && !message.includes('\n') && !/\bat\s+\//.test(message)) {
-    return message;
-  }
-  return 'Something went wrong. Please reload and try again.';
-}
 
 /**
  * Splits a confirm message into a heading and the rest for the dialog: the first

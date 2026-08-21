@@ -3,6 +3,8 @@ import {
   deriveLearningItems,
   itemProgress,
   sectionItemMeta,
+  checkLessonHeading,
+  topicHeading,
   type LessonRow,
 } from '@/lib/learning-units';
 
@@ -141,6 +143,30 @@ describe('item-based counts and time', () => {
     expect(p.doneItems).toBe(1);
     expect(p.percent).toBe(33);
     expect(p.itemsLeft).toBe(2);
+  });
+
+  it('checkLessonHeading never shows "Quiz" to the learner', () => {
+    expect(checkLessonHeading('A201 - Quiz')).toBe('Knowledge check — A201');
+    expect(checkLessonHeading('T Clip - Quiz')).toBe('Knowledge check — T Clip');
+    expect(checkLessonHeading('A831 / A832 - Quiz')).toBe('Knowledge check — A831 / A832');
+    // "Knowledge Quiz A200" normalises in place (idempotent, no double label).
+    expect(checkLessonHeading('Knowledge Quiz A200')).toBe('Knowledge check A200');
+    expect(checkLessonHeading('Knowledge check A200')).toBe('Knowledge check A200');
+    // Degenerate titles fall back cleanly.
+    expect(checkLessonHeading('Quiz')).toBe('Knowledge check');
+    expect(checkLessonHeading('')).toBe('Knowledge check');
+  });
+
+  it('topicHeading strips the internal "EP N —" prefix', () => {
+    expect(topicHeading('EP 1 — Qwickbuild Overview and A100')).toBe(
+      'Qwickbuild Overview and A100',
+    );
+    expect(topicHeading('EP 11 — A900 Supports')).toBe('A900 Supports');
+    // No prefix → unchanged; idempotent.
+    expect(topicHeading('DeckPlanner')).toBe('DeckPlanner');
+    expect(topicHeading('A900 Supports')).toBe('A900 Supports');
+    // Degenerate "EP 1" alone keeps the original rather than becoming empty.
+    expect(topicHeading('EP 1')).toBe('EP 1');
   });
 
   it('sectionItemMeta reports per-topic item count + done', () => {

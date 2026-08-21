@@ -36,8 +36,10 @@ describe('error messages survive the NavForm filter', () => {
   const LIMIT = 120;
 
   it('friendly() still has the limit these are written against', () => {
-    const nav = code('src/components/nav-form.tsx');
-    expect(nav, 'if this number moves, every message below needs re-checking').toMatch(
+    // friendly() is single-sourced in lib/action-errors (shared by NavForm and
+    // QuizForm); the 120-char limit lives with it there.
+    const src = code('src/lib/action-errors.ts');
+    expect(src, 'if this number moves, every message below needs re-checking').toMatch(
       /message\.length < 120/,
     );
   });
@@ -141,14 +143,15 @@ describe('internal vocabulary does not reach the screen', () => {
     // It threw 'Forbidden'; includes('FORBIDDEN') is case-sensitive, so the raw word
     // was shown instead of "You don't have permission to do that."
     //
-    // Sentinels are now single-sourced in lib/action-errors and thrown/matched by
-    // name (throw new Error(ActionError.X) / includes(ActionError.X)), so this
-    // reads the names off the tenant guards and confirms friendly() references
-    // each. Asserting the whole loop rather than one string: the platform guard
-    // has since moved into lib/tenant.ts, and a location-pinned check would fail
-    // for a move while passing for a genuinely unmatched sentinel.
+    // Sentinels and friendly() are now single-sourced in lib/action-errors and
+    // thrown/matched by name (throw new Error(ActionError.X) / includes(ActionError.X)),
+    // so this reads the names off the tenant guards and confirms friendly() (which
+    // lives alongside them) references each. Asserting the whole loop rather than one
+    // string: the platform guard has since moved into lib/tenant.ts, and a
+    // location-pinned check would fail for a move while passing for a genuinely
+    // unmatched sentinel.
     const guards = code('src/lib/tenant.ts');
-    const navForm = code('src/components/nav-form.tsx');
+    const matcher = code('src/lib/action-errors.ts');
 
     const sentinels = [...guards.matchAll(/throw new Error\(ActionError\.([A-Z_]+)\)/g)].map(
       (m) => m[1],
@@ -160,7 +163,7 @@ describe('internal vocabulary does not reach the screen', () => {
     // The platform guard is the one that regressed before; keep it named.
     expect(sentinels).toContain('FORBIDDEN');
 
-    const unmatched = sentinels.filter((s) => !navForm.includes(`ActionError.${s}`));
+    const unmatched = sentinels.filter((s) => !matcher.includes(`ActionError.${s}`));
     expect(
       unmatched,
       `friendly() would show these raw to the user: ${unmatched.join(', ')}`,

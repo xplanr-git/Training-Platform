@@ -20,5 +20,6 @@ export {
   lte,
   count,
   countDistinct,
+  max,
   ilike,
 } from 'drizzle-orm';

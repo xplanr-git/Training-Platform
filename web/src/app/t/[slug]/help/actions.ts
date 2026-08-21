@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { db, eq, users } from '@training-platform/db';
+import { db, eq, users, helpRequests } from '@training-platform/db';
 import { getTenantContext } from '@/lib/tenant';
 import { getAudience } from '@/lib/audience-server';
 import { buildLearnerContext, summariseContext } from '@/lib/learner-context';
@@ -51,13 +51,36 @@ export async function submitHelpRequest(
     path: ctxInput.path,
   });
 
+  // Persist FIRST — the DB row is the source of truth, so a request is never lost
+  // even if email delivery fails or is unset. Written through the privileged
+  // server connection; help_requests has RLS on + no REST grant (migration 0022),
+  // so this PII is not reachable from the client. Internal IDs are stored, never
+  // shown to the learner.
+  const [saved] = await db
+    .insert(helpRequests)
+    .values({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      email: context.email,
+      message: text,
+      path: context.path,
+      courseSlug: context.courseSlug ?? null,
+      courseTitle: context.courseTitle ?? null,
+      topicTitle: context.topicTitle ?? null,
+      learningItem: context.learningItem ?? null,
+      audience: context.audience ?? null,
+      deliveryStatus: 'unsent',
+    })
+    .returning({ id: helpRequests.id });
+
+  let deliveryStatus: 'sent' | 'failed' = 'sent';
   try {
     await sendSupportEmail(context.email, summariseContext(context), text);
   } catch (e) {
-    // Never lose the request if delivery fails: it is at least in the server log.
-    console.error('[help] delivery failed', { context, error: (e as Error).message });
+    // The request is already persisted; email is only the notification.
+    deliveryStatus = 'failed';
+    console.error('[help] delivery failed', { requestId: saved.id, error: (e as Error).message });
   }
-  // Structured log so a request is reconstructable even where email is unset.
-  console.log('[help] request', { email: context.email, context: summariseContext(context) });
+  await db.update(helpRequests).set({ deliveryStatus }).where(eq(helpRequests.id, saved.id));
   return { ok: true };
 }
