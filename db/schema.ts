@@ -442,6 +442,12 @@ export const quizQuestions = pgTable(
     options: jsonb('options').notNull().default([]),
     correct: jsonb('correct').notNull().default([]),
     points: integer('points').notNull().default(1),
+    // Optional product image shown ABOVE the options, for "what is this product?"
+    // visual-identification questions. A relative path under /public (e.g.
+    // '/product-images/a201-90-bracket.webp') served from the app's own origin —
+    // NOT a caption, and never the answer in text. NULL = an ordinary text-only
+    // question (the overwhelming majority). See the quiz player + builder.
+    imageUrl: text('image_url'),
     // Warranty-critical questions MUST be answered correctly to pass a critical
     // check — a learner cannot compensate for a wrong critical answer with easy
     // ones. Only questions in the confirmed critical areas set this; default

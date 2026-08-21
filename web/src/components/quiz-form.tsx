@@ -12,6 +12,8 @@ export interface QuizFormQuestion {
   prompt: string;
   type: string;
   options: string[];
+  /** Optional product image for "what is this product?" identification questions. */
+  imageUrl?: string | null;
 }
 
 /**
@@ -101,6 +103,24 @@ export function QuizForm({
       </p>
       <h2 className="text-h2 mt-2">{q.prompt}</h2>
       {multi && <p className="text-muted mt-1 text-meta">Choose all that apply.</p>}
+
+      {/*
+        Product-identification image (optional). The learner recognises the part
+        from the picture and picks its name, so the alt text is deliberately
+        NEUTRAL — naming the product here would hand over the answer and defeat
+        the question. Constrained box on a plain surface because the renders are
+        transparent WebP; object-contain keeps the whole part in view.
+      */}
+      {q.imageUrl && (
+        <div className="border-border bg-surface-muted mt-4 flex justify-center rounded-sm border p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static /public asset; next/image adds no value for a fixed local file */}
+          <img
+            src={q.imageUrl}
+            alt="Product to identify"
+            className="h-auto max-h-72 w-auto max-w-full"
+          />
+        </div>
+      )}
 
       <div className="mt-5 flex flex-col gap-2.5">
         {q.options.map((o, oi) => {

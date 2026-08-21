@@ -572,6 +572,7 @@ export default async function LessonPlayer({
                   prompt: q.prompt,
                   type: q.type,
                   options: q.options as string[],
+                  imageUrl: q.imageUrl,
                 }))}
                 submitAction={submitQuizAttempt.bind(
                   null,
